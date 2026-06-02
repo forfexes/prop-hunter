@@ -1,0 +1,36 @@
+name: Prop Hunter Daily
+
+on:
+  schedule:
+    # 16:00 UTC = 18:00 CEST (picks for next 12h)
+    - cron: '0 16 * * *'
+  workflow_dispatch:    # manual trigger button
+    inputs:
+      include_nba:
+        description: 'NBA einschliessen?'
+        required: false
+        default: 'false'
+
+jobs:
+  run-prophunter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Prop Hunter
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          INCLUDE_NBA: ${{ github.event.inputs.include_nba || 'false' }}
+        run: python prophunter.py
