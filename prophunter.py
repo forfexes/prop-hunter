@@ -24,7 +24,7 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 ODDS_BASE = "https://api.the-odds-api.com/v4"
-BOOKMAKERS = "betfair_ex_eu,betfair_ex_uk,pinnacle"
+BOOKMAKERS = "bet365,draftkings,fanduel,betmgm,williamhill,pinnacle"
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 YEAR = datetime.now(timezone.utc).year
 
@@ -98,7 +98,7 @@ def fetch_events(sport):
 def fetch_props(sport, eid, markets):
     try:
         r = requests.get(f"{ODDS_BASE}/sports/{sport}/events/{eid}/odds", params={
-            "apiKey": ODDS_API_KEY, "regions": "eu,uk,us", "markets": markets,
+            "apiKey": ODDS_API_KEY, "regions": "us,eu,uk", "markets": markets,
             "oddsFormat": "decimal", "bookmakers": BOOKMAKERS}, timeout=30)
         return r.json() if r.status_code == 200 else None
     except Exception:
@@ -135,6 +135,10 @@ def fetch_savant():
     try:
         r = requests.get("https://baseballsavant.mlb.com/leaderboard/percentile-rankings",
             params={"type":"batter","year":str(YEAR),"csv":"true"}, headers=UA, timeout=30)
+        # Fallback to previous year if current year empty
+        if r.status_code == 200 and len(r.text) < 200:
+            r = requests.get("https://baseballsavant.mlb.com/leaderboard/percentile-rankings",
+                params={"type":"batter","year":str(YEAR-1),"csv":"true"}, headers=UA, timeout=30)
         if r.status_code != 200:
             print(f"  warn savant {r.status_code}"); return {}
         out = {}
@@ -323,6 +327,34 @@ def send_telegram(text):
     except Exception as e:
         print(f"  TG error: {e}")
 
+def save_picks(picks):
+    """Append today's picks to history for later evaluation."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    history = []
+    if os.path.exists("picks_history.json"):
+        try:
+            with open("picks_history.json") as f:
+                history = json.load(f)
+        except Exception:
+            history = []
+    # Only store singles + flatten for evaluation
+    entry = {"date": today, "evaluated": False, "picks": []}
+    for p in picks:
+        if p.get("type") == "single":
+            entry["picks"].append({
+                "player": p.get("player", ""),
+                "team": p.get("team", ""),
+                "market": p.get("market", ""),
+                "odds": p.get("odds", 0),
+                "stake": p.get("stake", 1),
+                "sport": "MLB" if p.get("emoji") == "⚾" else "NBA" if p.get("emoji") == "🏀" else "NFL",
+                "result": None,
+            })
+    history.append(entry)
+    with open("picks_history.json", "w") as f:
+        json.dump(history, f, indent=2)
+    print(f"  Saved {len(entry['picks'])} picks to history")
+
 def main():
     print("PROP HUNTER starting...")
     print("Fetching games + odds + Statcast + weather (next 12h)...")
@@ -339,6 +371,7 @@ def main():
     post = build_post(picks)
     print("\n"+"="*40+"\n"+post+"\n"+"="*40+"\n")
     send_telegram(post)
+    save_picks(picks)
     print("Done!")
 
 if __name__ == "__main__":
