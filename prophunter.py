@@ -38,6 +38,7 @@ except Exception:
 # ─── CONFIG ───
 ODDS_API_KEY   = os.environ.get("ODDS_API_KEY", "")
 GEMINI_KEYS    = [k.strip() for k in os.environ.get("GEMINI_API_KEY","").split(",") if k.strip()]
+GROQ_KEYS      = [k.strip() for k in os.environ.get("GROQ_API_KEY","").split(",") if k.strip()]
 TG_TOKEN       = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT        = os.environ.get("TELEGRAM_CHAT_ID", "")
 
@@ -356,6 +357,29 @@ def gather():
     print(f"  Total props enriched: {len(all_props)}")
     return all_props
 
+# ─── GROQ FALLBACK ───
+def groq_analyze(prompt):
+    models = ["llama-3.3-70b-versatile","llama-3.1-70b-versatile","mixtral-8x7b-32768"]
+    for key in GROQ_KEYS:
+        for model in models:
+            try:
+                r = requests.post("https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"},
+                    json={"model":model,"messages":[{"role":"user","content":prompt}],
+                          "max_tokens":2048,"temperature":0.7}, timeout=60)
+                if r.status_code == 200:
+                    text = r.json()["choices"][0]["message"]["content"]
+                    text = text.replace("```json","").replace("```","").strip()
+                    s, e = text.find("["), text.rfind("]")+1
+                    picks = json.loads(text[s:e])
+                    print(f"  Groq ({model}): {len(picks)} picks")
+                    return picks
+                elif r.status_code == 429:
+                    print(f"  Groq 429, next model..."); continue
+            except Exception as ex:
+                print(f"  warn groq {ex}"); continue
+    return None
+
 # ─── GEMINI ───
 def gemini_analyze(props):
     if not props or not GEMINI_KEYS: return None
@@ -389,11 +413,14 @@ Return ONLY valid JSON (no markdown), empty array [] if no value:
 {{"type":"big","legs":["L1","L2","L3"],"odds":40.0,"stake":0.25}}
 ]"""
 
-    for key in GEMINI_KEYS:
+    for i, key in enumerate(GEMINI_KEYS):
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}"
             r = requests.post(url, json={"contents":[{"parts":[{"text":prompt}]}],
                 "generationConfig":{"temperature":0.7,"maxOutputTokens":2048}}, timeout=60)
+            if r.status_code == 429:
+                print(f"  Gemini key {i+1} rate limited, next...")
+                time.sleep(3); continue
             if r.status_code != 200:
                 print(f"  warn gemini {r.status_code}, next..."); continue
             text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
@@ -404,6 +431,10 @@ Return ONLY valid JSON (no markdown), empty array [] if no value:
             return picks
         except Exception as ex:
             print(f"  warn gemini {ex}, next..."); continue
+    # All Gemini keys failed → try Groq
+    if GROQ_KEYS:
+        print("  All Gemini keys failed → trying Groq fallback...")
+        return groq_analyze(prompt)
     return None
 
 # ─── POST (Format B — bet365 style) ───
