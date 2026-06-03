@@ -2,10 +2,8 @@ name: Prop Hunter Daily
 
 on:
   schedule:
-    # 15:00 UTC = 17:00 CEST (Day + Evening Games)
-    - cron: '0 15 * * *'
-    # 20:00 UTC = 22:00 CEST (Night Games)
-    - cron: '0 20 * * *'
+    - cron: '0 15 * * *'   # 17:00 CEST (Day + Evening Games)
+    - cron: '0 20 * * *'   # 22:00 CEST (Night Games)
   workflow_dispatch:
 
 permissions:
@@ -24,9 +22,10 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: |
+          pip install requests pybaseball nba_api nfl_data_py
 
-      - name: Run Prop Hunter (Picks)
+      - name: Run Prop Hunter
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -39,5 +38,5 @@ jobs:
           git config user.name "prophunter-bot"
           git config user.email "bot@prophunter.local"
           git add picks_history.json || true
-          git commit -m "Update picks history $(date +%F)" || echo "nothing to commit"
+          git commit -m "picks $(date +%F-%H%M)" || echo "nothing to commit"
           git push || echo "nothing to push"
