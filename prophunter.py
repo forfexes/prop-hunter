@@ -327,6 +327,22 @@ def send_telegram(text):
     except Exception as e:
         print(f"  TG error: {e}")
 
+def already_posted_today():
+    """Return set of player names already posted today (avoid duplicates on 2nd run)."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    posted = set()
+    if os.path.exists("picks_history.json"):
+        try:
+            with open("picks_history.json") as f:
+                history = json.load(f)
+            for entry in history:
+                if entry["date"] == today:
+                    for p in entry.get("picks", []):
+                        posted.add(p.get("player", "").lower())
+        except Exception:
+            pass
+    return posted
+
 def save_picks(picks):
     """Append today's picks to history for later evaluation."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -367,7 +383,25 @@ def main():
     if not picks:
         print("  No value found today. Exiting (no post).")
         return
-    print(f"  {len(picks)} value picks")
+
+    # Dedup: remove picks already posted today (2nd run of the day)
+    posted = already_posted_today()
+    if posted:
+        before = len(picks)
+        filtered = []
+        for p in picks:
+            if p.get("type") == "single":
+                if p.get("player", "").lower() in posted:
+                    continue
+            filtered.append(p)
+        picks = filtered
+        print(f"  Dedup: {before} -> {len(picks)} (removed already-posted)")
+
+    singles_left = [p for p in picks if p.get("type") == "single"]
+    if not singles_left:
+        print("  All picks already posted today. Exiting (no duplicate post).")
+        return
+    print(f"  {len(picks)} new value picks")
     post = build_post(picks)
     print("\n"+"="*40+"\n"+post+"\n"+"="*40+"\n")
     send_telegram(post)
