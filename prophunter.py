@@ -335,13 +335,8 @@ def gather():
 
                     all_props.append(p)
 
-    # NBA enrichment (only top candidates to save API calls)
-    nba_props = [p for p in all_props if p["sport"]=="NBA"][:10]
-    for p in nba_props:
-        ns = fetch_nba_player_stats(p["player"])
-        if ns:
-            tags = [f"Ø{ns['avg_pts']}Pts/{ns['games']}G",f"Ø{ns['avg_min']}Min"]
-            p["enrichment"] = p.get("enrichment","") + " | " + " ".join(tags)
+    # NBA enrichment skipped - stats.nba.com blocks CI/CD environments
+    # nba_api works locally but times out on GitHub Actions
 
     # NFL enrichment (off-season: last season data)
     nfl_props = [p for p in all_props if p["sport"]=="NFL"][:8]
