@@ -113,23 +113,49 @@ def fetch_props(sport, eid, markets):
 
 def extract(data, mkey, label, min_pt, min_odds):
     out = {}
+    _logged = [False]
     for bm in (data.get("bookmakers") or []):
         for mkt in (bm.get("markets") or []):
             if mkt.get("key") != mkey: continue
-            for o in (mkt.get("outcomes") or []):
-                desc, pt = o.get("description",""), o.get("point")
-                if desc and desc not in ("Over","Yes"): continue
-                if min_pt and pt and pt < min_pt: continue
-                name = o.get("name") or o.get("participant","")
-                if not name or name in ("Over","Under","Yes","No"):
-                    name = o.get("description","") or name
-                if not name: continue
-                k = f"{name}|{pt or ''}"
-                out.setdefault(k,{"player":name,"point":pt,"prices":[]})
-                out[k]["prices"].append(o.get("price",0))
+            outcomes = mkt.get("outcomes") or []
+            # Debug first market
+            if not _logged[0] and outcomes:
+                _logged[0] = True
+                sample = outcomes[0]
+                print(f"  [struct] name={sample.get('name')} desc={sample.get('description')} pt={sample.get('point')} price={sample.get('price')}")
+            for o in outcomes:
+                desc       = o.get("description","") or ""
+                name_field = o.get("name","") or ""
+                pt         = o.get("point")
+                price      = o.get("price",0)
+
+                # Handle both bookmaker structures:
+                # Type A: name=PlayerName, description=Over/Under  (most US books)
+                # Type B: name=Over/Under, description=PlayerName  (some EU books)
+                TYPE_WORDS = {"Over","Under","Yes","No",""}
+                if name_field in TYPE_WORDS:
+                    # Type B
+                    player_name  = desc
+                    outcome_type = name_field
+                else:
+                    # Type A
+                    player_name  = name_field
+                    outcome_type = desc
+
+                # Only keep Over / Yes / empty (for HR: "will player hit HR" = effectively Over)
+                if outcome_type and outcome_type not in ("Over","Yes"): continue
+                if not player_name or player_name in TYPE_WORDS: continue
+                if min_pt and pt is not None and pt < min_pt: continue
+
+                k = f"{player_name}|{pt or ''}"
+                out.setdefault(k,{"player":player_name,"point":pt,"prices":[]})
+                out[k]["prices"].append(price)
+
     res = []
     for v in out.values():
-        avg = sum(v["prices"])/len(v["prices"])
+        prices = [p for p in v["prices"] if p > 1]
+        if not prices: continue
+        avg = sum(prices)/len(prices)
         if avg >= min_odds:
             lbl = label
             if v["point"] and label in ("Points","Rush Yds","Rec Yds","Pass TDs"):
