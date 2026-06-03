@@ -2,14 +2,14 @@ name: Prop Hunter Daily
 
 on:
   schedule:
-    # 16:00 UTC = 18:00 CEST (picks for next 12h)
-    - cron: '0 16 * * *'
-  workflow_dispatch:    # manual trigger button
-    inputs:
-      include_nba:
-        description: 'NBA einschliessen?'
-        required: false
-        default: 'false'
+    # 15:00 UTC = 17:00 CEST (Day + Evening Games)
+    - cron: '0 15 * * *'
+    # 20:00 UTC = 22:00 CEST (Night Games)
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   run-prophunter:
@@ -26,11 +26,18 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run Prop Hunter
+      - name: Run Prop Hunter (Picks)
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          INCLUDE_NBA: ${{ github.event.inputs.include_nba || 'false' }}
         run: python prophunter.py
+
+      - name: Save picks history
+        run: |
+          git config user.name "prophunter-bot"
+          git config user.email "bot@prophunter.local"
+          git add picks_history.json || true
+          git commit -m "Update picks history $(date +%F)" || echo "nothing to commit"
+          git push || echo "nothing to push"
