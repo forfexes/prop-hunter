@@ -13,12 +13,25 @@ from datetime import datetime, timedelta, timezone
 
 # Optional stats libraries (graceful fallback if unavailable)
 try:
+    from playwright.sync_api import sync_playwright
+    PLAYWRIGHT = True
+    print("  playwright OK")
+except Exception:
+    PLAYWRIGHT = False
+try:
     from pybaseball import batting_stats as pb_batting
     from pybaseball import playerid_lookup
     PYBASEBALL = True
     print("  pybaseball OK")
 except Exception:
     PYBASEBALL = False
+
+try:
+    import statsapi  # toddrob99/MLB-StatsAPI - fallback for MLB data
+    MLB_STATSAPI = True
+    print("  MLB-StatsAPI OK")
+except Exception:
+    MLB_STATSAPI = False
 
 try:
     from nba_api.stats.static import players as nba_db
@@ -29,11 +42,16 @@ except Exception:
     NBA_API = False
 
 try:
-    import nfl_data_py as nfl
+    import nflreadpy as nfl  # newer replacement for nfl_data_py
     NFL_DATA = True
-    print("  nfl_data_py OK")
+    print("  nflreadpy OK")
 except Exception:
-    NFL_DATA = False
+    try:
+        import nfl_data_py as nfl  # fallback to deprecated version
+        NFL_DATA = True
+        print("  nfl_data_py OK (deprecated)")
+    except Exception:
+        NFL_DATA = False
 
 # ─── CONFIG ───
 ODDS_API_KEY   = os.environ.get("ODDS_API_KEY", "")
@@ -48,13 +66,23 @@ UA         = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 YEAR       = datetime.now(timezone.utc).year
 
 SPORTS = {
+    # ⚾ Baseball
     "baseball_mlb": {"emoji":"⚾","name":"MLB",
         "markets":[("batter_home_runs","Home Run",None,3.5)]},
+    # 🏀 Basketball
     "basketball_nba": {"emoji":"🏀","name":"NBA",
         "markets":[
             ("player_points_alternate","Points",25,3.5),
             ("player_double_double","Double Double",None,3.0),
             ("player_triple_double","Triple Double",None,6.0)]},
+    "basketball_wnba": {"emoji":"🏀","name":"WNBA",
+        "markets":[
+            ("player_points_alternate","Points",15,3.5),
+            ("player_double_double","Double Double",None,3.0)]},
+    "basketball_euroleague": {"emoji":"🏀","name":"Euroleague",
+        "markets":[
+            ("player_points_alternate","Points",15,3.5)]},
+    # 🏈 American Football
     "americanfootball_nfl": {"emoji":"🏈","name":"NFL",
         "markets":[
             ("player_anytime_td","Anytime TD",None,2.5),
@@ -192,7 +220,147 @@ def fetch_mlb_stats():
         print(f"  pybaseball: {len(out)} batters loaded")
         return out
     except Exception as e:
-        print(f"  warn pybaseball: {e}"); return {}
+        print(f"  warn pybaseball: {e}")
+        # Fallback 1: MLB-StatsAPI
+        if MLB_STATSAPI:
+            try:
+                return fetch_mlb_statsapi()
+            except Exception as e2:
+                print(f"  warn mlb-statsapi: {e2}")
+        # Fallback 2: Playwright → FanGraphs
+        result = scrape_fangraphs_batting()
+        if result: return result
+        # Fallback 3: Playwright → Baseball Savant
+        return scrape_baseball_savant()
+
+# ─── PLAYWRIGHT SCRAPER (fallback for 403s) ───
+def playwright_scrape(url, wait_selector=None, timeout=30000):
+    """Generic Playwright scraper — handles JS-heavy pages + bot protection."""
+    if not PLAYWRIGHT: return None
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True, args=["--no-sandbox","--disable-dev-shm-usage"])
+            ctx = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                viewport={"width":1280,"height":800}
+            )
+            page = ctx.new_page()
+            page.goto(url, wait_until="networkidle", timeout=timeout)
+            if wait_selector:
+                page.wait_for_selector(wait_selector, timeout=timeout)
+            content = page.content()
+            browser.close()
+            return content
+    except Exception as e:
+        print(f"  warn playwright {url[:50]}: {e}")
+        return None
+
+def playwright_fetch_csv(url, timeout=30000):
+    """Fetch CSV/text content via Playwright."""
+    if not PLAYWRIGHT: return None
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True, args=["--no-sandbox","--disable-dev-shm-usage"])
+            ctx = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            )
+            page = ctx.new_page()
+            response = page.goto(url, timeout=timeout)
+            body = response.body().decode("utf-8", errors="replace") if response else None
+            browser.close()
+            return body
+    except Exception as e:
+        print(f"  warn playwright csv: {e}")
+        return None
+
+def scrape_fangraphs_batting():
+    """Playwright fallback for FanGraphs batting stats (pybaseball 403)."""
+    if not PLAYWRIGHT: return {}
+    print("  Playwright → FanGraphs...")
+    url = f"https://www.fangraphs.com/leaders/major-league?pos=all&stats=bat&lg=all&qual=20&season={YEAR}&month=0&ind=0&rost=0&type=8&pageitems=500"
+    html = playwright_scrape(url, wait_selector="table.rgMasterTable, .fg-data-grid", timeout=40000)
+    if not html: return {}
+    try:
+        from html.parser import HTMLParser
+        import re
+        # Extract stats from JSON data embedded in page
+        pattern = r'"Name":"([^"]+)"[^}]*"ISO":([0-9.]+)[^}]*"Hard%":([0-9.]+)[^}]*"Barrel%":([0-9.]+)'
+        matches = re.findall(pattern, html)
+        out = {}
+        for m in matches:
+            name, iso, hardhit, barrel = m
+            out[name.lower()] = {"iso": float(iso), "hardhit": float(hardhit), "barrel": float(barrel), "hr": None, "xslg": None}
+        if out: print(f"  FanGraphs (PW): {len(out)} batters")
+        return out
+    except Exception as e:
+        print(f"  warn fangraphs parse: {e}"); return {}
+
+def scrape_baseball_savant():
+    """Playwright fallback for Baseball Savant percentile rankings."""
+    if not PLAYWRIGHT: return {}
+    print("  Playwright → Baseball Savant...")
+    url = f"https://baseballsavant.mlb.com/leaderboard/percentile-rankings?type=batter&year={YEAR}&csv=true"
+    body = playwright_fetch_csv(url)
+    if not body: return {}
+    try:
+        import csv, io
+        out = {}
+        for row in csv.DictReader(io.StringIO(body)):
+            name = (row.get("player_name") or "").strip()
+            if not name: continue
+            if "," in name:
+                p = [x.strip() for x in name.split(",")]
+                name = f"{p[1]} {p[0]}" if len(p)==2 else name
+            def g(k):
+                v = row.get(k,"")
+                try: return int(float(v)) if v not in ("",None) else None
+                except: return None
+            out[name.lower()] = {
+                "hr": g("hr") or g("home_run"), "xslg": g("xslg"),
+                "xiso": g("xiso") or g("iso"), "barrel": g("brl_percent") or g("brl"),
+                "hardhit": g("hard_hit_percent") or g("exit_velocity")}
+        if out: print(f"  Savant (PW): {len(out)} profiles")
+        return out
+    except Exception as e:
+        print(f"  warn savant parse: {e}"); return {}
+
+def scrape_nba_stats_player(player_name):
+    """Playwright fallback for NBA player stats (nba_api timeout)."""
+    if not PLAYWRIGHT: return None
+    try:
+        last = player_name.split()[-1].lower()
+        url = f"https://www.basketball-reference.com/search/search.fcgi?search={player_name.replace(' ','+')}"
+        html = playwright_scrape(url, timeout=20000)
+        if not html: return None
+        import re
+        pts = re.findall(r'"pts_per_g":"?([0-9.]+)"?', html)
+        mp = re.findall(r'"mp_per_g":"?([0-9.]+)"?', html)
+        if pts:
+            return {"avg_pts": float(pts[0]), "avg_min": float(mp[0]) if mp else 0, "games": 0}
+    except Exception as e:
+        print(f"  warn pw nba {player_name}: {e}")
+    return None
+
+def fetch_mlb_statsapi():
+    """Fallback: MLB-StatsAPI for basic batter stats."""
+    if not MLB_STATSAPI: return {}
+    try:
+        out = {}
+        # Get current season stats for all batters
+        people = statsapi.get('sports_players', {'season': YEAR, 'sportId': 1})
+        for p in (people.get('people') or [])[:200]:
+            name = p.get('fullName','').lower()
+            pid  = p.get('id')
+            if not name or not pid: continue
+            s = statsapi.player_stat_data(pid, group='hitting', type='season')
+            stats_data = (s.get('stats') or [{}])[0].get('stats', {})
+            hr = stats_data.get('homeRuns', 0)
+            if hr and int(hr) > 3:
+                out[name] = {"hr": int(hr), "iso": None, "barrel": None, "hardhit": None, "xslg": None}
+        print(f"  MLB-StatsAPI: {len(out)} batters")
+        return out
+    except Exception as e:
+        print(f"  warn mlb-statsapi: {e}"); return {}
 
 def match_batter(player, stats):
     pl = player.lower()
@@ -392,13 +560,31 @@ PROPS:
 Select ONLY genuine VALUE picks — where stats show edge the odds don't reflect. QUALITY OVER QUANTITY (2-8 picks).
 
 VALUE CRITERIA:
-- MLB HR: high Barrel% (>10%), high ISO (>0.200), good HardHit%, HR-friendly weather, weak pitcher
-- NBA: low minutes projection vs line, sell-high regression, tough defensive matchup (cite avg pts vs line)
-- NFL: matchup advantage vs defensive weakness, recent form trend
+- ⚾ MLB HR: high Barrel%/ISO/HardHit%, HR-friendly weather, weak pitcher vs batter handedness
+- 🏀 NBA/WNBA: minutes/usage vs line, sell-high regression, defensive matchup (Wembanyama = rim protection)
+- 🏈 NFL: matchup vs defensive weakness, recent yardage form
+COMBO STRATEGY (like NETRATTLER — probability-first):
+- Kombis müssen aus den WAHRSCHEINLICHSTEN Legs gebaut werden, nicht den höchsten Odds
+- Kombiniere Spieler mit höchster Hit-Rate: hohe Barrel%/ISO für HR, klare Minuten-Edge für NBA
+- NIEMALS 2 Longshots (>6.0) in einem Kombi — mindestens 1 Leg muss solid sein (@3.0-4.5)
+- Ziel: realistische Gewinn-Chance, nicht maximale Odds
+- Cross-sport combos erlaubt: z.B. solider HR @4.0 + sicherer NBA Points @2.0
+- Bewerte jeden Leg nach: Trefferquote × Quote = Expected Value
 
 Write sharp 2-sentence analysis per pick citing actual data.
-Build 2-leg combos if ≥4 value singles; 3-leg only if ≥5.
-Staking: confident 1u, speculative 0.25u, 2-leg 0.5u, 3-leg 0.25u.
+KOMBI REGELN — 2 Typen wie JK:
+
+TYPE 1 — PROBABILITY KOMBIS (2-Leg, 3 Stück):
+- Aus den wahrscheinlichsten Singles (@3.0-5.0)
+- Ziel-Kombi-Quote: @8-20
+- Stake: 0.5u — reale Gewinnchance
+
+TYPE 2 — LOTTERY BIGS (3-Leg, 2 Stück):
+- Mix: 1-2 solide Legs + 1-2 Longshots (@6.0-10.0)
+- Ziel-Kombi-Quote: @40-150+
+- Stake: 0.25u — kleiner Einsatz, grosse Auszahlung möglich
+
+Staking Singles: sicherer Single 1u, spekulativer Longshot 0.25u
 
 Include "team" = short code + nickname (MLB: "ATL Braves", NBA: "OKC Thunder", NFL: "KC Chiefs").
 Return ONLY valid JSON (no markdown), empty array [] if no value:
@@ -475,17 +661,25 @@ def save_picks(picks):
     if os.path.exists("picks_history.json"):
         try: history = json.load(open("picks_history.json"))
         except Exception: pass
-    entry = {"date":today,"evaluated":False,"picks":[]}
+    entry = {"date":today,"evaluated":False,"picks":[],"kombis":[]}
     for p in picks:
         if p.get("type")=="single":
             entry["picks"].append({
                 "player":p.get("player",""),"team":p.get("team",""),
                 "market":p.get("market",""),"odds":p.get("odds",0),
-                "stake":p.get("stake",1),"sport":"MLB" if p.get("emoji")=="⚾" else "NBA" if p.get("emoji")=="🏀" else "NFL",
+                "stake":p.get("stake",1),
+                "sport":"MLB" if p.get("emoji")=="⚾" else "NBA" if p.get("emoji")=="🏀" else "NFL",
+                "result":None})
+        elif p.get("type") in ("kombi2","big"):
+            entry["kombis"].append({
+                "type":p.get("type","kombi2"),
+                "legs":p.get("legs",[]),
+                "odds":p.get("odds",0),
+                "stake":p.get("stake",0.5),
                 "result":None})
     history.append(entry)
     json.dump(history, open("picks_history.json","w"), indent=2)
-    print(f"  Saved {len(entry['picks'])} picks")
+    print(f"  Saved {len(entry['picks'])} singles + {len(entry['kombis'])} kombis")
 
 # ─── TELEGRAM ───
 def send_telegram(text):
