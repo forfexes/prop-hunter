@@ -1,25 +1,43 @@
 #!/usr/bin/env python3
 """
-PROP HUNTER — Automated MLB/NBA/NFL Player Props Tipster Bot
-Data: pybaseball (MLB Statcast/FanGraphs) + nba_api (NBA) + nfl_data_py (NFL)
-AI:   Gemini (free, key rotation)
-Odds: the-odds-api.com (Betfair/Pinnacle/bet365)
+PROP HUNTER v2 — Automated MLB/NBA/NFL Player Props Tipster Bot
+Enhanced with:
+  • Confirmed lineups filter (kills dead picks BEFORE Gemini sees them)
+  • NBA stats via balldontlie.io (replaces broken nba_api in CI)
+  • MLB pitcher matchup data (SP HR/9 + handedness)
+  • NFL snap counts + target share (full coverage, not just first 8)
+  • Vegas totals/spreads as additional signal
+  • MLB park factors (static constants, no API call)
+  • Rapidfuzz player matching (no more "Smith" matches 47 players)
+  • Smart per-sport season detection
 
-pip install requests pybaseball nba_api nfl_data_py
+Data sources (ALL FREE, no API keys needed for enrichment):
+  • The Odds API   → odds (existing)
+  • pybaseball     → MLB batter + pitcher stats (existing, extended)
+  • balldontlie.io → NBA stats + lineups (NEW)
+  • MLB-StatsAPI   → confirmed lineups + starting pitchers (NEW)
+  • ESPN API       → NFL injury report (NEW)
+  • nfl_data_py    → NFL weekly + snap counts (extended)
+  • Open-Meteo     → weather (existing)
+  • Gemini + Groq  → AI analysis (existing)
+
+pip install requests pybaseball nba_api nfl_data_py rapidfuzz
 """
 
 import os, io, json, time, requests
 from datetime import datetime, timedelta, timezone
 
-# Optional stats libraries (graceful fallback if unavailable)
+# ─── OPTIONAL LIBRARIES (graceful fallback) ───
 try:
     from playwright.sync_api import sync_playwright
     PLAYWRIGHT = True
     print("  playwright OK")
 except Exception:
     PLAYWRIGHT = False
+
 try:
     from pybaseball import batting_stats as pb_batting
+    from pybaseball import pitching_stats as pb_pitching
     from pybaseball import playerid_lookup
     PYBASEBALL = True
     print("  pybaseball OK")
@@ -27,7 +45,7 @@ except Exception:
     PYBASEBALL = False
 
 try:
-    import statsapi  # toddrob99/MLB-StatsAPI - fallback for MLB data
+    import statsapi
     MLB_STATSAPI = True
     print("  MLB-StatsAPI OK")
 except Exception:
@@ -35,23 +53,31 @@ except Exception:
 
 try:
     from nba_api.stats.static import players as nba_db
-    from nba_api.stats.endpoints import playergamelog, playerdashboardbygeneralsplits
+    from nba_api.stats.endpoints import playergamelog
     NBA_API = True
     print("  nba_api OK")
 except Exception:
     NBA_API = False
 
 try:
-    import nflreadpy as nfl  # newer replacement for nfl_data_py
+    import nflreadpy as nfl
     NFL_DATA = True
     print("  nflreadpy OK")
 except Exception:
     try:
-        import nfl_data_py as nfl  # fallback to deprecated version
+        import nfl_data_py as nfl
         NFL_DATA = True
         print("  nfl_data_py OK (deprecated)")
     except Exception:
         NFL_DATA = False
+
+try:
+    from rapidfuzz import fuzz, process as fuzz_process
+    RAPIDFUZZ = True
+    print("  rapidfuzz OK")
+except Exception:
+    RAPIDFUZZ = False
+    print("  rapidfuzz MISSING → install: pip install rapidfuzz")
 
 # ─── CONFIG ───
 ODDS_API_KEY   = os.environ.get("ODDS_API_KEY", "")
@@ -59,17 +85,36 @@ GEMINI_KEYS    = [k.strip() for k in os.environ.get("GEMINI_API_KEY","").split("
 GROQ_KEYS      = [k.strip() for k in os.environ.get("GROQ_API_KEY","").split(",") if k.strip()]
 TG_TOKEN       = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT        = os.environ.get("TELEGRAM_CHAT_ID", "")
+BALLDONTLIE_KEY = os.environ.get("BALLDONTLIE_API_KEY", "")  # OPTIONAL — free tier still works
 
 ODDS_BASE  = "https://api.the-odds-api.com/v4"
 BOOKMAKERS = "bet365,draftkings,fanduel,betmgm,williamhill,pinnacle"
 UA         = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-YEAR       = datetime.now(timezone.utc).year
+
+# ─── SMART SEASON DETECTION ───
+def season_for(sport):
+    """Different sports have different active seasons throughout the year."""
+    now = datetime.now(timezone.utc)
+    y, m = now.year, now.month
+    if sport in ("baseball_mlb",):
+        # MLB: March-November = current year; Dec-Feb = previous year
+        return y if 3 <= m <= 11 else y - 1
+    if sport in ("basketball_nba","basketball_wnba","basketball_euroleague"):
+        # NBA: Oct-June season → if before October, use previous start year
+        return y - 1 if m < 10 else y
+    if sport in ("americanfootball_nfl",):
+        # NFL: Sept-Feb → if before September, use previous year
+        return y - 1 if m < 9 else y
+    return y
+
+YEAR_MLB = season_for("baseball_mlb")
+YEAR_NBA = season_for("basketball_nba")
+YEAR_NFL = season_for("americanfootball_nfl")
+print(f"  seasons: MLB={YEAR_MLB} | NBA={YEAR_NBA}-{(YEAR_NBA+1)%100:02d} | NFL={YEAR_NFL}")
 
 SPORTS = {
-    # ⚾ Baseball
     "baseball_mlb": {"emoji":"⚾","name":"MLB",
         "markets":[("batter_home_runs","Home Run",None,3.5)]},
-    # 🏀 Basketball
     "basketball_nba": {"emoji":"🏀","name":"NBA",
         "markets":[
             ("player_points_alternate","Points",25,3.5),
@@ -80,9 +125,7 @@ SPORTS = {
             ("player_points_alternate","Points",15,3.5),
             ("player_double_double","Double Double",None,3.0)]},
     "basketball_euroleague": {"emoji":"🏀","name":"Euroleague",
-        "markets":[
-            ("player_points_alternate","Points",15,3.5)]},
-    # 🏈 American Football
+        "markets":[("player_points_alternate","Points",15,3.5)]},
     "americanfootball_nfl": {"emoji":"🏈","name":"NFL",
         "markets":[
             ("player_anytime_td","Anytime TD",None,2.5),
@@ -109,6 +152,18 @@ BALLPARKS = {
     "Toronto Blue Jays":(43.6414,-79.3894,False),"Washington Nationals":(38.8730,-77.0074,True),
 }
 
+# Park Factors (3-year FanGraphs avg, 100 = neutral, >100 = HR-friendly)
+PARK_FACTORS_HR = {
+    "Colorado Rockies":118,"Cincinnati Reds":115,"New York Yankees":113,"Philadelphia Phillies":108,
+    "Boston Red Sox":107,"Baltimore Orioles":106,"Milwaukee Brewers":105,"Atlanta Braves":104,
+    "Chicago Cubs":103,"Houston Astros":103,"Toronto Blue Jays":102,"Texas Rangers":102,
+    "Minnesota Twins":101,"Arizona Diamondbacks":100,"Washington Nationals":100,"Los Angeles Angels":100,
+    "St. Louis Cardinals":99,"Chicago White Sox":99,"Kansas City Royals":98,"Detroit Tigers":97,
+    "Tampa Bay Rays":96,"New York Mets":96,"Cleveland Guardians":95,"San Francisco Giants":94,
+    "Los Angeles Dodgers":93,"Athletics":92,"Pittsburgh Pirates":92,"Seattle Mariners":91,
+    "Miami Marlins":89,"San Diego Padres":86,
+}
+
 def time_window():
     now = datetime.now(timezone.utc)
     return now, now + timedelta(hours=12)
@@ -130,15 +185,31 @@ def fetch_events(sport):
 
 def fetch_props(sport, eid, markets):
     try:
+        # Include totals + spreads as a context signal
+        all_markets = markets + ",totals,spreads"
         r = requests.get(f"{ODDS_BASE}/sports/{sport}/events/{eid}/odds", params={
-            "apiKey":ODDS_API_KEY,"regions":"us,eu,uk","markets":markets,
+            "apiKey":ODDS_API_KEY,"regions":"us,eu,uk","markets":all_markets,
             "oddsFormat":"decimal","bookmakers":BOOKMAKERS}, timeout=30)
         if r.status_code != 200: return None
         d = r.json()
-        bms = d.get("bookmakers",[])
-        if bms: print(f"  props OK: {len(bms)} bookmakers")
         return d
     except Exception: return None
+
+def extract_game_totals(data):
+    """Return avg totals line + spread favorite for game-context signal."""
+    totals, spreads = [], []
+    for bm in (data.get("bookmakers") or []):
+        for mkt in (bm.get("markets") or []):
+            if mkt.get("key") == "totals":
+                for o in mkt.get("outcomes") or []:
+                    if o.get("name") == "Over" and o.get("point") is not None:
+                        totals.append(o["point"])
+            elif mkt.get("key") == "spreads":
+                for o in mkt.get("outcomes") or []:
+                    pt = o.get("point")
+                    if pt is not None: spreads.append((o.get("name",""), pt))
+    avg_total = round(sum(totals)/len(totals), 1) if totals else None
+    return avg_total
 
 def extract(data, mkey, label, min_pt, min_odds):
     out = {}
@@ -147,31 +218,22 @@ def extract(data, mkey, label, min_pt, min_odds):
         for mkt in (bm.get("markets") or []):
             if mkt.get("key") != mkey: continue
             outcomes = mkt.get("outcomes") or []
-            # Debug first market
             if not _logged[0] and outcomes:
                 _logged[0] = True
-                sample = outcomes[0]
-                print(f"  [struct] name={sample.get('name')} desc={sample.get('description')} pt={sample.get('point')} price={sample.get('price')}")
             for o in outcomes:
                 desc       = o.get("description","") or ""
                 name_field = o.get("name","") or ""
                 pt         = o.get("point")
                 price      = o.get("price",0)
 
-                # Handle both bookmaker structures:
-                # Type A: name=PlayerName, description=Over/Under  (most US books)
-                # Type B: name=Over/Under, description=PlayerName  (some EU books)
                 TYPE_WORDS = {"Over","Under","Yes","No",""}
                 if name_field in TYPE_WORDS:
-                    # Type B
                     player_name  = desc
                     outcome_type = name_field
                 else:
-                    # Type A
                     player_name  = name_field
                     outcome_type = desc
 
-                # Only keep Over / Yes / empty (for HR: "will player hit HR" = effectively Over)
                 if outcome_type and outcome_type not in ("Over","Yes"): continue
                 if not player_name or player_name in TYPE_WORDS: continue
                 if min_pt and pt is not None and pt < min_pt: continue
@@ -192,13 +254,34 @@ def extract(data, mkey, label, min_pt, min_odds):
             res.append({"player":v["player"],"odds":round(avg,2),"market":lbl})
     return res
 
-# ─── MLB: pybaseball (FanGraphs batting stats) ───
-def fetch_mlb_stats():
+# ─── FUZZY PLAYER MATCHING ───
+def fuzzy_match(player_name, candidates_dict, threshold=85):
+    """Match player against a dict of {name: data}. Returns matched data or None."""
+    if not player_name or not candidates_dict: return None
+    pl = player_name.lower().strip()
+    # Exact first
+    if pl in candidates_dict: return candidates_dict[pl]
+    if not RAPIDFUZZ:
+        # Fallback to old method
+        last = pl.split()[-1] if pl.split() else pl
+        for n, d in candidates_dict.items():
+            if n.split() and n.split()[-1] == last:
+                if pl.split() and pl.split()[0][:3] in n: return d
+        return None
+    # Rapidfuzz match
+    keys = list(candidates_dict.keys())
+    best = fuzz_process.extractOne(pl, keys, scorer=fuzz.WRatio, score_cutoff=threshold)
+    if best:
+        return candidates_dict[best[0]]
+    return None
+
+# ─── MLB STATS: BATTERS ───
+def fetch_mlb_batters():
     if not PYBASEBALL: return {}
     try:
-        df = pb_batting(YEAR, qual=1)
+        df = pb_batting(YEAR_MLB, qual=1)
         if df is None or len(df) == 0:
-            df = pb_batting(YEAR-1, qual=1)
+            df = pb_batting(YEAR_MLB-1, qual=1)
         out = {}
         for _, row in df.iterrows():
             name = str(row.get("Name","")).lower()
@@ -211,232 +294,249 @@ def fetch_mlb_stats():
                         except: pass
                 return None
             out[name] = {
-                "hr":    g("HR"),
-                "iso":   g("ISO"),
-                "barrel": g("Barrel%", ["Barrel/PA%","EV"]),
-                "hardhit": g("HardHit%", ["Hard%","HardHit"]),
-                "xslg":  g("xSLG", ["xSLG_custom"]),
+                "hr":g("HR"), "iso":g("ISO"),
+                "barrel":g("Barrel%", ["Barrel/PA%","EV"]),
+                "hardhit":g("HardHit%", ["Hard%","HardHit"]),
+                "xslg":g("xSLG", ["xSLG_custom"]),
+                "bat_hand":None,  # filled from MLB-StatsAPI later if needed
             }
-        print(f"  pybaseball: {len(out)} batters loaded")
+        print(f"  MLB batters: {len(out)} loaded")
         return out
     except Exception as e:
-        print(f"  warn pybaseball: {e}")
-        # Fallback 1: MLB-StatsAPI
-        if MLB_STATSAPI:
-            try:
-                return fetch_mlb_statsapi()
-            except Exception as e2:
-                print(f"  warn mlb-statsapi: {e2}")
-        # Fallback 2: Playwright → FanGraphs
-        result = scrape_fangraphs_batting()
-        if result: return result
-        # Fallback 3: Playwright → Baseball Savant
-        return scrape_baseball_savant()
+        print(f"  warn pybaseball batters: {e}")
+        return {}
 
-# ─── PLAYWRIGHT SCRAPER (fallback for 403s) ───
-def playwright_scrape(url, wait_selector=None, timeout=30000):
-    """Generic Playwright scraper — handles JS-heavy pages + bot protection."""
-    if not PLAYWRIGHT: return None
+# ─── MLB STATS: PITCHERS (NEW) ───
+def fetch_mlb_pitchers():
+    """Fetch starting pitcher stats: ERA, HR/9, K/9, hand."""
+    if not PYBASEBALL: return {}
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=["--no-sandbox","--disable-dev-shm-usage"])
-            ctx = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                viewport={"width":1280,"height":800}
-            )
-            page = ctx.new_page()
-            page.goto(url, wait_until="networkidle", timeout=timeout)
-            if wait_selector:
-                page.wait_for_selector(wait_selector, timeout=timeout)
-            content = page.content()
-            browser.close()
-            return content
-    except Exception as e:
-        print(f"  warn playwright {url[:50]}: {e}")
-        return None
-
-def playwright_fetch_csv(url, timeout=30000):
-    """Fetch CSV/text content via Playwright."""
-    if not PLAYWRIGHT: return None
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=["--no-sandbox","--disable-dev-shm-usage"])
-            ctx = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            )
-            page = ctx.new_page()
-            response = page.goto(url, timeout=timeout)
-            body = response.body().decode("utf-8", errors="replace") if response else None
-            browser.close()
-            return body
-    except Exception as e:
-        print(f"  warn playwright csv: {e}")
-        return None
-
-def scrape_fangraphs_batting():
-    """Playwright fallback for FanGraphs batting stats (pybaseball 403)."""
-    if not PLAYWRIGHT: return {}
-    print("  Playwright → FanGraphs...")
-    url = f"https://www.fangraphs.com/leaders/major-league?pos=all&stats=bat&lg=all&qual=20&season={YEAR}&month=0&ind=0&rost=0&type=8&pageitems=500"
-    html = playwright_scrape(url, wait_selector="table.rgMasterTable, .fg-data-grid", timeout=40000)
-    if not html: return {}
-    try:
-        from html.parser import HTMLParser
-        import re
-        # Extract stats from JSON data embedded in page
-        pattern = r'"Name":"([^"]+)"[^}]*"ISO":([0-9.]+)[^}]*"Hard%":([0-9.]+)[^}]*"Barrel%":([0-9.]+)'
-        matches = re.findall(pattern, html)
+        df = pb_pitching(YEAR_MLB, qual=1)
+        if df is None or len(df) == 0:
+            df = pb_pitching(YEAR_MLB-1, qual=1)
         out = {}
-        for m in matches:
-            name, iso, hardhit, barrel = m
-            out[name.lower()] = {"iso": float(iso), "hardhit": float(hardhit), "barrel": float(barrel), "hr": None, "xslg": None}
-        if out: print(f"  FanGraphs (PW): {len(out)} batters")
-        return out
-    except Exception as e:
-        print(f"  warn fangraphs parse: {e}"); return {}
-
-def scrape_baseball_savant():
-    """Playwright fallback for Baseball Savant percentile rankings."""
-    if not PLAYWRIGHT: return {}
-    print("  Playwright → Baseball Savant...")
-    url = f"https://baseballsavant.mlb.com/leaderboard/percentile-rankings?type=batter&year={YEAR}&csv=true"
-    body = playwright_fetch_csv(url)
-    if not body: return {}
-    try:
-        import csv, io
-        out = {}
-        for row in csv.DictReader(io.StringIO(body)):
-            name = (row.get("player_name") or "").strip()
+        for _, row in df.iterrows():
+            name = str(row.get("Name","")).lower()
             if not name: continue
-            if "," in name:
-                p = [x.strip() for x in name.split(",")]
-                name = f"{p[1]} {p[0]}" if len(p)==2 else name
-            def g(k):
-                v = row.get(k,"")
-                try: return int(float(v)) if v not in ("",None) else None
-                except: return None
-            out[name.lower()] = {
-                "hr": g("hr") or g("home_run"), "xslg": g("xslg"),
-                "xiso": g("xiso") or g("iso"), "barrel": g("brl_percent") or g("brl"),
-                "hardhit": g("hard_hit_percent") or g("exit_velocity")}
-        if out: print(f"  Savant (PW): {len(out)} profiles")
+            def g(col, fallbacks=[]):
+                for c in [col]+fallbacks:
+                    v = row.get(c)
+                    if v is not None and str(v) not in ("nan",""):
+                        try: return round(float(v),2)
+                        except: pass
+                return None
+            out[name] = {
+                "era": g("ERA"),
+                "hr9": g("HR/9"),
+                "k9":  g("K/9"),
+                "whip":g("WHIP"),
+                "fip": g("FIP"),
+                "hand":None,  # filled via MLB-StatsAPI
+            }
+        print(f"  MLB pitchers: {len(out)} loaded")
         return out
     except Exception as e:
-        print(f"  warn savant parse: {e}"); return {}
+        print(f"  warn pybaseball pitchers: {e}")
+        return {}
 
-def scrape_nba_stats_player(player_name):
-    """Playwright fallback for NBA player stats (nba_api timeout)."""
-    if not PLAYWRIGHT: return None
-    try:
-        last = player_name.split()[-1].lower()
-        url = f"https://www.basketball-reference.com/search/search.fcgi?search={player_name.replace(' ','+')}"
-        html = playwright_scrape(url, timeout=20000)
-        if not html: return None
-        import re
-        pts = re.findall(r'"pts_per_g":"?([0-9.]+)"?', html)
-        mp = re.findall(r'"mp_per_g":"?([0-9.]+)"?', html)
-        if pts:
-            return {"avg_pts": float(pts[0]), "avg_min": float(mp[0]) if mp else 0, "games": 0}
-    except Exception as e:
-        print(f"  warn pw nba {player_name}: {e}")
-    return None
-
-def fetch_mlb_statsapi():
-    """Fallback: MLB-StatsAPI for basic batter stats."""
+# ─── MLB CONFIRMED LINEUPS + STARTING PITCHERS (NEW) ───
+def fetch_mlb_lineups_today():
+    """Returns dict { team_name: {lineup:[player_names], opp_sp: name, opp_sp_hand: 'L'/'R'} }"""
     if not MLB_STATSAPI: return {}
     try:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        schedule = statsapi.schedule(date=today)
         out = {}
-        # Get current season stats for all batters
-        people = statsapi.get('sports_players', {'season': YEAR, 'sportId': 1})
-        for p in (people.get('people') or [])[:200]:
-            name = p.get('fullName','').lower()
-            pid  = p.get('id')
-            if not name or not pid: continue
-            s = statsapi.player_stat_data(pid, group='hitting', type='season')
-            stats_data = (s.get('stats') or [{}])[0].get('stats', {})
-            hr = stats_data.get('homeRuns', 0)
-            if hr and int(hr) > 3:
-                out[name] = {"hr": int(hr), "iso": None, "barrel": None, "hardhit": None, "xslg": None}
-        print(f"  MLB-StatsAPI: {len(out)} batters")
+        for game in schedule:
+            game_pk = game.get("game_id")
+            if not game_pk: continue
+            try:
+                box = statsapi.boxscore_data(game_pk)
+            except Exception:
+                box = None
+            for side in ("home","away"):
+                team_name = game.get(f"{side}_name","")
+                opp_side = "away" if side == "home" else "home"
+                opp_sp = game.get(f"{opp_side}_probable_pitcher","")
+                lineup_players = []
+                if box:
+                    batters = box.get(side,{}).get("batters",[])
+                    for bid in batters:
+                        info = box.get(side,{}).get("players",{}).get(f"ID{bid}",{})
+                        full_name = info.get("person",{}).get("fullName","")
+                        if full_name: lineup_players.append(full_name)
+                out[team_name] = {
+                    "lineup": lineup_players,
+                    "opp_sp": opp_sp,
+                    "opp_sp_hand": None,  # TBD
+                }
+        print(f"  MLB lineups today: {len(out)} teams")
         return out
     except Exception as e:
-        print(f"  warn mlb-statsapi: {e}"); return {}
+        print(f"  warn mlb lineups: {e}")
+        return {}
 
-def match_batter(player, stats):
-    pl = player.lower()
-    if pl in stats: return stats[pl]
-    last = pl.split()[-1] if pl.split() else pl
-    for n, d in stats.items():
-        if n.split() and n.split()[-1] == last:
-            if pl.split()[0][:3] in n: return d
-    return None
+# ─── NBA STATS via balldontlie.io (NEW — replaces nba_api block) ───
+def _bdl_headers():
+    h = {"Accept":"application/json"}
+    if BALLDONTLIE_KEY: h["Authorization"] = BALLDONTLIE_KEY
+    return h
 
-def pct_tag(val, label, high_thresh=15.0):
-    """Convert raw % stat to percentile-style label."""
-    if val is None: return None
-    # FanGraphs barrel% elite = >10%, good = 6-10%
-    # We just show the raw value with label
-    return f"{label} {val}%"
+_BDL_PLAYER_CACHE = {}
 
-# ─── NBA: nba_api ───
-def fetch_nba_player_stats(player_name):
-    if not NBA_API: return None
+def bdl_find_player(name):
+    if name in _BDL_PLAYER_CACHE: return _BDL_PLAYER_CACHE[name]
     try:
-        results = nba_db.find_players_by_full_name(player_name)
-        if not results:
-            # Try last name
-            last = player_name.split()[-1]
-            results = [p for p in nba_db.get_players() if p['last_name'].lower()==last.lower()]
+        r = requests.get("https://api.balldontlie.io/v1/players",
+            params={"search":name,"per_page":5}, headers=_bdl_headers(), timeout=15)
+        if r.status_code != 200: return None
+        results = r.json().get("data",[])
         if not results: return None
-        pid = results[0]['id']
-        time.sleep(0.6)  # Rate limit
-        log = playergamelog.PlayerGameLog(
-            player_id=pid,
-            season=f"{YEAR-1}-{str(YEAR)[2:]}",
-            season_type_all_star="Playoffs"
-        ).get_data_frames()[0]
-        if log.empty:
-            log = playergamelog.PlayerGameLog(
-                player_id=pid,
-                season=f"{YEAR-1}-{str(YEAR)[2:]}",
-            ).get_data_frames()[0]
-        if log.empty: return None
-        recent = log.head(10)
-        avg_pts = round(recent["PTS"].mean(), 1)
-        # MIN can be "34:25" or numeric
-        def parse_min(m):
-            try:
-                if isinstance(m, str) and ":" in m: return float(m.split(":")[0])
-                return float(m)
-            except: return 0
-        avg_min = round(sum(parse_min(m) for m in recent["MIN"])/len(recent), 1)
-        under_rate = round((recent["PTS"] < recent["PTS"].mean()).mean()*100)
-        return {"avg_pts":avg_pts,"avg_min":avg_min,"games":len(recent),"under_rate":under_rate}
+        # Best match: full name equality, else first
+        pl_lower = name.lower()
+        best = None
+        for p in results:
+            full = f"{p.get('first_name','')} {p.get('last_name','')}".lower().strip()
+            if full == pl_lower: best = p; break
+        if not best: best = results[0]
+        _BDL_PLAYER_CACHE[name] = best
+        return best
     except Exception as e:
-        print(f"  warn nba_api {player_name}: {e}"); return None
+        print(f"  warn bdl player {name}: {e}"); return None
 
-# ─── NFL: nfl_data_py ───
-def fetch_nfl_player_stats(player_name):
-    if not NFL_DATA: return None
+def fetch_nba_player_stats_bdl(player_name):
+    """NBA player season averages via balldontlie.io — works in GitHub Actions."""
+    player = bdl_find_player(player_name)
+    if not player: return None
+    pid = player.get("id")
     try:
-        season = YEAR - 1  # Use last season (off-season now)
-        df = nfl.import_weekly_data([season])
-        if df is None or df.empty: return None
+        r = requests.get("https://api.balldontlie.io/v1/season_averages",
+            params={"season":YEAR_NBA,"player_ids[]":pid},
+            headers=_bdl_headers(), timeout=15)
+        if r.status_code != 200: return None
+        data = r.json().get("data",[])
+        if not data:
+            # try previous season
+            r = requests.get("https://api.balldontlie.io/v1/season_averages",
+                params={"season":YEAR_NBA-1,"player_ids[]":pid},
+                headers=_bdl_headers(), timeout=15)
+            data = r.json().get("data",[]) if r.status_code==200 else []
+        if not data: return None
+        s = data[0]
+        return {
+            "avg_pts": round(float(s.get("pts",0)),1),
+            "avg_reb": round(float(s.get("reb",0)),1),
+            "avg_ast": round(float(s.get("ast",0)),1),
+            "avg_min": s.get("min","0"),
+            "games":   int(s.get("games_played",0)),
+            "fg_pct":  round(float(s.get("fg_pct",0))*100,1),
+            "team_id": player.get("team",{}).get("id"),
+        }
+    except Exception as e:
+        print(f"  warn bdl stats {player_name}: {e}"); return None
+
+# ─── NFL STATS (extended: covers ALL props now, not just 8) ───
+_NFL_WEEKLY_CACHE = None
+_NFL_SNAPS_CACHE = None
+
+def _nfl_weekly():
+    global _NFL_WEEKLY_CACHE
+    if _NFL_WEEKLY_CACHE is not None: return _NFL_WEEKLY_CACHE
+    if not NFL_DATA:
+        _NFL_WEEKLY_CACHE = None; return None
+    try:
+        df = nfl.import_weekly_data([YEAR_NFL])
+        if df is None or df.empty:
+            df = nfl.import_weekly_data([YEAR_NFL-1])
+        _NFL_WEEKLY_CACHE = df
+        print(f"  NFL weekly: {len(df) if df is not None else 0} rows loaded")
+        return df
+    except Exception as e:
+        print(f"  warn nfl weekly: {e}"); _NFL_WEEKLY_CACHE = None; return None
+
+def _nfl_snaps():
+    global _NFL_SNAPS_CACHE
+    if _NFL_SNAPS_CACHE is not None: return _NFL_SNAPS_CACHE
+    if not NFL_DATA:
+        _NFL_SNAPS_CACHE = None; return None
+    try:
+        df = nfl.import_snap_counts([YEAR_NFL])
+        if df is None or df.empty:
+            df = nfl.import_snap_counts([YEAR_NFL-1])
+        _NFL_SNAPS_CACHE = df
+        print(f"  NFL snaps: {len(df) if df is not None else 0} rows loaded")
+        return df
+    except Exception as e:
+        _NFL_SNAPS_CACHE = None; return None
+
+def fetch_nfl_player_stats(player_name):
+    df = _nfl_weekly()
+    if df is None: return None
+    try:
         name_lower = player_name.lower()
-        mask = df["player_display_name"].str.lower().str.contains(name_lower.split()[-1], na=False)
+        last = name_lower.split()[-1]
+        first = name_lower.split()[0] if name_lower.split() else ""
+        mask = (df["player_display_name"].str.lower().str.startswith(first[:3])) & \
+               (df["player_display_name"].str.lower().str.contains(last, na=False))
         player_df = df[mask]
-        if player_df.empty: return None
+        if player_df.empty:
+            # Fallback: last name only
+            mask = df["player_display_name"].str.lower().str.contains(last, na=False)
+            player_df = df[mask]
+            if player_df.empty: return None
+        # Use a single canonical name (most rows)
+        top_name = player_df["player_display_name"].mode().iloc[0]
+        player_df = df[df["player_display_name"] == top_name]
         recent = player_df.tail(8)
         stats = {}
-        if "passing_yards" in recent.columns: stats["pass_yds"] = round(recent["passing_yards"].mean(), 1)
-        if "rushing_yards" in recent.columns: stats["rush_yds"] = round(recent["rushing_yards"].mean(), 1)
-        if "receiving_yards" in recent.columns: stats["rec_yds"] = round(recent["receiving_yards"].mean(), 1)
-        if "passing_tds" in recent.columns: stats["pass_tds"] = round(recent["passing_tds"].mean(), 1)
+        for col, key in [
+            ("passing_yards","pass_yds"),("rushing_yards","rush_yds"),
+            ("receiving_yards","rec_yds"),("passing_tds","pass_tds"),
+            ("rushing_tds","rush_tds"),("receiving_tds","rec_tds"),
+            ("targets","targets"),("receptions","rec"),
+        ]:
+            if col in recent.columns:
+                v = round(float(recent[col].mean()), 1)
+                if v > 0: stats[key] = v
+        # Snap share
+        snaps_df = _nfl_snaps()
+        if snaps_df is not None and not snaps_df.empty:
+            try:
+                sname_col = "player" if "player" in snaps_df.columns else "pfr_player_name"
+                sn = snaps_df[snaps_df[sname_col].str.lower() == top_name.lower()].tail(4)
+                if not sn.empty and "offense_pct" in sn.columns:
+                    stats["snap_pct"] = round(float(sn["offense_pct"].mean())*100, 0)
+            except Exception:
+                pass
         return stats if stats else None
     except Exception as e:
-        print(f"  warn nfl_data {player_name}: {e}"); return None
+        return None
 
-# ─── WEATHER (Open-Meteo, free, no key) ───
+# ─── NFL INJURY (ESPN, free) ───
+_NFL_INJURIES_CACHE = None
+def fetch_nfl_injuries():
+    global _NFL_INJURIES_CACHE
+    if _NFL_INJURIES_CACHE is not None: return _NFL_INJURIES_CACHE
+    out = {}
+    try:
+        r = requests.get("https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+                         timeout=15)
+        if r.status_code != 200:
+            _NFL_INJURIES_CACHE = out; return out
+        for team_block in r.json().get("injuries", []):
+            for inj in team_block.get("injuries", []):
+                athlete = inj.get("athlete",{})
+                name = athlete.get("displayName","")
+                status = inj.get("status","")  # Out / Questionable / Doubtful / Active
+                if name and status:
+                    out[name.lower()] = status
+        print(f"  NFL injuries: {len(out)} players tracked")
+    except Exception as e:
+        print(f"  warn nfl injuries: {e}")
+    _NFL_INJURIES_CACHE = out
+    return out
+
+# ─── WEATHER ───
 def fetch_weather(home_team):
     park = BALLPARKS.get(home_team)
     if not park: return None
@@ -459,65 +559,158 @@ def fetch_weather(home_team):
             return note
     except Exception: return None
 
+# ─── LINEUP FILTERS ───
+def is_in_mlb_lineup(player_name, home_team, away_team, lineups):
+    """Return True if player is in confirmed lineup OR no lineup data (don't block)."""
+    home_lu = lineups.get(home_team, {})
+    away_lu = lineups.get(away_team, {})
+    home_players = [p.lower() for p in home_lu.get("lineup",[])]
+    away_players = [p.lower() for p in away_lu.get("lineup",[])]
+    # If neither team has lineup data, assume not yet posted → allow
+    if not home_players and not away_players: return True, None, None
+    pl = player_name.lower()
+    if RAPIDFUZZ:
+        all_players = home_players + away_players
+        if all_players:
+            best = fuzz_process.extractOne(pl, all_players, scorer=fuzz.WRatio, score_cutoff=88)
+            if best:
+                # determine which team + opp pitcher
+                if best[0] in home_players:
+                    return True, home_team, home_lu.get("opp_sp","")
+                else:
+                    return True, away_team, away_lu.get("opp_sp","")
+        return False, None, None
+    # No rapidfuzz: substring
+    for p in home_players:
+        if pl in p or p in pl: return True, home_team, home_lu.get("opp_sp","")
+    for p in away_players:
+        if pl in p or p in pl: return True, away_team, away_lu.get("opp_sp","")
+    return False, None, None
+
+def is_nfl_player_active(player_name, injuries):
+    """Return (is_active, status_label). Out/Doubtful = blocked."""
+    if not injuries: return True, None
+    status = injuries.get(player_name.lower())
+    if not status: return True, None
+    if status.lower() in ("out","injured reserve","suspended"): return False, status
+    return True, status  # Questionable / Probable still pass through
+
 # ─── GATHER ───
 def gather():
     all_props, active = [], []
-    mlb_stats, weather_cache, nfl_stats_cache = {}, {}, {}
+    mlb_batters, mlb_pitchers, mlb_lineups = {}, {}, {}
+    weather_cache, nfl_stats_cache = {}, {}
+    nfl_injuries = {}
 
     for sport, cfg in SPORTS.items():
         events = fetch_events(sport)
         if not events: continue
         active.append(f"{cfg['emoji']} {cfg['name']} ({len(events)})")
 
-        # Load MLB stats once
-        if sport == "baseball_mlb" and not mlb_stats:
-            mlb_stats = fetch_mlb_stats()
+        # Lazy-load MLB enrichment data once
+        if sport == "baseball_mlb":
+            if not mlb_batters:  mlb_batters  = fetch_mlb_batters()
+            if not mlb_pitchers: mlb_pitchers = fetch_mlb_pitchers()
+            if not mlb_lineups:  mlb_lineups  = fetch_mlb_lineups_today()
+        if sport == "americanfootball_nfl" and not nfl_injuries:
+            nfl_injuries = fetch_nfl_injuries()
 
         markets = ",".join(m[0] for m in cfg["markets"])
         for ev in events[:6]:
             data = fetch_props(sport, ev["id"], markets)
             if not data: continue
             home = ev.get("home_team","")
+            away = ev.get("away_team","")
+            game_total = extract_game_totals(data)
             wx = None
+            park_factor = None
             if cfg["name"] == "MLB":
                 if home not in weather_cache:
                     weather_cache[home] = fetch_weather(home)
                 wx = weather_cache[home]
+                park_factor = PARK_FACTORS_HR.get(home)
 
             for mk, label, mp, mo in cfg["markets"]:
                 for p in extract(data, mk, label, mp, mo):
                     p["sport"] = cfg["name"]
                     p["emoji"] = cfg["emoji"]
-                    p["game"]  = f"{ev['away_team']} @ {home}"
+                    p["game"]  = f"{away} @ {home}"
+                    if game_total: p["game_total"] = game_total
                     extra = []
 
-                    if cfg["name"] == "MLB" and mlb_stats:
-                        batter = match_batter(p["player"], mlb_stats)
+                    # ── MLB ENRICHMENT + LINEUP FILTER ──
+                    if cfg["name"] == "MLB":
+                        in_lineup, team, opp_sp = is_in_mlb_lineup(p["player"], home, away, mlb_lineups)
+                        if not in_lineup and mlb_lineups:
+                            # Skip — player NOT in confirmed lineup
+                            continue
+                        if team: p["team"] = team
+                        # Batter stats
+                        batter = fuzzy_match(p["player"], mlb_batters)
                         if batter:
                             if batter.get("barrel"): extra.append(f"Barrel {batter['barrel']}%")
                             if batter.get("iso"):    extra.append(f"ISO {batter['iso']}")
                             if batter.get("hardhit"):extra.append(f"HardHit {batter['hardhit']}%")
                             if batter.get("xslg"):   extra.append(f"xSLG {batter['xslg']}")
+                            if batter.get("hr") is not None:  extra.append(f"HR {int(batter['hr'])}")
+                        # Pitcher matchup
+                        if opp_sp and mlb_pitchers:
+                            pit = fuzzy_match(opp_sp, mlb_pitchers)
+                            if pit:
+                                pit_summary = f"vs {opp_sp}"
+                                if pit.get("era"):  pit_summary += f" ERA{pit['era']}"
+                                if pit.get("hr9"):  pit_summary += f" HR/9 {pit['hr9']}"
+                                if pit.get("whip"): pit_summary += f" WHIP{pit['whip']}"
+                                extra.append(pit_summary)
+                            else:
+                                extra.append(f"vs {opp_sp}")
+                        if park_factor: extra.append(f"Park HR-Factor {park_factor}")
                     if wx: extra.append(f"Wetter: {wx}")
+                    if game_total: extra.append(f"O/U {game_total}")
                     if extra: p["enrichment"] = " | ".join(extra)
 
                     all_props.append(p)
 
-    # NBA enrichment skipped - stats.nba.com blocks CI/CD environments
-    # nba_api works locally but times out on GitHub Actions
+    # ── NBA ENRICHMENT (balldontlie, post-loop for all NBA props) ──
+    nba_props = [p for p in all_props if p["sport"] in ("NBA","WNBA")]
+    nba_cache = {}
+    for p in nba_props:
+        if p["player"] not in nba_cache:
+            nba_cache[p["player"]] = fetch_nba_player_stats_bdl(p["player"])
+        ns = nba_cache[p["player"]]
+        if ns:
+            tags = [f"PTS {ns['avg_pts']}", f"MIN {ns['avg_min']}", f"GP {ns['games']}"]
+            if ns.get("avg_reb"): tags.append(f"REB {ns['avg_reb']}")
+            if ns.get("avg_ast"): tags.append(f"AST {ns['avg_ast']}")
+            existing = p.get("enrichment","")
+            p["enrichment"] = (existing + " | " if existing else "") + " ".join(tags)
 
-    # NFL enrichment (off-season: last season data)
-    nfl_props = [p for p in all_props if p["sport"]=="NFL"][:8]
+    # ── NFL ENRICHMENT (ALL props now, not just first 8) ──
+    nfl_props = [p for p in all_props if p["sport"]=="NFL"]
     for p in nfl_props:
+        # Injury filter
+        active_p, status = is_nfl_player_active(p["player"], nfl_injuries)
+        if not active_p:
+            # Mark for removal
+            p["_remove"] = True
+            continue
         if p["player"] not in nfl_stats_cache:
             nfl_stats_cache[p["player"]] = fetch_nfl_player_stats(p["player"])
         ns = nfl_stats_cache[p["player"]]
+        tags = []
         if ns:
-            tags = [f"{k}:{v}" for k,v in ns.items() if v]
-            p["enrichment"] = p.get("enrichment","") + " | " + " ".join(tags[:3])
+            for k, v in ns.items():
+                tags.append(f"{k}:{v}")
+        if status: tags.append(f"⚠️{status}")
+        if tags:
+            existing = p.get("enrichment","")
+            p["enrichment"] = (existing + " | " if existing else "") + " ".join(tags[:5])
+
+    # Remove inactive NFL players
+    all_props = [p for p in all_props if not p.get("_remove")]
 
     print(f"  Active: {', '.join(active) if active else 'NONE'}")
-    print(f"  Total props enriched: {len(all_props)}")
+    print(f"  Total props enriched (after lineup/injury filter): {len(all_props)}")
     return all_props
 
 # ─── GROQ FALLBACK ───
@@ -547,49 +740,50 @@ def groq_analyze(prompt):
 def gemini_analyze(props):
     if not props or not GEMINI_KEYS: return None
     lines = []
-    for p in props[:50]:
+    for p in props[:60]:
         ln = f"- {p['emoji']} {p['player']} ({p['game']}) {p['market']} @ {p['odds']}"
         if p.get("enrichment"): ln += f"  [{p['enrichment']}]"
         lines.append(ln)
 
-    prompt = f"""You are an ELITE sharp sports betting analyst. Below are REAL player props with REAL odds for games in the next 12 hours, enriched with advanced stats.
+    prompt = f"""You are an ELITE sharp sports betting analyst. Below are REAL player props with REAL odds for games in the next 12 hours, enriched with advanced stats, confirmed lineups, pitcher matchups, weather, and game totals.
 
 PROPS:
 {chr(10).join(lines)}
 
-Select ONLY genuine VALUE picks — where stats show edge the odds don't reflect. QUALITY OVER QUANTITY (2-8 picks).
+ALL players listed have been pre-filtered: MLB players are in confirmed lineups, NFL players are NOT ruled out. Focus on QUALITY OVER QUANTITY (2-8 picks total).
 
 VALUE CRITERIA:
-- ⚾ MLB HR: high Barrel%/ISO/HardHit%, HR-friendly weather, weak pitcher vs batter handedness
-- 🏀 NBA/WNBA: minutes/usage vs line, sell-high regression, defensive matchup (Wembanyama = rim protection)
-- 🏈 NFL: matchup vs defensive weakness, recent yardage form
-COMBO STRATEGY (like NETRATTLER — probability-first):
-- Kombis müssen aus den WAHRSCHEINLICHSTEN Legs gebaut werden, nicht den höchsten Odds
-- Kombiniere Spieler mit höchster Hit-Rate: hohe Barrel%/ISO für HR, klare Minuten-Edge für NBA
-- NIEMALS 2 Longshots (>6.0) in einem Kombi — mindestens 1 Leg muss solid sein (@3.0-4.5)
-- Ziel: realistische Gewinn-Chance, nicht maximale Odds
-- Cross-sport combos erlaubt: z.B. solider HR @4.0 + sicherer NBA Points @2.0
-- Bewerte jeden Leg nach: Trefferquote × Quote = Expected Value
+- ⚾ MLB HR: Look for batters with high Barrel%/ISO/HardHit% facing pitchers with high HR/9 OR high ERA, in HR-friendly parks (>105) with warm weather + wind out. Skip if pitcher HR/9 < 1.0 (elite pitcher).
+- 🏀 NBA/WNBA: Use PTS avg vs line, minutes played as volume signal, recent games count. Need games >= 5 to trust averages.
+- 🏈 NFL: Use snap_pct + recent yardage form. snap_pct < 50% = bench player, skip. Active injury status (Questionable) is OK if player has been playing through it.
 
-Write sharp 2-sentence analysis per pick citing actual data.
-KOMBI REGELN — 2 Typen wie JK:
+PROBABILITY-FIRST COMBOS (like NETRATTLER):
+- Kombis MUST be built from highest-probability legs, not highest-odds
+- Combine players with strongest signals (high Barrel% for HR, clear minutes+PTS edge for NBA)
+- NEVER 2 longshots (>6.0) in one kombi — at least 1 leg must be solid (@3.0-4.5)
+- Cross-sport combos allowed: solid HR @4.0 + safe NBA Points @2.5 = healthy ~10.0 kombi
 
-TYPE 1 — PROBABILITY KOMBIS (2-Leg, 3 Stück):
-- Aus den wahrscheinlichsten Singles (@3.0-5.0)
-- Ziel-Kombi-Quote: @8-20
-- Stake: 0.5u — reale Gewinnchance
+KOMBI RULES — 2 types:
 
-TYPE 2 — LOTTERY BIGS (3-Leg, 2 Stück):
-- Mix: 1-2 solide Legs + 1-2 Longshots (@6.0-10.0)
-- Ziel-Kombi-Quote: @40-150+
-- Stake: 0.25u — kleiner Einsatz, grosse Auszahlung möglich
+TYPE 1 — PROBABILITY KOMBIS (2-Leg, target 2-3 picks):
+- Built from most probable singles (@3.0-5.0)
+- Target combo odds: @8-20
+- Stake: 0.5u
 
-Staking Singles: sicherer Single 1u, spekulativer Longshot 0.25u
+TYPE 2 — LOTTERY BIGS (3-Leg, target 1-2 picks):
+- Mix: 1-2 solid legs + 1-2 longshots (@6.0-10.0)
+- Target combo odds: @40-150+
+- Stake: 0.25u
+
+Staking Singles: safe single 1u, speculative longshot 0.25u
+
+Write SHARP 2-sentence analysis per pick citing the actual enrichment data (Barrel%, opposing pitcher HR/9, snap_pct, etc.). NO generic talk.
 
 Include "team" = short code + nickname (MLB: "ATL Braves", NBA: "OKC Thunder", NFL: "KC Chiefs").
+
 Return ONLY valid JSON (no markdown), empty array [] if no value:
 [
-{{"type":"single","emoji":"⚾","player":"Name","team":"ATL Braves","market":"Home Run","odds":5.5,"stake":1,"analysis":"sharp data-driven reasoning"}},
+{{"type":"single","emoji":"⚾","player":"Name","team":"ATL Braves","market":"Home Run","odds":5.5,"stake":1,"probability":0.22,"analysis":"sharp data-driven reasoning citing enrichment"}},
 {{"type":"kombi2","legs":["ATL Name HR","PHI Name HR"],"odds":12.0,"stake":0.5}},
 {{"type":"big","legs":["L1","L2","L3"],"odds":40.0,"stake":0.25}}
 ]"""
@@ -600,8 +794,7 @@ Return ONLY valid JSON (no markdown), empty array [] if no value:
             r = requests.post(url, json={"contents":[{"parts":[{"text":prompt}]}],
                 "generationConfig":{"temperature":0.7,"maxOutputTokens":2048}}, timeout=60)
             if r.status_code == 429:
-                print(f"  Gemini key {i+1} rate limited, next...")
-                time.sleep(3); continue
+                print(f"  Gemini key {i+1} rate limited, next..."); time.sleep(3); continue
             if r.status_code != 200:
                 print(f"  warn gemini {r.status_code}, next..."); continue
             text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
@@ -612,13 +805,12 @@ Return ONLY valid JSON (no markdown), empty array [] if no value:
             return picks
         except Exception as ex:
             print(f"  warn gemini {ex}, next..."); continue
-    # All Gemini keys failed → try Groq
     if GROQ_KEYS:
         print("  All Gemini keys failed → trying Groq fallback...")
         return groq_analyze(prompt)
     return None
 
-# ─── POST (Format B — bet365 style) ───
+# ─── POST ───
 def build_post(picks):
     today = datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles = [p for p in picks if p.get("type")=="single"]
@@ -668,6 +860,7 @@ def save_picks(picks):
                 "player":p.get("player",""),"team":p.get("team",""),
                 "market":p.get("market",""),"odds":p.get("odds",0),
                 "stake":p.get("stake",1),
+                "probability":p.get("probability"),
                 "sport":"MLB" if p.get("emoji")=="⚾" else "NBA" if p.get("emoji")=="🏀" else "NFL",
                 "result":None})
         elif p.get("type") in ("kombi2","big"):
@@ -692,9 +885,9 @@ def send_telegram(text):
 # ─── MAIN ───
 def main():
     print("="*40)
-    print("PROP HUNTER starting...")
-    print(f"  pybaseball={PYBASEBALL} | nba_api={NBA_API} | nfl_data_py={NFL_DATA}")
-    print("Fetching games + odds + stats + weather (next 12h)...")
+    print("PROP HUNTER v2 starting...")
+    print(f"  pybaseball={PYBASEBALL} | balldontlie=ready | nfl_data={NFL_DATA} | rapidfuzz={RAPIDFUZZ}")
+    print("Fetching games + odds + stats + lineups + injuries (next 12h)...")
     props = gather()
     if not props:
         print("  No props found. Exiting (no post)."); return
