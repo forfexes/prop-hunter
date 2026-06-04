@@ -49,5 +49,71 @@
         "result": "pending"
       }
     ]
+  },
+  {
+    "date": "2026-06-04",
+    "evaluated": false,
+    "picks": [
+      {
+        "player": "Rafael Devers",
+        "team": "BOS Red Sox",
+        "market": "Home Run",
+        "odds": 3.98,
+        "stake": 1,
+        "sport": "MLB",
+        "result": null
+      },
+      {
+        "player": "Pete Alonso",
+        "team": "NYM Mets",
+        "market": "Home Run",
+        "odds": 4.4,
+        "stake": 1,
+        "sport": "MLB",
+        "result": null
+      },
+      {
+        "player": "Kelsey Mitchell",
+        "team": "IND Fever",
+        "market": "24+ Points",
+        "odds": 3.96,
+        "stake": 1,
+        "sport": "NBA",
+        "result": null
+      }
+    ],
+    "kombis": [
+      {
+        "type": "kombi2",
+        "legs": [
+          "Rafael Devers HR",
+          "Pete Alonso HR"
+        ],
+        "odds": 17.36,
+        "stake": 0.5,
+        "result": null
+      },
+      {
+        "type": "kombi2",
+        "legs": [
+          "Kelsey Mitchell 24+ Points",
+          "Rafael Devers HR"
+        ],
+        "odds": 15.68,
+        "stake": 0.5,
+        "result": null
+      },
+      {
+        "type": "big",
+        "legs": [
+          "Pete Alonso HR",
+          "Kelsey Mitchell 24+ Points",
+          "Rhyne Howard 24+ Points"
+        ],
+        "odds": 64.51,
+        "stake": 0.25,
+        "result": null
+      }
+    ]
   }
 ]
