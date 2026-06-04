@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pybaseball nba_api nflreadpy nfl_data_py statsapi rapidfuzz playwright
+          pip install requests pybaseball nba_api nflreadpy nfl_data_py MLB-StatsAPI rapidfuzz playwright
 
       - name: Install Playwright browsers
         run: playwright install chromium --with-deps
