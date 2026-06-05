@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pybaseball nba_api nflreadpy nfl_data_py MLB-StatsAPI rapidfuzz playwright
+          pip install requests pybaseball nba_api nflreadpy nfl_data_py MLB-StatsAPI rapidfuzz playwright supabase
 
       - name: Install Playwright browsers
         run: playwright install chromium --with-deps
@@ -36,6 +36,8 @@ jobs:
           TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+          SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:        ${{ secrets.SUPABASE_KEY }}
         run: python prophunter.py
 
       - name: Save picks history
