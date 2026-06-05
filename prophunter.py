@@ -121,15 +121,28 @@ print(f"  seasons: MLB={YEAR_MLB} | NBA={YEAR_NBA}-{(YEAR_NBA+1)%100:02d} | NFL=
 
 SPORTS = {
     "baseball_mlb": {"emoji":"⚾","name":"MLB",
-        "markets":[("batter_home_runs","Home Run",None,3.5)]},
+        "markets":[
+            ("batter_home_runs","Home Run",None,3.5),
+            ("batter_hits","Hits Over 1.5",None,1.7),
+            ("batter_total_bases","Total Bases",None,1.8),
+            ("pitcher_strikeouts","Pitcher K",None,1.8)]},
     "basketball_nba": {"emoji":"🏀","name":"NBA",
         "markets":[
             ("player_points_alternate","Points",25,3.5),
+            ("player_rebounds_alternate","Rebounds",8,3.0),
+            ("player_assists_alternate","Assists",6,3.0),
+            ("player_blocks_alternate","Blocks",2,3.5),
+            ("player_points_rebounds_assists","PRA",35,1.8),
+            ("player_points_rebounds","PR",30,1.8),
+            ("player_points_assists","PA",30,1.8),
             ("player_double_double","Double Double",None,3.0),
             ("player_triple_double","Triple Double",None,6.0)]},
     "basketball_wnba": {"emoji":"🏀","name":"WNBA",
         "markets":[
             ("player_points_alternate","Points",15,3.5),
+            ("player_rebounds_alternate","Rebounds",6,3.0),
+            ("player_assists_alternate","Assists",5,3.0),
+            ("player_points_rebounds_assists","PRA",20,1.8),
             ("player_double_double","Double Double",None,3.0)]},
     "basketball_euroleague": {"emoji":"🏀","name":"Euroleague",
         "markets":[("player_points_alternate","Points",15,3.5)]},
