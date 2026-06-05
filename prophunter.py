@@ -786,6 +786,7 @@ Staking Singles: safe single 1u, speculative longshot 0.25u
 
 Write SHARP 2-sentence analysis per pick citing the actual enrichment data (Barrel%, opposing pitcher HR/9, snap_pct, etc.). NO generic talk.
 
+WICHTIG: Alle Analysen auf DEUTSCH schreiben!
 Include "team" = short code + nickname (MLB: "ATL Braves", NBA: "OKC Thunder", NFL: "KC Chiefs").
 
 Return ONLY valid JSON (no markdown), empty array [] if no value:
@@ -839,7 +840,7 @@ def build_post(picks):
         for p in bigs:
             post += f"• {' + '.join(p['legs'])} @{p['odds']:.2f} → {p['stake']}u\n"
         post += "\n"
-    post += "📊 ANALYZE. TARGET. CASH. 🎯\n@prophunter"
+    post += "📊 ANALYSIERT. GEZIELT. GEWONNEN. 🎯\n@prophunter"
     return post
 
 # ─── DEDUP ───
