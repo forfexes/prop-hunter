@@ -92,7 +92,8 @@ except Exception:
     print("  rapidfuzz MISSING → install: pip install rapidfuzz")
 
 # ─── CONFIG ───
-ODDS_API_KEY   = os.environ.get("ODDS_API_KEY", "")
+ODDS_API_KEYS  = [k.strip() for k in os.environ.get("ODDS_API_KEY","").split(",") if k.strip()]
+ODDS_API_KEY   = ODDS_API_KEYS[0] if ODDS_API_KEYS else ""  # backwards compat
 GEMINI_KEYS    = [k.strip() for k in os.environ.get("GEMINI_API_KEY","").split(",") if k.strip()]
 GROQ_KEYS      = [k.strip() for k in os.environ.get("GROQ_API_KEY","").split(",") if k.strip()]
 API_SPORTS_KEYS = [k.strip() for k in os.environ.get("API_SPORTS_KEY","").split(",") if k.strip()]
@@ -215,7 +216,7 @@ def fetch_events(sport):
     now, end = time_window()
     try:
         r = requests.get(f"{ODDS_BASE}/sports/{sport}/events", params={
-            "apiKey":ODDS_API_KEY,"dateFormat":"iso",
+            "apiKey":_odds_key(),"dateFormat":"iso",
             "commenceTimeFrom":now.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "commenceTimeTo":end.strftime("%Y-%m-%dT%H:%M:%SZ")}, timeout=30)
         data = r.json() if r.status_code==200 else []
@@ -230,7 +231,7 @@ def fetch_props(sport, eid, markets):
         # Include totals + spreads as a context signal
         all_markets = markets + ",totals,spreads"
         r = requests.get(f"{ODDS_BASE}/sports/{sport}/events/{eid}/odds", params={
-            "apiKey":ODDS_API_KEY,"regions":"us,eu,uk","markets":all_markets,
+            "apiKey":_odds_key(),"regions":"us,eu,uk","markets":all_markets,
             "oddsFormat":"decimal","bookmakers":BOOKMAKERS}, timeout=30)
         if r.status_code != 200: return None
         d = r.json()
@@ -859,6 +860,84 @@ def enrich_with_propsmadness(props_list):
         print(f"  PropsMadness: {enriched} players enriched")
     return props_list
 
+
+
+# ─── ODDS API KEY ROTATION ───
+_odds_key_idx = 0
+def _odds_key():
+    """Return current active ODDS API key."""
+    global _odds_key_idx
+    if not ODDS_API_KEYS: return ""
+    return ODDS_API_KEYS[_odds_key_idx % len(ODDS_API_KEYS)]
+
+def _odds_next_key():
+    """Switch to next ODDS API key on quota error."""
+    global _odds_key_idx
+    _odds_key_idx += 1
+    if ODDS_API_KEYS:
+        print(f"  ODDS API → Key {(_odds_key_idx % len(ODDS_API_KEYS))+1}/{len(ODDS_API_KEYS)}")
+    return _odds_key()
+
+# ─── ODDS CACHE (spart API Quota) ───
+CACHE_FILE = "odds_cache.json"
+CACHE_TTL  = 6 * 3600  # 6 Stunden
+
+def load_odds_cache():
+    if not os.path.exists(CACHE_FILE): return {}
+    try:
+        data = json.load(open(CACHE_FILE))
+        ts = data.get("timestamp", 0)
+        if time.time() - ts < CACHE_TTL:
+            print(f"  ✅ Odds Cache hit (alter: {int((time.time()-ts)/60)}min)")
+            return data.get("odds", {})
+        print("  Odds Cache abgelaufen → frisch laden")
+    except Exception: pass
+    return {}
+
+def save_odds_cache(odds_data):
+    try:
+        json.dump({"timestamp": time.time(), "odds": odds_data}, 
+                  open(CACHE_FILE, "w"), indent=2)
+    except Exception: pass
+
+def fetch_odds_playwright(sport, eid, markets):
+    """Playwright scraper für DraftKings Props (kein API Key!)."""
+    try:
+        from playwright.sync_api import sync_playwright
+        dk_sport = {
+            "baseball_mlb": "baseball/mlb",
+            "basketball_nba": "basketball/nba",
+            "basketball_wnba": "basketball/wnba",
+            "americanfootball_nfl": "football/nfl",
+        }.get(sport, "basketball/nba")
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(user_agent=UA["User-Agent"])
+            url = f"https://sportsbook.draftkings.com/leagues/{dk_sport}"
+            page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            page.wait_for_timeout(3000)
+            
+            # Extract props from page
+            props = []
+            # DK structure: player name + line + odds
+            rows = page.locator(".sportsbook-row-name, [class*='event-cell__name']").all()
+            odds_els = page.locator("[class*='sportsbook-odds']").all()
+            
+            for i, row in enumerate(rows[:50]):
+                try:
+                    name = row.text_content().strip()
+                    if not name: continue
+                    odd_text = odds_els[i].text_content() if i < len(odds_els) else ""
+                    props.append({"player": name, "raw_odds": odd_text})
+                except Exception: continue
+            
+            browser.close()
+            return props if props else None
+    except Exception as e:
+        print(f"  warn DK playwright: {e}")
+        return None
+
 # ─── GATHER ───
 def gather():
     all_props, active = [], []
@@ -974,10 +1053,16 @@ def gather():
     all_props = [p for p in all_props if not p.get("_remove")]
 
     print(f"  Active: {', '.join(active) if active else 'NONE'}")
+    # Save new odds to cache
+    if new_odds:
+        combined = {**odds_cache, **new_odds}
+        save_odds_cache(combined)
+        print(f"  Odds Cache: {len(new_odds)} neue Events gespeichert")
+    
     print(f"  Total props enriched (after lineup/injury filter): {len(all_props)}")
     
     # PropsMadness: Hit Rate für Top-NBA Props
-    if PW_OK:
+    if PLAYWRIGHT:
         all_props = enrich_with_propsmadness(all_props)
     return all_props
 
