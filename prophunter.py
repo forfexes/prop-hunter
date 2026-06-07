@@ -26,6 +26,13 @@ pip install requests pybaseball nba_api nfl_data_py rapidfuzz
 
 import os, io, json, time, requests
 try:
+    from py_ball import playerstats as pyball_stats
+    from py_ball.utils import WNBA_HEADERS
+    PYBALL = True
+except Exception:
+    PYBALL = False
+
+try:
     from supabase import create_client as sb_create
     SUPABASE = True
 except Exception:
@@ -88,6 +95,7 @@ except Exception:
 ODDS_API_KEY   = os.environ.get("ODDS_API_KEY", "")
 GEMINI_KEYS    = [k.strip() for k in os.environ.get("GEMINI_API_KEY","").split(",") if k.strip()]
 GROQ_KEYS      = [k.strip() for k in os.environ.get("GROQ_API_KEY","").split(",") if k.strip()]
+API_SPORTS_KEYS = [k.strip() for k in os.environ.get("API_SPORTS_KEY","").split(",") if k.strip()]
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 TG_TOKEN       = os.environ.get("TELEGRAM_BOT_TOKEN", "")
@@ -125,13 +133,20 @@ SPORTS = {
             ("batter_home_runs","Home Run",None,3.5),
             ("batter_hits","Hits Over 1.5",None,1.7),
             ("batter_total_bases","Total Bases",None,1.8),
-            ("pitcher_strikeouts","Pitcher K",None,1.8)]},
+            ("pitcher_strikeouts","Pitcher K",None,1.8),
+            ("batter_stolen_bases","Stolen Base",None,4.0),
+            ("batter_rbis","RBI",None,2.5),
+            ("pitcher_outs","Outs Recorded",None,1.8),
+            ("pitcher_earned_runs","Earned Runs U",None,1.8),
+            ("pitcher_hits_allowed","Hits Allowed U",None,1.8)]},
     "basketball_nba": {"emoji":"🏀","name":"NBA",
         "markets":[
             ("player_points_alternate","Points",25,3.5),
             ("player_rebounds_alternate","Rebounds",8,3.0),
             ("player_assists_alternate","Assists",6,3.0),
             ("player_blocks_alternate","Blocks",2,3.5),
+            ("player_steals_alternate","Steals",2,3.5),
+            ("player_threes_alternate","3PM",2,2.5),
             ("player_points_rebounds_assists","PRA",35,1.8),
             ("player_points_rebounds","PR",30,1.8),
             ("player_points_assists","PA",30,1.8),
@@ -142,16 +157,23 @@ SPORTS = {
             ("player_points_alternate","Points",15,3.5),
             ("player_rebounds_alternate","Rebounds",6,3.0),
             ("player_assists_alternate","Assists",5,3.0),
+            ("player_threes_alternate","3PM",2,2.5),
             ("player_points_rebounds_assists","PRA",20,1.8),
             ("player_double_double","Double Double",None,3.0)]},
     "basketball_euroleague": {"emoji":"🏀","name":"Euroleague",
-        "markets":[("player_points_alternate","Points",15,3.5)]},
+        "markets":[
+            ("player_points_alternate","Points",12,3.0),
+            ("player_rebounds_alternate","Rebounds",5,2.8),
+            ("player_assists_alternate","Assists",4,2.8),
+            ("player_threes_alternate","3PM",2,2.5)]},
     "americanfootball_nfl": {"emoji":"🏈","name":"NFL",
         "markets":[
             ("player_anytime_td","Anytime TD",None,2.5),
             ("player_pass_tds_alternate","Pass TDs",None,3.0),
+            ("player_pass_yds_alternate","Pass Yds",None,1.8),
             ("player_rush_yds_alternate","Rush Yds",None,3.0),
-            ("player_reception_yds_alternate","Rec Yds",None,3.0)]},
+            ("player_reception_yds_alternate","Rec Yds",None,3.0),
+            ("player_receptions_alternate","Receptions",None,1.8)]},
 }
 
 BALLPARKS = {
@@ -615,6 +637,228 @@ def is_nfl_player_active(player_name, injuries):
     if status.lower() in ("out","injured reserve","suspended"): return False, status
     return True, status  # Questionable / Probable still pass through
 
+
+# ─── WNBA: py_ball + ESPN (double-source) ───
+def fetch_wnba_stats_espn(player_name):
+    """ESPN WNBA player season stats — no key needed."""
+    try:
+        # Step 1: Search for player
+        r = requests.get("https://site.api.espn.com/apis/common/v3/search",
+            params={"query": player_name, "limit": 5, "type": "athlete", "leagues": "wnba"},
+            headers=UA, timeout=15)
+        if r.status_code != 200: return None
+        hits = r.json().get("athletes") or r.json().get("items") or []
+        if not hits: return None
+        pid = hits[0].get("id") or hits[0].get("athlete", {}).get("id")
+        if not pid: return None
+        # Step 2: Get stats
+        r2 = requests.get(
+            f"https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/athletes/{pid}/statistics",
+            headers=UA, timeout=15)
+        if r2.status_code != 200: return None
+        cats = r2.json().get("statistics", {}).get("categories") or []
+        out = {}
+        for cat in cats:
+            for stat in cat.get("stats", []):
+                out[stat.get("name","").lower()] = stat.get("value")
+        if not out: return None
+        return {
+            "avg_pts":  out.get("avgpoints") or out.get("points"),
+            "avg_reb":  out.get("avgrebounds") or out.get("rebounds"),
+            "avg_ast":  out.get("avgassists") or out.get("assists"),
+            "avg_min":  out.get("avgminutes") or out.get("minutespergame"),
+            "games":    out.get("gamesplayed"),
+        }
+    except Exception as e:
+        return None
+
+def fetch_wnba_stats_pyball(player_name):
+    """py_ball WNBA stats from stats.wnba.com."""
+    if not PYBALL: return None
+    try:
+        from py_ball import player as pb_player
+        search = pb_player.Player(headers=WNBA_HEADERS,
+            endpoint="commonallplayers", league_id="10", season="2025-26")
+        df = search.data.get("CommonAllPlayers", {})
+        rows = df.get("data", [])
+        headers = df.get("headers", [])
+        name_idx = headers.index("DISPLAY_FIRST_LAST") if "DISPLAY_FIRST_LAST" in headers else None
+        id_idx = headers.index("PERSON_ID") if "PERSON_ID" in headers else None
+        if name_idx is None or id_idx is None: return None
+        from rapidfuzz import process
+        names = [r[name_idx] for r in rows]
+        match, score, idx = process.extractOne(player_name, names)
+        if score < 80: return None
+        pid = rows[idx][id_idx]
+        time.sleep(0.3)
+        stats = pyball_stats.PlayerStats(headers=WNBA_HEADERS,
+            endpoint="playercareerstats", player_id=str(pid), league_id="10")
+        sdata = stats.data.get("SeasonTotalsRegularSeason",{})
+        if not sdata.get("data"): return None
+        row = sdata["data"][-1]
+        hdr = sdata.get("headers",[])
+        def g(k): return row[hdr.index(k)] if k in hdr else None
+        gp = g("GP") or 1
+        return {
+            "avg_pts": round((g("PTS") or 0)/gp, 1),
+            "avg_reb": round((g("REB") or 0)/gp, 1),
+            "avg_ast": round((g("AST") or 0)/gp, 1),
+        }
+    except Exception as e:
+        return None
+
+def fetch_wnba_player_stats(player_name):
+    """Try ESPN first, then py_ball."""
+    result = fetch_wnba_stats_espn(player_name)
+    if result: return result
+    return fetch_wnba_stats_pyball(player_name)
+
+# ─── api-sports.io (backup for all leagues) ───
+def fetch_apisports_player(player_name, sport="basketball"):
+    """api-sports.io backup — 100 req/day free."""
+    if not API_SPORTS_KEYS: return None
+    endpoints = {
+        "basketball": "https://v2.nba.api-sports.io",
+        "baseball":   "https://v1.baseball.api-sports.io",
+        "football":   "https://v1.american-football.api-sports.io",
+    }
+    base = endpoints.get(sport, endpoints["basketball"])
+    for key in API_SPORTS_KEYS:
+        try:
+            r = requests.get(f"{base}/players",
+                params={"search": player_name.split()[-1], "season": YEAR},
+                headers={"x-apisports-key": key}, timeout=20)
+            if r.status_code != 200: continue
+            players = r.json().get("response", [])
+            if not players: continue
+            p = players[0]
+            stats = p.get("statistics", [{}])[0]
+            return {
+                "avg_pts": stats.get("points", {}).get("average"),
+                "avg_reb": stats.get("rebounds", {}).get("total", {}).get("average"),
+                "avg_ast": stats.get("assists", {}).get("average"),
+                "games":   stats.get("games", {}).get("played"),
+            }
+        except Exception: continue
+    return None
+
+
+# ─── PROPSMADNESS SCRAPER (Playwright) ───
+async def fetch_propsmadness_player(page, player_name, market="player-points"):
+    """Scrape hit rate + stats from PropsMadness for a player."""
+    try:
+        # Go to PropsMadness and search for player
+        await page.goto("https://propsmadness.com/nba", timeout=30000)
+        await page.wait_for_timeout(2000)
+        
+        # Click search / type player name
+        search = page.locator("input[placeholder*='search'], input[placeholder*='player'], input[type='search']").first
+        await search.click()
+        await search.fill(player_name.split()[-1])  # Last name search
+        await page.wait_for_timeout(1500)
+        
+        # Find and click matching player
+        options = page.locator(f"[data-player], .player-option, li:has-text('{player_name}')")
+        if await options.count() > 0:
+            await options.first.click()
+            await page.wait_for_timeout(2000)
+        
+        # Extract hit rate
+        hit_rate_el = page.locator(".hit-rate, [class*='HitRate'], [class*='hitRate']").first
+        hit_rate_text = await hit_rate_el.text_content() if await hit_rate_el.count() > 0 else ""
+        
+        # Extract stats
+        pts_el = page.locator("text=Pts").locator("..").locator("[class*='value'], span").first
+        avg_pts = await pts_el.text_content() if await pts_el.count() > 0 else None
+        
+        import re
+        hr_match = re.search(r'(\d+)%\s*\((\d+)/(\d+)\)', hit_rate_text)
+        hit_rate = int(hr_match.group(1)) if hr_match else None
+        
+        return {
+            "hit_rate": hit_rate,
+            "avg": float(avg_pts) if avg_pts and avg_pts.replace('.','').isdigit() else None,
+            "source": "propsmadness"
+        }
+    except Exception as e:
+        return None
+
+def fetch_propsmadness_sync(player_name, market="player-points"):
+    """Sync wrapper for PropsMadness scraper."""
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(user_agent=UA["User-Agent"])
+            
+            # Navigate to PropsMadness
+            page.goto("https://propsmadness.com/nba", timeout=30000)
+            page.wait_for_timeout(2500)
+            
+            # Use keyboard shortcut or search
+            page.keyboard.press("Slash")
+            page.wait_for_timeout(500)
+            
+            # Type player last name
+            last_name = player_name.split()[-1]
+            page.keyboard.type(last_name)
+            page.wait_for_timeout(1500)
+            
+            # Select first matching result
+            results = page.locator(f"text={last_name}").all()
+            if results:
+                # Click first result that matches full name approximately
+                for r in results[:5]:
+                    txt = r.text_content() or ""
+                    if last_name.lower() in txt.lower():
+                        r.click()
+                        break
+                page.wait_for_timeout(2000)
+            
+            # Extract Hit Rate from page
+            import re
+            content_text = page.content()
+            
+            # Look for hit rate pattern: "65% (13/20)"
+            hr_match = re.search(r'(\d+)%[^<]*(\d+)/(\d+)', content_text)
+            hit_rate = int(hr_match.group(1)) if hr_match else None
+            wins = int(hr_match.group(2)) if hr_match else None
+            total = int(hr_match.group(3)) if hr_match else None
+            
+            # Look for avg stats
+            pts_match = re.search(r'"pts[^"]*"[^:]*:\s*([0-9.]+)', content_text)
+            avg_pts = float(pts_match.group(1)) if pts_match else None
+            
+            browser.close()
+            
+            if hit_rate:
+                return {
+                    "hit_rate": hit_rate,
+                    "hit_count": wins,
+                    "total_games": total,
+                    "avg": avg_pts,
+                }
+    except Exception as e:
+        print(f"  warn propsmadness {player_name}: {e}")
+    return None
+
+def enrich_with_propsmadness(props_list):
+    """Enrich top NBA props with PropsMadness hit rate data."""
+    # Only for NBA/WNBA, limit to 5 players to save time
+    nba_props = [p for p in props_list if p.get("sport") in ("NBA","WNBA")][:5]
+    enriched = 0
+    for p in nba_props:
+        data = fetch_propsmadness_sync(p["player"])
+        if data and data.get("hit_rate"):
+            hr = data["hit_rate"]
+            tag = f"PropsMadness: {hr}% ({data.get('hit_count','?')}/{data.get('total_games','?')})"
+            p["enrichment"] = p.get("enrichment","") + " | " + tag
+            p["pm_hit_rate"] = hr
+            enriched += 1
+    if enriched:
+        print(f"  PropsMadness: {enriched} players enriched")
+    return props_list
+
 # ─── GATHER ───
 def gather():
     all_props, active = [], []
@@ -731,6 +975,10 @@ def gather():
 
     print(f"  Active: {', '.join(active) if active else 'NONE'}")
     print(f"  Total props enriched (after lineup/injury filter): {len(all_props)}")
+    
+    # PropsMadness: Hit Rate für Top-NBA Props
+    if PW_OK:
+        all_props = enrich_with_propsmadness(all_props)
     return all_props
 
 # ─── GROQ FALLBACK ───
@@ -765,48 +1013,76 @@ def gemini_analyze(props):
         if p.get("enrichment"): ln += f"  [{p['enrichment']}]"
         lines.append(ln)
 
-    prompt = f"""You are an ELITE sharp sports betting analyst. Below are REAL player props with REAL odds for games in the next 12 hours, enriched with advanced stats, confirmed lineups, pitcher matchups, weather, and game totals.
+    prompt = f"""Du bist der BESTE Sharp Sports Betting Analyst der Welt. Finde ECHTEN VALUE in diesen Props — wir sind besser als JK!
 
 PROPS:
 {chr(10).join(lines)}
 
-ALL players listed have been pre-filtered: MLB players are in confirmed lineups, NFL players are NOT ruled out. Focus on QUALITY OVER QUANTITY (2-8 picks total).
+ALLE Spieler vorausgefiltert (bestätigte Lineups, keine DNPs).
 
-VALUE CRITERIA:
-- ⚾ MLB HR: Look for batters with high Barrel%/ISO/HardHit% facing pitchers with high HR/9 OR high ERA, in HR-friendly parks (>105) with warm weather + wind out. Skip if pitcher HR/9 < 1.0 (elite pitcher).
-- 🏀 NBA/WNBA: Use PTS avg vs line, minutes played as volume signal, recent games count. Need games >= 5 to trust averages.
-- 🏈 NFL: Use snap_pct + recent yardage form. snap_pct < 50% = bench player, skip. Active injury status (Questionable) is OK if player has been playing through it.
+=== ⚾ MLB STRATEGIE ===
+Home Run: Barrel% > 10% + HardHit% > 40% + Pitcher HR/9 > 1.2 + HR-Park (>105) + warm + Wind raus → 0.25u
+Total Bases: Kontakt-Hitter, gutes Matchup → 0.25u
+Stolen Base: SB-Rate > 70%, Läufer auf Base → 0.25u
+Pitcher K OVER: K/9 > 9.0 gegen K-anfälliges Lineup → 0.25u
+Outs Recorded UNDER: Pitcher mit ERA > 5.0 / schlechter Form → 0.25u
+RBI: Runner on base, Clutch-Hitter → 0.25u
+→ MLB immer 0.25u Stakes (Volume-Strategie wie JK!)
 
-PROBABILITY-FIRST COMBOS (like NETRATTLER):
-- Kombis MUST be built from highest-probability legs, not highest-odds
-- Combine players with strongest signals (high Barrel% for HR, clear minutes+PTS edge for NBA)
-- NEVER 2 longshots (>6.0) in one kombi — at least 1 leg must be solid (@3.0-4.5)
-- Cross-sport combos allowed: solid HR @4.0 + safe NBA Points @2.5 = healthy ~10.0 kombi
+=== 🏀 NBA/WNBA STRATEGIE ===
+OVER: avg_last5 > linie × 1.08 → 1u solid
+UNDER: avg_last5 < linie × 0.85 → 1u solid
+3PM: avg 3PM > 3/Spiel → Over sinnvoll
+PRA: Starkes All-Around Game, hohe Minuten
+Blocks/Steals: Nur bei klarem statistischen Edge
 
-KOMBI RULES — 2 types:
+LADDER (gleicher Spieler, 2 Schwellen):
+- Niveau 1: linie × 0.85 @1.8-2.5 → 0.75u
+- Niveau 2: linie × 1.1  @3.0-6.0 → 0.25u
+- Nur wenn Spieler in 3/5 letzten Spielen Niveau 2 erreichte
 
-TYPE 1 — PROBABILITY KOMBIS (2-Leg, target 2-3 picks):
-- Built from most probable singles (@3.0-5.0)
-- Target combo odds: @8-20
+=== 🏀 EUROLEAGUE ===
+Linien 12-15 Punkte normal. Nur klare Over/Under wählen.
+Rebounds/Assists/3PM wenn klarer Trend in Daten.
+
+=== 🏈 NFL ===
+Nur wenn aktive Saison! snap_pct > 70% Pflicht.
+
+=== KOMBI-SYSTEM (alle Paare abdecken!) ===
+
+BET BUILDER – Same Game Parlay (@3-12):
+- Gleicher Spieler: Brunson 30+ Pts + 5+ Ast
+- Gleiche Partie: Wemby 20+ + Castle 5+ Ast
 - Stake: 0.5u
 
-TYPE 2 — LOTTERY BIGS (3-Leg, target 1-2 picks):
-- Mix: 1-2 solid legs + 1-2 longshots (@6.0-10.0)
-- Target combo odds: @40-150+
-- Stake: 0.25u
+TYPE 1 – 2-LEG KOMBIS (alle Paare!):
+Top-3 Picks → AB + AC + BC = 3 Kombis
+Target @8-25 | Stake: 0.5u
 
-Staking Singles: safe single 1u, speculative longshot 0.25u
+TYPE 2 – 3-LEG LOTTERY:
+ABC aus Top-3 Picks
+Target @40-150 | Stake: 0.25u
 
-Write SHARP 2-sentence analysis per pick citing the actual enrichment data (Barrel%, opposing pitcher HR/9, snap_pct, etc.). NO generic talk.
+TYPE 3 – SUPER LOTTERY (wenn 4+ starke Picks):
+ABCD = 4-Leg
+Target @200+ | Stake: 0.10u
 
-WICHTIG: Alle Analysen auf DEUTSCH schreiben!
-Include "team" = short code + nickname (MLB: "ATL Braves", NBA: "OKC Thunder", NFL: "KC Chiefs").
+→ Wenn 7 HR alle stark: alle 21 Paare wären möglich, aber wähle die 3 BESTEN Paare + 1 Triple!
+→ Kein künstliches Limit bei Singles! Alle echten Value-Picks rein!
 
-Return ONLY valid JSON (no markdown), empty array [] if no value:
+Alle Analysen auf DEUTSCH! Echte Daten zitieren (Barrel%, Odds, avg letzte 5).
+Team: MLB="ATL Braves", NBA="NYK Knicks", NFL="KC Chiefs"
+
+Return ONLY valid JSON (kein Markdown):
 [
-{{"type":"single","emoji":"⚾","player":"Name","team":"ATL Braves","market":"Home Run","odds":5.5,"stake":1,"probability":0.22,"analysis":"sharp data-driven reasoning citing enrichment"}},
-{{"type":"kombi2","legs":["ATL Name HR","PHI Name HR"],"odds":12.0,"stake":0.5}},
-{{"type":"big","legs":["L1","L2","L3"],"odds":40.0,"stake":0.25}}
+{{"type":"single","emoji":"⚾","player":"Name","team":"ATL Braves","market":"Home Run","odds":5.5,"stake":0.25,"probability":0.22,"analysis":"Deutsch: Barrel% 14%, HR/9 1.8, Coors Field 110, 28°C Wind raus"}},
+{{"type":"single","emoji":"🏀","player":"Name","team":"NYK Knicks","market":"Points UNDER 35.5","odds":1.90,"stake":1.0,"probability":0.60,"analysis":"Deutsch: avg letzte 5 = 27.3, klar unter 35.5"}},
+{{"type":"single","emoji":"🏀","player":"Name","team":"SAS Spurs","market":"3PM Over 1.5","odds":2.49,"stake":0.5,"probability":0.62,"analysis":"Deutsch: avg 2.3 3PM/Spiel, 4/5 letzten Spiele getroffen"}},
+{{"type":"ladder","emoji":"🏀","player":"Name","team":"NYK","picks":[{{"market":"30+ Points","odds":2.50,"stake":0.75}},{{"market":"35+ Points","odds":5.00,"stake":0.25}}],"analysis":"Deutsch: 3/5 letzten Spiele über 35, Heimspiel NYC"}},
+{{"type":"betbuilder","legs":["Brunson 30+ Pts","Brunson 5+ Ast"],"game":"NYK vs SAS","odds":8.50,"stake":0.5,"analysis":"Deutsch: Same-Game Parlay"}},
+{{"type":"kombi2","legs":["ATL Name HR","PHI Name HR"],"odds":20.75,"stake":0.5}},
+{{"type":"big","legs":["Suzuki HR","Goodman HR","Wood HR"],"odds":99.23,"stake":0.25}},
+{{"type":"super","legs":["L1","L2","L3","L4"],"odds":250.0,"stake":0.10}}
 ]"""
 
     for i, key in enumerate(GEMINI_KEYS):
@@ -858,15 +1134,21 @@ def build_post(picks):
 
 # ─── DEDUP ───
 def already_posted_today():
+    """Returns (player|market keys, player names) already posted today."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    posted = set()
+    posted_keys = set()
+    posted_players = set()
     if os.path.exists("picks_history.json"):
         try:
             for entry in json.load(open("picks_history.json")):
                 if entry["date"] == today:
-                    for p in entry.get("picks",[]): posted.add(p.get("player","").lower())
+                    for p in entry.get("picks",[]):
+                        pl = p.get("player","").lower()
+                        mk = p.get("market","").lower()
+                        posted_keys.add(f"{pl}|{mk}")
+                        posted_players.add(pl)
         except Exception: pass
-    return posted
+    return posted_keys, posted_players
 
 def save_picks(picks):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -971,12 +1253,20 @@ def main():
     picks = gemini_analyze(props)
     if not picks:
         print("  No value found. Exiting (no post)."); return
-    posted = already_posted_today()
+    posted_keys, posted_players = already_posted_today()
+    posted = posted_players  # backwards compat
     if posted:
         before = len([p for p in picks if p.get("type")=="single"])
         picks = [p for p in picks if not (p.get("type")=="single" and p.get("player","").lower() in posted)]
         after = len([p for p in picks if p.get("type")=="single"])
-        if before != after: print(f"  Dedup: {before}→{after} singles")
+        # Also filter combos containing already-posted players
+        before_k = len([p for p in picks if p.get("type") in ("kombi2","big","super","betbuilder")])
+        picks = [p for p in picks if p.get("type") not in ("kombi2","big","super","betbuilder") or
+                 not any(any(pl in leg.lower() for pl in posted_players) 
+                         for leg in p.get("legs",[]))]
+        after_k = len([p for p in picks if p.get("type") in ("kombi2","big","super","betbuilder")])
+        if before != after: print(f"  Dedup Singles: {before}→{after}")
+        if before_k != after_k: print(f"  Dedup Kombis: {before_k}→{after_k}")
     if not [p for p in picks if p.get("type")=="single"]:
         print("  All picks already posted today. Skipping."); return
     post = build_post(picks)
