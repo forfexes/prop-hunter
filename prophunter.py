@@ -126,7 +126,9 @@ def season_for(sport):
 YEAR_MLB = season_for("baseball_mlb")
 YEAR_NBA = season_for("basketball_nba")
 YEAR_NFL = season_for("americanfootball_nfl")
-print(f"  seasons: MLB={YEAR_MLB} | NBA={YEAR_NBA}-{(YEAR_NBA+1)%100:02d} | NFL={YEAR_NFL}")
+NFL_OFFSEASON = datetime.now(timezone.utc).month in (3,4,5,6,7,8)
+nfl_label = f"{YEAR_NFL} (OFF-SEASON)" if NFL_OFFSEASON else str(YEAR_NFL)
+print(f"  seasons: MLB={YEAR_MLB} | NBA={YEAR_NBA}-{(YEAR_NBA+1)%100:02d} | NFL={nfl_label}")
 
 SPORTS = {
     "baseball_mlb": {"emoji":"⚾","name":"MLB",
@@ -947,6 +949,8 @@ def fetch_odds_playwright(sport, eid, markets):
 # ─── GATHER ───
 def gather():
     all_props, active = [], []
+    odds_cache = load_odds_cache()
+    new_odds = {}
     mlb_batters, mlb_pitchers, mlb_lineups = {}, {}, {}
     weather_cache, nfl_stats_cache = {}, {}
     nfl_injuries = {}
