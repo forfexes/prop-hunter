@@ -142,25 +142,31 @@ SPORTS = {
             ("pitcher_hits_allowed","Hits Allowed U",None,1.8)]},
     "basketball_nba": {"emoji":"🏀","name":"NBA",
         "markets":[
-            ("player_points_alternate","Points",25,3.5),
-            ("player_rebounds_alternate","Rebounds",8,3.0),
-            ("player_assists_alternate","Assists",6,3.0),
-            ("player_blocks_alternate","Blocks",2,3.5),
-            ("player_steals_alternate","Steals",2,3.5),
-            ("player_threes_alternate","3PM",2,2.5),
+            # TIER 1 - Stabile Props @1.70-1.95 (Basket Premium/Blitz Style)
+            ("player_rebounds_assists","Rebounds+Assists",10,1.8),
             ("player_points_rebounds_assists","PRA",35,1.8),
             ("player_points_rebounds","PR",30,1.8),
             ("player_points_assists","PA",30,1.8),
-            ("player_double_double","Double Double",None,3.0),
+            ("player_rebounds_alternate","Rebounds",8,1.9),
+            ("player_assists_alternate","Assists",6,1.9),
+            ("player_threes_alternate","3PM",2,1.9),
+            ("player_double_double","Double Double",None,2.5),
+            # TIER 2 - Longshots @3.5+ (JK Style)
+            ("player_points_alternate","Points",25,3.5),
+            ("player_blocks_alternate","Blocks",2,3.5),
+            ("player_steals_alternate","Steals",2,3.5),
             ("player_triple_double","Triple Double",None,6.0)]},
     "basketball_wnba": {"emoji":"🏀","name":"WNBA",
         "markets":[
-            ("player_points_alternate","Points",15,3.5),
-            ("player_rebounds_alternate","Rebounds",6,3.0),
-            ("player_assists_alternate","Assists",5,3.0),
-            ("player_threes_alternate","3PM",2,2.5),
+            ("player_rebounds_assists","Rebounds+Assists",8,1.8),
             ("player_points_rebounds_assists","PRA",20,1.8),
-            ("player_double_double","Double Double",None,3.0)]},
+            ("player_points_rebounds","PR",18,1.8),
+            ("player_points_assists","PA",18,1.8),
+            ("player_points_alternate","Points",15,3.5),
+            ("player_rebounds_alternate","Rebounds",6,1.9),
+            ("player_assists_alternate","Assists",5,1.9),
+            ("player_threes_alternate","3PM",2,2.0),
+            ("player_double_double","Double Double",None,2.5)]},
     "basketball_euroleague": {"emoji":"🏀","name":"Euroleague",
         "markets":[
             ("player_points_alternate","Points",12,3.0),
@@ -1098,74 +1104,68 @@ def gemini_analyze(props):
         if p.get("enrichment"): ln += f"  [{p['enrichment']}]"
         lines.append(ln)
 
-    prompt = f"""Du bist der BESTE Sharp Sports Betting Analyst der Welt. Finde ECHTEN VALUE in diesen Props — wir sind besser als JK!
+    prompt = f"""Du bist der BESTE Sharp Sports Betting Analyst der Welt.
+Inspiriert von: Basket Premium (82.5% Win Rate Nov), Basket Blitz VIP, JK (300u+ Profit).
 
 PROPS:
 {chr(10).join(lines)}
 
-ALLE Spieler vorausgefiltert (bestätigte Lineups, keine DNPs).
+=== ZWEI-TIER SYSTEM ===
 
-=== ⚾ MLB STRATEGIE ===
-Home Run: Barrel% > 10% + HardHit% > 40% + Pitcher HR/9 > 1.2 + HR-Park (>105) + warm + Wind raus → 0.25u
-Total Bases: Kontakt-Hitter, gutes Matchup → 0.25u
-Stolen Base: SB-Rate > 70%, Läufer auf Base → 0.25u
-Pitcher K OVER: K/9 > 9.0 gegen K-anfälliges Lineup → 0.25u
-Outs Recorded UNDER: Pitcher mit ERA > 5.0 / schlechter Form → 0.25u
-RBI: Runner on base, Clutch-Hitter → 0.25u
-→ MLB immer 0.25u Stakes (Volume-Strategie wie JK!)
+🔵 TIER 2 — STABILE PROPS (Basket Premium/Blitz Stil) @1.65-1.95:
+Stake: 0.75-1u | Ziel: 75-85% Hit Rate
 
-=== 🏀 NBA/WNBA STRATEGIE ===
-OVER: avg_last5 > linie × 1.08 → 1u solid
-UNDER: avg_last5 < linie × 0.85 → 1u solid
-3PM: avg 3PM > 3/Spiel → Over sinnvoll
-PRA: Starkes All-Around Game, hohe Minuten
-Blocks/Steals: Nur bei klarem statistischen Edge
+ÜBER-Picks (wenn avg_last5 > linie × 1.08):
+- Rebounds+Assists: konsistentester Markt! Spieler mit hoher Usage, Minuten > 28
+- PRA (Points+Rebounds+Assists): All-Around Spieler
+- Assists: Playmaker mit hohem Usage Rate
+- 3PM: Spieler mit avg > 3 Dreier/Spiel
+- Points+Rebounds oder Points+Assists
 
-LADDER (gleicher Spieler, 2 Schwellen):
-- Niveau 1: linie × 0.85 @1.8-2.5 → 0.75u
-- Niveau 2: linie × 1.1  @3.0-6.0 → 0.25u
-- Nur wenn Spieler in 3/5 letzten Spielen Niveau 2 erreichte
+UNTER-Picks (avg_last5 < linie × 0.87):
+- Wenn Spieler von Top-Verteidiger bewacht wird
+- Wenn Gegner defensiv stark auf diese Position
+- Wenn Spieler injured/limited/back-to-back
+- Unter Points: nur wenn klarer defensiver Vorteil für Gegner
+Analysiere wie Basket Blitz: Defensive Rank, H2H, Usage-Shifts, Matchup
 
-=== 🏀 EUROLEAGUE ===
-Linien 12-15 Punkte normal. Nur klare Over/Under wählen.
-Rebounds/Assists/3PM wenn klarer Trend in Daten.
+🟡 TIER 1 — LONGSHOTS (JK Stil) @3.5-8.0:
+Stake: 0.25u | Ziel: 20-30% Hit Rate
+- MLB Home Run: Barrel% > 10%, HardHit% > 40%, Pitcher HR/9 > 1.2, Park > 105
+- MLB Stolen Base: SB-Rate > 70%
+- NBA Triple Double, Blocks
+- Lottery Longshots mit gutem Wert
 
-=== 🏈 NFL ===
-Nur wenn aktive Saison! snap_pct > 70% Pflicht.
+=== STAKE-REGELN ===
+@1.65-1.95: 1.0u (sehr sicher)
+@2.00-2.50: 0.75u (sicher)
+@2.50-3.50: 0.5u (mittel)
+@3.50-6.00: 0.25u (spekulativ/MLB)
+@6.00+:     0.10u (lottery)
 
-=== KOMBI-SYSTEM (alle Paare abdecken!) ===
+=== KOMBI-SYSTEM ===
 
-BET BUILDER – Same Game Parlay (@3-12):
-- Gleicher Spieler: Brunson 30+ Pts + 5+ Ast
-- Gleiche Partie: Wemby 20+ + Castle 5+ Ast
-- Stake: 0.5u
+BET BUILDER Same-Game (@3-8): 2-3 stabile Props aus gleichem Spiel, 0.5u
+TYPE 1 — 2-LEG Wahrscheinlichkeits-Kombis:
+  Top-3 Picks → AB + AC + BC (alle Paare!) @6-15, 0.5u
+TYPE 2 — 3-LEG Lottery: ABC @30-100, 0.25u  
+TYPE 3 — SUPER Lottery (4-Leg wenn 4+ starke Picks): @100-300, 0.10u
 
-TYPE 1 – 2-LEG KOMBIS (alle Paare!):
-Top-3 Picks → AB + AC + BC = 3 Kombis
-Target @8-25 | Stake: 0.5u
+Kombiniere gerne:
+- 2 stabile Props (Tier 2) = @3-5 solide Kombi
+- 1 stabil + 1 longshot = @8-15 gute Balance
+- 3 stabile = @5-8 hochwahrscheinlich
 
-TYPE 2 – 3-LEG LOTTERY:
-ABC aus Top-3 Picks
-Target @40-150 | Stake: 0.25u
+Alle Analysen auf DEUTSCH! Echte Daten: avg_last5, Barrel%, Defensive Rank, Matchup.
 
-TYPE 3 – SUPER LOTTERY (wenn 4+ starke Picks):
-ABCD = 4-Leg
-Target @200+ | Stake: 0.10u
-
-→ Wenn 7 HR alle stark: alle 21 Paare wären möglich, aber wähle die 3 BESTEN Paare + 1 Triple!
-→ Kein künstliches Limit bei Singles! Alle echten Value-Picks rein!
-
-Alle Analysen auf DEUTSCH! Echte Daten zitieren (Barrel%, Odds, avg letzte 5).
-Team: MLB="ATL Braves", NBA="NYK Knicks", NFL="KC Chiefs"
-
-Return ONLY valid JSON (kein Markdown):
+Return ONLY valid JSON:
 [
-{{"type":"single","emoji":"⚾","player":"Name","team":"ATL Braves","market":"Home Run","odds":5.5,"stake":0.25,"probability":0.22,"analysis":"Deutsch: Barrel% 14%, HR/9 1.8, Coors Field 110, 28°C Wind raus"}},
-{{"type":"single","emoji":"🏀","player":"Name","team":"NYK Knicks","market":"Points UNDER 35.5","odds":1.90,"stake":1.0,"probability":0.60,"analysis":"Deutsch: avg letzte 5 = 27.3, klar unter 35.5"}},
-{{"type":"single","emoji":"🏀","player":"Name","team":"SAS Spurs","market":"3PM Over 1.5","odds":2.49,"stake":0.5,"probability":0.62,"analysis":"Deutsch: avg 2.3 3PM/Spiel, 4/5 letzten Spiele getroffen"}},
-{{"type":"ladder","emoji":"🏀","player":"Name","team":"NYK","picks":[{{"market":"30+ Points","odds":2.50,"stake":0.75}},{{"market":"35+ Points","odds":5.00,"stake":0.25}}],"analysis":"Deutsch: 3/5 letzten Spiele über 35, Heimspiel NYC"}},
-{{"type":"betbuilder","legs":["Brunson 30+ Pts","Brunson 5+ Ast"],"game":"NYK vs SAS","odds":8.50,"stake":0.5,"analysis":"Deutsch: Same-Game Parlay"}},
-{{"type":"kombi2","legs":["ATL Name HR","PHI Name HR"],"odds":20.75,"stake":0.5}},
+{{"type":"single","tier":2,"emoji":"🏀","player":"Josh Hart","team":"NYK Knicks","market":"Rebounds+Assists Over 10.5","direction":"over","odds":1.83,"stake":1.0,"probability":0.72,"analysis":"Durchschnitt letzte 5: 12.3 Reb+Ast. Spurs Verteidigung anfällig gegen Physical Wings. Hart in 4/5 über der Linie."}},
+{{"type":"single","tier":2,"emoji":"🏀","player":"CJ McCollum","team":"POR Blazers","market":"Points UNDER 19.5","direction":"under","odds":1.83,"stake":1.0,"probability":0.68,"analysis":"Knicks sind #3 defensiv bei Points gegen SG. McCollum letzte 5: 14,18,12,16,15 — klar unter 19.5."}},
+{{"type":"single","tier":1,"emoji":"⚾","player":"Seiya Suzuki","team":"CHC Cubs","market":"Home Run","direction":"over","odds":4.50,"stake":0.25,"probability":0.22,"analysis":"Barrel% 14%, HR/9 Gegenpitcher 1.8, Wrigley Field 108, 26°C."}},
+{{"type":"ladder","emoji":"🏀","player":"Brunson","team":"NYK","picks":[{{"market":"30+ Points","odds":2.50,"stake":0.75}},{{"market":"35+ Points","odds":5.00,"stake":0.25}}],"analysis":"Heimspiel MSG, Playoff-Form"}},
+{{"type":"betbuilder","legs":["Hart Reb+Ast 10.5+","Bridges PRA 22.5+"],"game":"NYK vs SAS","odds":3.60,"stake":0.5,"analysis":"Same-Game: beide konsistent"}},
+{{"type":"kombi2","legs":["Hart Reb+Ast Over","McCollum Under","Suzuki HR"],"odds":13.50,"stake":0.5}},
 {{"type":"big","legs":["Suzuki HR","Goodman HR","Wood HR"],"odds":99.23,"stake":0.25}},
 {{"type":"super","legs":["L1","L2","L3","L4"],"odds":250.0,"stake":0.10}}
 ]"""
@@ -1197,22 +1197,67 @@ def build_post(picks):
     today = datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles = [p for p in picks if p.get("type")=="single"]
     kombis  = [p for p in picks if p.get("type")=="kombi2"]
-    bigs    = [p for p in picks if p.get("type")=="big"]
-    post = f"🎯 PROP HUNTER — {today}\n\n📋 VALUE SINGLES:\n\n"
-    for p in singles:
-        post += f"{p.get('emoji','⚾')} {p.get('team','')} — {p['player']}\n"
-        post += f"   └ {p['market']} @{p['odds']:.2f} → {p['stake']}u\n"
-        if p.get("analysis"): post += f"   💡 {p['analysis']}\n"
+    bigs    = [p for p in picks if p.get("type") in ("big","super")]
+    builders= [p for p in picks if p.get("type")=="betbuilder"]
+    ladders = [p for p in picks if p.get("type")=="ladder"]
+    
+    # Split singles by tier
+    tier2 = [p for p in singles if p.get("tier",1)==2]
+    tier1 = [p for p in singles if p.get("tier",1)!=2]
+    
+    post = f"🎯 PROP HUNTER — {today}\n\n"
+    
+    if tier2:
+        post += "🔵 STABILE PICKS (High Confidence):\n\n"
+        for p in tier2:
+            direct = p.get("direction","over")
+            market = p["market"]
+            if direct == "under" and "UNDER" not in market.upper() and "Under" not in market:
+                market = f"UNDER {market}"
+            post += f"🏀 {p.get('team','')} — {p['player']}\n"
+            post += f"   └ {market} @{p['odds']:.2f} → {p['stake']}u\n"
+            if p.get("analysis"): post += f"   💡 {p['analysis']}\n"
+            post += "\n"
+    
+    if tier1:
+        post += "🟡 VALUE PICKS:\n\n"
+        for p in tier1:
+            post += f"{p.get('emoji','⚾')} {p.get('team','')} — {p['player']}\n"
+            post += f"   └ {p['market']} @{p['odds']:.2f} → {p['stake']}u\n"
+            if p.get("analysis"): post += f"   💡 {p['analysis']}\n"
+            post += "\n"
+    
+    if not tier2 and not tier1:
+        post += "📋 VALUE PICKS:\n\n"
+        for p in singles:
+            post += f"{p.get('emoji','⚾')} {p.get('team','')} — {p['player']}\n"
+            post += f"   └ {p['market']} @{p['odds']:.2f} → {p['stake']}u\n"
+            if p.get("analysis"): post += f"   💡 {p['analysis']}\n"
+            post += "\n"
+    
+    if ladders:
+        post += "🪜 LADDER PICKS:\n"
+        for p in ladders:
+            for leg in p.get("picks",[]):
+                post += f"• {p['player']} {leg['market']} @{leg['odds']:.2f} → {leg['stake']}u\n"
         post += "\n"
+    
+    if builders:
+        post += "🎯 BET BUILDER (Same-Game):\n"
+        for p in builders:
+            post += f"• {' + '.join(p['legs'])} @{p['odds']:.2f} → {p['stake']}u\n"
+        post += "\n"
+    
     if kombis:
         post += "🔥 2-LEG KOMBIS:\n"
         for p in kombis:
             post += f"• {' + '.join(p['legs'])} @{p['odds']:.2f} → {p['stake']}u\n"
         post += "\n"
     if bigs:
-        post += "💣 BIG KOMBIS:\n"
+        post += "💣 LOTTERY BIGS:\n"
         for p in bigs:
-            post += f"• {' + '.join(p['legs'])} @{p['odds']:.2f} → {p['stake']}u\n"
+            emoji = "🚀" if p.get("type")=="super" else "•"
+            post += f"{emoji} {' + '.join(p['legs'])} @{p['odds']:.1f} → {p['stake']}u\n"
         post += "\n"
     post += "📊 ANALYSIERT. GEZIELT. GEWONNEN. 🎯\n@prophunter"
     return post
