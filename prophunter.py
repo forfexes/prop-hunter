@@ -112,7 +112,8 @@ class Pick(BaseModel):
     analysis:Optional[str]=None; legs:Optional[List[str]]=None
     picks:Optional[List[LadderLeg]]=None; game:Optional[str]=None
     ev:Optional[float]=None; edge_pct:Optional[float]=None
-    @field_validator("stake") @classmethod
+    @field_validator("stake")
+    @classmethod
     def cap(cls,v): return round(min(v,5.0),2)
 class HistoricalPick(BaseModel):
     date:str; player:str; team:str; market:str; sport:str; odds:float; stake:float
