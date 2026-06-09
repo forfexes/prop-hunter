@@ -726,5 +726,65 @@
       }
     ],
     "kombis": []
+  },
+  {
+    "date": "2026-06-09",
+    "evaluated": false,
+    "picks": [
+      {
+        "player": "Julio Rodriguez",
+        "team": "SEA Mariners",
+        "market": "Home Run",
+        "odds": 4.87,
+        "stake": 0.75,
+        "probability": 0.62,
+        "sport": "MLB",
+        "result": null
+      },
+      {
+        "player": "Pete Alonso",
+        "team": "BAL Orioles",
+        "market": "Home Run",
+        "odds": 4.39,
+        "stake": 0.75,
+        "probability": 0.65,
+        "sport": "MLB",
+        "result": null
+      },
+      {
+        "player": "Randy Arozarena",
+        "team": "SEA Mariners",
+        "market": "Stolen Base",
+        "odds": 6.72,
+        "stake": 0.25,
+        "probability": 0.25,
+        "sport": "MLB",
+        "result": null
+      }
+    ],
+    "kombis": [
+      {
+        "type": "kombi2",
+        "legs": [
+          "Julio Rodriguez Home Run",
+          "Pete Alonso Home Run",
+          "Randy Arozarena Stolen Base"
+        ],
+        "odds": 24.5,
+        "stake": 0.25,
+        "result": null
+      },
+      {
+        "type": "big",
+        "legs": [
+          "Randy Arozarena Stolen Base",
+          "Julio Rodriguez Home Run",
+          "Pete Alonso Home Run"
+        ],
+        "odds": 120.0,
+        "stake": 0.1,
+        "result": null
+      }
+    ]
   }
 ]
