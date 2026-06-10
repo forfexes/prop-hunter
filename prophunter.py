@@ -248,7 +248,14 @@ def stake_for(prob,odds,ai=None):
 # ─────────────────────────────────────────────
 try: from rapidfuzz import fuzz,process; RAPIDFUZZ=True
 except: RAPIDFUZZ=False
-try: from pybaseball import batting_stats as pb_bat,pitching_stats as pb_pit,statcast_batter,playerid_lookup; PYBASEBALL=True
+try:
+    import contextlib, io
+    from pybaseball import batting_stats as pb_bat,pitching_stats as pb_pit,statcast_batter,playerid_lookup
+    def _quiet_lookup(last,first,fuzzy=True):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return playerid_lookup(last,first,fuzzy=fuzzy)
+    PYBASEBALL=True
+except Exception: PYBASEBALL=False; _quiet_lookup=None
 except: PYBASEBALL=False
 try: import statsapi; MLB_STATS=True
 except: MLB_STATS=False
@@ -403,12 +410,45 @@ def fetch_weather(team):
 # MLB SOURCES
 # ─────────────────────────────────────────────
 _mlb_bat={}; _mlb_pit={}; _mlb_lu={}; _mlb_id_cache={}
-def fetch_mlb_batters():
-    if not PYBASEBALL: return {}
+def fetch_mlb_batters_savant():
+    """Fallback: Baseball Savant season stats (no FanGraphs needed)."""
     try:
-        df=pb_bat(YEAR_MLB,qual=1)
-        if df is None or len(df)==0: df=pb_bat(YEAR_MLB-1,qual=1)
-    except Exception as e: log.warning("pb_bat: %s",e); return {}
+        year = YEAR_MLB
+        url = f"https://baseballsavant.mlb.com/leaderboard/custom?year={year}&type=batter&filter=&min=10&selections=xba,xslg,xwoba,xobp,barrel_batted_rate,hard_hit_percent&csv=true"
+        r = requests.get(url, headers=HTTP_H, timeout=TIMEOUT*2)
+        if r.status_code != 200: return {}
+        import csv, io
+        reader = csv.DictReader(io.StringIO(r.text))
+        out = {}
+        for row in reader:
+            name = (row.get("last_name, first_name","") or "").lower()
+            # Convert "Smith, John" → "john smith"
+            if "," in name:
+                parts = [x.strip() for x in name.split(",")]
+                name = f"{parts[1]} {parts[0]}" if len(parts)>=2 else name
+            if not name: continue
+            def gf(k):
+                v = row.get(k,"")
+                try: return round(float(v),1) if v else None
+                except: return None
+            out[name] = {"barrel": gf("barrel_batted_rate"), "hardhit": gf("hard_hit_percent"),
+                         "xslg": gf("xslg"), "xwoba": gf("xwoba")}
+        log.info("MLB batters (Savant): %d", len(out))
+        return out
+    except Exception as e:
+        log.warning("savant batters: %s", e)
+        return {}
+
+def fetch_mlb_batters():
+    if not PYBASEBALL: return fetch_mlb_batters_savant()
+    try:
+        import contextlib, io as _io
+        with contextlib.redirect_stdout(_io.StringIO()):
+            df=pb_bat(YEAR_MLB,qual=1)
+        if df is None or len(df)==0:
+            with contextlib.redirect_stdout(_io.StringIO()):
+                df=pb_bat(YEAR_MLB-1,qual=1)
+    except Exception as e: log.warning("pb_bat: %s",e); return fetch_mlb_batters_savant()
     out={}
     for _,row in df.iterrows():
         n=str(row.get("Name","")).lower().strip()
@@ -426,8 +466,12 @@ def fetch_mlb_batters():
 def fetch_mlb_pitchers():
     if not PYBASEBALL: return {}
     try:
-        df=pb_pit(YEAR_MLB,qual=1)
-        if df is None or len(df)==0: df=pb_pit(YEAR_MLB-1,qual=1)
+        import contextlib, io as _io
+        with contextlib.redirect_stdout(_io.StringIO()):
+            df=pb_pit(YEAR_MLB,qual=1)
+        if df is None or len(df)==0:
+            with contextlib.redirect_stdout(_io.StringIO()):
+                df=pb_pit(YEAR_MLB-1,qual=1)
     except Exception as e: log.warning("pb_pit: %s",e); return {}
     out={}
     for _,row in df.iterrows():
@@ -469,7 +513,7 @@ def resolve_mlb_id(name):
     try:
         parts=name.split()
         if len(parts)<2: _mlb_id_cache[name]=None; return None
-        ids=playerid_lookup(parts[-1],parts[0],fuzzy=True)
+        ids=_quiet_lookup(parts[-1],parts[0],fuzzy=True)
         mid=int(ids.iloc[0]["key_mlbam"]) if ids is not None and len(ids) else None
         _mlb_id_cache[name]=mid; return mid
     except: _mlb_id_cache[name]=None; return None
@@ -493,7 +537,7 @@ def fetch_statcast(player,days=30):
     try:
         parts=player.split()
         if len(parts)<2: return None
-        ids=playerid_lookup(parts[-1],parts[0],fuzzy=True)
+        ids=_quiet_lookup(parts[-1],parts[0],fuzzy=True)
         if ids is None or len(ids)==0: return None
         mid=int(ids.iloc[0]["key_mlbam"])
         end=date.today(); start=end-timedelta(days=days)
@@ -688,7 +732,9 @@ def _get_sb():
 def sb_insert(row):
     sb=_get_sb()
     if not sb: return
-    try: sb.table("prop_picks").insert(row).execute()
+    # Only keep columns that exist in schema
+    safe = {k:v for k,v in row.items() if k not in ("closing_odds","clv_pct","features")}
+    try: sb.table("prop_picks").insert(safe).execute()
     except Exception as e: log.warning("sb insert: %s",e)
 
 
