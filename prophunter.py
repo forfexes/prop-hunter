@@ -71,6 +71,9 @@ def setup_logging(level=logging.INFO):
     _LOG_DONE = True
 setup_logging()
 log = logging.getLogger("prophunter")
+# Suppress noisy font warnings
+logging.getLogger("matplotlib").setLevel(logging.ERROR)
+logging.getLogger("PIL").setLevel(logging.ERROR)
 
 # ─────────────────────────────────────────────
 # SEASON DETECTION
@@ -411,32 +414,58 @@ def fetch_weather(team):
 # ─────────────────────────────────────────────
 _mlb_bat={}; _mlb_pit={}; _mlb_lu={}; _mlb_id_cache={}
 def fetch_mlb_batters_savant():
-    """Fallback: Baseball Savant season stats (no FanGraphs needed)."""
+    """Fallback: MLB Stats API season batting stats."""
+    if not MLB_STATS: return {}
     try:
-        year = YEAR_MLB
-        url = f"https://baseballsavant.mlb.com/leaderboard/custom?year={year}&type=batter&filter=&min=10&selections=xba,xslg,xwoba,xobp,barrel_batted_rate,hard_hit_percent&csv=true"
-        r = requests.get(url, headers=HTTP_H, timeout=TIMEOUT*2)
+        import statsapi
+        params = {"sportId":1,"season":YEAR_MLB,"gameType":"R",
+                  "stats":"season","group":"hitting","limit":500,
+                  "fields":"stats,splits,player,fullName,stat,homeRuns,avg,ops,slugging"}
+        r = requests.get("https://statsapi.mlb.com/api/v1/stats",
+            params=params, headers=HTTP_H, timeout=TIMEOUT)
         if r.status_code != 200: return {}
-        import csv, io
-        reader = csv.DictReader(io.StringIO(r.text))
         out = {}
-        for row in reader:
-            name = (row.get("last_name, first_name","") or "").lower()
-            # Convert "Smith, John" → "john smith"
-            if "," in name:
-                parts = [x.strip() for x in name.split(",")]
-                name = f"{parts[1]} {parts[0]}" if len(parts)>=2 else name
+        for split in r.json().get("stats",[{}])[0].get("splits",[]):
+            name = split.get("player",{}).get("fullName","").lower()
+            stat = split.get("stat",{})
             if not name: continue
-            def gf(k):
-                v = row.get(k,"")
-                try: return round(float(v),1) if v else None
-                except: return None
-            out[name] = {"barrel": gf("barrel_batted_rate"), "hardhit": gf("hard_hit_percent"),
-                         "xslg": gf("xslg"), "xwoba": gf("xwoba")}
-        log.info("MLB batters (Savant): %d", len(out))
+            out[name] = {
+                "hr":   int(stat.get("homeRuns",0) or 0),
+                "avg":  float(stat.get("avg",0) or 0),
+                "ops":  float(stat.get("ops",0) or 0),
+                "slg":  float(stat.get("slugging",0) or 0),
+            }
+        log.info("MLB batters (StatsAPI): %d", len(out))
         return out
     except Exception as e:
-        log.warning("savant batters: %s", e)
+        log.warning("statsapi batters: %s", e)
+        return {}
+
+def fetch_mlb_pitchers_statsapi():
+    """Fallback: MLB Stats API season pitching stats."""
+    if not MLB_STATS: return {}
+    try:
+        params = {"sportId":1,"season":YEAR_MLB,"gameType":"R",
+                  "stats":"season","group":"pitching","limit":300,
+                  "fields":"stats,splits,player,fullName,stat,era,strikeoutsPer9Inn,homeRunsPer9,whip"}
+        r = requests.get("https://statsapi.mlb.com/api/v1/stats",
+            params=params, headers=HTTP_H, timeout=TIMEOUT)
+        if r.status_code != 200: return {}
+        out = {}
+        for split in r.json().get("stats",[{}])[0].get("splits",[]):
+            name = split.get("player",{}).get("fullName","").lower()
+            stat = split.get("stat",{})
+            if not name: continue
+            out[name] = {
+                "era":  float(stat.get("era",0) or 0),
+                "k9":   float(stat.get("strikeoutsPer9Inn",0) or 0),
+                "hr9":  float(stat.get("homeRunsPer9",0) or 0),
+                "whip": float(stat.get("whip",0) or 0),
+            }
+        log.info("MLB pitchers (StatsAPI): %d", len(out))
+        return out
+    except Exception as e:
+        log.warning("statsapi pitchers: %s", e)
         return {}
 
 def fetch_mlb_batters():
@@ -464,7 +493,7 @@ def fetch_mlb_batters():
                 "hardhit":g("HardHit%","Hard%"),"xslg":g("xSLG"),"xwoba":g("xwOBA")}
     log.info("MLB batters: %d",len(out)); return out
 def fetch_mlb_pitchers():
-    if not PYBASEBALL: return {}
+    if not PYBASEBALL: return fetch_mlb_pitchers_statsapi()
     try:
         import contextlib, io as _io
         with contextlib.redirect_stdout(_io.StringIO()):
@@ -472,7 +501,7 @@ def fetch_mlb_pitchers():
         if df is None or len(df)==0:
             with contextlib.redirect_stdout(_io.StringIO()):
                 df=pb_pit(YEAR_MLB-1,qual=1)
-    except Exception as e: log.warning("pb_pit: %s",e); return {}
+    except Exception as e: log.warning("pb_pit: %s",e); return fetch_mlb_pitchers_statsapi()
     out={}
     for _,row in df.iterrows():
         n=str(row.get("Name","")).lower().strip()
