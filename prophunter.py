@@ -309,29 +309,63 @@ def save_cache(odds,earliest=None):
 # ODDS API
 # ─────────────────────────────────────────────
 _kid=0
+_dead_keys: set = set()
 def _key():
-    return ODDS_API_KEYS[_kid%len(ODDS_API_KEYS)] if ODDS_API_KEYS else ""
+    if not ODDS_API_KEYS: return ""
+    # Find first non-dead key
+    for i in range(len(ODDS_API_KEYS)):
+        idx = (_kid + i) % len(ODDS_API_KEYS)
+        if idx not in _dead_keys:
+            return ODDS_API_KEYS[idx]
+    return ""  # all dead
 def _next_key():
-    global _kid; _kid+=1
-    log.warning("Odds API → key %d/%d",(_kid%max(1,len(ODDS_API_KEYS)))+1,len(ODDS_API_KEYS))
+    global _kid
+    _dead_keys.add(_kid % len(ODDS_API_KEYS))
+    _kid+=1
+    remaining = len(ODDS_API_KEYS) - len(_dead_keys)
+    log.warning("Odds API → key %d/%d (%d dead)", (_kid%max(1,len(ODDS_API_KEYS)))+1, len(ODDS_API_KEYS), len(_dead_keys))
     return _key()
-def _req(url,params,retries=2):
+def _all_keys_dead():
+    return len(_dead_keys) >= len(ODDS_API_KEYS) if ODDS_API_KEYS else True
+def _req(url,params,retries=1):
+    if _all_keys_dead(): return None
     for i in range(retries+1):
+        k = _key()
+        if not k: return None
+        params["apiKey"] = k
         try: r=requests.get(url,params=params,headers=HTTP_H,timeout=TIMEOUT)
-        except requests.RequestException as e: log.warning("HTTP %d: %s",i+1,e); time.sleep(1); continue
+        except requests.RequestException as e: log.warning("HTTP: %s",e); time.sleep(1); continue
         if r.status_code==200:
-            log.debug("ok %s quota=%s",url.rsplit("/",1)[-1],r.headers.get("x-requests-remaining","?"))
+            rem = r.headers.get("x-requests-remaining","?")
+            log.debug("ok quota=%s", rem)
+            # Proactively switch if quota nearly exhausted
+            if rem != "?" and int(rem) == 0:
+                log.warning("Odds API key quota=0, marking dead")
+                _next_key()
             return r.json()
-        if r.status_code in (401,429,500,502,503) and ODDS_API_KEYS:
-            params["apiKey"]=_next_key(); time.sleep(0.5); continue
-        log.warning("Odds API %d",r.status_code); return None
+        if r.status_code in (401,422) and ODDS_API_KEYS:
+            log.warning("Odds API quota exhausted on key %d", (_kid%len(ODDS_API_KEYS))+1)
+            _next_key()
+            if _all_keys_dead(): log.error("ALL Odds API keys exhausted!"); return None
+            continue
+        if r.status_code in (429,500,502,503):
+            _next_key(); time.sleep(1); continue
+        log.warning("Odds API %d", r.status_code); return None
     return None
+_events_cache: dict = {}
 def fetch_events(sport):
     if not ODDS_API_KEYS: return []
+    # Check in-memory cache first (valid for 30min)
+    cached = _events_cache.get(sport)
+    if cached and time.time() - cached[0] < 1800:
+        log.debug("%s: %d events (cached)", sport, len(cached[1]))
+        return cached[1]
+    if _all_keys_dead(): return []
     now=datetime.now(timezone.utc); end=now+timedelta(hours=LOOKAHEAD_H)
     data=_req(f"{ODDS_BASE}/sports/{sport}/events",{"apiKey":_key(),"dateFormat":"iso",
         "commenceTimeFrom":now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "commenceTimeTo":end.strftime("%Y-%m-%dT%H:%M:%SZ")}) or []
+    _events_cache[sport] = (time.time(), data)
     log.info("%s: %d events",sport,len(data)); return data
 def fetch_props(sport,eid,mkeys):
     return _req(f"{ODDS_BASE}/sports/{sport}/events/{eid}/odds",
