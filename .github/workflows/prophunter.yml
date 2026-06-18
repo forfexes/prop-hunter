@@ -1,27 +1,30 @@
 name: Prop Hunter v3
-
 on:
   schedule:
     - cron: '0 15 * * *'
     - cron: '0 20 * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   run-prophunter:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install
         run: |
           pip install requests pydantic python-dateutil pybaseball MLB-StatsAPI nfl_data_py py_ball rapidfuzz playwright supabase
           playwright install chromium --with-deps
+
       - name: Run
         env:
           ODDS_API_KEY:        ${{ secrets.ODDS_API_KEY }}
@@ -33,10 +36,12 @@ jobs:
           SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:        ${{ secrets.SUPABASE_KEY }}
         run: python prophunter.py
-      - name: Save
+
+      - name: Save picks to repo
         run: |
           git config user.name "prophunter-bot"
           git config user.email "bot@prophunter.local"
+          git pull --rebase origin main || true
           git add picks_history.json odds_cache.json clv_history.json || true
-          git commit -m "picks $(date +%F-%H%M)" || echo "nothing to commit"
-          git push || echo "nothing to push"
+          git diff --staged --quiet || git commit -m "picks $(date +%F-%H%M)"
+          git push origin main
