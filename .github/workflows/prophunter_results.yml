@@ -11,11 +11,17 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install
         run: pip install requests pydantic python-dateutil MLB-StatsAPI supabase
+
       - name: Run Results
         env:
           TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -24,10 +30,12 @@ jobs:
           SUPABASE_KEY:        ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
         run: python prophunter_results.py
-      - name: Save
+
+      - name: Save results
         run: |
           git config user.name "prophunter-bot"
           git config user.email "bot@prophunter.local"
+          git pull --rebase origin main || true
           git add picks_history.json || true
-          git commit -m "results $(date +%F)" || echo "nothing to commit"
-          git push || echo "nothing to push"
+          git diff --staged --quiet || git commit -m "results $(date +%F)"
+          git push origin main
