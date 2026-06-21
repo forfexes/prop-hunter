@@ -12,8 +12,36 @@ _ESPN_MLB_DAY_CACHE = {}
 TG_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN","")
 TG_CHAT  = os.environ.get("TELEGRAM_CHAT_ID","")
 BDL_KEY  = os.environ.get("BALLDONTLIE_API_KEY","")
+SUPABASE_URL = os.environ.get("SUPABASE_URL","")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY","")
 HISTORY  = "picks_history.json"
 TIMEOUT  = 30
+
+def update_supabase_result(pick, result, profit):
+    """Writes win/loss + profit back to Supabase prop_picks table, matched by dedup_key+date."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return False
+    dedup_key = pick.get("dedup_key")
+    pick_date = pick.get("date")
+    if not dedup_key or not pick_date:
+        return False
+    try:
+        r = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/prop_picks",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+            params={"dedup_key": f"eq.{dedup_key}", "date": f"eq.{pick_date}"},
+            json={"result": result, "profit": profit},
+            timeout=TIMEOUT,
+        )
+        return r.status_code in (200, 204)
+    except Exception as e:
+        print(f"Supabase update error: {e}")
+        return False
 
 def send(text):
     if not TG_TOKEN or not TG_CHAT: print(text); return
@@ -265,6 +293,7 @@ def main():
         profit = round((odds-1)*stake if result=="win" else -stake, 2)
         p["result"] = result
         p["profit"] = profit
+        update_supabase_result(p, result, profit)
         results.append(("✅" if result=="win" else "❌", p, profit))
         time.sleep(0.3)
 
