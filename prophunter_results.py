@@ -3,6 +3,12 @@
 import json, os, requests, time, re
 from datetime import datetime, timedelta, timezone
 
+# ─── Day-level cache (1 API call covers all picks of that day) ───
+_NBA_DAY_CACHE = {}
+_MLB_DAY_CACHE = {}
+_ESPN_NBA_DAY_CACHE = {}
+_ESPN_MLB_DAY_CACHE = {}
+
 TG_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN","")
 TG_CHAT  = os.environ.get("TELEGRAM_CHAT_ID","")
 BDL_KEY  = os.environ.get("BALLDONTLIE_API_KEY","")
@@ -74,6 +80,111 @@ def mlb_stats_yesterday(player):
     except: pass
     return None
 
+# ─── ESPN Fallback ───
+def espn_nba_scoreboard(date_str):
+    """ESPN NBA scoreboard for a given date (YYYYMMDD), cached per day."""
+    if date_str in _ESPN_NBA_DAY_CACHE:
+        return _ESPN_NBA_DAY_CACHE[date_str]
+    games = []
+    try:
+        d = date_str.replace("-", "")
+        r = requests.get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+            params={"dates": d}, timeout=TIMEOUT)
+        if r.status_code == 200:
+            games = r.json().get("events", [])
+    except Exception:
+        pass
+    _ESPN_NBA_DAY_CACHE[date_str] = games
+    return games
+
+def espn_mlb_scoreboard(date_str):
+    """ESPN MLB scoreboard for a given date (YYYYMMDD), cached per day."""
+    if date_str in _ESPN_MLB_DAY_CACHE:
+        return _ESPN_MLB_DAY_CACHE[date_str]
+    games = []
+    try:
+        d = date_str.replace("-", "")
+        r = requests.get("https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
+            params={"dates": d}, timeout=TIMEOUT)
+        if r.status_code == 200:
+            games = r.json().get("events", [])
+    except Exception:
+        pass
+    _ESPN_MLB_DAY_CACHE[date_str] = games
+    return games
+
+def espn_nba_player_stats(player_name, date_str):
+    """Fallback: find NBA player boxscore stats via ESPN scoreboard summary."""
+    games = espn_nba_scoreboard(date_str)
+    pl = player_name.lower()
+    for ev in games:
+        try:
+            comp = ev.get("competitions", [{}])[0]
+            event_id = ev.get("id")
+            if not event_id:
+                continue
+            r = requests.get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary",
+                params={"event": event_id}, timeout=TIMEOUT)
+            if r.status_code != 200:
+                continue
+            box = r.json().get("boxscore", {})
+            for team in box.get("players", []):
+                for stat_group in team.get("statistics", []):
+                    labels = stat_group.get("labels", [])
+                    for athlete in stat_group.get("athletes", []):
+                        name = (athlete.get("athlete", {}) or {}).get("displayName", "")
+                        if pl not in name.lower():
+                            continue
+                        vals = athlete.get("stats", [])
+                        stat_map = dict(zip(labels, vals))
+                        def gi(k):
+                            try: return float(stat_map.get(k, 0) or 0)
+                            except: return 0.0
+                        return {
+                            "pts": gi("PTS"), "reb": gi("REB"), "ast": gi("AST"),
+                            "blk": gi("BLK"), "stl": gi("STL"), "fg3m": gi("3PM"),
+                        }
+        except Exception:
+            continue
+    return None
+
+def espn_mlb_player_stats(player_name, date_str):
+    """Fallback: find MLB player boxscore stats via ESPN scoreboard summary."""
+    games = espn_mlb_scoreboard(date_str)
+    pl = player_name.lower()
+    for ev in games:
+        try:
+            event_id = ev.get("id")
+            if not event_id:
+                continue
+            r = requests.get("https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary",
+                params={"event": event_id}, timeout=TIMEOUT)
+            if r.status_code != 200:
+                continue
+            box = r.json().get("boxscore", {})
+            for team in box.get("players", []):
+                for stat_group in team.get("statistics", []):
+                    labels = stat_group.get("labels", [])
+                    for athlete in stat_group.get("athletes", []):
+                        name = (athlete.get("athlete", {}) or {}).get("displayName", "")
+                        if pl not in name.lower():
+                            continue
+                        vals = athlete.get("stats", [])
+                        stat_map = dict(zip(labels, vals))
+                        def gi(k):
+                            try: return int(float(stat_map.get(k, 0) or 0))
+                            except: return 0
+                        return {
+                            "hits": gi("H"), "hr": gi("HR"), "tb": gi("TB"),
+                            "rbi": gi("RBI"), "sb": gi("SB"),
+                            "k": gi("K"), "outs": gi("IP") * 3 if "IP" in stat_map else 0,
+                            "er": gi("ER"),
+                        }
+        except Exception:
+            continue
+    return None
+
+
 # ─── Grade single pick ───
 def grade(pick):
     market = (pick.get("market") or "").lower()
@@ -104,6 +215,9 @@ def grade(pick):
         else: return None
     elif sport == "MLB":
         stats = mlb_stats_yesterday(player)
+        if not stats:
+            yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y%m%d")
+            stats = espn_mlb_player_stats(player, yesterday)
         if not stats: return None
         if "home run" in market or "hr" in market: val = stats["hr"]; line = line or 0.5
         elif "hits" in market: val = stats["hits"]
