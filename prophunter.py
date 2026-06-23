@@ -1083,6 +1083,22 @@ def gather(sport_filter=None):
                         if ns: extras+=[f"{k}:{v}" for k,v in list(ns.items())[:4]]
                     if wxd: extras.append(f"WX:{wxd}")
                     if total: extras.append(f"O/U{total}")
+                    # Player ML: historische Hit-Rate einrechnen
+                    try:
+                        import re as _re2
+                        _line_m = _re2.search(r"(\d+\.?\d*)", p.market or "")
+                        if _line_m:
+                            _ml = player_ml_probability(
+                                p.player, p.sport or m.sport, p.market or "", 
+                                float(_line_m.group(1)),
+                                direction=p.direction or "over"
+                            )
+                            if _ml is not None:
+                                extras.append(f"ML:{round(_ml*100,0):.0f}%")
+                                if p.probability:
+                                    p.probability = int(0.4*_ml*100 + 0.6*p.probability)
+                    except Exception:
+                        pass
                     if extras: p.enrichment=" | ".join(extras)
                     p.event_id=ev["id"]; p.sport_key=sk
                     all_props.append(p)
@@ -1123,10 +1139,13 @@ def analyse(props):
         m=next((p for p in props if p.player==pk.player and (pk.market or "").lower() in (p.market or "").lower()),None)
         if m:
             fair=m.features.get("fair_prob")
-            if fair:
-                pk.edge_pct=round(edge_pct(fair,pk.odds)*100,2)
-                pk.ev=round(ev(fair,pk.odds),3)
-                pk.stake=stake_for(fair,pk.odds,pk.stake)
+            base_prob = fair if fair else pk.probability
+            sport_label = m.sport
+            blended_prob = blend_with_ml(pk, base_prob, sport_label)
+            if blended_prob:
+                pk.edge_pct=round(edge_pct(blended_prob,pk.odds)*100,2)
+                pk.ev=round(ev(blended_prob,pk.odds),3)
+                pk.stake=stake_for(blended_prob,pk.odds,pk.stake)
             elif pk.probability:
                 pk.stake=stake_for(pk.probability,pk.odds,pk.stake)
     return picks
@@ -1149,6 +1168,154 @@ def filter_picks(picks):
         out.append(p)
     log.info("dedup: %d → %d",before,len(out))
     return out
+
+
+# ─────────────────────────────────────────────
+# ML MODEL — Win Probability Calibration
+# ─────────────────────────────────────────────
+ML_MIN_SAMPLES = 60         # min settled picks before ML kicks in
+ML_MODEL_FILE  = "ml_model.pkl"
+ML_BLEND_WEIGHT = 0.4       # 40% ML, 60% LLM/Kelly when blending
+
+try:
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import TimeSeriesSplit
+    from sklearn.metrics import roc_auc_score, brier_score_loss
+    import pickle
+    SKLEARN_OK = True
+except Exception:
+    SKLEARN_OK = False
+
+ML_FEATURE_NAMES = [
+    "odds", "stake", "tier", "is_under", "is_mlb", "is_nba", "is_wnba",
+    "weekday", "hour", "edge_pct",
+]
+
+def _pick_features(p: dict):
+    """Extract numeric feature vector from a historical pick dict."""
+    try:
+        odds = float(p.get("odds", 2.0) or 2.0)
+        stake = float(p.get("stake", 0.5) or 0.5)
+        tier = 2 if "stabil" in str(p.get("tier","")).lower() else 1
+        direction = (p.get("direction") or "over").lower()
+        is_under = 1.0 if direction == "under" else 0.0
+        sport = (p.get("sport") or "").upper()
+        is_mlb = 1.0 if sport == "MLB" else 0.0
+        is_nba = 1.0 if "NBA" in sport else 0.0
+        is_wnba = 1.0 if "WNBA" in sport else 0.0
+        created = p.get("created_at") or p.get("date") or ""
+        weekday = hour = 0
+        try:
+            dt = datetime.fromisoformat(str(created).replace("Z","+00:00")) if "T" in str(created) else datetime.strptime(created,"%Y-%m-%d")
+            weekday = dt.weekday(); hour = getattr(dt,"hour",17)
+        except Exception:
+            pass
+        edge = float(p.get("edge_pct", 0) or 0)
+        return [odds, stake, tier, is_under, is_mlb, is_nba, is_wnba, weekday, hour, edge]
+    except Exception:
+        return None
+
+def build_ml_dataset():
+    """Builds (X, y) from picks_history.json — only settled picks (win/loss)."""
+    X, y = [], []
+    for entry in load_history():
+        for p in entry.get("picks", []):
+            res = p.get("result")
+            if res not in ("win","loss"): continue
+            feats = _pick_features(p)
+            if feats is None: continue
+            X.append(feats); y.append(1 if res=="win" else 0)
+    return X, y
+
+def train_ml_model():
+    """Trains a logistic regression on historical picks. Requires ML_MIN_SAMPLES settled picks."""
+    if not SKLEARN_OK:
+        log.warning("sklearn nicht installiert — ML übersprungen")
+        return None
+    X, y = build_ml_dataset()
+    n = len(y)
+    if n < ML_MIN_SAMPLES:
+        log.info("ML: nur %d/%d Picks — noch zu wenig Daten, training übersprungen", n, ML_MIN_SAMPLES)
+        return None
+    if len(set(y)) < 2:
+        log.info("ML: nur eine Klasse vorhanden (alle win oder alle loss) — kein Training möglich")
+        return None
+
+    import numpy as np
+    X = np.array(X); y = np.array(y)
+    scaler = StandardScaler()
+    Xs = scaler.fit_transform(X)
+
+    # Walk-forward validation (TimeSeriesSplit) statt random split — picks sind zeitlich geordnet
+    n_splits = min(5, max(2, n // 20))
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    aucs, briers = [], []
+    for train_idx, test_idx in tscv.split(Xs):
+        if len(set(y[train_idx])) < 2: continue
+        m = LogisticRegression(max_iter=500, C=0.5)
+        m.fit(Xs[train_idx], y[train_idx])
+        proba = m.predict_proba(Xs[test_idx])[:,1]
+        try:
+            aucs.append(roc_auc_score(y[test_idx], proba))
+            briers.append(brier_score_loss(y[test_idx], proba))
+        except Exception:
+            pass
+
+    # Final model trained on all data
+    model = LogisticRegression(max_iter=500, C=0.5)
+    model.fit(Xs, y)
+
+    avg_auc = sum(aucs)/len(aucs) if aucs else 0.5
+    avg_brier = sum(briers)/len(briers) if briers else 0.25
+    log.info("ML trainiert: n=%d | walk-forward AUC=%.3f | Brier=%.3f", n, avg_auc, avg_brier)
+
+    payload = {"model": model, "scaler": scaler, "n_samples": n, "auc": avg_auc, "trained_at": datetime.now(timezone.utc).isoformat()}
+    try:
+        with open(ML_MODEL_FILE, "wb") as f: pickle.dump(payload, f)
+    except Exception as e:
+        log.warning("ML model save failed: %s", e)
+    return payload
+
+def load_ml_model():
+    if not SKLEARN_OK or not os.path.exists(ML_MODEL_FILE):
+        return None
+    try:
+        import pickle
+        with open(ML_MODEL_FILE, "rb") as f:
+            return pickle.load(f)
+    except Exception:
+        return None
+
+def ml_predict_proba(pick: Pick, sport_label: str) -> float | None:
+    """Returns ML win-probability for a Pick, or None if no model / not enough data."""
+    payload = load_ml_model()
+    if not payload: return None
+    if payload.get("auc", 0) < 0.52:
+        return None  # model not better than coinflip — don't trust it
+    feats = _pick_features({
+        "odds": pick.odds, "stake": pick.stake, "tier": "stabil" if (pick.tier or 1)==2 else "value",
+        "direction": pick.direction, "sport": sport_label,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "edge_pct": pick.edge_pct or 0,
+    })
+    if feats is None: return None
+    try:
+        import numpy as np
+        Xs = payload["scaler"].transform(np.array([feats]))
+        return float(payload["model"].predict_proba(Xs)[0][1])
+    except Exception:
+        return None
+
+def blend_with_ml(pick: Pick, llm_prob: float | None, sport_label: str) -> float | None:
+    """Blends LLM/fair probability with ML model probability if available."""
+    ml_prob = ml_predict_proba(pick, sport_label)
+    if ml_prob is None or llm_prob is None:
+        return llm_prob
+    blended = ML_BLEND_WEIGHT * ml_prob + (1 - ML_BLEND_WEIGHT) * llm_prob
+    log.debug("ML blend: llm=%.2f ml=%.2f -> %.2f", llm_prob, ml_prob, blended)
+    return blended
+
 
 # ─────────────────────────────────────────────
 # MAIN PIPELINE
@@ -1174,6 +1341,209 @@ if __name__=="__main__":
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
+    parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
     args=parser.parse_args()
+    if args.train_ml:
+        if args.verbose: setup_logging(logging.DEBUG)
+        result = train_ml_model()
+        if result:
+            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
+        else:
+            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
+        raise SystemExit(0)
     if args.verbose: setup_logging(logging.DEBUG)
     run(dry_run=args.dry_run,sport_filter=args.sport)
+
+
+# ─────────────────────────────────────────────
+# PLAYER PERFORMANCE MODEL (historische Daten)
+# ─────────────────────────────────────────────
+
+_PLAYER_STATS_CACHE = {}
+
+def fetch_nba_player_gamelogs(player_name: str, num_games: int = 30) -> list:
+    """Holt historische NBA Game Logs via balldontlie."""
+    cache_key = f"nba_gl_{player_name}"
+    if cache_key in _PLAYER_STATS_CACHE:
+        return _PLAYER_STATS_CACHE[cache_key]
+    h = {"Accept": "application/json"}
+    if BDL_KEY: h["Authorization"] = BDL_KEY
+    try:
+        r = requests.get("https://api.balldontlie.io/v1/players",
+            params={"search": player_name, "per_page": 5}, headers=h, timeout=20)
+        if r.status_code != 200: return []
+        players = r.json().get("data", [])
+        if not players: return []
+        pid = players[0]["id"]
+        r2 = requests.get("https://api.balldontlie.io/v1/stats",
+            params={"player_ids[]": pid, "per_page": num_games, "seasons[]": [2024, 2025]},
+            headers=h, timeout=20)
+        if r2.status_code != 200: return []
+        games = r2.json().get("data", [])
+        result = []
+        for g in games:
+            try:
+                result.append({
+                    "date": g.get("game", {}).get("date", "")[:10],
+                    "pts": float(g.get("pts") or 0),
+                    "reb": float(g.get("reb") or 0),
+                    "ast": float(g.get("ast") or 0),
+                    "blk": float(g.get("blk") or 0),
+                    "stl": float(g.get("stl") or 0),
+                    "fg3m": float(g.get("fg3m") or 0),
+                    "min": float(str(g.get("min") or "0").split(":")[0]),
+                    "opponent": g.get("game", {}).get("visitor_team_id", ""),
+                    "is_home": g.get("game", {}).get("home_team_id") == g.get("team", {}).get("id"),
+                    "team": g.get("team", {}).get("abbreviation", ""),
+                })
+            except Exception:
+                continue
+        _PLAYER_STATS_CACHE[cache_key] = result
+        return result
+    except Exception as e:
+        log.warning("NBA gamelogs error: %s", e)
+        return []
+
+
+def fetch_mlb_player_gamelogs(player_name: str, num_games: int = 30) -> list:
+    """Holt historische MLB Game Logs via MLB StatsAPI."""
+    cache_key = f"mlb_gl_{player_name}"
+    if cache_key in _PLAYER_STATS_CACHE:
+        return _PLAYER_STATS_CACHE[cache_key]
+    try:
+        import statsapi
+        # Spieler ID suchen
+        search = statsapi.lookup_player(player_name)
+        if not search: return []
+        pid = search[0]["id"]
+        # Game Logs der aktuellen Saison
+        logs = statsapi.player_stat_data(pid, group="hitting", type="gameLog")
+        result = []
+        for g in (logs.get("stats", [{}])[0].get("splits", []))[:num_games]:
+            try:
+                s = g.get("stat", {})
+                result.append({
+                    "date": g.get("date", "")[:10],
+                    "hits": int(s.get("hits", 0) or 0),
+                    "hr": int(s.get("homeRuns", 0) or 0),
+                    "tb": int(s.get("totalBases", 0) or 0),
+                    "rbi": int(s.get("rbi", 0) or 0),
+                    "sb": int(s.get("stolenBases", 0) or 0),
+                    "opponent": g.get("opponent", {}).get("name", ""),
+                    "is_home": g.get("isHome", False),
+                    "team": g.get("team", {}).get("abbreviation", ""),
+                })
+            except Exception:
+                continue
+        _PLAYER_STATS_CACHE[cache_key] = result
+        return result
+    except Exception as e:
+        log.warning("MLB gamelogs error: %s", e)
+        return []
+
+
+def save_gamelogs_to_supabase(player: str, sport: str, games: list):
+    """Speichert Game Logs in Supabase player_stats Tabelle."""
+    sb = _get_sb()
+    if not sb or not games: return
+    rows = []
+    for g in games:
+        row = {"player": player, "sport": sport,
+               "game_date": g.get("date"), "season": 2025}
+        row.update({k: v for k, v in g.items() if k not in ("date",)})
+        rows.append(row)
+    try:
+        sb.table("player_stats").upsert(rows, on_conflict="player,sport,game_date").execute()
+        log.info("Supabase: %d game logs gespeichert für %s", len(rows), player)
+    except Exception as e:
+        log.warning("Supabase player_stats error: %s", e)
+
+
+def compute_player_features(games: list, line: float, stat_key: str) -> dict | None:
+    """Berechnet ML-Features aus historischen Game Logs."""
+    if len(games) < 5: return None
+    vals = [float(g.get(stat_key, 0) or 0) for g in games]
+    l5  = vals[:5];  l10 = vals[:10]; l20 = vals[:20]
+    hit_rate_l5  = sum(1 for v in l5  if v > line) / len(l5)
+    hit_rate_l10 = sum(1 for v in l10 if v > line) / len(l10) if l10 else 0
+    hit_rate_l20 = sum(1 for v in l20 if v > line) / len(l20) if l20 else 0
+    avg_l5  = sum(l5)  / len(l5)
+    avg_l10 = sum(l10) / len(l10) if l10 else avg_l5
+    streak = 0
+    for v in l5:
+        if v > line: streak += 1
+        else: break
+    home_games = [g for g in games if g.get("is_home")]
+    home_hit_rate = sum(1 for g in home_games if float(g.get(stat_key,0) or 0) > line) / len(home_games) if home_games else hit_rate_l10
+    return {
+        "hit_rate_l5": hit_rate_l5, "hit_rate_l10": hit_rate_l10,
+        "hit_rate_l20": hit_rate_l20, "avg_l5": avg_l5, "avg_l10": avg_l10,
+        "streak": streak, "home_hit_rate": home_hit_rate,
+        "line_vs_avg": avg_l10 - line,
+    }
+
+
+def player_ml_probability(player: str, sport: str, market: str,
+                           line: float, direction: str = "over") -> float | None:
+    """
+    Hauptfunktion: berechnet ML-Wahrscheinlichkeit für einen Player Prop.
+    Gibt None zurück wenn zu wenig Daten.
+    """
+    # Stat Key aus Markt ableiten
+    STAT_MAP = {
+        "hits": "hits", "home run": "hr", "total bases": "tb",
+        "rbi": "rbi", "stolen base": "sb",
+        "points": "pts", "rebounds": "reb", "assists": "ast",
+        "pra": "pts", "3pm": "fg3m", "blocks": "blk", "steals": "stl",
+        "rebounds+assists": "reb",
+    }
+    stat_key = None
+    market_lower = market.lower()
+    for k, v in STAT_MAP.items():
+        if k in market_lower:
+            stat_key = v
+            break
+    if not stat_key: return None
+
+    # Game Logs laden
+    if sport in ("NBA", "WNBA"):
+        games = fetch_nba_player_gamelogs(player)
+    elif sport == "MLB":
+        games = fetch_mlb_player_gamelogs(player)
+    else:
+        return None
+
+    if len(games) < 5: return None
+
+    # Features berechnen
+    feats = compute_player_features(games, line, stat_key)
+    if not feats: return None
+
+    # Einfaches gewichtetes Modell (kein Training nötig — direkte Heuristik)
+    # Gewichtung: L5 Hit Rate 40%, L10 Hit Rate 35%, L20 Hit Rate 15%, Streak 10%
+    prob = (0.40 * feats["hit_rate_l5"] +
+            0.35 * feats["hit_rate_l10"] +
+            0.15 * feats["hit_rate_l20"] +
+            0.10 * min(feats["streak"] / 5, 1.0))
+
+    # Bonus/Malus für Linie vs Durchschnitt
+    if feats["line_vs_avg"] > 3: prob -= 0.05   # Linie viel über Schnitt → Malus
+    if feats["line_vs_avg"] < -3: prob += 0.05  # Linie weit unter Schnitt → Bonus
+
+    if direction == "under":
+        prob = 1 - prob
+
+    # In Supabase speichern für Tracking
+    sb = _get_sb()
+    if sb:
+        try:
+            sb.table("ml_predictions").insert({
+                "player": player, "sport": sport, "market": market,
+                "line": line, "direction": direction,
+                "ml_prob": round(prob, 3),
+            }).execute()
+        except Exception:
+            pass
+
+    log.info("Player ML [%s %s %s @%.1f]: %.1f%%", sport, player, market, line, prob*100)
+    return round(prob, 3)
