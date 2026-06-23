@@ -1029,7 +1029,14 @@ def build_post(picks):
     def fmt(p):
         m=p.market or ""
         if p.direction=="under" and "under" not in m.lower(): m=f"UNDER {m}"
-        line=f"{p.emoji or '🎯'} {p.team or ''} — {p.player}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
+        # Linie anzeigen wenn vorhanden und nicht bereits im market-Namen enthalten
+        point_str=""
+        if p.point is not None and str(p.point) not in m and f"{p.point:g}" not in m:
+            dir_word="Under" if p.direction=="under" else "Over"
+            point_str=f" {dir_word} {p.point:g}"
+        elif p.point is None and p.direction and "over" not in m.lower() and "under" not in m.lower():
+            point_str=""
+        line=f"{p.emoji or '🎯'} {p.team or ''} — {p.player}\n   └ {m}{point_str} @{p.odds:.2f} → {p.stake}u"
         if p.edge_pct is not None: line+=f"  (edge {p.edge_pct:+.1f}%)"
         if p.analysis: line+=f"\n   💡 {p.analysis}"
         return line
