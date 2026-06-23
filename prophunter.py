@@ -1416,16 +1416,64 @@ if __name__=="__main__":
 
 
 # ─────────────────────────────────────────────
+# NHL API (aktiv ab Oktober)
+# ─────────────────────────────────────────────
+NHL_BASE = "https://api-web.nhle.com/v1"
+
+def fetch_nhl_player_gamelogs(player_name: str, num_games: int = 20) -> list:
+    """Holt NHL Game Logs via offizielle NHL API (kein Key nötig!)."""
+    cache_key = f"nhl_{player_name}"
+    if cache_key in _PLAYER_STATS_CACHE:
+        return _PLAYER_STATS_CACHE[cache_key]
+    try:
+        # Spieler suchen
+        r = requests.get(f"{NHL_BASE}/player/search?q={player_name.replace(' ','+')}&limit=5",
+            headers=HTTP_H, timeout=TIMEOUT)
+        if r.status_code != 200: return []
+        players = r.json().get("searchResults", {}).get("playerSearchResults", [])
+        if not players: return []
+        pid = players[0].get("playerId")
+        if not pid: return []
+        # Game Log der aktuellen Saison
+        r2 = requests.get(f"{NHL_BASE}/player/{pid}/game-log/20242025/2",
+            headers=HTTP_H, timeout=TIMEOUT)
+        if r2.status_code != 200: return []
+        games = r2.json().get("gameLog", [])[:num_games]
+        result = []
+        for g in games:
+            result.append({
+                "date": str(g.get("gameDate",""))[:10],
+                "goals": int(g.get("goals",0) or 0),
+                "assists": int(g.get("assists",0) or 0),
+                "points": int(g.get("points",0) or 0),
+                "shots": int(g.get("shots",0) or 0),
+                "toi": str(g.get("toi","0:00")),
+                "is_home": g.get("homeRoadFlag","H") == "H",
+                "opponent": str(g.get("opponentAbbrev","")),
+            })
+        _PLAYER_STATS_CACHE[cache_key] = result
+        log.info("NHL API: %d game logs für %s", len(result), player_name)
+        return result
+    except Exception as e:
+        log.warning("NHL gamelogs: %s", e)
+        return []
+
+# ─────────────────────────────────────────────
 # PLAYER PERFORMANCE MODEL (historische Daten)
 # ─────────────────────────────────────────────
 
 _PLAYER_STATS_CACHE = {}
 
 def fetch_nba_player_gamelogs(player_name: str, num_games: int = 30) -> list:
-    """Holt historische NBA Game Logs via balldontlie."""
+    """Holt historische NBA Game Logs — nba_api zuerst, balldontlie als Fallback."""
     cache_key = f"nba_gl_{player_name}"
     if cache_key in _PLAYER_STATS_CACHE:
         return _PLAYER_STATS_CACHE[cache_key]
+    # Primär: nba_api (offizielle NBA.com Daten)
+    result = fetch_nba_api_gamelogs(player_name)
+    if result:
+        _PLAYER_STATS_CACHE[cache_key] = result[:num_games]
+        return result[:num_games]
     h = {"Accept": "application/json"}
     if BDL_KEY: h["Authorization"] = BDL_KEY
     try:
@@ -1464,6 +1512,52 @@ def fetch_nba_player_gamelogs(player_name: str, num_games: int = 30) -> list:
         log.warning("NBA gamelogs error: %s", e)
         return []
 
+
+
+def fetch_nhl_player_stats(player_name: str, last_n: int = 20) -> list:
+    """Holt NHL Game Logs via offizieller NHL API (kein Key nötig!)."""
+    cache_key = f"nhl_gl_{player_name}"
+    if cache_key in _PLAYER_STATS_CACHE:
+        return _PLAYER_STATS_CACHE[cache_key]
+    try:
+        # Spieler suchen
+        r = requests.get(
+            "https://search.d3.nhle.com/api/v1/search",
+            params={"q": player_name, "type": "player", "culture": "en-us", "limit": 5},
+            headers=HTTP_H, timeout=10)
+        if r.status_code != 200: return []
+        results = r.json()
+        if not results: return []
+        pid = results[0].get("playerId")
+        if not pid: return []
+        # Game Log
+        r2 = requests.get(
+            f"https://api-web.nhle.com/v1/player/{pid}/game-log/now",
+            headers=HTTP_H, timeout=10)
+        if r2.status_code != 200: return []
+        games = r2.json().get("gameLog", [])[:last_n]
+        result = []
+        for g in games:
+            result.append({
+                "date": g.get("gameDate","")[:10],
+                "goals": int(g.get("goals",0) or 0),
+                "assists": int(g.get("assists",0) or 0),
+                "points": int(g.get("points",0) or 0),
+                "shots": int(g.get("shots",0) or 0),
+                "ppp": int(g.get("powerPlayPoints",0) or 0),
+                "toi": g.get("toi","0:00"),
+                "is_home": g.get("homeRoadFlag","H") == "H",
+                "team": g.get("teamAbbrev",""),
+                "opponent": g.get("opponentAbbrev",""),
+            })
+        _PLAYER_STATS_CACHE[cache_key] = result
+        return result
+    except Exception as e:
+        log.warning("NHL stats error: %s", e)
+        return []
+
+def fetch_nhl_player_gamelogs(player_name: str, num_games: int = 20) -> list:
+    return fetch_nhl_player_stats(player_name, num_games)
 
 def fetch_mlb_player_gamelogs(player_name: str, num_games: int = 30) -> list:
     """Holt historische MLB Game Logs via MLB StatsAPI."""
@@ -1558,11 +1652,17 @@ def player_ml_probability(player: str, sport: str, market: str,
     """
     # Stat Key aus Markt ableiten
     STAT_MAP = {
+        # MLB
         "hits": "hits", "home run": "hr", "total bases": "tb",
-        "rbi": "rbi", "stolen base": "sb",
+        "rbi": "rbi", "stolen base": "sb", "strikeout": "k_pitcher",
+        # NBA/WNBA
         "points": "pts", "rebounds": "reb", "assists": "ast",
         "pra": "pts", "3pm": "fg3m", "blocks": "blk", "steals": "stl",
         "rebounds+assists": "reb",
+        # NHL
+        "shots on goal": "shots", "goals": "goals",
+        "power play": "ppp", "nhl assists": "assists",
+        "nhl points": "points",
     }
     stat_key = None
     market_lower = market.lower()
@@ -1574,7 +1674,8 @@ def player_ml_probability(player: str, sport: str, market: str,
 
     # Game Logs laden
     if sport in ("NBA", "WNBA"):
-        games = fetch_nba_player_gamelogs(player)
+        # nba_api zuerst (direkter NBA.com), dann balldontlie als Fallback
+        games = fetch_nba_api_gamelogs(player) or fetch_nba_player_gamelogs(player)
     elif sport == "MLB":
         games = fetch_mlb_player_gamelogs(player)
     else:
