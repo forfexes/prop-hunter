@@ -453,6 +453,53 @@ def fetch_weather(team):
 # MLB SOURCES
 # ─────────────────────────────────────────────
 _mlb_bat={}; _mlb_pit={}; _mlb_lu={}; _mlb_id_cache={}
+def fetch_team_strikeout_rates() -> dict:
+    """Holt Strikeout-Raten pro Team (wie anfällig für Ks) via MLB StatsAPI."""
+    cache_key = "team_k_rates"
+    if cache_key in _PLAYER_STATS_CACHE:
+        return _PLAYER_STATS_CACHE[cache_key]
+    try:
+        r = requests.get(
+            "https://statsapi.mlb.com/api/v1/stats",
+            params={"sportId":1,"season":YEAR_MLB,"gameType":"R",
+                    "stats":"season","group":"hitting","limit":30,
+                    "fields":"stats,splits,team,name,stat,strikeOuts,plateAppearances"},
+            headers=HTTP_H, timeout=TIMEOUT)
+        if r.status_code != 200: return {}
+        out = {}
+        for split in r.json().get("stats",[{}])[0].get("splits",[]):
+            name = split.get("team",{}).get("name","").lower()
+            stat = split.get("stat",{})
+            so = int(stat.get("strikeOuts",0) or 0)
+            pa = int(stat.get("plateAppearances",1) or 1)
+            out[name] = round(so/pa*100, 1) if pa>0 else 20.0
+        _PLAYER_STATS_CACHE[cache_key] = out
+        log.info("Team K-Rates: %d Teams", len(out))
+        return out
+    except Exception as e:
+        log.warning("team K-rates: %s", e)
+        return {}
+
+def get_pitcher_strikeout_context(pitcher: str, opponent_team: str) -> dict:
+    """Kombiniert Pitcher K/9 + Gegner K-Rate für Strikeout-Wahrscheinlichkeit."""
+    pitchers = fetch_mlb_pitchers()
+    k_rates = fetch_team_strikeout_rates()
+    pn = pitcher.lower()
+    pit_stats = next((v for k,v in pitchers.items() if pn in k or k in pn), {})
+    opp_k_rate = k_rates.get(opponent_team.lower(), 20.0)
+    k9 = float(pit_stats.get("k9", 8.0) or 8.0)
+    # Erwartete Ks = (K/9 * opp_k_rate_adj) / 9 Innings
+    league_avg_k_rate = 22.5
+    opp_adj = opp_k_rate / league_avg_k_rate
+    expected_ks = round(k9 * opp_adj, 1)
+    return {
+        "k9": k9,
+        "opp_k_rate": opp_k_rate,
+        "expected_ks": expected_ks,
+        "is_strikeout_pitcher": k9 >= 9.0,
+        "opp_k_vulnerable": opp_k_rate >= 24.0,
+    }
+
 def fetch_mlb_batters_savant():
     """Fallback: MLB Stats API season batting stats."""
     if not MLB_STATS: return {}
@@ -864,7 +911,20 @@ DATENINTERPRETATION:
 TIER 2 (stabil @1.65-1.95): Rebounds+Ast, PRA, 3PM, Assists
 WNBA BESONDERS WICHTIG: Wenn WNBA Spiele vorhanden → MINDESTENS 2 WNBA Picks!
 WNBA Stars: Caitlin Clark, A'ja Wilson, Breanna Stewart, Sabrina Ionescu, Angel Reese
-WNBA Märkte: Points, Rebounds+Assists, PRA, 3PM — alle @1.75-1.95
+WNBA Märkte: Points, Rebounds+Assists, PRA, 3PM, Steals, Blocks — alle @1.75-1.95
+
+MLB PITCHER STRIKEOUTS (sehr profitabler Markt!):
+→ K/9 des Pitchers × Gegner K-Rate = erwartete Strikeouts
+→ Über 5.5 Ks: wenn K/9 ≥ 9.0 UND Gegner K-Rate ≥ 23%
+→ Über 6.5 Ks: nur bei Elite-Pitcher (Strider, Cole, Wheeler) gegen K-anfällige Lineups
+→ NIEMALS Pitcher K wenn < 4 innings erwartet (Bullpen-Risk!)
+
+MLB ANALYSE-FRAMEWORK (aus dem Dokument):
+→ Pitcher vs Gegner-Lineup: Kontakt-Hitter = weniger Ks, Power-Hitter = mehr Ks
+→ Heim/Auswärts Split: viele Spieler haben 15-20% bessere Heim-Stats
+→ Gegner-Defensive Rating für NBA (Pace × Net Rating)
+→ Verletzungslisten IMMER prüfen (NFL/NBA Inactive Reports)
+→ Spielminuten-Trend: Back-to-Back = weniger Minuten für Stars
 TIER 1 (longshots @3.5+): HR, Triple Double, Blocks, NFL Anytime TD
 
 STAKES: @1.65-1.95=1.0u | @2.00-2.50=0.75u | @2.50-3.50=0.5u | @3.50-6.00=0.25u | @6+= 0.10u
@@ -1473,12 +1533,19 @@ def compute_player_features(games: list, line: float, stat_key: str) -> dict | N
     for v in l5:
         if v > line: streak += 1
         else: break
-    home_games = [g for g in games if g.get("is_home")]
+    home_games  = [g for g in games if g.get("is_home")]
+    away_games  = [g for g in games if not g.get("is_home")]
     home_hit_rate = sum(1 for g in home_games if float(g.get(stat_key,0) or 0) > line) / len(home_games) if home_games else hit_rate_l10
+    away_hit_rate = sum(1 for g in away_games if float(g.get(stat_key,0) or 0) > line) / len(away_games) if away_games else hit_rate_l10
+    # Heim/Auswärts-Bonus (20% bessere Heim-Stats ist typisch)
+    is_home_game = games[0].get("is_home", True) if games else True
+    location_adj = (home_hit_rate - away_hit_rate) * 0.5 if home_games and away_games else 0
     return {
         "hit_rate_l5": hit_rate_l5, "hit_rate_l10": hit_rate_l10,
         "hit_rate_l20": hit_rate_l20, "avg_l5": avg_l5, "avg_l10": avg_l10,
         "streak": streak, "home_hit_rate": home_hit_rate,
+        "away_hit_rate": away_hit_rate,
+        "location_adj": home_hit_rate - away_hit_rate,
         "line_vs_avg": avg_l10 - line,
     }
 
@@ -1521,10 +1588,12 @@ def player_ml_probability(player: str, sport: str, market: str,
 
     # Einfaches gewichtetes Modell (kein Training nötig — direkte Heuristik)
     # Gewichtung: L5 Hit Rate 40%, L10 Hit Rate 35%, L20 Hit Rate 15%, Streak 10%
+    location_adj = feats.get("location_adj", 0)
     prob = (0.40 * feats["hit_rate_l5"] +
             0.35 * feats["hit_rate_l10"] +
             0.15 * feats["hit_rate_l20"] +
             0.10 * min(feats["streak"] / 5, 1.0))
+    if is_home_game: prob += location_adj * 0.3
 
     # Bonus/Malus für Linie vs Durchschnitt
     if feats["line_vs_avg"] > 3: prob -= 0.05   # Linie viel über Schnitt → Malus
