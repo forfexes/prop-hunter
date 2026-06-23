@@ -1229,9 +1229,7 @@ def filter_picks(picks):
         if p.type=="single":
             dk=dedup_key(p.player or "",p.market or "",getattr(p,"point",None),p.direction)
             if dk in posted_keys: continue
-        elif p.type in ("kombi2","big","super","betbuilder"):
-            used={n.lower() for n in posted_players}
-            if any(any(n in leg.lower() for n in used) for leg in (p.legs or [])): continue
+        # Kombis/BetBuilder: nicht blocken — dürfen auch beim 2. Run erscheinen
         out.append(p)
     log.info("dedup: %d → %d",before,len(out))
     return out
@@ -1395,7 +1393,7 @@ def run(dry_run=False,sport_filter=None):
     picks=analyse(props)
     if not picks: log.warning("no picks from LLM"); return
     picks=filter_picks(picks)
-    if not any(p.type=="single" for p in picks): log.warning("all posted today"); return
+    if not picks: log.warning("all posted today"); return
     body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
