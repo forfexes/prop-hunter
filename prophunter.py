@@ -351,8 +351,12 @@ def enrich_statz(props: list) -> list:
     """Fügt statz.ai Hit Rates als Enrichment hinzu (NBA/WNBA)."""
     nba_props = [p for p in props if p.sport in ("NBA", "WNBA")]
     if not nba_props: return props
-    sport_key = "wnba" if all(p.sport == "WNBA" for p in nba_props) else "nba"
-    data = fetch_statz_hitrates(sport_key)
+    # Beide Sports laden falls nötig
+    data: dict = {}
+    sports_present = set(p.sport for p in nba_props)
+    for s in sports_present:
+        sport_key = "wnba" if s == "WNBA" else "nba"
+        data.update(fetch_statz_hitrates(sport_key))
     if not data: return props
     enriched = 0
     for p in nba_props:
