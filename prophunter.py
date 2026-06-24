@@ -1229,8 +1229,23 @@ KOMBIS:
 - 3-LEG LOTTERY @30-100: 0.25u | 4-LEG SUPER @100-300: 0.10u"""
 
 def build_prompt(props):
+    # Sports gleichmässig verteilen: nicht einfach [:70] nehmen (MLB würde WNBA verdrängen)
+    from collections import defaultdict
+    by_sport = defaultdict(list)
+    for p in props:
+        by_sport[p.sport or "OTHER"].append(p)
+    # Priorität: WNBA/NBA zuerst, dann MLB, dann Rest
+    sport_order = ["WNBA","NBA","MLB","NHL","NFL","OTHER"]
+    interleaved = []
+    buckets = [by_sport[s] for s in sport_order if s in by_sport]
+    buckets += [by_sport[s] for s in by_sport if s not in sport_order]
+    i = 0
+    while len(interleaved) < MAX_PROPS_AI and any(buckets):
+        b = buckets[i % len(buckets)]
+        if b: interleaved.append(b.pop(0))
+        i += 1
     lines=[]
-    for p in props[:MAX_PROPS_AI]:
+    for p in interleaved:
         fair=p.features.get("fair_prob"); edge=""
         if fair:
             ep=round((fair-implied_prob(p.odds))*100,1); edge=f" edge={ep:+.1f}%"
