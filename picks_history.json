@@ -1720,6 +1720,74 @@
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-06-24T17:13:03.045798+00:00"
+      },
+      {
+        "date": "2026-06-24",
+        "player": "Bo Bichette",
+        "team": "CHC",
+        "market": "Hits Over 1.5",
+        "sport": "MLB",
+        "odds": 2.82,
+        "stake": 0.56,
+        "direction": "over",
+        "probability": 0.65,
+        "dedup_key": "bo bichette|hits over 1.5||over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-06-24T22:56:46.524800+00:00"
+      },
+      {
+        "date": "2026-06-24",
+        "player": "Brett Baty",
+        "team": "NYM",
+        "market": "Hits Over 1.5",
+        "sport": "MLB",
+        "odds": 1.85,
+        "stake": 0.55,
+        "direction": "over",
+        "probability": 0.68,
+        "dedup_key": "brett baty|hits over 1.5||over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-06-24T22:56:47.900608+00:00"
+      },
+      {
+        "date": "2026-06-24",
+        "player": "Francisco Lindor",
+        "team": "NYM",
+        "market": "Home Run",
+        "sport": "MLB",
+        "odds": 4.63,
+        "stake": 0.12,
+        "direction": "over",
+        "probability": 0.21,
+        "dedup_key": "francisco lindor|home run||over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-06-24T22:56:48.244434+00:00"
+      },
+      {
+        "date": "2026-06-24",
+        "player": "Bo Bichette",
+        "team": "TOR",
+        "market": "Home Run",
+        "sport": "MLB",
+        "odds": 6.08,
+        "stake": 0.12,
+        "direction": "over",
+        "probability": 0.19,
+        "dedup_key": "bo bichette|home run||over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-06-24T22:56:48.536388+00:00"
       }
     ],
     "kombis": [
@@ -1752,6 +1820,48 @@
         ],
         "odds": 49.8,
         "stake": 0.25,
+        "result": "pending"
+      },
+      {
+        "type": "betbuilder",
+        "legs": [
+          "Bo Bichette Hits Over 1.5",
+          "Brett Baty Hits Over 1.5"
+        ],
+        "odds": 4.8,
+        "stake": 0.5,
+        "result": "pending"
+      },
+      {
+        "type": "kombi2",
+        "legs": [
+          "Bo Bichette Hits Over 1.5",
+          "Francisco Lindor Home Run"
+        ],
+        "odds": 10.3,
+        "stake": 0.5,
+        "result": "pending"
+      },
+      {
+        "type": "big",
+        "legs": [
+          "Francisco Lindor Home Run",
+          "Bo Bichette Home Run",
+          "Mark Vientos Home Run"
+        ],
+        "odds": 120.8,
+        "stake": 0.25,
+        "result": "pending"
+      },
+      {
+        "type": "super",
+        "legs": [
+          "Bo Bichette Hits Over 1.5",
+          "Brett Baty Hits Over 1.5",
+          "Francisco Lindor Home Run"
+        ],
+        "odds": 300.0,
+        "stake": 0.1,
         "result": "pending"
       }
     ]
