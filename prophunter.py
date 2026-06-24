@@ -273,6 +273,286 @@ try: from playwright.async_api import async_playwright; PLAYWRIGHT=True
 except: PLAYWRIGHT=False
 try: from supabase import create_client; HAS_SUPABASE=True
 except: HAS_SUPABASE=False
+try: import cloudscraper; HAS_CLOUDSCRAPER=True
+except: HAS_CLOUDSCRAPER=False
+
+# ─────────────────────────────────────────────
+# CLOUDSCRAPER HELPER
+# ─────────────────────────────────────────────
+def _cs_get(url, timeout=20):
+    """GET via cloudscraper (bypasses Cloudflare). Falls back to requests."""
+    try:
+        if HAS_CLOUDSCRAPER:
+            cs = cloudscraper.create_scraper()
+            r = cs.get(url, timeout=timeout)
+            return r.text if r.status_code == 200 else None
+        r = requests.get(url, headers=HTTP_H, timeout=timeout)
+        return r.text if r.status_code == 200 else None
+    except Exception as e:
+        log.debug("cs_get %s: %s", url, e)
+        return None
+
+# ─────────────────────────────────────────────
+# ENRICHMENT: STATZ.AI (NBA Hit Rates)
+# ─────────────────────────────────────────────
+_STATZ_CACHE: dict = {}
+
+def fetch_statz_hitrates(sport: str = "nba") -> dict:
+    """
+    Holt Hit Rates von statz.ai/nba/hit-rates.
+    Gibt dict zurück: {player_name_lower: {prop, l5, l10, season, odds}}
+    """
+    cache_key = f"statz_{sport}"
+    if cache_key in _STATZ_CACHE:
+        return _STATZ_CACHE[cache_key]
+    url = f"https://statz.ai/{sport}/hit-rates"
+    html = _cs_get(url)
+    if not html:
+        log.warning("statz.ai: kein Response")
+        return {}
+    try:
+        from html.parser import HTMLParser
+        import re as _re
+        # Tabelle parsen: Player | Matchup | Prop | Last 5 | Last 10 | Season | Odds
+        rows = _re.findall(
+            r'<tr[^>]*>(.*?)</tr>', html, _re.DOTALL | _re.IGNORECASE)
+        result = {}
+        for row in rows:
+            cells = _re.findall(r'<td[^>]*>(.*?)</td>', row, _re.DOTALL | _re.IGNORECASE)
+            # Text aus HTML-Tags extrahieren
+            def txt(s): return _re.sub(r'<[^>]+>', '', s).strip()
+            cells = [txt(c) for c in cells]
+            if len(cells) < 6: continue
+            # Format: Player, Matchup, Prop, L5%, L10%, Season%, Odds
+            player = cells[0].split('\n')[0].strip().lower()
+            prop = cells[2].strip() if len(cells) > 2 else ""
+            l5 = cells[3].strip() if len(cells) > 3 else ""
+            l10 = cells[4].strip() if len(cells) > 4 else ""
+            season = cells[5].strip() if len(cells) > 5 else ""
+            odds = cells[6].strip() if len(cells) > 6 else ""
+            if not player or not prop or not season: continue
+            # Nur echte Prozent-Werte
+            if "%" not in season: continue
+            key = player
+            if key not in result:
+                result[key] = []
+            result[key].append({
+                "prop": prop, "l5": l5, "l10": l10,
+                "season": season, "odds": odds
+            })
+        log.info("statz.ai: %d Spieler geladen (%s)", len(result), sport)
+        _STATZ_CACHE[cache_key] = result
+        return result
+    except Exception as e:
+        log.warning("statz.ai parse: %s", e)
+        return {}
+
+def enrich_statz(props: list) -> list:
+    """Fügt statz.ai Hit Rates als Enrichment hinzu (NBA/WNBA)."""
+    nba_props = [p for p in props if p.sport in ("NBA", "WNBA")]
+    if not nba_props: return props
+    sport_key = "wnba" if all(p.sport == "WNBA" for p in nba_props) else "nba"
+    data = fetch_statz_hitrates(sport_key)
+    if not data: return props
+    enriched = 0
+    for p in nba_props:
+        name = (p.player or "").lower().strip()
+        # Fuzzy match
+        matched = data.get(name)
+        if not matched and RAPIDFUZZ:
+            keys = list(data.keys())
+            res = process.extractOne(name, keys, scorer=fuzz.token_sort_ratio)
+            if res and res[1] >= FUZZY_THR:
+                matched = data[res[0]]
+        if not matched: continue
+        # Besten passenden Prop finden
+        market_lower = (p.market or "").lower()
+        best = None
+        for entry in matched:
+            prop_lower = entry["prop"].lower()
+            if any(k in market_lower for k in prop_lower.split()):
+                best = entry
+                break
+        if not best:
+            best = matched[0]  # Erstes nehmen
+        tag = f"Statz L5:{best['l5']} L10:{best['l10']} Season:{best['season']}"
+        p.enrichment = (p.enrichment + " | " if p.enrichment else "") + tag
+        enriched += 1
+    log.info("statz.ai enriched: %d", enriched)
+    return props
+
+# ─────────────────────────────────────────────
+# ENRICHMENT: PROPCRUNCHER (Best Play Grade)
+# ─────────────────────────────────────────────
+_PROPCRUNCHER_CACHE: dict = {}
+
+def fetch_propcruncher(sport: str) -> dict:
+    """
+    Holt Best Play Grades von propcruncher.com.
+    Gibt dict zurück: {player_name_lower: {"grade": "S", "prop": "Rebounds", "line": "o 3.5"}}
+    """
+    cache_key = f"pc_{sport}"
+    if cache_key in _PROPCRUNCHER_CACHE:
+        return _PROPCRUNCHER_CACHE[cache_key]
+    sport_map = {
+        "NBA": "nba", "WNBA": "wnba", "MLB": "mlb",
+        "NHL": "nhl", "NFL": "nfl"
+    }
+    slug = sport_map.get(sport, sport.lower())
+    url = f"https://propcruncher.com/props/{slug}/today"
+    html = _cs_get(url)
+    if not html:
+        log.warning("propcruncher: kein Response für %s", sport)
+        return {}
+    try:
+        import re as _re
+        result = {}
+        # Tabelle: Player | Prop | Line | Grade
+        rows = _re.findall(r'<tr[^>]*>(.*?)</tr>', html, _re.DOTALL | _re.IGNORECASE)
+        def txt(s): return _re.sub(r'<[^>]+>', '', s).strip()
+        for row in rows:
+            cells = [txt(c) for c in _re.findall(r'<td[^>]*>(.*?)</td>', row, _re.DOTALL | _re.IGNORECASE)]
+            if len(cells) < 4: continue
+            player = cells[0].split('\n')[0].strip().lower()
+            prop = cells[1].strip()
+            line = cells[2].strip()
+            grade = cells[3].strip()
+            if not player or grade not in ("S", "A", "B", "C"): continue
+            if player not in result or grade < result[player]["grade"]:
+                result[player] = {"grade": grade, "prop": prop, "line": line}
+        log.info("propcruncher: %d Spieler (%s)", len(result), sport)
+        _PROPCRUNCHER_CACHE[cache_key] = result
+        return result
+    except Exception as e:
+        log.warning("propcruncher parse: %s", e)
+        return {}
+
+def enrich_propcruncher(props: list) -> list:
+    """Fügt ProCruncher Best Play Grade als Enrichment hinzu."""
+    sports = set(p.sport for p in props if p.sport in ("NBA","WNBA","MLB","NHL","NFL"))
+    if not sports: return props
+    all_data: dict = {}
+    for sport in sports:
+        d = fetch_propcruncher(sport)
+        all_data.update(d)
+    enriched = 0
+    for p in props:
+        name = (p.player or "").lower().strip()
+        matched = all_data.get(name)
+        if not matched and RAPIDFUZZ:
+            keys = list(all_data.keys())
+            res = process.extractOne(name, keys, scorer=fuzz.token_sort_ratio)
+            if res and res[1] >= FUZZY_THR:
+                matched = all_data[res[0]]
+        if not matched: continue
+        grade = matched.get("grade", "")
+        if grade in ("S", "A"):
+            tag = f"PC:{grade} {matched.get('prop','')} {matched.get('line','')}"
+            p.enrichment = (p.enrichment + " | " if p.enrichment else "") + tag
+            enriched += 1
+    log.info("propcruncher enriched: %d", enriched)
+    return props
+
+# ─────────────────────────────────────────────
+# ENRICHMENT: FREEPLAYERPROPS (NHL Game Logs)
+# ─────────────────────────────────────────────
+_FPP_SLUG_CACHE: dict = {}
+_FPP_STATS_CACHE: dict = {}
+
+def _fpp_find_slug(player_name: str, sport: str = "nhl") -> Optional[str]:
+    """Sucht den FPP Slug für einen Spieler via Sportseite."""
+    sport_map = {"NHL": "hockey/nhl", "NBA": "basketball/nba",
+                 "MLB": "baseball/mlb", "NFL": "american-football/nfl"}
+    path = sport_map.get(sport, "hockey/nhl")
+    cache_key = f"{sport}_slugs"
+    if cache_key not in _FPP_SLUG_CACHE:
+        url = f"https://freeplayerprops.com/{path}"
+        html = _cs_get(url)
+        if not html:
+            _FPP_SLUG_CACHE[cache_key] = {}
+            return None
+        import re as _re
+        # Links: /hockey/nhl/connor-mcdavid/f65rr45d
+        links = _re.findall(
+            rf'href="(/{path}/([a-z0-9-]+)/([a-z0-9]+))"', html)
+        slug_map = {}
+        for full, name_slug, uid in links:
+            display = name_slug.replace("-", " ")
+            slug_map[display] = full
+        _FPP_SLUG_CACHE[cache_key] = slug_map
+    slug_map = _FPP_SLUG_CACHE.get(cache_key, {})
+    name_lower = player_name.lower()
+    if name_lower in slug_map:
+        return slug_map[name_lower]
+    if RAPIDFUZZ:
+        keys = list(slug_map.keys())
+        res = process.extractOne(name_lower, keys, scorer=fuzz.token_sort_ratio)
+        if res and res[1] >= FUZZY_THR:
+            return slug_map[res[0]]
+    return None
+
+def fetch_fpp_gamelogs(player_name: str, sport: str = "NHL", season: str = "2025-26") -> list:
+    """Holt Game Logs von freeplayerprops.com für NHL/NBA/MLB."""
+    cache_key = f"fpp_{sport}_{player_name}"
+    if cache_key in _FPP_STATS_CACHE:
+        return _FPP_STATS_CACHE[cache_key]
+    slug = _fpp_find_slug(player_name, sport)
+    if not slug:
+        return []
+    url = f"https://freeplayerprops.com{slug}/gamelog/{season}/all"
+    html = _cs_get(url)
+    if not html:
+        return []
+    try:
+        import re as _re
+        def txt(s): return _re.sub(r'<[^>]+>', '', s).strip()
+        rows = _re.findall(r'<tr[^>]*>(.*?)</tr>', html, _re.DOTALL | _re.IGNORECASE)
+        # Header-Zeile überspringen
+        games = []
+        for row in rows[1:]:
+            cells = [txt(c) for c in _re.findall(r'<td[^>]*>(.*?)</td>', row, _re.DOTALL | _re.IGNORECASE)]
+            if len(cells) < 10: continue
+            try:
+                # Spalten: #, Date, Team, Opp, Result, G, A, P, +/-, PIM, PPG, PPP, ...S(shots)
+                game = {
+                    "date": cells[1], "result": cells[4],
+                    "goals": int(cells[5] or 0), "assists": int(cells[6] or 0),
+                    "points": int(cells[7] or 0),
+                }
+                # Shots on goal: Spalte 21 (S)
+                if len(cells) > 21:
+                    try: game["shots"] = int(cells[21] or 0)
+                    except: game["shots"] = 0
+                games.append(game)
+            except Exception:
+                continue
+        log.info("FPP %s %s: %d games", sport, player_name, len(games))
+        _FPP_STATS_CACHE[cache_key] = games
+        return games
+    except Exception as e:
+        log.warning("FPP parse %s: %s", player_name, e)
+        return []
+
+def enrich_fpp_nhl(props: list) -> list:
+    """Fügt FreePlayerProps NHL Stats als Enrichment hinzu."""
+    nhl_props = [p for p in props if p.sport == "NHL"]
+    if not nhl_props: return props
+    enriched = 0
+    for p in nhl_props:
+        games = fetch_fpp_gamelogs(p.player or "", "NHL")
+        if not games or len(games) < 3: continue
+        l5 = games[:5]
+        avg_pts = sum(g.get("points", 0) for g in l5) / len(l5)
+        avg_shots = sum(g.get("shots", 0) for g in l5) / len(l5)
+        streak_pts = 0
+        for g in l5:
+            if g.get("points", 0) > 0: streak_pts += 1
+            else: break
+        tag = f"FPP L5: {avg_pts:.1f}pts {avg_shots:.1f}sog streak:{streak_pts}"
+        p.enrichment = (p.enrichment + " | " if p.enrichment else "") + tag
+        enriched += 1
+    log.info("FPP NHL enriched: %d", enriched)
+    return props
 
 def _fuzzy(name,d,thr=85):
     if not name or not d: return None
@@ -1187,6 +1467,9 @@ def gather(sport_filter=None):
             tags=[f"PTS{ws.get('avg_pts')}","REB{:.1f}".format(ws.get('avg_reb') or 0)]
             p.enrichment=(p.enrichment+" | " if p.enrichment else "")+" ".join(t for t in tags if t)
     all_props=enrich_propsmadness(all_props)
+    all_props=enrich_statz(all_props)
+    all_props=enrich_propcruncher(all_props)
+    all_props=enrich_fpp_nhl(all_props)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
