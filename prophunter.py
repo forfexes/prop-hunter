@@ -417,7 +417,11 @@ def fetch_propcruncher(sport: str) -> dict:
         for row in rows:
             cells = [txt(c) for c in _re.findall(r'<td[^>]*>(.*?)</td>', row, _re.DOTALL | _re.IGNORECASE)]
             if len(cells) < 4: continue
-            player = cells[0].split('\n')[0].strip().lower()
+            player_raw = cells[0].split('\n')[0].strip().lower()
+            # Strip team/matchup suffix: "pete crow-armstrongchc vs nym" → "pete crow-armstrong"
+            import re as _re2
+            player = _re2.sub(r'[a-z]{2,3}\s+vs\s+[a-z]{2,3}.*$', '', player_raw).strip()
+            player = _re2.sub(r'\s+[a-z]{2,3}$', '', player).strip()
             prop = cells[1].strip()
             line = cells[2].strip()
             grade = cells[3].strip()
