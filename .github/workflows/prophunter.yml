@@ -1,8 +1,8 @@
 name: Prop Hunter v3
 on:
   schedule:
-    - cron: '0 15 * * *'
-    - cron: '0 20 * * *'
+    - cron: '0 15 * * *'   # 15:00 UTC (erster Run)
+    - cron: '0 20 * * *'   # 20:00 UTC (zweiter Run)
   workflow_dispatch:
 permissions:
   contents: write
@@ -22,7 +22,8 @@ jobs:
 
       - name: Install
         run: |
-          pip install requests pydantic python-dateutil pybaseball MLB-StatsAPI nfl_data_py py_ball rapidfuzz playwright supabase
+          pip install requests pydantic python-dateutil pybaseball MLB-StatsAPI \
+            nfl_data_py py_ball rapidfuzz playwright supabase cloudscraper
           playwright install chromium --with-deps
 
       - name: Run
