@@ -19,11 +19,13 @@ jobs:
         sport: [baseball_mlb, basketball_nba, americanfootball_nfl, icehockey_nhl, basketball_wnba]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install
-        run: pip install requests supabase
+        run: pip install requests supabase cloudscraper
 
       - name: Scrape Props
         env:
