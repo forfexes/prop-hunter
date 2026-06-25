@@ -1632,12 +1632,13 @@ def send_telegram(text,dry_run=False):
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
     cache=load_cache(); new_cache={}
-    # If all keys dead, try stale cache then OddsPapi backup
-    if _all_keys_dead() and not cache:
+    keys_dead = _all_keys_dead()
+    # If all keys dead, try stale cache
+    if keys_dead and not cache:
         log.warning("All keys dead — trying stale cache")
         cache=load_cache(force_stale=True)
-    # OddsPapi backup wenn Odds API Keys exhausted
-    if _all_keys_dead() and ODDSPAPI_KEY and not cache:
+    # OddsPapi backup wenn Odds API Keys exhausted UND kein frischer Cache
+    if keys_dead and ODDSPAPI_KEY:
         log.info("OddsPapi Backup aktiviert — Odds API exhausted")
         sports_to_try = list(SPORTS.keys()) if not sport_filter else \
             [k for k,v in SPORTS.items() if v.name.lower()==sport_filter.lower()]
