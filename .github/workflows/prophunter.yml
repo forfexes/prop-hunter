@@ -1,49 +1,53 @@
-name: Prop Hunter v3
+name: Prop Hunter
+
 on:
-  schedule:
-    - cron: '0 15 * * *'   # 15:00 UTC (erster Run)
-    - cron: '0 20 * * *'   # 20:00 UTC (zweiter Run)
   workflow_dispatch:
-permissions:
-  contents: write
+  schedule:
+    # Läuft alle 6 Stunden
+    - cron: "0 */6 * * *"
+
 jobs:
-  run-prophunter:
+  run-prop-hunter:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Install
+      - name: Install dependencies
         run: |
-          pip install requests pydantic python-dateutil pybaseball MLB-StatsAPI \
-            nfl_data_py py_ball rapidfuzz playwright supabase cloudscraper
-          playwright install chromium --with-deps
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements_data_plus.txt ]; then pip install -r requirements_data_plus.txt; fi
+          python -m playwright install chromium || true
 
-      - name: Run
+      - name: Run DATA+ scraper
+        run: python prop_hunter_scraper.py
         env:
-          ODDS_API_KEY:        ${{ secrets.ODDS_API_KEY }}
-          GEMINI_API_KEY:      ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY:        ${{ secrets.GROQ_API_KEY }}
-          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-          SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY:        ${{ secrets.SUPABASE_KEY }}
-          ODDSPAPI:            ${{ secrets.ODDSPAPI }}
-        run: python prophunter.py
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ODDSPAPI: ${{ secrets.ODDSPAPI }}
 
-      - name: Save picks
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A picks_history.json odds_cache.json
-          git diff --staged --quiet && echo "Nothing to commit" && exit 0
-          git commit -m "picks $(date -u +%F-%H%M)"
-          git push
+      - name: Run Prop Hunter
+        run: python prophunter.py
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ODDSPAPI: ${{ secrets.ODDSPAPI }}
