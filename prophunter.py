@@ -21,6 +21,7 @@ ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
 GROQ_KEYS      = _csv("GROQ_API_KEY")
 BALLDONTLIE_KEY= os.environ.get("BALLDONTLIE_API_KEY","")
+BDL_KEY = BALLDONTLIE_KEY
 ODDSPAPI_KEY   = os.environ.get("ODDSPAPI","")
 SUPABASE_URL   = os.environ.get("SUPABASE_URL","")
 SUPABASE_KEY   = os.environ.get("SUPABASE_KEY","")
@@ -1758,6 +1759,22 @@ def send_telegram(text,dry_run=False):
 # ─────────────────────────────────────────────
 # GATHER (main data pipeline)
 # ─────────────────────────────────────────────
+
+# ─────────────────────────────────────────────
+# ODDSPAPI SAFE FALLBACK
+# ─────────────────────────────────────────────
+def fetch_oddspapi_props(sport_key: str) -> list:
+    """
+    Safe fallback: OddsPapi is not implemented in this file.
+    Returning [] prevents GitHub Actions from crashing when ODDSPAPI is set
+    or when The Odds API quota is exhausted.
+    """
+    try:
+        log.warning("OddsPapi fallback requested for %s, but fetch_oddspapi_props is not implemented. Skipping.", sport_key)
+    except Exception:
+        pass
+    return []
+
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
     cache=load_cache(); new_cache={}
