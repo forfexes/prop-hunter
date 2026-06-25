@@ -1632,49 +1632,46 @@ def send_telegram(text,dry_run=False):
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
     cache=load_cache(); new_cache={}
-    keys_dead = _all_keys_dead()
-    # If all keys dead, try stale cache
-    if keys_dead and not cache:
+    # If all keys dead upfront, try stale cache
+    if _all_keys_dead() and not cache:
         log.warning("All keys dead — trying stale cache")
         cache=load_cache(force_stale=True)
-    # OddsPapi backup wenn Odds API Keys exhausted UND kein frischer Cache
-    if keys_dead and ODDSPAPI_KEY:
+
+    def _try_oddspapi():
+        """OddsPapi als Fallback wenn Odds API Keys exhausted."""
+        if not ODDSPAPI_KEY: return False
         log.info("OddsPapi Backup aktiviert — Odds API exhausted")
         sports_to_try = list(SPORTS.keys()) if not sport_filter else \
             [k for k,v in SPORTS.items() if v.name.lower()==sport_filter.lower()]
+        found = False
         for sk in sports_to_try:
             op_props = fetch_oddspapi_props(sk)
-            if op_props:
-                active.append(f"(OP){sk.split('_')[-1].upper()}({len(op_props)})")
-                # Konvertiere OddsPapi Props in Prop-Objekte
-                for raw in op_props:
-                    try:
-                        sport_label = {
-                            "baseball_mlb":"MLB","basketball_nba":"NBA",
-                            "basketball_wnba":"WNBA","americanfootball_nfl":"NFL",
-                            "icehockey_nhl":"NHL"
-                        }.get(raw["sport"],"?")
-                        dec = raw.get("decimal_odds",0)
-                        if not dec or dec<=1: continue
-                        p = Prop(
-                            player=raw.get("player_name",""),
-                            market=raw.get("market_key",""),
-                            odds=round(dec,2),
-                            point=raw.get("line"),
-                            sport=sport_label,
-                            game=f"{raw.get('away_team','')} @ {raw.get('home_team','')}",
-                            direction="over" if "over" in (raw.get("selection","")).lower() else "under",
-                            features={},
-                            emoji=SPORTS.get(sk,SPORTS["baseball_mlb"]).emoji,
-                        )
-                        all_props.append(p)
-                    except Exception: continue
-        if all_props:
-            log.info("OddsPapi: %d props total", len(all_props))
-            all_props=enrich_propsmadness(all_props)
-            all_props=enrich_propcruncher(all_props)
-            log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
-            return all_props
+            if not op_props: continue
+            found = True
+            active.append(f"(OP){sk.split('_')[-1].upper()}({len(op_props)})")
+            for raw in op_props:
+                try:
+                    sport_label = {
+                        "baseball_mlb":"MLB","basketball_nba":"NBA",
+                        "basketball_wnba":"WNBA","americanfootball_nfl":"NFL",
+                        "icehockey_nhl":"NHL"
+                    }.get(raw["sport"],"?")
+                    dec = raw.get("decimal_odds",0)
+                    if not dec or dec<=1: continue
+                    p = Prop(
+                        player=raw.get("player_name",""),
+                        market=raw.get("market_key",""),
+                        odds=round(dec,2),
+                        point=raw.get("line"),
+                        sport=sport_label,
+                        game=f"{raw.get('away_team','')} @ {raw.get('home_team','')}",
+                        direction="over" if "over" in (raw.get("selection","")).lower() else "under",
+                        features={},
+                        emoji=SPORTS.get(sk,SPORTS["baseball_mlb"]).emoji,
+                    )
+                    all_props.append(p)
+                except Exception: continue
+        return found
     mlb_b={}; mlb_p={}; mlb_lu={}; nfl_inj={}; wx={}
     sports=SPORTS
     if sport_filter:
@@ -1778,6 +1775,14 @@ def gather(sport_filter=None):
     all_props=enrich_oddspedia(all_props)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
+    # OddsPapi Fallback wenn keine Props gesammelt
+    if not all_props and _all_keys_dead():
+        _try_oddspapi()
+        if all_props:
+            all_props=enrich_propsmadness(all_props)
+            all_props=enrich_propcruncher(all_props)
+            log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
+            return all_props
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
 
