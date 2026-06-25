@@ -480,8 +480,137 @@ def enrich_propcruncher(props: list) -> list:
     return props
 
 # ─────────────────────────────────────────────
-# ENRICHMENT: FREEPLAYERPROPS (NHL Game Logs)
+# PROPCRUNCHER ALS PROPS-QUELLE (kein API Key nötig)
 # ─────────────────────────────────────────────
+_PC_PROPS_CACHE: dict = {}
+
+def fetch_propcruncher_as_props(sport: str) -> list:
+    """
+    Scrapt ProCruncher als vollständige Props-Quelle via Playwright.
+    Gibt Liste von Prop-Objekten zurück (ohne Odds API Key).
+    """
+    cache_key = f"pc_props_{sport}"
+    if cache_key in _PC_PROPS_CACHE:
+        return _PC_PROPS_CACHE[cache_key]
+    if not PLAYWRIGHT:
+        log.warning("ProCruncher props: Playwright nicht verfügbar")
+        return []
+    sport_map = {"NBA":"nba","WNBA":"wnba","MLB":"mlb","NHL":"nhl","NFL":"nfl"}
+    slug = sport_map.get(sport)
+    if not slug: return []
+    url = f"https://propcruncher.com/props/{slug}/today"
+    props_out = []
+    try:
+        import asyncio, re as _re
+        async def _scrape():
+            async with async_playwright() as pw:
+                browser = await pw.chromium.launch(headless=True)
+                ctx = await browser.new_context(user_agent=UA)
+                page = await ctx.new_page()
+                await page.goto(url, timeout=30000, wait_until="networkidle")
+                try:
+                    await page.wait_for_selector("table tbody tr", timeout=10000)
+                except Exception:
+                    pass
+                await page.wait_for_timeout(2000)
+                rows = await page.query_selector_all("table tbody tr")
+                data = []
+                for row in rows:
+                    cells = await row.query_selector_all("td")
+                    cell_texts = []
+                    for cell in cells:
+                        t = await cell.inner_text()
+                        cell_texts.append(t.strip())
+                    if cell_texts:
+                        data.append(cell_texts)
+                await browser.close()
+                return data
+        rows_data = asyncio.run(_scrape())
+        import re as _re
+        for cells in rows_data:
+            # Format: Player | Team | Matchup | Prop | Line | Grade | ...Odds...
+            if len(cells) < 5: continue
+            player_raw = cells[0].split('\n')[0].strip()
+            player = _re.sub(r'[A-Z]{2,3}\s+vs\s+[A-Z]{2,3}.*$','',player_raw).strip()
+            player = _re.sub(r'\s+[A-Z]{2,3}$','',player).strip()
+            if not player or len(player) < 3: continue
+            # Prop und Linie finden
+            prop_name = ""; line_val = None; direction = "over"; grade = ""; odds_dec = 1.85
+            for cell in cells[1:]:
+                # Grade: S/A/B/C
+                if cell in ("S","A","B","C"): grade = cell
+                # Linie: Zahl mit evtl. O/U prefix
+                m = _re.match(r'^([OoUu])\s*(\d+\.?\d*)$', cell)
+                if m:
+                    direction = "under" if m.group(1).lower()=="u" else "over"
+                    line_val = float(m.group(2))
+                # Nur reine Zahl
+                elif _re.match(r'^\d+\.?\d*$', cell):
+                    try: line_val = float(cell)
+                    except: pass
+                # Prop-Name
+                elif len(cell) > 3 and not _re.match(r'^[\d\.\+\-]+$', cell):
+                    if cell not in ("Over","Under","Today","Props") and grade not in (cell,):
+                        if not prop_name: prop_name = cell
+            # Nur Grade S und A
+            if grade not in ("S","A"): continue
+            if not prop_name or line_val is None: continue
+            # Fake Odds basierend auf Grade (ProCruncher hat keine Decimal Odds)
+            odds_map = {"S": 1.83, "A": 1.80}
+            odds_dec = odds_map.get(grade, 1.80)
+            emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
+            props_out.append({
+                "player": player,
+                "market": prop_name,
+                "odds": odds_dec,
+                "line": line_val,
+                "sport": sport,
+                "direction": direction,
+                "grade": grade,
+                "game": "",
+                "emoji": emoji_map.get(sport,"🎯"),
+                "source": "propcruncher",
+            })
+        log.info("ProCruncher props: %d picks (%s Grade S/A)", len(props_out), sport)
+        _PC_PROPS_CACHE[cache_key] = props_out
+        return props_out
+    except Exception as e:
+        log.warning("ProCruncher props Playwright: %s", e)
+        return []
+
+def gather_propcruncher_fallback(sport_filter=None) -> list:
+    """
+    Fallback wenn Odds API exhausted + kein OddsPapi Key:
+    Nutzt ProCruncher Grade S/A als Props-Quelle.
+    """
+    all_props = []
+    sports_map = {
+        "baseball_mlb": "MLB", "basketball_nba": "NBA",
+        "basketball_wnba": "WNBA", "icehockey_nhl": "NHL",
+        "americanfootball_nfl": "NFL"
+    }
+    for sk, sport_label in sports_map.items():
+        if sport_filter and sport_filter.lower() not in (sk, sport_label.lower()):
+            continue
+        raw_list = fetch_propcruncher_as_props(sport_label)
+        for raw in raw_list:
+            try:
+                p = Prop(
+                    player=raw["player"],
+                    market=raw["market"],
+                    odds=raw["odds"],
+                    point=raw["line"],
+                    sport=raw["sport"],
+                    game=raw.get("game",""),
+                    direction=raw["direction"],
+                    features={"pc_grade": raw["grade"]},
+                    emoji=raw["emoji"],
+                    enrichment=f"PC:{raw['grade']}",
+                )
+                all_props.append(p)
+            except Exception: continue
+    log.info("ProCruncher fallback: %d props total", len(all_props))
+    return all_props
 _FPP_SLUG_CACHE: dict = {}
 _FPP_STATS_CACHE: dict = {}
 
@@ -1782,6 +1911,13 @@ def gather(sport_filter=None):
             all_props=enrich_propsmadness(all_props)
             all_props=enrich_propcruncher(all_props)
             log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
+            return all_props
+        # ProCruncher Fallback wenn OddsPapi auch leer
+        log.info("ProCruncher Fallback aktiviert")
+        all_props = gather_propcruncher_fallback(sport_filter)
+        if all_props:
+            all_props=enrich_statz(all_props)
+            log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
             return all_props
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
