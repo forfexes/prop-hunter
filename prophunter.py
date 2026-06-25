@@ -50,6 +50,23 @@ NFL_LAST_N     = 5
 AI_TOKENS      = 3000
 AI_TEMP        = 0.6
 AI_RETRY       = 1
+
+# ─────────────────────────────────────────────
+# STRICT PICK FILTERS (v4)
+# Ziel: weniger Tipps, bessere Qualität, keine negativen Edges, Basket immer mit Line.
+# Alle Edge-Werte sind Prozentpunkte, z.B. +3.0 = +3%.
+MIN_EDGE_SINGLE       = 3.0
+MIN_EDGE_BASKET       = 3.0
+MIN_EDGE_HR           = 5.0
+MIN_PROB_BASKET       = 0.60
+MIN_PROB_MLB_HITS     = 0.62
+MIN_PROB_MLB_HR       = 0.25
+MAX_SINGLES_TOTAL     = 5
+MAX_HR_SINGLES        = 1
+MAX_COMBOS_TOTAL      = 2
+MAX_LOTTERY_TOTAL     = 1
+MAX_LOTTERY_LEGS      = 3
+
 GEMINI_MODEL   = "gemini-2.0-flash"
 GROQ_MODELS    = ["llama-3.3-70b-versatile","llama-3.1-70b-versatile","mixtral-8x7b-32768"]
 FUZZY_THR      = 85
@@ -1562,12 +1579,14 @@ Inspiriert von Basket Premium (82.5% WR Nov), Basket Blitz VIP, JK (300u+).
 MUSST ausschliesslich gueltiges JSON Array zurueckgeben. Keine Code-Fences, kein Text.
 
 DATENINTERPRETATION:
+- NUR +EV Picks: edge_pct muss positiv sein, ideal >= +3%. Negative Edge niemals ausgeben.
+- Basket/NBA/WNBA nur mit konkreter Linie/Punktzahl ausgeben (z.B. Rebounds+Assists Over 17.5). Niemals nur "Over" ohne Linie.
 - edge_pct >= 3% = +EV | avg_last > linie×1.08 = Over | < 0.87 = Under
 - Barrel% >= 12, HardHit% >= 45 = MLB HR Edge | NBA last10 > season+2 = Form Heat
 - Lineup CONFIRMED = posten | Injury Out = NICHT posten
 
 TIER 2 (stabil @1.65-1.95): Rebounds+Ast, PRA, 3PM, Assists
-WNBA BESONDERS WICHTIG: Wenn WNBA Spiele vorhanden → MINDESTENS 2 WNBA Picks!
+WNBA BESONDERS WICHTIG: WNBA nur ausgeben, wenn Linie + Edge + Wahrscheinlichkeit stimmen. Keine Pflicht-Picks erzwingen.
 WNBA Stars: Caitlin Clark, A'ja Wilson, Breanna Stewart, Sabrina Ionescu, Angel Reese
 WNBA Märkte: Points, Rebounds+Assists, PRA, 3PM, Steals, Blocks — alle @1.75-1.95
 
@@ -1613,7 +1632,12 @@ def build_prompt(props):
         fair=p.features.get("fair_prob"); edge=""
         if fair:
             ep=round((fair-implied_prob(p.odds))*100,1); edge=f" edge={ep:+.1f}%"
-        ln=f"- {p.emoji} {p.player} ({p.game}) {p.market} @{p.odds}{edge}"
+        line_txt = ""
+        if getattr(p, "point", None) is not None:
+            dir_word = "Under" if getattr(p, "direction", "over") == "under" else "Over"
+            if str(p.point) not in str(p.market) and f"{p.point:g}" not in str(p.market):
+                line_txt = f" {dir_word} {p.point:g}"
+        ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} @{p.odds}{edge}"
         if p.enrichment: ln+=f"  [{p.enrichment}]"
         lines.append(ln)
     return f"""{SYSTEM}
@@ -1689,6 +1713,33 @@ def call_groq(prompt):
 # ─────────────────────────────────────────────
 # POST BUILDER
 # ─────────────────────────────────────────────
+def _confidence_score(p: Pick) -> int:
+    """Ein einfacher Confidence-Score aus Edge, Probability und Quotenrisiko."""
+    edge = max(0.0, float(p.edge_pct or 0))
+    prob = float(p.probability or 0)
+    odds_penalty = max(0.0, float(p.odds or 1) - 2.0) * 3.0
+    score = 50 + edge * 4 + max(0, prob - 0.50) * 80 - odds_penalty
+    if _is_hr_pick(p):
+        score -= 8
+    return int(max(1, min(99, round(score))))
+
+
+def _fmt_leg(leg: str, singles: list[Pick]) -> str:
+    """Leg-Text mit Linie ergänzen, wenn der passende Single vorhanden ist."""
+    l = leg or ""
+    low = l.lower()
+    for p in singles:
+        name = (p.player or "").lower()
+        if not name:
+            continue
+        if name in low or name.split()[-1] in low:
+            market = _market_with_line(p.market or "", p.direction, getattr(p, "point", None))
+            if re.search(r"\d+(?:\.\d+)?", l) or getattr(p, "point", None) is None:
+                return l
+            return f"{p.player} {market}"
+    return l
+
+
 def build_post(picks):
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles=[p for p in picks if p.type=="single"]
@@ -1698,24 +1749,21 @@ def build_post(picks):
     bigs=[p for p in picks if p.type in ("big","super")]
     tier2=[p for p in singles if (p.tier or 1)==2]
     tier1=[p for p in singles if (p.tier or 1)!=2]
-    out=[f"🎯 PROP HUNTER — {today}",""]
+    out=[f"🎯 PROP HUNTER v4 — {today}",""]
     def fmt(p):
-        m=p.market or ""
-        if p.direction=="under" and "under" not in m.lower(): m=f"UNDER {m}"
-        # Linie anzeigen wenn vorhanden und nicht bereits im market-Namen enthalten
-        point_str=""
-        _point = getattr(p, "point", None)
-        if _point is not None and str(_point) not in m and f"{_point:g}" not in m:
-            dir_word="Under" if p.direction=="under" else "Over"
-            point_str=f" {dir_word} {_point:g}"
-        elif _point is None and p.direction and "over" not in m.lower() and "under" not in m.lower():
-            point_str=""
-        line=f"{p.emoji or '🎯'} {p.team or ''} — {p.player}\n   └ {m}{point_str} @{p.odds:.2f} → {p.stake}u"
-        if p.edge_pct is not None: line+=f"  (edge {p.edge_pct:+.1f}%)"
+        m=_market_with_line(p.market or "", p.direction, getattr(p, "point", None))
+        team = (p.team or "").strip()
+        head = f"{p.emoji or '🎯'} {team + ' — ' if team else ''}{p.player}"
+        line=f"{head}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
+        meta=[]
+        if p.edge_pct is not None: meta.append(f"Edge {p.edge_pct:+.1f}%")
+        if p.probability is not None: meta.append(f"Prob {p.probability*100:.0f}%")
+        meta.append(f"Confidence {_confidence_score(p)}/100")
+        line += "\n   📈 " + " · ".join(meta)
         if p.analysis: line+=f"\n   💡 {p.analysis}"
         return line
     if tier2:
-        out+=["🔵 STABILE PICKS (High Confidence):",""]
+        out+=["🔵 STABILE PICKS:",""]
         for p in tier2: out+=[fmt(p),""]
     if tier1:
         out+=["🟡 VALUE PICKS:",""]
@@ -1727,19 +1775,24 @@ def build_post(picks):
         out.append("")
     if builders:
         out+=["🎯 BET BUILDER:"]
-        for p in builders: out.append(f"• {' + '.join(p.legs or [])} @{p.odds:.2f} → {p.stake}u")
+        for p in builders:
+            legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
+            out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
         out.append("")
     if kombis:
         out+=["🔥 2-LEG KOMBIS:"]
-        for p in kombis: out.append(f"• {' + '.join(p.legs or [])} @{p.odds:.2f} → {p.stake}u")
+        for p in kombis:
+            legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
+            out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
         out.append("")
     if bigs:
         out+=["💣 LOTTERY BIGS:"]
         for p in bigs:
             pfx="🚀" if p.type=="super" else "•"
-            out.append(f"{pfx} {' + '.join(p.legs or [])} @{p.odds:.1f} → {p.stake}u")
+            legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
+            out.append(f"{pfx} {' + '.join(legs)} @{p.odds:.1f} → {p.stake}u")
         out.append("")
-    out+=["📊 ANALYSIERT · GEZIELT · GEWONNEN 🎯","@prophunter"]
+    out+=["📊 Weniger Picks · Keine negative Edge · Lines Pflicht 🎯","@prophunter"]
     return "\n".join(out)
 
 # ─────────────────────────────────────────────
@@ -1942,6 +1995,68 @@ def gather(sport_filter=None):
 # ─────────────────────────────────────────────
 # ANALYSE
 # ─────────────────────────────────────────────
+def _same_market(ai_market: str, prop_market: str) -> bool:
+    """Robuster Market-Match zwischen AI-Text und originalem Prop."""
+    a = (ai_market or "").lower()
+    b = (prop_market or "").lower()
+    if not a or not b:
+        return False
+    if a in b or b in a:
+        return True
+    aliases = {
+        "reb+ast": ["rebounds+assists", "rebounds assists", "ra"],
+        "pra": ["points rebounds assists", "points+rebounds+assists"],
+        "points": ["points"],
+        "hits": ["hits"],
+        "home run": ["home run", "hr"],
+        "3pm": ["3pm", "threes", "3-pointers"],
+    }
+    text = a + " " + b
+    for key, vals in aliases.items():
+        if key in text and any(v in text for v in vals):
+            return True
+    return False
+
+
+def _find_source_prop(pk: Pick, props: list[Prop]) -> Optional[Prop]:
+    """Findet den originalen Prop zur AI-Auswahl, damit Line/Team/Edge sauber übernommen werden."""
+    player = (pk.player or "").lower().strip()
+    if not player:
+        return None
+    candidates = [p for p in props if (p.player or "").lower().strip() == player]
+    if not candidates and RAPIDFUZZ:
+        names = list({(p.player or "").lower().strip() for p in props if p.player})
+        res = process.extractOne(player, names, scorer=fuzz.WRatio, score_cutoff=90)
+        if res:
+            candidates = [p for p in props if (p.player or "").lower().strip() == res[0]]
+    if not candidates:
+        return None
+    market_matches = [p for p in candidates if _same_market(pk.market or "", p.market or "")]
+    if market_matches:
+        candidates = market_matches
+    # Wenn Odds ähnlich sind, diesen bevorzugen
+    try:
+        close = sorted(candidates, key=lambda p: abs(float(p.odds) - float(pk.odds)))
+        return close[0]
+    except Exception:
+        return candidates[0]
+
+
+def _market_with_line(market: str, direction: Optional[str], point: Optional[float]) -> str:
+    """Einheitlicher Market-Text mit Linie."""
+    m = (market or "").strip()
+    if point is None:
+        return m
+    low = m.lower()
+    if str(point) in m or f"{point:g}" in m:
+        return m
+    dir_word = "Under" if (direction or "over").lower() == "under" else "Over"
+    # Bei Yes/No-Märkten wie Home Run keine Over-Line anhängen
+    if any(x in low for x in ["home run", "anytime td", "double double", "triple double"]):
+        return m
+    return f"{m} {dir_word} {point:g}".strip()
+
+
 def analyse(props):
     if not props: return []
     prompt=build_prompt(props)
@@ -1949,20 +2064,203 @@ def analyse(props):
     picks=call_with_retry(prompt,llm)
     log.info("LLM: %d picks",len(picks))
     for pk in picks:
-        if pk.type!="single": continue
-        m=next((p for p in props if p.player==pk.player and (pk.market or "").lower() in (p.market or "").lower()),None)
-        if m:
-            fair=m.features.get("fair_prob")
-            base_prob = fair if fair else pk.probability
-            sport_label = m.sport
-            blended_prob = blend_with_ml(pk, base_prob, sport_label)
-            if blended_prob:
-                pk.edge_pct=round(edge_pct(blended_prob,pk.odds)*100,2)
-                pk.ev=round(ev(blended_prob,pk.odds),3)
-                pk.stake=stake_for(blended_prob,pk.odds,pk.stake)
-            elif pk.probability:
-                pk.stake=stake_for(pk.probability,pk.odds,pk.stake)
+        if pk.type != "single":
+            continue
+        m = _find_source_prop(pk, props)
+        if not m:
+            continue
+        # Originaldaten übernehmen: verhindert Basket ohne Linie und falsche Teams.
+        pk.emoji = pk.emoji or m.emoji
+        pk.team = pk.team or getattr(m, "team", None) or m.home or ""
+        pk.direction = pk.direction or getattr(m, "direction", None) or "over"
+        pk.point = getattr(m, "point", None)
+        pk.source_sport = m.sport
+        pk.source_game = m.game
+        pk.features = getattr(m, "features", {}) or {}
+        pk.market = _market_with_line(pk.market or m.market, pk.direction, pk.point)
+        if m.enrichment and pk.analysis:
+            # kurz halten, aber Zusatzinfos nicht verlieren
+            pk.analysis = f"{pk.analysis} | {m.enrichment[:90]}"
+        elif m.enrichment and not pk.analysis:
+            pk.analysis = m.enrichment[:120]
+        fair=m.features.get("fair_prob") if getattr(m, "features", None) else None
+        base_prob = fair if fair else pk.probability
+        sport_label = m.sport
+        blended_prob = blend_with_ml(pk, base_prob, sport_label)
+        if blended_prob:
+            pk.probability = round(float(blended_prob), 4)
+            pk.edge_pct=round(edge_pct(blended_prob,pk.odds)*100,2)
+            pk.ev=round(ev(blended_prob,pk.odds),3)
+            pk.stake=stake_for(blended_prob,pk.odds,pk.stake)
+        elif pk.probability:
+            pk.edge_pct=round(edge_pct(pk.probability,pk.odds)*100,2)
+            pk.stake=stake_for(pk.probability,pk.odds,pk.stake)
+    picks = quality_filter_picks(picks)
     return picks
+
+
+def _is_basket_pick(p: Pick) -> bool:
+    sport = (getattr(p, "source_sport", "") or "").upper()
+    return sport in ("NBA", "WNBA") or (p.emoji == "🏀")
+
+
+def _is_mlb_pick(p: Pick) -> bool:
+    sport = (getattr(p, "source_sport", "") or "").upper()
+    return sport == "MLB" or (p.emoji == "⚾")
+
+
+def _is_hr_pick(p: Pick) -> bool:
+    return "home run" in (p.market or "").lower() or re.search(r"\bhr\b", (p.market or "").lower()) is not None
+
+
+def _is_hits_pick(p: Pick) -> bool:
+    return "hit" in (p.market or "").lower() and not _is_hr_pick(p)
+
+
+def _leg_matches_accepted(leg: str, accepted_singles: list[Pick]) -> bool:
+    l = (leg or "").lower()
+    for p in accepted_singles:
+        name = (p.player or "").lower()
+        if name and name in l:
+            return True
+        # Nachname reicht oft bei Kombis
+        if name and name.split()[-1] in l:
+            return True
+    return False
+
+
+def _lottery_leg_score(p: Pick) -> tuple:
+    """Lottery-Auswahl: zuerst Wahrscheinlichkeit, dann Edge, nicht einfach höchste Quote."""
+    prob = p.probability if p.probability is not None else implied_prob(p.odds)
+    edge = p.edge_pct if p.edge_pct is not None else 0.0
+    # Longshots/HR leicht bestrafen: Lottery ja, aber nur wenn Wahrscheinlichkeit stark ist.
+    risk_penalty = 0.08 if _is_hr_pick(p) else 0.0
+    return (float(prob) - risk_penalty, float(edge), -float(p.odds or 1))
+
+
+def _unique_probability_legs(singles: list[Pick], max_legs: int = MAX_LOTTERY_LEGS) -> list[Pick]:
+    """Nimmt die wahrscheinlichsten akzeptierten Singles, max. ein HR, keine doppelten Spieler."""
+    ordered = sorted(singles, key=_lottery_leg_score, reverse=True)
+    out=[]; players=set(); hr_used=False
+    for p in ordered:
+        name=(p.player or "").lower().strip()
+        if not name or name in players:
+            continue
+        if _is_hr_pick(p):
+            if hr_used:
+                continue
+            hr_used=True
+        # Wahrscheinlichkeit muss für Lottery trotzdem Sinn machen
+        prob = p.probability if p.probability is not None else implied_prob(p.odds)
+        if _is_hr_pick(p):
+            if prob < MIN_PROB_MLB_HR:
+                continue
+        elif prob < 0.58:
+            continue
+        out.append(p); players.add(name)
+        if len(out) >= max_legs:
+            break
+    return out
+
+
+def _make_probability_lottery(singles: list[Pick]) -> list[Pick]:
+    """Baut 1 Lottery aus den höchsten Wahrscheinlichkeiten, nicht aus den höchsten Quoten."""
+    legs = _unique_probability_legs(singles, MAX_LOTTERY_LEGS)
+    if len(legs) < 2:
+        return []
+    odds=1.0
+    leg_txt=[]
+    for p in legs:
+        odds *= float(p.odds)
+        leg_txt.append(f"{p.player} {_market_with_line(p.market or '', p.direction, getattr(p, 'point', None))}")
+    # Zu extreme Quoten sind eher Lotto-Müll; cap nur für Anzeige/Stake nicht nötig, aber filtern.
+    if odds < 4.0:
+        return []
+    stake = 0.25 if odds <= 50 else 0.10
+    return [Pick(type="big", legs=leg_txt, odds=round(odds, 2), stake=stake, analysis="Probability Lottery: höchste Trefferwahrscheinlichkeiten")]
+
+
+def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
+    """Strenger v4 Filter: weniger Picks, keine negativen Edges, Basket nur mit Line."""
+    accepted_singles=[]
+    rejected=defaultdict(int)
+    hr_count=0
+    # Singles zuerst prüfen und nach Edge/EV sortieren
+    singles=[p for p in picks if p.type=="single"]
+    singles.sort(key=lambda p: ((p.edge_pct if p.edge_pct is not None else -999), (p.probability or 0)), reverse=True)
+    for p in singles:
+        edge = p.edge_pct
+        prob = p.probability
+        if edge is None:
+            rejected["no_edge"] += 1; continue
+        if edge <= 0:
+            rejected["negative_edge"] += 1; continue
+        if _is_basket_pick(p):
+            if getattr(p, "point", None) is None and not re.search(r"\d+(?:\.\d+)?", p.market or ""):
+                rejected["basket_no_line"] += 1; continue
+            if edge < MIN_EDGE_BASKET:
+                rejected["basket_edge"] += 1; continue
+            if prob is not None and prob < MIN_PROB_BASKET:
+                rejected["basket_prob"] += 1; continue
+        elif _is_mlb_pick(p):
+            if _is_hr_pick(p):
+                if edge < MIN_EDGE_HR:
+                    rejected["hr_edge"] += 1; continue
+                if prob is not None and prob < MIN_PROB_MLB_HR:
+                    rejected["hr_prob"] += 1; continue
+                if hr_count >= MAX_HR_SINGLES:
+                    rejected["hr_cap"] += 1; continue
+                hr_count += 1
+            elif _is_hits_pick(p):
+                if edge < MIN_EDGE_SINGLE:
+                    rejected["hits_edge"] += 1; continue
+                if prob is not None and prob < MIN_PROB_MLB_HITS:
+                    rejected["hits_prob"] += 1; continue
+            elif edge < MIN_EDGE_SINGLE:
+                rejected["mlb_edge"] += 1; continue
+        else:
+            if edge < MIN_EDGE_SINGLE:
+                rejected["edge"] += 1; continue
+        accepted_singles.append(p)
+        if len(accepted_singles) >= MAX_SINGLES_TOTAL:
+            break
+
+    # Kombis/Builder streng; Lottery wird neu aus Top-Wahrscheinlichkeiten gebaut.
+    combos=[]
+    lottery=[]
+    for p in [x for x in picks if x.type in ("betbuilder","kombi2","big","super","ladder")]:
+        legs = p.legs or []
+        if p.type in ("big", "super"):
+            # AI-Lottery nur behalten, wenn ALLE Legs aus den besten Probability-Singles kommen.
+            top_prob = _unique_probability_legs(accepted_singles, MAX_LOTTERY_LEGS)
+            if legs and top_prob and all(_leg_matches_accepted(leg, top_prob) for leg in legs):
+                p.type = "big"
+                p.stake = min(p.stake or 0.25, 0.25)
+                lottery.append(p)
+            else:
+                rejected["lottery_low_prob"] += 1
+            continue
+        if p.type == "ladder":
+            if any((p.player or "").lower() == (s.player or "").lower() for s in accepted_singles):
+                combos.append(p)
+            continue
+        if not legs:
+            rejected["combo_no_legs"] += 1; continue
+        matched=sum(1 for leg in legs if _leg_matches_accepted(leg, accepted_singles))
+        if matched >= min(2, len(legs)):
+            combos.append(p)
+        else:
+            rejected["combo_untrusted"] += 1
+        if len(combos) >= MAX_COMBOS_TOTAL:
+            break
+
+    # Falls AI keine gute Lottery gebaut hat: selbst eine bauen aus den höchsten Wahrscheinlichkeiten.
+    if not lottery:
+        lottery = _make_probability_lottery(accepted_singles)
+    lottery = lottery[:MAX_LOTTERY_TOTAL]
+    out = accepted_singles + combos[:MAX_COMBOS_TOTAL] + lottery
+    log.info("quality filter: %d → %d | rejected=%s", len(picks), len(out), dict(rejected))
+    return out
 
 # ─────────────────────────────────────────────
 # FILTER DEDUP
@@ -2134,13 +2432,14 @@ def blend_with_ml(pick: Pick, llm_prob: float | None, sport_label: str) -> float
 # ─────────────────────────────────────────────
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v3 (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER v4 STRICT (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props: log.warning("no props found"); return
     picks=analyse(props)
     if not picks: log.warning("no picks from LLM"); return
     picks=filter_picks(picks)
-    if not picks: log.warning("all posted today"); return
+    picks=quality_filter_picks(picks)
+    if not picks: log.warning("no picks after dedup/quality filter"); return
     body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
@@ -2149,7 +2448,7 @@ def run(dry_run=False,sport_filter=None):
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v3")
+    parser=argparse.ArgumentParser(description="PROP HUNTER v4 STRICT")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
