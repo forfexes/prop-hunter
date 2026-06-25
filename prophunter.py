@@ -300,44 +300,55 @@ _STATZ_CACHE: dict = {}
 
 def fetch_statz_hitrates(sport: str = "nba") -> dict:
     """
-    Holt Hit Rates von statz.ai/nba/hit-rates.
-    Gibt dict zurück: {player_name_lower: {prop, l5, l10, season, odds}}
+    Holt Hit Rates von statz.ai via Playwright (JS-rendered).
+    Gibt dict zurück: {player_name_lower: [{prop, l5, l10, season, odds}]}
     """
     cache_key = f"statz_{sport}"
     if cache_key in _STATZ_CACHE:
         return _STATZ_CACHE[cache_key]
-    url = f"https://statz.ai/{sport}/hit-rates"
-    html = _cs_get(url)
-    if not html:
-        log.warning("statz.ai: kein Response")
+    if not PLAYWRIGHT:
+        log.warning("statz.ai: Playwright nicht verfügbar")
         return {}
+    url = f"https://statz.ai/{sport}/hit-rates"
+    result = {}
     try:
-        from html.parser import HTMLParser
-        import re as _re
-        # Tabelle parsen: Player | Matchup | Prop | Last 5 | Last 10 | Season | Odds
-        rows = _re.findall(
-            r'<tr[^>]*>(.*?)</tr>', html, _re.DOTALL | _re.IGNORECASE)
-        result = {}
-        for row in rows:
-            cells = _re.findall(r'<td[^>]*>(.*?)</td>', row, _re.DOTALL | _re.IGNORECASE)
-            # Text aus HTML-Tags extrahieren
-            def txt(s): return _re.sub(r'<[^>]+>', '', s).strip()
-            cells = [txt(c) for c in cells]
-            if len(cells) < 6: continue
-            # Format: Player, Matchup, Prop, L5%, L10%, Season%, Odds
+        import asyncio, re as _re
+        async def _scrape():
+            async with async_playwright() as pw:
+                browser = await pw.chromium.launch(headless=True)
+                ctx = await browser.new_context(user_agent=UA)
+                page = await ctx.new_page()
+                await page.goto(url, timeout=30000, wait_until="networkidle")
+                # Warten bis Tabelle geladen
+                try:
+                    await page.wait_for_selector("table tbody tr", timeout=10000)
+                except Exception:
+                    pass
+                await page.wait_for_timeout(2000)
+                # Alle Tabellenzeilen extrahieren
+                rows = await page.query_selector_all("table tbody tr")
+                data = []
+                for row in rows:
+                    cells = await row.query_selector_all("td")
+                    cell_texts = []
+                    for cell in cells:
+                        t = await cell.inner_text()
+                        cell_texts.append(t.strip())
+                    data.append(cell_texts)
+                await browser.close()
+                return data
+        rows_data = asyncio.run(_scrape())
+        for cells in rows_data:
+            if len(cells) < 5: continue
             player = cells[0].split('\n')[0].strip().lower()
-            prop = cells[2].strip() if len(cells) > 2 else ""
-            l5 = cells[3].strip() if len(cells) > 3 else ""
-            l10 = cells[4].strip() if len(cells) > 4 else ""
+            prop   = cells[2].strip() if len(cells) > 2 else ""
+            l5     = cells[3].strip() if len(cells) > 3 else ""
+            l10    = cells[4].strip() if len(cells) > 4 else ""
             season = cells[5].strip() if len(cells) > 5 else ""
-            odds = cells[6].strip() if len(cells) > 6 else ""
-            if not player or not prop or not season: continue
-            # Nur echte Prozent-Werte
-            if "%" not in season: continue
-            key = player
-            if key not in result:
-                result[key] = []
-            result[key].append({
+            odds   = cells[6].strip() if len(cells) > 6 else ""
+            if not player or not prop: continue
+            if "%" not in (l5+l10+season): continue
+            result.setdefault(player, []).append({
                 "prop": prop, "l5": l5, "l10": l10,
                 "season": season, "odds": odds
             })
@@ -345,7 +356,7 @@ def fetch_statz_hitrates(sport: str = "nba") -> dict:
         _STATZ_CACHE[cache_key] = result
         return result
     except Exception as e:
-        log.warning("statz.ai parse: %s", e)
+        log.warning("statz.ai Playwright: %s", e)
         return {}
 
 def enrich_statz(props: list) -> list:
