@@ -97,7 +97,6 @@ log = logging.getLogger("prophunter")
 DATA_PLUS_CACHE_FILE = "prop_hunter_data_cache.json"
 
 def log_data_plus_cache_status():
-    """Sichtbarer Log, damit GitHub zeigt, ob DATA+ vorhanden ist."""
     try:
         if not os.path.exists(DATA_PLUS_CACHE_FILE):
             log.warning("DATA+ cache missing: %s", DATA_PLUS_CACHE_FILE)
@@ -124,11 +123,6 @@ def log_data_plus_cache_status():
         return {}
 
 def apply_data_plus_visible(props):
-    """
-    DATA+ Anwenden mit sichtbarem Log.
-    Wenn prop_hunter_scoring.apply_data_plus_to_props existiert, wird sie genutzt.
-    Sonst läuft der Bot normal weiter.
-    """
     data = log_data_plus_cache_status()
     before = len(props or [])
     if not props:
@@ -136,38 +130,28 @@ def apply_data_plus_visible(props):
         return props
     try:
         from prop_hunter_scoring import apply_data_plus_to_props
-        out = apply_data_plus_to_props(props, data)
+        try:
+            out = apply_data_plus_to_props(props, data)
+        except TypeError:
+            out = apply_data_plus_to_props(props)
         log.info("DATA+ enrichment applied: props=%d → %d", before, len(out or []))
         return out or props
-    except TypeError:
-        try:
-            from prop_hunter_scoring import apply_data_plus_to_props
-            out = apply_data_plus_to_props(props)
-            log.info("DATA+ enrichment applied: props=%d → %d", before, len(out or []))
-            return out or props
-        except Exception as e:
-            log.warning("DATA+ enrichment skipped: %s", e)
-            return props
     except Exception as e:
         log.warning("DATA+ enrichment skipped: %s", e)
         return props
 
 def limit_singles_per_game(picks, max_per_game=2):
-    """
-    Verhindert zu viele Singles aus einem Spiel.
-    Combos/Builder bleiben erhalten, Singles werden pro Game limitiert.
-    """
     try:
         singles = [p for p in picks if getattr(p, "type", None) == "single"]
         others = [p for p in picks if getattr(p, "type", None) != "single"]
-        buckets = {}
         kept = []
+        counts = {}
         for p in singles:
-            g = (getattr(p, "game", None) or getattr(p, "team", None) or "unknown").strip()
-            buckets.setdefault(g, 0)
-            if buckets[g] < max_per_game:
+            game = (getattr(p, "game", None) or getattr(p, "team", None) or "unknown").strip()
+            counts.setdefault(game, 0)
+            if counts[game] < max_per_game:
                 kept.append(p)
-                buckets[g] += 1
+                counts[game] += 1
         if len(kept) != len(singles):
             log.info("per-game cap: singles %d → %d (max %d/game)", len(singles), len(kept), max_per_game)
         return kept + others
@@ -2057,9 +2041,7 @@ def gather(sport_filter=None):
     all_props=enrich_bdl_props(all_props)
     all_props=enrich_datastreak(all_props)
     all_props=enrich_oddspedia(all_props)
-    
-    all_props = apply_data_plus_visible(all_props)
-if new_cache:
+    if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
     # OddsPapi Fallback wenn keine Props gesammelt
     if not all_props and _all_keys_dead():
@@ -2076,6 +2058,7 @@ if new_cache:
             all_props=enrich_statz(all_props)
             log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
             return all_props
+    all_props = apply_data_plus_visible(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
 
