@@ -21,6 +21,7 @@ ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
 GROQ_KEYS      = _csv("GROQ_API_KEY")
 BALLDONTLIE_KEY= os.environ.get("BALLDONTLIE_API_KEY","")
+ODDSPAPI_KEY   = os.environ.get("ODDSPAPI","")
 SUPABASE_URL   = os.environ.get("SUPABASE_URL","")
 SUPABASE_KEY   = os.environ.get("SUPABASE_KEY","")
 TG_TOKEN       = os.environ.get("TELEGRAM_BOT_TOKEN","")
@@ -568,12 +569,234 @@ def enrich_fpp_nhl(props: list) -> list:
     log.info("FPP NHL enriched: %d", enriched)
     return props
 
-def _fuzzy(name,d,thr=85):
+# ─────────────────────────────────────────────
+# ENRICHMENT: BALLDONTLIE PLAYER PROPS (NBA/WNBA)
+# ─────────────────────────────────────────────
+_BDL_PROPS_CACHE: dict = {}
+
+def fetch_bdl_props(sport: str = "nba") -> dict:
+    """
+    Holt Player Props von BallDontLie (braucht GOAT Plan).
+    Gibt dict zurück: {player_name_lower: [{market, line, over_odds, under_odds}]}
+    """
+    cache_key = f"bdl_props_{sport}"
+    if cache_key in _BDL_PROPS_CACHE:
+        return _BDL_PROPS_CACHE[cache_key]
+    key = BDL_KEY
+    if not key:
+        return {}
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    base = "https://api.balldontlie.io/v1" if sport == "nba" else f"https://{sport}.balldontlie.io/v1"
+    url = f"{base}/player_props"
+    try:
+        r = requests.get(url, headers={"Authorization": key},
+                         params={"date": today, "per_page": 100}, timeout=20)
+        if r.status_code == 402:
+            log.warning("BDL Props: GOAT Plan erforderlich")
+            return {}
+        if r.status_code != 200:
+            log.warning("BDL Props: %s", r.status_code)
+            return {}
+        data = r.json().get("data", [])
+        result: dict = {}
+        for item in data:
+            pname = (item.get("player", {}) or {}).get("display_name", "").lower()
+            if not pname: continue
+            entry = {
+                "market": item.get("stat_type", ""),
+                "line": item.get("line"),
+                "over_odds": item.get("over_odds"),
+                "under_odds": item.get("under_odds"),
+            }
+            result.setdefault(pname, []).append(entry)
+        log.info("BDL Props: %d Spieler (%s)", len(result), sport)
+        _BDL_PROPS_CACHE[cache_key] = result
+        return result
+    except Exception as e:
+        log.warning("BDL Props: %s", e)
+        return {}
+
+def enrich_bdl_props(props: list) -> list:
+    """Nutzt BallDontLie Props als zusätzliche Odds-Quelle für NBA/WNBA."""
+    sports = set(p.sport for p in props if p.sport in ("NBA", "WNBA"))
+    if not sports: return props
+    all_data: dict = {}
+    for s in sports:
+        all_data.update(fetch_bdl_props(s.lower()))
+    if not all_data: return props
+    enriched = 0
+    for p in props:
+        if p.sport not in ("NBA", "WNBA"): continue
+        matched = _fuzzy(p.player or "", all_data)
+        if not matched: continue
+        market_lower = (p.market or "").lower()
+        for entry in matched:
+            m = (entry.get("market") or "").lower()
+            if any(k in market_lower for k in m.split("_")):
+                line = entry.get("line")
+                over = entry.get("over_odds")
+                if line and over:
+                    tag = f"BDL {entry['market']} {line} @{over}"
+                    p.enrichment = (p.enrichment + " | " if p.enrichment else "") + tag
+                    enriched += 1
+                break
+    log.info("BDL Props enriched: %d", enriched)
+    return props
+
+# ─────────────────────────────────────────────
+# ENRICHMENT: DATASTREAK (Hit Rates, alle Sports)
+# ─────────────────────────────────────────────
+_DATASTREAK_CACHE: dict = {}
+
+def fetch_datastreak(sport: str) -> dict:
+    """
+    Holt Hit Rates von thedatastreak.com via Playwright.
+    Gibt dict zurück: {player_name_lower: {l5, l10, season, streak}}
+    """
+    cache_key = f"ds_{sport}"
+    if cache_key in _DATASTREAK_CACHE:
+        return _DATASTREAK_CACHE[cache_key]
+    sport_map = {"NBA": "nba", "WNBA": "wnba", "MLB": "mlb", "NHL": "nhl", "NFL": "nfl"}
+    slug = sport_map.get(sport)
+    if not slug or not PLAYWRIGHT:
+        return {}
+    url = f"https://thedatastreak.com/{slug}/props"
+    result: dict = {}
+    try:
+        import asyncio
+        async def _scrape():
+            async with async_playwright() as pw:
+                browser = await pw.chromium.launch(headless=True)
+                page = await browser.new_page()
+                await page.goto(url, timeout=25000, wait_until="networkidle")
+                await page.wait_for_timeout(3000)
+                content = await page.inner_text("body")
+                await browser.close()
+                return content
+        content = asyncio.run(_scrape())
+        import re as _re
+        # Parse: "PlayerName L5:80% L10:75% Season:72%"
+        # DataStreak zeigt Tabellen — suche nach Mustern
+        lines = content.split("\n")
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if not line or len(line) < 3:
+                i += 1; continue
+            # Hit rate patterns: Zahlen mit %
+            pct_matches = _re.findall(r'(\d+)%', line)
+            if len(pct_matches) >= 2:
+                # Spielername ist wahrscheinlich die Zeile davor
+                name = lines[i-1].strip().lower() if i > 0 else ""
+                if name and len(name) > 3 and not any(c.isdigit() for c in name):
+                    result[name] = {
+                        "l5": pct_matches[0] + "%",
+                        "l10": pct_matches[1] + "%",
+                        "season": pct_matches[2] + "%" if len(pct_matches) > 2 else "",
+                    }
+            i += 1
+        log.info("DataStreak %s: %d Spieler", sport, len(result))
+    except Exception as e:
+        log.warning("DataStreak %s: %s", sport, e)
+    _DATASTREAK_CACHE[cache_key] = result
+    return result
+
+def enrich_datastreak(props: list) -> list:
+    """Fügt DataStreak Hit Rates als Enrichment hinzu."""
+    sports = set(p.sport for p in props)
+    all_data: dict = {}
+    for s in sports:
+        d = fetch_datastreak(s)
+        if d: all_data.update(d)
+    if not all_data: return props
+    enriched = 0
+    for p in props:
+        matched = _fuzzy(p.player or "", all_data)
+        if not matched: continue
+        tag = f"DS L5:{matched.get('l5','')} L10:{matched.get('l10','')} S:{matched.get('season','')}"
+        p.enrichment = (p.enrichment + " | " if p.enrichment else "") + tag
+        enriched += 1
+    log.info("DataStreak enriched: %d", enriched)
+    return props
+
+# ─────────────────────────────────────────────
+# ENRICHMENT: ODDSPEDIA (Odds Vergleich)
+# ─────────────────────────────────────────────
+_ODDSPEDIA_CACHE: dict = {}
+
+def fetch_oddspedia(sport: str) -> dict:
+    """
+    Holt Odds von oddspedia.com via cloudscraper.
+    Gibt dict zurück: {player_name_lower: {market, best_odds, bookmaker}}
+    """
+    cache_key = f"op_{sport}"
+    if cache_key in _ODDSPEDIA_CACHE:
+        return _ODDSPEDIA_CACHE[cache_key]
+    sport_map = {
+        "NBA": "basketball/nba", "WNBA": "basketball/wnba",
+        "MLB": "baseball/mlb", "NHL": "ice-hockey/nhl", "NFL": "american-football/nfl"
+    }
+    slug = sport_map.get(sport)
+    if not slug:
+        return {}
+    url = f"https://oddspedia.com/{slug}/player-props"
+    html = _cs_get(url)
+    if not html:
+        log.warning("Oddspedia: kein Response für %s", sport)
+        return {}
+    try:
+        import re as _re
+        def txt(s): return _re.sub(r'<[^>]+>', '', s).strip()
+        result: dict = {}
+        rows = _re.findall(r'<tr[^>]*>(.*?)</tr>', html, _re.DOTALL | _re.IGNORECASE)
+        for row in rows:
+            cells = [txt(c) for c in _re.findall(r'<td[^>]*>(.*?)</td>', row, _re.DOTALL | _re.IGNORECASE)]
+            if len(cells) < 3: continue
+            player = cells[0].split('\n')[0].strip().lower()
+            market = cells[1].strip() if len(cells) > 1 else ""
+            odds_str = cells[2].strip() if len(cells) > 2 else ""
+            bookie = cells[3].strip() if len(cells) > 3 else ""
+            if not player or not odds_str: continue
+            try:
+                odds_val = float(odds_str)
+                if odds_val < 1.01: continue
+            except: continue
+            if player not in result or odds_val > result[player].get("best_odds", 0):
+                result[player] = {"market": market, "best_odds": odds_val, "bookmaker": bookie}
+        log.info("Oddspedia: %d Spieler (%s)", len(result), sport)
+        _ODDSPEDIA_CACHE[cache_key] = result
+        return result
+    except Exception as e:
+        log.warning("Oddspedia parse: %s", e)
+        return {}
+
+def enrich_oddspedia(props: list) -> list:
+    """Fügt Oddspedia beste verfügbare Odds als Enrichment hinzu."""
+    sports = set(p.sport for p in props)
+    all_data: dict = {}
+    for s in sports:
+        d = fetch_oddspedia(s)
+        if d: all_data.update(d)
+    if not all_data: return props
+    enriched = 0
+    for p in props:
+        matched = _fuzzy(p.player or "", all_data)
+        if not matched: continue
+        best = matched.get("best_odds", 0)
+        bk = matched.get("bookmaker", "")
+        if best > p.odds + 0.05:  # Nur wenn Oddspedia besser ist
+            tag = f"OP best:{best} @{bk}"
+            p.enrichment = (p.enrichment + " | " if p.enrichment else "") + tag
+            enriched += 1
+    log.info("Oddspedia enriched: %d", enriched)
+    return props
+
+def _fuzzy(name, d, thr=85):
     if not name or not d: return None
-    nl=name.lower().strip()
+    nl = name.lower().strip()
     if nl in d: return d[nl]
     if not RAPIDFUZZ: return None
-    best=process.extractOne(nl,list(d.keys()),scorer=fuzz.WRatio,score_cutoff=thr)
+    best = process.extractOne(nl, list(d.keys()), scorer=fuzz.WRatio, score_cutoff=thr)
     return d[best[0]] if best else None
 
 # ─────────────────────────────────────────────
@@ -1398,10 +1621,48 @@ def send_telegram(text,dry_run=False):
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
     cache=load_cache(); new_cache={}
-    # If all keys dead, try stale cache
+    # If all keys dead, try stale cache then OddsPapi backup
     if _all_keys_dead() and not cache:
         log.warning("All keys dead — trying stale cache")
         cache=load_cache(force_stale=True)
+    # OddsPapi backup wenn Odds API Keys exhausted
+    if _all_keys_dead() and ODDSPAPI_KEY and not cache:
+        log.info("OddsPapi Backup aktiviert — Odds API exhausted")
+        sports_to_try = list(SPORTS.keys()) if not sport_filter else \
+            [k for k,v in SPORTS.items() if v.name.lower()==sport_filter.lower()]
+        for sk in sports_to_try:
+            op_props = fetch_oddspapi_props(sk)
+            if op_props:
+                active.append(f"(OP){sk.split('_')[-1].upper()}({len(op_props)})")
+                # Konvertiere OddsPapi Props in Prop-Objekte
+                for raw in op_props:
+                    try:
+                        sport_label = {
+                            "baseball_mlb":"MLB","basketball_nba":"NBA",
+                            "basketball_wnba":"WNBA","americanfootball_nfl":"NFL",
+                            "icehockey_nhl":"NHL"
+                        }.get(raw["sport"],"?")
+                        dec = raw.get("decimal_odds",0)
+                        if not dec or dec<=1: continue
+                        p = Prop(
+                            player=raw.get("player_name",""),
+                            market=raw.get("market_key",""),
+                            odds=round(dec,2),
+                            point=raw.get("line"),
+                            sport=sport_label,
+                            game=f"{raw.get('away_team','')} @ {raw.get('home_team','')}",
+                            direction="over" if "over" in (raw.get("selection","")).lower() else "under",
+                            features={},
+                            emoji=SPORTS.get(sk,SPORTS["baseball_mlb"]).emoji,
+                        )
+                        all_props.append(p)
+                    except Exception: continue
+        if all_props:
+            log.info("OddsPapi: %d props total", len(all_props))
+            all_props=enrich_propsmadness(all_props)
+            all_props=enrich_propcruncher(all_props)
+            log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
+            return all_props
     mlb_b={}; mlb_p={}; mlb_lu={}; nfl_inj={}; wx={}
     sports=SPORTS
     if sport_filter:
@@ -1500,6 +1761,9 @@ def gather(sport_filter=None):
     all_props=enrich_statz(all_props)
     all_props=enrich_propcruncher(all_props)
     all_props=enrich_fpp_nhl(all_props)
+    all_props=enrich_bdl_props(all_props)
+    all_props=enrich_datastreak(all_props)
+    all_props=enrich_oddspedia(all_props)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
