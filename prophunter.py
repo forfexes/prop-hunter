@@ -55,13 +55,13 @@ AI_RETRY       = 1
 # STRICT PICK FILTERS (v4)
 # Ziel: weniger Tipps, bessere Qualität, keine negativen Edges, Basket immer mit Line.
 # Alle Edge-Werte sind Prozentpunkte, z.B. +3.0 = +3%.
-MIN_EDGE_SINGLE       = 3.0
-MIN_EDGE_BASKET       = 3.0
-MIN_EDGE_HR           = 5.0
-MIN_PROB_BASKET       = 0.60
-MIN_PROB_MLB_HITS     = 0.62
-MIN_PROB_MLB_HR       = 0.25
-MAX_SINGLES_TOTAL     = 5
+MIN_EDGE_SINGLE       = 1.2
+MIN_EDGE_BASKET       = 1.5
+MIN_EDGE_HR           = 3.0
+MIN_PROB_BASKET       = 0.55
+MIN_PROB_MLB_HITS     = 0.56
+MIN_PROB_MLB_HR       = 0.18
+MAX_SINGLES_TOTAL     = 6
 MAX_HR_SINGLES        = 1
 MAX_COMBOS_TOTAL      = 2
 MAX_LOTTERY_TOTAL     = 1
@@ -826,7 +826,7 @@ def fetch_datastreak(sport: str) -> dict:
             async with async_playwright() as pw:
                 browser = await pw.chromium.launch(headless=True)
                 page = await browser.new_page()
-                await page.goto(url, timeout=25000, wait_until="networkidle")
+                await page.goto(url, timeout=12000, wait_until="domcontentloaded")
                 await page.wait_for_timeout(3000)
                 content = await page.inner_text("body")
                 await browser.close()
@@ -2224,6 +2224,35 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
         accepted_singles.append(p)
         if len(accepted_singles) >= MAX_SINGLES_TOTAL:
             break
+
+    # Rescue-Pass: Falls AI gute, aber knapp abgelehnte Picks liefert, nicht komplett leer posten.
+    # Wichtig: negative Edge bleibt verboten. Basket braucht weiterhin Line.
+    if not accepted_singles:
+        rescue=[]
+        for p in singles:
+            edge = p.edge_pct
+            prob = p.probability
+            if edge is None or edge <= 0:
+                continue
+            if _is_basket_pick(p):
+                if getattr(p, "point", None) is None and not re.search(r"\d+(?:\.\d+)?", p.market or ""):
+                    continue
+                if edge < 0.8 or (prob is not None and prob < 0.52):
+                    continue
+            elif _is_hr_pick(p):
+                if edge < 2.0 or (prob is not None and prob < 0.15):
+                    continue
+            elif _is_hits_pick(p):
+                if edge < 0.8 or (prob is not None and prob < 0.53):
+                    continue
+            elif edge < 0.8:
+                continue
+            rescue.append(p)
+            if len(rescue) >= 3:
+                break
+        if rescue:
+            accepted_singles.extend(rescue)
+            log.info("quality rescue: %d fallback singles accepted", len(rescue))
 
     # Kombis/Builder streng; Lottery wird neu aus Top-Wahrscheinlichkeiten gebaut.
     combos=[]
