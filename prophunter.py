@@ -1972,6 +1972,12 @@ def gather(sport_filter=None):
     all_props=enrich_bdl_props(all_props)
     all_props=enrich_datastreak(all_props)
     all_props=enrich_oddspedia(all_props)
+    # DATA+ optional enrichment/scoring (does not crash if module or cache is missing)
+    try:
+        from prop_hunter_scoring import apply_data_plus_to_props
+        all_props = apply_data_plus_to_props(all_props, cache_file="prop_hunter_data_cache.json")
+    except Exception as e:
+        log.warning("DATA+ enrichment skipped: %s", e)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
     # OddsPapi Fallback wenn keine Props gesammelt
@@ -2461,7 +2467,7 @@ def blend_with_ml(pick: Pick, llm_prob: float | None, sport_label: str) -> float
 # ─────────────────────────────────────────────
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v4 STRICT (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER v4 DATA+ (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props: log.warning("no props found"); return
     picks=analyse(props)
@@ -2477,7 +2483,7 @@ def run(dry_run=False,sport_filter=None):
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v4 STRICT")
+    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
