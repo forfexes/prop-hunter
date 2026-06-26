@@ -2511,18 +2511,97 @@ def blend_with_ml(pick: Pick, llm_prob: float | None, sport_label: str) -> float
 # SOURCE-PROP RESCUE PICKS
 # ─────────────────────────────────────────────
 def _source_prop_probability(p):
-    """Nimmt bevorzugt No-Vig/Fair-Prob, sonst vorhandene Features."""
+    """
+    Nimmt bevorzugt Fair-Prob.
+    Wenn fehlt: konservativer Fallback aus Odds + Source-Signalen.
+    Dadurch funktioniert Rescue auch bei Props ohne fertige fair_prob.
+    """
     try:
         feats = getattr(p, "features", {}) or {}
-        fp = feats.get("fair_prob")
-        if fp is not None:
-            return float(fp)
-        for k in ("probability", "hit_prob", "model_prob"):
-            if feats.get(k) is not None:
-                return float(feats.get(k))
+        if isinstance(feats, dict):
+            for k in ("fair_prob", "probability", "hit_prob", "model_prob", "proj_prob"):
+                v = feats.get(k)
+                if v is not None:
+                    return max(0.01, min(0.98, float(v)))
     except Exception:
         pass
-    return None
+
+    # Direkte Attribute prüfen
+    try:
+        for k in ("fair_prob", "probability", "hit_prob", "model_prob", "proj_prob"):
+            v = getattr(p, k, None)
+            if v is not None:
+                return max(0.01, min(0.98, float(v)))
+    except Exception:
+        pass
+
+    # Fallback: aus Quote + Kontext konservativ bauen
+    try:
+        odds = float(getattr(p, "odds", 0) or 0)
+        if odds <= 1.01:
+            return None
+
+        implied = 1.0 / odds
+        market = str(getattr(p, "market", "") or "").lower()
+        sport = str(getattr(p, "sport", "") or "").upper()
+        point = getattr(p, "point", None)
+        feats = getattr(p, "features", {}) or {}
+        enrichment = str(getattr(p, "enrichment", "") or "").lower()
+
+        boost = 0.0
+
+        # DATA+ Score
+        try:
+            dps = float((feats or {}).get("data_plus_score", 0) or 0)
+            boost += max(-0.035, min(0.050, dps * 0.012))
+        except Exception:
+            pass
+
+        # Source-Signale aus Analyse-Texten
+        positive_markers = [
+            "avg_last > linie", "avg_last > line", "over recent", "hit rate",
+            "starker", "solide", "line vorhanden", "projection over",
+            "proj over", "value", "plus matchup"
+        ]
+        negative_markers = [
+            "schwach", "low", "below", "under recent", "tiefe", "bad matchup"
+        ]
+
+        for m in positive_markers:
+            if m in enrichment:
+                boost += 0.018
+        for m in negative_markers:
+            if m in enrichment:
+                boost -= 0.015
+
+        # Basket: ohne Line gar nicht, mit Line kleiner Boost möglich
+        if sport in ("NBA", "WNBA") or "basketball" in sport.lower():
+            if point is None:
+                return None
+            boost += 0.020
+
+        # MLB HR: hohe Quoten haben kleine implied probability, nur kleiner Kontextboost
+        is_hr = "home run" in market or re.search(r"hr", market) is not None
+        if is_hr:
+            boost = min(boost, 0.045)
+
+        # MLB Hits/Total Bases konservativer
+        if "hit" in market or "total base" in market or "bases" in market:
+            boost += 0.015
+
+        # Untere/obere Sicherheitsgrenzen
+        prob = implied + boost
+
+        # Für normale Props nicht unrealistisch aufblasen
+        if not is_hr:
+            prob = max(implied, prob)
+            prob = min(prob, 0.64)
+        else:
+            prob = min(prob, 0.30)
+
+        return max(0.01, min(0.98, prob))
+    except Exception:
+        return None
 
 def _source_prop_team(p):
     return getattr(p, "team", None) or getattr(p, "home", None) or ""
@@ -2772,7 +2851,7 @@ def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
 
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v4 DATA+ FILL-UP (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER v4 DATA+ FILL-UP PROB (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props:
         log.warning("no props found")
@@ -2815,7 +2894,7 @@ def run(dry_run=False,sport_filter=None):
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ FILL-UP")
+    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ FILL-UP PROB")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
