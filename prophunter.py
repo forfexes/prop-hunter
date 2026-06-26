@@ -2602,10 +2602,10 @@ def rescue_picks_from_props(props, max_picks=12):
             if point is None:
                 rejected["basket_no_line"] += 1
                 continue
-            if prob < 0.55:
+            if prob < 0.53:
                 rejected["basket_prob"] += 1
                 continue
-            if edge < 1.5:
+            if edge < 1.0:
                 rejected["basket_edge"] += 1
                 continue
         elif is_mlb:
@@ -2686,6 +2686,39 @@ def rescue_picks_from_props(props, max_picks=12):
 # MAIN PIPELINE
 # ─────────────────────────────────────────────
 
+
+def merge_unique_picks(primary, extra, max_singles=8, max_total=12):
+    """
+    Füllt Picks mit Rescue-Picks auf, ohne Spieler-Duplikate.
+    """
+    try:
+        out = []
+        seen = set()
+        single_count = 0
+
+        for source in (primary or []), (extra or []):
+            for p in source:
+                key = (
+                    (getattr(p, "type", "") or "").lower(),
+                    (getattr(p, "player", "") or "").lower().strip(),
+                    (getattr(p, "market", "") or "").lower().strip(),
+                    str(getattr(p, "point", "") or ""),
+                )
+                if key in seen:
+                    continue
+                if getattr(p, "type", None) == "single":
+                    if single_count >= max_singles:
+                        continue
+                    single_count += 1
+                seen.add(key)
+                out.append(p)
+                if len(out) >= max_total:
+                    return out
+        return out
+    except Exception as e:
+        log.warning("merge unique skipped: %s", e)
+        return primary or extra or []
+
 def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
     """
     Baut aus vorhandenen HR Singles zusätzlich 2 kleine HR-Lottery Kombis.
@@ -2739,7 +2772,7 @@ def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
 
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v4 DATA+ HR HUNTER (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER v4 DATA+ FILL-UP (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props:
         log.warning("no props found")
@@ -2755,11 +2788,24 @@ def run(dry_run=False,sport_filter=None):
         picks=filter_picks(picks)
         picks=quality_filter_picks(picks)
 
+        # Fill-Up: Wenn die KI zu wenig übrig lässt, füllen wir aus den besten Source-Props auf.
+        singles_now = sum(1 for p in picks if getattr(p, "type", None) == "single")
+        if singles_now < 5:
+            rescue = rescue_picks_from_props(props, max_picks=12)
+            before = len(picks)
+            picks = merge_unique_picks(picks, rescue, max_singles=8, max_total=12)
+            log.info("fill-up rescue: picks %d → %d (singles %d → %d)",
+                     before, len(picks), singles_now,
+                     sum(1 for p in picks if getattr(p, "type", None) == "single"))
+
     if not picks:
         log.warning("no picks after dedup/quality filter/rescue")
         return
 
     picks = limit_singles_per_game(picks, max_per_game=3)
+    picks = limit_total_singles(picks, max_singles=12)
+    hr_lottery = build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3)
+    picks = picks + hr_lottery
     body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
@@ -2769,7 +2815,7 @@ def run(dry_run=False,sport_filter=None):
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ HR HUNTER")
+    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ FILL-UP")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
