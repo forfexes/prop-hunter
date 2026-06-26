@@ -61,16 +61,25 @@ MIN_EDGE_HR           = 5.0
 MIN_PROB_BASKET       = 0.60
 MIN_PROB_MLB_HITS     = 0.62
 MIN_PROB_MLB_HR       = 0.25
-MAX_SINGLES_TOTAL     = 5
+MAX_SINGLES_TOTAL     = 12
 MAX_HR_SINGLES        = 1
 MAX_COMBOS_TOTAL      = 2
-MAX_LOTTERY_TOTAL     = 1
+MAX_LOTTERY_TOTAL     = 2
 MAX_LOTTERY_LEGS      = 3
 
 GEMINI_MODEL   = "gemini-2.0-flash"
 GROQ_MODELS    = ["llama-3.3-70b-versatile","llama-3.1-70b-versatile","mixtral-8x7b-32768"]
 FUZZY_THR      = 85
 LINEUP_THR     = 88
+
+
+# HR HUNTER SETTINGS:
+# Für volle MLB/WNBA Slates:
+# - bis 12 Singles total
+# - bis 3 Singles pro Spiel
+# - bis 2 Combos
+# - bis 2 Lottery
+# Schutz bleibt: keine negative Edge, Basket nur mit Line.
 
 # ─────────────────────────────────────────────
 # LOGGING
@@ -140,7 +149,7 @@ def apply_data_plus_visible(props):
         log.warning("DATA+ enrichment skipped: %s", e)
         return props
 
-def limit_singles_per_game(picks, max_per_game=2):
+def limit_singles_per_game(picks, max_per_game=3):
     try:
         singles = [p for p in picks if getattr(p, "type", None) == "single"]
         others = [p for p in picks if getattr(p, "type", None) != "single"]
@@ -1861,7 +1870,7 @@ def build_post(picks):
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
             out.append(f"{pfx} {' + '.join(legs)} @{p.odds:.1f} → {p.stake}u")
         out.append("")
-    out+=["📊 Weniger Picks · Keine negative Edge · Lines Pflicht 🎯","@prophunter"]
+    out+=["📊 Mehr Value Picks · Keine negative Edge · Lines Pflicht 🎯","@prophunter"]
     return "\n".join(out)
 
 # ─────────────────────────────────────────────
@@ -2211,15 +2220,15 @@ def _lottery_leg_score(p: Pick) -> tuple:
 def _unique_probability_legs(singles: list[Pick], max_legs: int = MAX_LOTTERY_LEGS) -> list[Pick]:
     """Nimmt die wahrscheinlichsten akzeptierten Singles, max. ein HR, keine doppelten Spieler."""
     ordered = sorted(singles, key=_lottery_leg_score, reverse=True)
-    out=[]; players=set(); hr_used=False
+    out=[]; players=set(); hr_count=False
     for p in ordered:
         name=(p.player or "").lower().strip()
         if not name or name in players:
             continue
         if _is_hr_pick(p):
-            if hr_used:
+            if hr_count:
                 continue
-            hr_used=True
+            hr_count=True
         # Wahrscheinlichkeit muss für Lottery trotzdem Sinn machen
         prob = p.probability if p.probability is not None else implied_prob(p.odds)
         if _is_hr_pick(p):
@@ -2497,28 +2506,270 @@ def blend_with_ml(pick: Pick, llm_prob: float | None, sport_label: str) -> float
     return blended
 
 
+
+# ─────────────────────────────────────────────
+# SOURCE-PROP RESCUE PICKS
+# ─────────────────────────────────────────────
+def _source_prop_probability(p):
+    """Nimmt bevorzugt No-Vig/Fair-Prob, sonst vorhandene Features."""
+    try:
+        feats = getattr(p, "features", {}) or {}
+        fp = feats.get("fair_prob")
+        if fp is not None:
+            return float(fp)
+        for k in ("probability", "hit_prob", "model_prob"):
+            if feats.get(k) is not None:
+                return float(feats.get(k))
+    except Exception:
+        pass
+    return None
+
+def _source_prop_team(p):
+    return getattr(p, "team", None) or getattr(p, "home", None) or ""
+
+def _source_prop_game(p):
+    return getattr(p, "game", None) or ""
+
+def _source_prop_direction(p):
+    return getattr(p, "direction", None) or "over"
+
+def _source_prop_score_tuple(p):
+    prob = _source_prop_probability(p)
+    if prob is None:
+        return (-999.0, -999.0)
+    try:
+        edge = edge_pct(prob, float(p.odds)) * 100
+    except Exception:
+        edge = -999.0
+    # Erst Edge, dann Wahrscheinlichkeit. Das verhindert reine Favoriten ohne Value.
+    return (edge, prob)
+
+
+def limit_total_singles(picks, max_singles=12):
+    try:
+        singles = [p for p in picks if getattr(p, "type", None) == "single"]
+        others = [p for p in picks if getattr(p, "type", None) != "single"]
+        singles.sort(key=lambda p: ((getattr(p, "edge_pct", 0) or 0), (getattr(p, "probability", 0) or 0)), reverse=True)
+        kept = singles[:max_singles]
+        if len(kept) != len(singles):
+            log.info("total singles cap: %d → %d", len(singles), len(kept))
+        return kept + others
+    except Exception as e:
+        log.warning("total singles cap skipped: %s", e)
+        return picks
+
+def rescue_picks_from_props(props, max_picks=12):
+    """
+    Baut konservative Singles direkt aus Source-Props, wenn LLM/Filter 0 Picks liefern.
+    Regeln:
+    - keine negative Edge
+    - Basket nur mit Line
+    - Basket prob >= 55%, edge >= 1.5%
+    - MLB Hits prob >= 56%, edge >= 1.2%
+    - MLB HR prob >= 18%, edge >= 3.0%, max 1 HR
+    - max 3 Picks pro Spiel
+    """
+    candidates = []
+    rejected = defaultdict(int)
+    hr_count = 0
+    per_game = defaultdict(int)
+
+    for sp in props or []:
+        prob = _source_prop_probability(sp)
+        if prob is None:
+            rejected["no_prob"] += 1
+            continue
+        try:
+            odds = float(sp.odds)
+            edge = edge_pct(prob, odds) * 100
+        except Exception:
+            rejected["bad_odds"] += 1
+            continue
+        if edge <= 0:
+            rejected["negative_edge"] += 1
+            continue
+
+        sport = (getattr(sp, "sport", "") or "").upper()
+        market = getattr(sp, "market", "") or ""
+        point = getattr(sp, "point", None)
+        direction = _source_prop_direction(sp)
+        is_basket = sport in ("NBA", "WNBA")
+        is_mlb = sport == "MLB"
+        is_hr = "home run" in market.lower() or re.search(r"\bhr\b", market.lower()) is not None
+        is_hits = ("hit" in market.lower()) and not is_hr
+
+        if is_basket:
+            if point is None:
+                rejected["basket_no_line"] += 1
+                continue
+            if prob < 0.55:
+                rejected["basket_prob"] += 1
+                continue
+            if edge < 1.5:
+                rejected["basket_edge"] += 1
+                continue
+        elif is_mlb:
+            if is_hr:
+                # HR Hunter: mehrere HR erlaubt, aber nur mit Value.
+                # Home Runs sind High Variance, daher getrennt/kleiner Einsatz.
+                if prob < 0.14:
+                    rejected["hr_prob"] += 1
+                    continue
+                if edge < 2.5:
+                    rejected["hr_edge"] += 1
+                    continue
+            elif is_hits:
+                if prob < 0.56:
+                    rejected["hits_prob"] += 1
+                    continue
+                if edge < 1.2:
+                    rejected["hits_edge"] += 1
+                    continue
+            else:
+                if edge < 1.2:
+                    rejected["mlb_edge"] += 1
+                    continue
+        else:
+            if prob < 0.55 or edge < 1.5:
+                rejected["other_low"] += 1
+                continue
+
+        try:
+            pk = Pick(
+                type="single",
+                emoji=getattr(sp, "emoji", None),
+                player=getattr(sp, "player", None),
+                team=_source_prop_team(sp),
+                market=_market_with_line(market, direction, point),
+                direction=direction,
+                odds=round(odds, 2),
+                stake=stake_for(prob, odds, 0.55),
+                probability=round(prob, 4),
+                edge_pct=round(edge, 2),
+                ev=round(ev(prob, odds), 3),
+                game=_source_prop_game(sp),
+                analysis=(getattr(sp, "enrichment", None) or "Rescue Pick aus Source-Props/Fair-Prob")[:140],
+            )
+            pk.point = point
+            pk.source_sport = sport
+            pk.source_game = _source_prop_game(sp)
+            pk.features = getattr(sp, "features", {}) or {}
+            candidates.append(pk)
+        except Exception:
+            rejected["pick_build_error"] += 1
+
+    candidates.sort(key=lambda p: ((p.edge_pct or 0), (p.probability or 0)), reverse=True)
+
+    out = []
+    players = set()
+    for pk in candidates:
+        name = (pk.player or "").lower().strip()
+        if not name or name in players:
+            continue
+        g = (getattr(pk, "game", None) or getattr(pk, "team", None) or "unknown").strip()
+        if per_game[g] >= 3:
+            continue
+        if _is_hr_pick(pk):
+            if hr_count >= 6:
+                continue
+            hr_count += 1
+        out.append(pk)
+        players.add(name)
+        per_game[g] += 1
+        if len(out) >= max_picks:
+            break
+
+    log.info("source-prop rescue: %d candidates → %d picks | rejected=%s", len(candidates), len(out), dict(rejected))
+    return out
+
 # ─────────────────────────────────────────────
 # MAIN PIPELINE
 # ─────────────────────────────────────────────
+
+def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
+    """
+    Baut aus vorhandenen HR Singles zusätzlich 2 kleine HR-Lottery Kombis.
+    Nur Anzeige/Posting als extra Picks, falls genügend HR Kandidaten vorhanden sind.
+    """
+    try:
+        hrs = [p for p in picks if getattr(p, "type", None) == "single" and _is_hr_pick(p)]
+        hrs.sort(key=lambda p: ((getattr(p, "edge_pct", 0) or 0), float(getattr(p, "odds", 0) or 0)), reverse=True)
+        if len(hrs) < 2:
+            return []
+        tickets = []
+        used = 0
+        for i in range(max_tickets):
+            legs = hrs[used:used + legs_per_ticket]
+            if len(legs) < 2:
+                break
+            used += legs_per_ticket
+            try:
+                combo_odds = 1.0
+                combo_prob = 1.0
+                names = []
+                for leg in legs:
+                    combo_odds *= float(leg.odds)
+                    combo_prob *= float(leg.probability or 0.01)
+                    names.append(leg.player)
+                pk = Pick(
+                    type="lottery",
+                    emoji="🎯",
+                    player=" + ".join(names[:3]),
+                    team="MLB HR Hunter",
+                    market=f"{len(legs)}er HR Lottery",
+                    direction="over",
+                    odds=round(combo_odds, 2),
+                    stake=0.25,
+                    probability=round(combo_prob, 4),
+                    edge_pct=0,
+                    ev=0,
+                    game="MLB HR Lottery",
+                    analysis="High-Risk HR Kombi: kleiner Einsatz, hohe Quote, nur Value-Kandidaten.",
+                )
+                pk.legs = legs
+                tickets.append(pk)
+            except Exception:
+                continue
+        if tickets:
+            log.info("HR lottery built: %d tickets from %d HR singles", len(tickets), len(hrs))
+        return tickets
+    except Exception as e:
+        log.warning("HR lottery skipped: %s", e)
+        return []
+
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v4 DATA+ LOGGED (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER v4 DATA+ HR HUNTER (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
-    if not props: log.warning("no props found"); return
+    if not props:
+        log.warning("no props found")
+        return
+
     picks=analyse(props)
-    if not picks: log.warning("no picks from LLM"); return
-    picks=filter_picks(picks)
-    picks=quality_filter_picks(picks)
-    if not picks: log.warning("no picks after dedup/quality filter"); return
+
+    if not picks:
+        log.warning("no picks from LLM — trying source-prop rescue")
+        picks = rescue_picks_from_props(props, max_picks=12)
+        picks = filter_picks(picks)
+    else:
+        picks=filter_picks(picks)
+        picks=quality_filter_picks(picks)
+
+    if not picks:
+        log.warning("no picks after dedup/quality filter/rescue")
+        return
+
+    picks = limit_singles_per_game(picks, max_per_game=3)
     body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
-    if not dry_run: persist(picks)
+    if not dry_run:
+        persist(picks)
     log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ LOGGED")
+    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ HR HUNTER")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
