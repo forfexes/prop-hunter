@@ -1818,6 +1818,33 @@ def _fmt_leg(leg: str, singles: list[Pick]) -> str:
     return l
 
 
+
+def _safe_display_team(p):
+    """
+    Verhindert falsche Team-Anzeige bei WNBA/NBA, solange Team-Mapping nicht 100% sicher ist.
+    Odds-Event-Team kann falsch sein, wenn Player-Props aus beiden Teams zusammengeführt werden.
+    """
+    try:
+        emoji = getattr(p, "emoji", "") or ""
+        sport = (getattr(p, "source_sport", "") or getattr(p, "sport", "") or "").upper()
+        team = (getattr(p, "team", "") or "").strip()
+
+        # Für Basketball vorerst Team unterdrücken, ausser später echtes roster_team vorhanden ist.
+        feats = getattr(p, "features", {}) or {}
+        roster_team = ""
+        if isinstance(feats, dict):
+            roster_team = (feats.get("roster_team") or feats.get("actual_team") or "").strip()
+
+        if roster_team:
+            return roster_team
+
+        if emoji == "🏀" or sport in ("NBA", "WNBA"):
+            return ""
+
+        return team
+    except Exception:
+        return ""
+
 def build_post(picks):
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles=[p for p in picks if p.type=="single"]
@@ -1830,7 +1857,7 @@ def build_post(picks):
     out=[f"🎯 PROP HUNTER v4 — {today}",""]
     def fmt(p):
         m=_market_with_line(p.market or "", p.direction, getattr(p, "point", None))
-        team = (p.team or "").strip()
+        team = _safe_display_team(p)
         head = f"{p.emoji or '🎯'} {team + ' — ' if team else ''}{p.player}"
         line=f"{head}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
         meta=[]
@@ -2851,7 +2878,7 @@ def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
 
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v4 DATA+ FILL-UP PROB (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER v4 DATA+ TEAM-SAFE (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props:
         log.warning("no props found")
@@ -2894,7 +2921,7 @@ def run(dry_run=False,sport_filter=None):
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ FILL-UP PROB")
+    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ TEAM-SAFE")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
