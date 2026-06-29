@@ -4,93 +4,55 @@ on:
   workflow_dispatch:
     inputs:
       run_ai_master:
-        description: 'Run AI Master V11 database modules'
-        required: false
-        default: 'true'
+        description: "Run AI Master V11 database modules"
+        required: true
+        default: "false"
+        type: choice
+        options: ["false", "true"]
       run_bot:
-        description: 'Run Telegram Prop Hunter bot'
-        required: false
-        default: 'true'
+        description: "Run Telegram Prop Hunter bot"
+        required: true
+        default: "true"
+        type: choice
+        options: ["true", "false"]
       run_heavy_backfill:
-        description: 'Run heavy backfills/statcast'
-        required: false
-        default: 'false'
+        description: "Run heavy backfills/statcast"
+        required: true
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
   schedule:
-    - cron: '15 */3 * * *'
+    - cron: "0 */6 * * *"
 
 jobs:
   prop-hunter-ai-master:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
+
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Show repo files
-        run: |
-          ls -la
-          ls -la .github/workflows || true
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install requests pandas pyarrow supabase nba_api nflreadpy pybaseball MLB-StatsAPI beautifulsoup4 lxml python-dotenv rapidfuzz pydantic; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements_data_plus.txt ]; then pip install -r requirements_data_plus.txt; fi
           python -m playwright install chromium || true
-      - name: Compile all Python
+
+      - name: Compile Python
         run: python -m py_compile *.py
+
       - name: DATA+ scraper
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-        run: |
-          if [ -f prop_hunter_scraper.py ]; then python prop_hunter_scraper.py; fi
-      - name: History scraper
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          LAST_N_GAMES: 30
-        run: |
-          if [ -f prop_hunter_history_scraper.py ]; then python prop_hunter_history_scraper.py; else echo "history scraper missing - skipped"; fi
-      - name: AI Master V11
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_ai_master == 'true' }}
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
-          OPTICODDS_API_KEY: ${{ secrets.OPTICODDS_API_KEY }}
-          ODDSPAPI: ${{ secrets.ODDSPAPI }}
-          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
-          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-          TIKTOK_RESEARCH_TOKEN: ${{ secrets.TIKTOK_RESEARCH_TOKEN }}
-          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
-          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL
-          LAST_N_GAMES: 30
-          NBA_SEASON: 2025-26
-          NFL_SEASON: 2025
-        run: python prop_hunter_ai_master_v11.py
-      - name: Heavy backfills optional
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_heavy_backfill == 'true' }}
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          STATCAST_DAYS: 3
-          STATCAST_ROW_CAP: 10000
-        run: |
-          if [ -f prop_hunter_statcast_backfill.py ]; then python prop_hunter_statcast_backfill.py; fi
-          if [ -f prop_hunter_retrosheet_import.py ]; then python prop_hunter_retrosheet_import.py; fi
-      - name: Run Telegram Prop Hunter
-        if: ${{ inputs.run_bot == 'true' || github.event_name == 'schedule' }}
-        env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEYS: ${{ secrets.ODDS_API_KEYS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -100,5 +62,58 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
         run: |
-          test -f prophunter.py
-          python prophunter.py
+          if [ -f prop_hunter_scraper.py ]; then python prop_hunter_scraper.py; else echo "prop_hunter_scraper.py missing - skipped"; fi
+
+      - name: History scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          HISTORY_BATCH_SIZE: 75
+          HISTORY_PLAYER_CAP: 220
+          HISTORY_LAST_N_GAMES: 30
+        run: |
+          if [ -f prop_hunter_history_scraper.py ]; then python prop_hunter_history_scraper.py; else echo "history scraper missing - skipped"; fi
+
+      - name: AI Master V11
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_ai_master == 'true' }}
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEYS: ${{ secrets.ODDS_API_KEYS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ODDSPAPI: ${{ secrets.ODDSPAPI }}
+        run: |
+          if [ -f prop_hunter_ai_master_v11.py ]; then python prop_hunter_ai_master_v11.py; else echo "AI Master missing - skipped"; fi
+
+      - name: Heavy backfills
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_heavy_backfill == 'true' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          if [ -f prop_hunter_statcast_backfill.py ]; then python prop_hunter_statcast_backfill.py; else echo "statcast missing - skipped"; fi
+          if [ -f prop_hunter_retrosheet_import.py ]; then python prop_hunter_retrosheet_import.py; else echo "retrosheet missing - skipped"; fi
+
+      - name: Run Prop Hunter
+        if: ${{ github.event_name == 'schedule' || inputs.run_bot == 'true' }}
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEYS: ${{ secrets.ODDS_API_KEYS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ODDSPAPI: ${{ secrets.ODDSPAPI }}
+          PH_EVENT_PROPS_LIVE: "1"
+          PH_EVENT_PROPS_MIN_ROWS: "300"
+          PH_EVENT_PROPS_SUPABASE_LIMIT: "5000"
+          PH_EVENT_PROPS_EVENT_LIMIT: "20"
+        run: test -f prophunter.py && python prophunter.py
