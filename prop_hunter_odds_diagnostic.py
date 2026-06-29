@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 """
-PROP HUNTER — ODDS DIAGNOSTIC
-=============================
-
-Diagnose für:
-- Events vorhanden, aber props: 0
-- The Odds API Key/Quota/Markets/Regions
-- Event Player Props Endpoint
-
-Env:
-ODDS_API_KEY oder ODDS_API_KEYS
-ODDS_REGIONS default=us,eu
-ODDS_BOOKMAKERS optional
-ODDS_MARKETS default=player_points,player_rebounds,player_assists,player_threes,player_blocks,player_steals,player_turnovers,player_rebounds_assists,player_points_rebounds_assists,batter_home_runs,batter_hits,batter_total_bases,batter_rbis,pitcher_strikeouts
+PROP HUNTER — ODDS DIAGNOSTIC V2
+Tests all The Odds API keys for event-level player prop access.
 """
 
 from __future__ import annotations
@@ -27,199 +16,161 @@ from typing import Any, Dict, List
 import requests
 
 BASE = "https://api.the-odds-api.com/v4"
-OUT = Path("prop_hunter_odds_diagnostic_report.json")
+OUT = Path("prop_hunter_odds_diagnostic_v2_report.json")
 
-SPORTS = [
-    "baseball_mlb",
-    "basketball_nba",
-    "basketball_wnba",
-    "americanfootball_nfl",
-]
+SPORTS = ["baseball_mlb", "basketball_wnba", "basketball_nba", "americanfootball_nfl"]
 
-DEFAULT_MARKETS = [
-    "player_points",
-    "player_rebounds",
-    "player_assists",
-    "player_threes",
-    "player_blocks",
-    "player_steals",
-    "player_turnovers",
-    "player_rebounds_assists",
-    "player_points_rebounds_assists",
-    "batter_home_runs",
-    "batter_hits",
-    "batter_total_bases",
-    "batter_rbis",
-    "pitcher_strikeouts",
-]
+SPORT_MARKETS = {
+    "baseball_mlb": ["batter_home_runs", "batter_hits", "batter_total_bases", "pitcher_strikeouts"],
+    "basketball_wnba": ["player_points", "player_rebounds", "player_assists", "player_points_rebounds_assists", "player_rebounds_assists"],
+    "basketball_nba": ["player_points", "player_rebounds", "player_assists", "player_points_rebounds_assists", "player_rebounds_assists"],
+    "americanfootball_nfl": ["player_anytime_td", "player_reception_yds", "player_rush_yds", "player_pass_yds"],
+}
 
 
-def log(msg: str):
+def log(msg: str) -> None:
     print(datetime.now().strftime("%H:%M:%S"), msg, flush=True)
 
 
 def get_keys() -> List[str]:
     raw = os.getenv("ODDS_API_KEYS", "").strip() or os.getenv("ODDS_API_KEY", "").strip()
-    keys = []
-    for part in raw.replace("\n", ",").split(","):
-        k = part.strip()
-        if k:
-            keys.append(k)
-    return keys
+    return [x.strip() for x in raw.replace("\n", ",").split(",") if x.strip()]
 
 
 def masked(k: str) -> str:
-    if not k:
-        return ""
-    if len(k) <= 8:
-        return k[:2] + "***"
-    return k[:4] + "***" + k[-4:]
+    return k[:4] + "***" + k[-4:] if len(k) > 8 else k[:2] + "***"
 
 
-def request_json(url: str, params: dict, timeout: int = 25):
+def req(url: str, params: dict, timeout: int = 25) -> Dict[str, Any]:
     try:
         r = requests.get(url, params=params, timeout=timeout)
-        text = r.text[:500]
         try:
             data = r.json()
         except Exception:
             data = None
         return {
             "status": r.status_code,
-            "headers": {
-                "x-requests-remaining": r.headers.get("x-requests-remaining"),
-                "x-requests-used": r.headers.get("x-requests-used"),
-                "x-requests-last": r.headers.get("x-requests-last"),
-            },
             "data": data,
-            "text": text,
-            "url": r.url.replace(params.get("apiKey", ""), "***") if params.get("apiKey") else r.url,
+            "text": r.text[:800],
+            "headers": {
+                "remaining": r.headers.get("x-requests-remaining"),
+                "used": r.headers.get("x-requests-used"),
+                "last": r.headers.get("x-requests-last"),
+            },
         }
     except Exception as e:
-        return {"status": "EXCEPTION", "error": str(e), "data": None}
+        return {"status": "EXCEPTION", "error": str(e), "data": None, "headers": {}}
 
 
-def count_props(events_data: Any) -> int:
+def remaining_int(headers: dict) -> int:
+    try:
+        return int(headers.get("remaining") or -1)
+    except Exception:
+        return -1
+
+
+def count_outcomes(data: Any) -> int:
+    events = [data] if isinstance(data, dict) else data if isinstance(data, list) else []
     total = 0
-    if not isinstance(events_data, list):
-        return 0
-    for ev in events_data:
+    for ev in events:
+        if not isinstance(ev, dict):
+            continue
         for bm in ev.get("bookmakers", []) or []:
             for mk in bm.get("markets", []) or []:
                 total += len(mk.get("outcomes", []) or [])
     return total
 
 
-def main():
-    keys = get_keys()
-    regions = os.getenv("ODDS_REGIONS", "us,eu")
-    bookmakers = os.getenv("ODDS_BOOKMAKERS", "").strip()
-    markets = os.getenv("ODDS_MARKETS", ",".join(DEFAULT_MARKETS))
+def get_first_event(key: str, sport: str):
+    res = req(f"{BASE}/sports/{sport}/events", {"apiKey": key})
+    data = res.get("data")
+    events = data if isinstance(data, list) else []
+    return res, events[0] if events else None
 
-    report = {
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "regions": regions,
-        "bookmakers": bookmakers,
-        "markets": markets,
-        "keys": [],
-        "sports": {},
-    }
 
-    if not keys:
-        log("NO ODDS_API_KEY / ODDS_API_KEYS FOUND")
-        OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
-        return
-
-    log("=" * 70)
-    log("PROP HUNTER ODDS DIAGNOSTIC")
-    log("=" * 70)
-    log(f"keys: {len(keys)}")
-    log(f"regions: {regions}")
-    log(f"bookmakers: {bookmakers or '(default)'}")
-    log(f"markets: {markets}")
-
-    active_key = None
-
-    # 1) Usage check via sports endpoint
-    for i, key in enumerate(keys, start=1):
-        res = request_json(f"{BASE}/sports", {"apiKey": key})
-        info = {
-            "index": i,
-            "masked": masked(key),
-            "status": res.get("status"),
-            "headers": res.get("headers"),
-        }
-        report["keys"].append(info)
-
-        log(f"KEY {i}/{len(keys)} {masked(key)} → status={res.get('status')} remaining={res.get('headers',{}).get('x-requests-remaining')} used={res.get('headers',{}).get('x-requests-used')}")
-
-        if res.get("status") == 200 and active_key is None:
-            active_key = key
-
-    if not active_key:
-        log("NO WORKING ODDS KEY FOUND")
-        OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
-        return
-
-    log(f"active key: {masked(active_key)}")
-
-    # 2) Check events and player props per sport
-    for sport in SPORTS:
-        log("-" * 70)
-        log(f"SPORT {sport}")
-        sport_report = {"events_status": None, "events_count": 0, "props_status": None, "props_count": 0, "events": []}
-
-        # Events
-        ev_res = request_json(
-            f"{BASE}/sports/{sport}/events",
-            {"apiKey": active_key},
-        )
-        sport_report["events_status"] = ev_res.get("status")
-        events = ev_res.get("data") if isinstance(ev_res.get("data"), list) else []
-        sport_report["events_count"] = len(events)
-        log(f"{sport}: events status={ev_res.get('status')} count={len(events)} remaining={ev_res.get('headers',{}).get('x-requests-remaining')}")
-
-        # Try normal odds endpoint with player markets
-        params = {
-            "apiKey": active_key,
+def test_event_props(key: str, sport: str, event_id: str, markets: List[str], regions: str) -> dict:
+    return req(
+        f"{BASE}/sports/{sport}/events/{event_id}/odds",
+        {
+            "apiKey": key,
             "regions": regions,
-            "markets": markets,
+            "markets": ",".join(markets),
             "oddsFormat": "decimal",
             "dateFormat": "iso",
+        },
+    )
+
+
+def main() -> None:
+    keys = get_keys()
+    regions = os.getenv("ODDS_REGIONS", "us,eu")
+    report = {"created_at": datetime.now(timezone.utc).isoformat(), "regions": regions, "keys": [], "tests": []}
+
+    log("=" * 80)
+    log("PROP HUNTER ODDS DIAGNOSTIC V2")
+    log("=" * 80)
+
+    if not keys:
+        log("NO ODDS API KEYS FOUND")
+        OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        return
+
+    key_infos = []
+    for idx, key in enumerate(keys, start=1):
+        res = req(f"{BASE}/sports", {"apiKey": key})
+        info = {
+            "index": idx,
+            "masked": masked(key),
+            "status": res.get("status"),
+            "remaining": remaining_int(res.get("headers") or {}),
+            "used": (res.get("headers") or {}).get("used"),
         }
-        if bookmakers:
-            params["bookmakers"] = bookmakers
+        key_infos.append((key, info))
+        report["keys"].append(info)
+        log(f"KEY {idx}: {info['masked']} status={info['status']} remaining={info['remaining']} used={info['used']}")
 
-        odds_res = request_json(f"{BASE}/sports/{sport}/odds", params)
-        data = odds_res.get("data")
-        props_count = count_props(data)
-        sport_report["props_status"] = odds_res.get("status")
-        sport_report["props_count"] = props_count
-        sport_report["props_text"] = odds_res.get("text")
-        log(f"{sport}: sport odds props status={odds_res.get('status')} props_outcomes={props_count} remaining={odds_res.get('headers',{}).get('x-requests-remaining')}")
+    valid = [(k, i) for k, i in key_infos if i["status"] == 200]
+    valid.sort(key=lambda x: x[1]["remaining"], reverse=True)
+    log("-" * 80)
+    if valid:
+        log(f"BEST QUOTA KEY: {valid[0][1]['index']} {valid[0][1]['masked']} remaining={valid[0][1]['remaining']}")
 
-        # Event-level props for first few events
-        for ev in events[:5]:
-            eid = ev.get("id")
-            home = ev.get("home_team")
-            away = ev.get("away_team")
-            event_row = {"id": eid, "home": home, "away": away, "event_props_status": None, "event_props_count": 0}
-            if eid:
-                eparams = dict(params)
-                evp = request_json(f"{BASE}/sports/{sport}/events/{eid}/odds", eparams)
-                event_row["event_props_status"] = evp.get("status")
-                event_row["event_props_count"] = count_props(evp.get("data") if isinstance(evp.get("data"), list) else [evp.get("data")] if isinstance(evp.get("data"), dict) else [])
-                event_row["text"] = evp.get("text")
-                log(f"  event {eid} {away} @ {home}: status={event_row['event_props_status']} props={event_row['event_props_count']}")
-                time.sleep(0.2)
-            sport_report["events"].append(event_row)
+    for key, info in valid:
+        log("-" * 80)
+        log(f"TEST KEY {info['index']} {info['masked']}")
+        for sport in SPORTS:
+            ev_res, ev = get_first_event(key, sport)
+            event_count = len(ev_res.get("data") or []) if isinstance(ev_res.get("data"), list) else 0
+            log(f"{sport}: events_status={ev_res.get('status')} events={event_count}")
+            row = {"key": info, "sport": sport, "events_status": ev_res.get("status"), "events_count": event_count, "event": None, "market_tests": []}
+            if not ev:
+                report["tests"].append(row)
+                continue
 
-        report["sports"][sport] = sport_report
+            row["event"] = {"id": ev.get("id"), "home": ev.get("home_team"), "away": ev.get("away_team")}
+            log(f"  event {ev.get('away_team')} @ {ev.get('home_team')} id={ev.get('id')}")
+
+            markets = SPORT_MARKETS.get(sport, [])
+            for market in markets:
+                res = test_event_props(key, sport, ev.get("id"), [market], regions)
+                outcomes = count_outcomes(res.get("data"))
+                row["market_tests"].append({
+                    "market": market,
+                    "status": res.get("status"),
+                    "outcomes": outcomes,
+                    "text": res.get("text"),
+                    "headers": res.get("headers"),
+                })
+                log(f"    {market}: status={res.get('status')} outcomes={outcomes} remaining={(res.get('headers') or {}).get('remaining')}")
+                time.sleep(0.15)
+
+            report["tests"].append(row)
+            time.sleep(0.2)
 
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    log("=" * 70)
+    log("=" * 80)
     log(f"wrote {OUT}")
-    log("diagnostic done")
+    log("diagnostic v2 done")
 
 
 if __name__ == "__main__":
