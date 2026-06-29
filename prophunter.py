@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationEr
 # CONFIG
 # ─────────────────────────────────────────────
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
-ODDS_API_KEYS  = _csv("ODDS_API_KEY")
+ODDS_API_KEYS  = _csv("ODDS_API_KEYS") or _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
 GROQ_KEYS      = _csv("GROQ_API_KEY")
 BALLDONTLIE_KEY= os.environ.get("BALLDONTLIE_API_KEY","")
@@ -1102,8 +1102,13 @@ def _req(url,params,retries=1):
                 log.warning("Odds API key quota=0, marking dead")
                 _next_key()
             return r.json()
-        if r.status_code in (401,422) and ODDS_API_KEYS:
-            log.warning("Odds API quota exhausted on key %d", (_kid%len(ODDS_API_KEYS))+1)
+        if r.status_code == 422:
+            # 422 bedeutet meistens: Market-Kombination/Bookmaker-Filter ungültig oder aktuell nicht verfügbar.
+            # Das ist KEIN Key-Quota-Problem, deshalb Key nicht tot markieren.
+            log.warning("Odds API 422 invalid market mix for %s", url.split('/sports/')[-1][:80])
+            return None
+        if r.status_code == 401 and ODDS_API_KEYS:
+            log.warning("Odds API key rejected/quota exhausted on key %d", (_kid%len(ODDS_API_KEYS))+1)
             _next_key()
             if _all_keys_dead(): log.error("ALL Odds API keys exhausted!"); return None
             continue
@@ -1914,6 +1919,391 @@ def send_telegram(text,dry_run=False):
     except Exception as e: log.error("Telegram: %s",e); return False
 
 
+
+
+# ─────────────────────────────────────────────
+# FINAL EVENT PLAYER PROPS SOURCE
+# ─────────────────────────────────────────────
+# Fix: The Odds API Player Props funktionieren stabil über
+# /sports/{sport}/events/{eventId}/odds mit EINEM Market pro Request.
+# Diese Quelle wird direkt in prophunter.py gemerged, damit der Bot nicht mehr
+# bei props: 0 hängen bleibt.
+EVENT_PROPS_CACHE_FILE = "prop_hunter_event_props_cache.json"
+PH_EVENT_PROPS_MIN_ROWS = int(os.getenv("PH_EVENT_PROPS_MIN_ROWS", "300"))
+PH_EVENT_PROPS_SUPABASE_LIMIT = int(os.getenv("PH_EVENT_PROPS_SUPABASE_LIMIT", "5000"))
+PH_EVENT_PROPS_EVENT_LIMIT = int(os.getenv("PH_EVENT_PROPS_EVENT_LIMIT", "20"))
+PH_EVENT_PROPS_LIVE = os.getenv("PH_EVENT_PROPS_LIVE", "1").lower() not in ("0", "false", "no")
+PH_EVENT_PROPS_ALLOW_UNDER = os.getenv("PH_EVENT_PROPS_ALLOW_UNDER", "0").lower() in ("1", "true", "yes")
+
+EVENT_PROP_MARKETS = {
+    "baseball_mlb": [
+        "batter_home_runs", "batter_hits", "batter_total_bases", "batter_rbis",
+        "batter_runs_scored", "batter_stolen_bases", "pitcher_strikeouts", "pitcher_record_a_win",
+    ],
+    "basketball_wnba": [
+        "player_points", "player_rebounds", "player_assists", "player_threes",
+        "player_rebounds_assists", "player_points_rebounds_assists",
+        "player_points_rebounds", "player_points_assists",
+    ],
+    "basketball_nba": [
+        "player_points", "player_rebounds", "player_assists", "player_threes",
+        "player_rebounds_assists", "player_points_rebounds_assists",
+        "player_points_rebounds", "player_points_assists",
+    ],
+    "americanfootball_nfl": [
+        "player_anytime_td", "player_1st_td", "player_pass_tds", "player_pass_yds",
+        "player_rush_yds", "player_receptions", "player_reception_yds",
+    ],
+}
+
+EVENT_MARKET_LABELS = {
+    "batter_home_runs": "Home Run",
+    "batter_hits": "Hits",
+    "batter_total_bases": "Total Bases",
+    "batter_rbis": "RBI",
+    "batter_runs_scored": "Runs",
+    "batter_stolen_bases": "Stolen Base",
+    "pitcher_strikeouts": "Pitcher Strikeouts",
+    "pitcher_record_a_win": "Pitcher Win",
+    "player_points": "Points",
+    "player_rebounds": "Rebounds",
+    "player_assists": "Assists",
+    "player_threes": "3PM",
+    "player_rebounds_assists": "Rebounds+Assists",
+    "player_points_rebounds_assists": "PRA",
+    "player_points_rebounds": "PR",
+    "player_points_assists": "PA",
+    "player_anytime_td": "Anytime TD",
+    "player_1st_td": "First TD",
+    "player_pass_tds": "Pass TDs",
+    "player_pass_yds": "Pass Yards",
+    "player_rush_yds": "Rush Yards",
+    "player_receptions": "Receptions",
+    "player_reception_yds": "Receiving Yards",
+}
+
+
+def _event_sport_label(sport_key: str) -> tuple[str, str]:
+    cfg = SPORTS.get(sport_key)
+    if cfg:
+        return cfg.name, cfg.emoji
+    return sport_key.upper(), "🎯"
+
+
+def _event_direction(name: str) -> str:
+    n = (name or "").strip().lower()
+    if n in ("under", "no"):
+        return "under" if n == "under" else "no"
+    if n in ("yes", "over"):
+        return "over" if n == "over" else "yes"
+    return "over"
+
+
+def _event_keep_outcome(direction: str) -> bool:
+    # Standard: nur Over/Yes, weil das gesamte Scoring/Telegram bisher auf Overs aufgebaut ist.
+    # Under kann per PH_EVENT_PROPS_ALLOW_UNDER=1 aktiviert werden.
+    if direction in ("over", "yes"):
+        return True
+    return bool(PH_EVENT_PROPS_ALLOW_UNDER)
+
+
+def _event_fair_prob(odds: float, market_key: str, sport: str, point=None) -> float:
+    """Konservativer Fair-Prob Startwert für Rescue/Ranking, bis CLV/Learning genug Daten hat."""
+    try:
+        imp = 1.0 / float(odds)
+    except Exception:
+        return 0.0
+    m = (market_key or "").lower()
+    sport = (sport or "").upper()
+    boost = 0.025
+    if sport in ("NBA", "WNBA"):
+        boost = 0.040
+    if sport == "MLB":
+        if "home_runs" in m:
+            boost = 0.045
+        elif "hits" in m or "total_bases" in m:
+            boost = 0.035
+        elif "strikeouts" in m:
+            boost = 0.030
+    if sport == "NFL":
+        boost = 0.030
+    if point is None and sport in ("NBA", "WNBA"):
+        boost = 0.0
+    return max(0.02, min(0.88, imp + boost))
+
+
+def _event_row_to_prop(row: dict) -> Optional[Prop]:
+    try:
+        sport_key = row.get("source_sport_key") or row.get("sport_key") or ""
+        sport = row.get("league") or row.get("sport") or ""
+        # DB speichert sport oft als BASKETBALL/BASEBALL und league als MLB/WNBA.
+        if str(sport).upper() in ("BASEBALL", "BASKETBALL", "AMERICAN_FOOTBALL") and row.get("league"):
+            sport = row.get("league")
+        if not sport and sport_key:
+            sport, _ = _event_sport_label(sport_key)
+        sport = str(sport or "").upper().replace("AMERICANFOOTBALL", "NFL")
+        emoji = "⚾" if sport == "MLB" else "🏀" if sport in ("NBA", "WNBA") else "🏈" if sport == "NFL" else "🎯"
+
+        player = row.get("player_name") or row.get("player") or row.get("description") or ""
+        if not player or str(player).lower() in ("over", "under", "yes", "no"):
+            return None
+        market_key = row.get("market_key") or row.get("market") or ""
+        market = EVENT_MARKET_LABELS.get(str(market_key), row.get("market_group") or row.get("market") or str(market_key))
+        odds = row.get("odds_decimal") if row.get("odds_decimal") is not None else row.get("odds")
+        odds = float(odds)
+        if odds <= 1.01:
+            return None
+        point = row.get("line") if row.get("line") is not None else row.get("point")
+        try:
+            point = float(point) if point is not None and point != "" else None
+        except Exception:
+            point = None
+        direction = str(row.get("direction") or "over").lower()
+        if direction in ("over", "under", "yes", "no"):
+            direction = "over" if direction == "yes" else "under" if direction == "no" else direction
+        else:
+            direction = "over"
+        if not _event_keep_outcome(direction):
+            return None
+
+        home = row.get("home_team") or row.get("home") or ""
+        away = row.get("away_team") or row.get("away") or ""
+        game = row.get("game") or (f"{away} @ {home}" if home and away else "")
+        ct = row.get("commence_time")
+        ctdt = None
+        if ct:
+            try:
+                ctdt = datetime.fromisoformat(str(ct).replace("Z", "+00:00"))
+            except Exception:
+                ctdt = None
+        fair = _event_fair_prob(odds, str(market_key), sport, point)
+        features = {
+            "source": "the_odds_api_event_props",
+            "source_rank": 1,
+            "fair_prob": fair,
+            "market_key": market_key,
+            "bookmaker": row.get("bookmaker"),
+            "event_id": row.get("event_id") or row.get("source_event_id") or row.get("game_id"),
+            "snapshot_ts": row.get("snapshot_ts"),
+        }
+        p = Prop(
+            player=str(player), market=str(market), odds=round(odds, 2), point=point,
+            sport=sport, emoji=emoji, game=game, home=home or None, away=away or None,
+            commence_time=ctdt, features=features,
+            enrichment=f"EVENT PROPS | {row.get('bookmaker') or 'book'} | fair {fair*100:.0f}%",
+            direction=direction, team=row.get("team") or None, source="the_odds_api_event_props",
+        )
+        p.event_id = features["event_id"]
+        p.sport_key = sport_key
+        return p
+    except Exception:
+        return None
+
+
+def _load_event_props_cache() -> list[Prop]:
+    path = Path(EVENT_PROPS_CACHE_FILE)
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        rows = data.get("props", data if isinstance(data, list) else [])
+        out = []
+        for r in rows or []:
+            if isinstance(r, dict):
+                p = _event_row_to_prop(r)
+                if p:
+                    out.append(p)
+        log.info("event props cache loaded: %d", len(out))
+        return out
+    except Exception as e:
+        log.warning("event props cache read failed: %s", e)
+        return []
+
+
+def _load_event_props_supabase(limit: int = PH_EVENT_PROPS_SUPABASE_LIMIT) -> list[Prop]:
+    sb = _get_sb()
+    if not sb:
+        return []
+    try:
+        res = sb.table("prop_hunter_prop_snapshots").select("*").order("snapshot_ts", desc=True).limit(limit).execute()
+        rows = getattr(res, "data", None) or []
+        out = []
+        for r in rows:
+            p = _event_row_to_prop(r)
+            if p:
+                out.append(p)
+        log.info("event props supabase loaded: %d/%d", len(out), len(rows))
+        return out
+    except Exception as e:
+        log.warning("event props supabase load skipped: %s", e)
+        return []
+
+
+def _event_key_infos() -> list[dict]:
+    infos = []
+    for idx, key in enumerate(ODDS_API_KEYS or [], start=1):
+        try:
+            r = requests.get(f"{ODDS_BASE}/sports", params={"apiKey": key}, headers=HTTP_H, timeout=15)
+            rem = r.headers.get("x-requests-remaining", "-1")
+            try:
+                rem_i = int(rem)
+            except Exception:
+                rem_i = -1
+            infos.append({"idx": idx, "key": key, "status": r.status_code, "remaining": rem_i})
+        except Exception:
+            infos.append({"idx": idx, "key": key, "status": 0, "remaining": -1})
+    infos = [x for x in infos if x["status"] == 200 and x["remaining"] != 0]
+    infos.sort(key=lambda x: x["remaining"], reverse=True)
+    return infos
+
+
+def _event_api_get(url: str, params: dict, key_infos: list[dict]):
+    for info in key_infos:
+        p = dict(params)
+        p["apiKey"] = info["key"]
+        try:
+            r = requests.get(url, params=p, headers=HTTP_H, timeout=TIMEOUT)
+            if r.status_code == 200:
+                return r.json(), r.headers
+            if r.status_code in (401, 403, 429):
+                log.warning("event props key %d status=%s rotate", info["idx"], r.status_code)
+                continue
+            if r.status_code in (404, 422):
+                return None, r.headers
+            log.warning("event props HTTP %s: %s", r.status_code, r.text[:120])
+        except Exception as e:
+            log.warning("event props HTTP failed: %s", e)
+    return None, {}
+
+
+def _parse_live_event_market(sport_key: str, evrow: dict, market_key: str, data: dict) -> list[Prop]:
+    if not isinstance(data, dict):
+        return []
+    sport, emoji = _event_sport_label(sport_key)
+    home = data.get("home_team") or evrow.get("home_team") or ""
+    away = data.get("away_team") or evrow.get("away_team") or ""
+    game = f"{away} @ {home}" if home and away else ""
+    ct = data.get("commence_time") or evrow.get("commence_time")
+    rows = []
+    for bm in data.get("bookmakers", []) or []:
+        book = bm.get("key") or bm.get("title") or "book"
+        for mk in bm.get("markets", []) or []:
+            if (mk.get("key") or market_key) != market_key:
+                continue
+            for o in mk.get("outcomes", []) or []:
+                name = o.get("name") or ""
+                desc = o.get("description") or ""
+                if name in ("Over", "Under", "Yes", "No") and desc:
+                    player = desc
+                    direction = _event_direction(name)
+                else:
+                    player = name or desc
+                    direction = _event_direction(desc or "over")
+                if not player or str(player).lower() in ("over", "under", "yes", "no"):
+                    continue
+                if not _event_keep_outcome(direction):
+                    continue
+                row = {
+                    "source_sport_key": sport_key,
+                    "league": sport,
+                    "event_id": data.get("id") or evrow.get("id"),
+                    "game_id": data.get("id") or evrow.get("id"),
+                    "commence_time": ct,
+                    "game": game,
+                    "home_team": home,
+                    "away_team": away,
+                    "player_name": player,
+                    "market": market_key,
+                    "market_key": market_key,
+                    "direction": direction,
+                    "line": o.get("point"),
+                    "odds_decimal": o.get("price"),
+                    "bookmaker": book,
+                    "snapshot_ts": datetime.now(timezone.utc).isoformat(),
+                }
+                p = _event_row_to_prop(row)
+                if p:
+                    rows.append(p)
+    return rows
+
+
+def _load_event_props_live(sport_filter=None) -> list[Prop]:
+    if not PH_EVENT_PROPS_LIVE or not ODDS_API_KEYS:
+        return []
+    key_infos = _event_key_infos()
+    if not key_infos:
+        log.warning("event props live skipped: no working Odds keys")
+        return []
+    log.info("event props live: best key index=%s remaining=%s", key_infos[0]["idx"], key_infos[0]["remaining"])
+    sport_keys = list(EVENT_PROP_MARKETS.keys())
+    if sport_filter:
+        sf = sport_filter.lower()
+        aliases = {"mlb": "baseball_mlb", "wnba": "basketball_wnba", "nba": "basketball_nba", "nfl": "americanfootball_nfl"}
+        sport_keys = [aliases.get(sf, sf)] if aliases.get(sf, sf) in EVENT_PROP_MARKETS else []
+    out = []
+    for sk in sport_keys:
+        events, _ = _event_api_get(f"{ODDS_BASE}/sports/{sk}/events", {"dateFormat": "iso"}, key_infos)
+        if not isinstance(events, list):
+            continue
+        log.info("event props live %s: events=%d", sk, len(events))
+        for evrow in events[:PH_EVENT_PROPS_EVENT_LIMIT]:
+            eid = evrow.get("id")
+            if not eid:
+                continue
+            for market in EVENT_PROP_MARKETS.get(sk, []):
+                data, headers = _event_api_get(
+                    f"{ODDS_BASE}/sports/{sk}/events/{eid}/odds",
+                    {"regions": "us,eu", "markets": market, "oddsFormat": "decimal", "dateFormat": "iso"},
+                    key_infos,
+                )
+                rows = _parse_live_event_market(sk, evrow, market, data) if data else []
+                if rows:
+                    log.info("event props live %s %s event=%s rows=%d remaining=%s", sk, market, eid[:8], len(rows), headers.get("x-requests-remaining", "?"))
+                    out.extend(rows)
+                time.sleep(0.03)
+    log.info("event props live loaded: %d", len(out))
+    return out
+
+
+def _dedupe_and_rank_props(props: list[Prop]) -> list[Prop]:
+    best = {}
+    for p in props or []:
+        try:
+            key = dedup_key(p.player, p.market, getattr(p, "point", None), getattr(p, "direction", "over")) + "|" + (_source_prop_game(p) or "")
+            old = best.get(key)
+            if old is None or float(p.odds or 0) > float(old.odds or 0):
+                best[key] = p
+        except Exception:
+            continue
+    out = list(best.values())
+    def score(p):
+        try:
+            prob = (getattr(p, "features", {}) or {}).get("fair_prob") or _source_prop_probability(p) or 0
+            edge = edge_pct(float(prob), float(p.odds)) * 100 if prob else -999
+            source_rank = (getattr(p, "features", {}) or {}).get("source_rank", 9)
+            sport_bonus = 0.2 if (p.sport or "").upper() in ("WNBA", "NBA", "MLB") else 0
+            return (edge + sport_bonus, prob, -source_rank, -float(p.odds or 1))
+        except Exception:
+            return (-999, 0, 0, 0)
+    out.sort(key=score, reverse=True)
+    log.info("props dedup/rank: %d → %d", len(props or []), len(out))
+    return out
+
+
+def load_final_event_props(sport_filter=None, current_count: int = 0) -> list[Prop]:
+    props = []
+    # 1) Artifact/cache aus vorherigem Loader Run
+    props.extend(_load_event_props_cache())
+    # 2) Supabase Snapshots
+    if len(props) < PH_EVENT_PROPS_MIN_ROWS:
+        props.extend(_load_event_props_supabase())
+    # 3) Live-Fallback direkt im Bot, damit es keine Extra-Runs braucht
+    if len(props) < PH_EVENT_PROPS_MIN_ROWS or current_count < 200:
+        props.extend(_load_event_props_live(sport_filter))
+    props = _dedupe_and_rank_props(props)
+    log.info("FINAL EVENT PROPS merged source count: %d", len(props))
+    return props
+
 # ─────────────────────────────────────────────
 # GATHER (main data pipeline)
 # ─────────────────────────────────────────────
@@ -2053,6 +2443,18 @@ def gather(sport_filter=None):
                     if extras: p.enrichment=" | ".join(extras)
                     p.event_id=ev["id"]; p.sport_key=sk
                     all_props.append(p)
+
+    # FINAL: The Odds API Event Player Props direkt einbinden.
+    # Dadurch nutzt der Bot 8000+ Event-Props statt nur Restquellen/PropCruncher.
+    try:
+        event_props = load_final_event_props(sport_filter, current_count=len(all_props))
+        if event_props:
+            before_event_merge = len(all_props)
+            all_props.extend(event_props)
+            log.info("event props integrated: props %d → %d", before_event_merge, len(all_props))
+    except Exception as e:
+        log.warning("event props integration skipped: %s", e)
+
     # NBA/WNBA batch enrichment
     nba=[p for p in all_props if p.sport=="NBA"]
     if nba:
@@ -2094,6 +2496,7 @@ def gather(sport_filter=None):
             all_props=enrich_statz(all_props)
             log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
             return all_props
+    all_props = _dedupe_and_rank_props(all_props)
     all_props = apply_data_plus_visible(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
