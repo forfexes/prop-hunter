@@ -82,7 +82,6 @@ jobs:
           PH_MAX_PER_PLAYER: "3"
           PH_MAX_PER_GAME: "6"
         run: |
-          python prop_hunter_supabase_table_fix.py
           python -m py_compile prophunter.py
           python prophunter.py
 
