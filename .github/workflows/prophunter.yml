@@ -3,7 +3,10 @@ name: Prop Hunter V5 JK Style
 on:
   workflow_dispatch:
   schedule:
-    # Schweiz Sommerzeit: 10:00 Datenupdate, 18:30 Final Card, 23:00 US Final Card
+    # Schweiz Sommerzeit:
+    # 10:00 Datenupdate
+    # 18:30 Final Card
+    # 23:00 US Final Card
     - cron: '0 8 * * *'
     - cron: '30 16 * * *'
     - cron: '0 21 * * *'
@@ -27,11 +30,13 @@ jobs:
         run: |
           HOUR_MIN="$(date -u +'%H:%M')"
           echo "UTC time: $HOUR_MIN"
+
           if [ "$HOUR_MIN" = "16:30" ] || [ "$HOUR_MIN" = "21:00" ]; then
             echo "PH_RUN_MODE=final" >> "$GITHUB_ENV"
           else
             echo "PH_RUN_MODE=data" >> "$GITHUB_ENV"
           fi
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "PH_RUN_MODE=final" >> "$GITHUB_ENV"
           fi
@@ -42,13 +47,6 @@ jobs:
           test -f requirements.txt
           pip install -r requirements.txt
           python -m playwright install chromium || true
-
-      - name: Apply V5 runtime patch
-        run: |
-          test -f prophunter.py
-          test -f prop_hunter_v5_patch.py
-          python prop_hunter_v5_patch.py
-          python -m py_compile prophunter.py
 
       - name: Run DATA+ scraper
         env:
@@ -76,6 +74,14 @@ jobs:
             echo "prop_hunter_history_scraper.py not found, skip"
           fi
 
+      - name: Apply V5 JK Style patch
+        if: env.PH_RUN_MODE == 'final'
+        run: |
+          test -f prophunter.py
+          test -f prop_hunter_v5_patch.py
+          python prop_hunter_v5_patch.py
+          python -m py_compile prophunter.py
+
       - name: Run Prop Hunter final card
         if: env.PH_RUN_MODE == 'final'
         env:
@@ -88,8 +94,16 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
-          PH_MAX_PER_PLAYER: 3
-          PH_MAX_PER_GAME: 6
+
+          # Qualität statt künstliches Gesamtlimit
+          PH_MIN_EDGE: "3.0"
+          PH_MAX_PER_PLAYER: "3"
+          PH_MAX_PER_GAME: "6"
+
+          # Style
+          PH_OUTPUT_STYLE: "jk_simple"
+          PH_HIDE_SOURCES: "1"
+          PH_HIDE_DEBUG: "1"
         run: |
           python prophunter.py
 
