@@ -1,4 +1,4 @@
-name: Prop Hunter V5 JK Style
+name: Prop Hunter Clean
 
 on:
   workflow_dispatch:
@@ -74,37 +74,20 @@ jobs:
             echo "prop_hunter_history_scraper.py not found, skip"
           fi
 
-      - name: Apply V5 JK Style patch
-        if: env.PH_RUN_MODE == 'final'
-        run: |
-          test -f prophunter.py
-          test -f prop_hunter_v5_patch.py
-          python prop_hunter_v5_patch.py
-          python -m py_compile prophunter.py
-
       - name: Run Prop Hunter final card
         if: env.PH_RUN_MODE == 'final'
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          ODDSPAPI: ${{ secrets.ODDSPAPI }}
 
-          # Qualität statt künstliches Gesamtlimit
           PH_MIN_EDGE: "3.0"
+          PH_MAX_PICKS_TOTAL: "50"
           PH_MAX_PER_PLAYER: "3"
           PH_MAX_PER_GAME: "6"
-
-          # Style
-          PH_OUTPUT_STYLE: "jk_simple"
-          PH_HIDE_SOURCES: "1"
-          PH_HIDE_DEBUG: "1"
         run: |
+          python -m py_compile prophunter.py
           python prophunter.py
 
       - name: Data-only done
