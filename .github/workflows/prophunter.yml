@@ -68,7 +68,7 @@ jobs:
           fi
 
       - name: Run extra odds connectors
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_extra_odds == 'true' }}
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_extra_odds == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -82,7 +82,7 @@ jobs:
           if [ -f prop_hunter_odds_opticodds.py ]; then python prop_hunter_odds_opticodds.py; fi
 
       - name: Run results/backfill/settlement
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_backfill == 'true' }}
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_backfill == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -99,7 +99,7 @@ jobs:
           if [ -f espn_multisport_results.py ]; then python espn_multisport_results.py; fi
 
       - name: Run settlement + learning
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_backfill == 'true' }}
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_backfill == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
