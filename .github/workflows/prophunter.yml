@@ -3,10 +3,6 @@ name: Prop Hunter Clean
 on:
   workflow_dispatch:
   schedule:
-    # Schweiz Sommerzeit:
-    # 10:00 Datenupdate
-    # 18:30 Final Card
-    # 23:00 US Final Card
     - cron: '0 8 * * *'
     - cron: '30 16 * * *'
     - cron: '0 21 * * *'
@@ -81,12 +77,12 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-
           PH_MIN_EDGE: "3.0"
           PH_MAX_PICKS_TOTAL: "50"
           PH_MAX_PER_PLAYER: "3"
           PH_MAX_PER_GAME: "6"
         run: |
+          python prop_hunter_supabase_table_fix.py
           python -m py_compile prophunter.py
           python prophunter.py
 
