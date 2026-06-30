@@ -1741,7 +1741,11 @@ def build_prompt(props):
         line_txt = ""
         if getattr(p, "point", None) is not None:
             dir_word = "Under" if getattr(p, "direction", "over") == "under" else "Over"
-            if str(p.point) not in str(p.market) and f"{p.point:g}" not in str(p.market):
+            mkt = str(p.market)
+            # Nicht hinzufügen wenn Market schon Over/Under + Zahl enthält
+            import re as _re
+            already_has_line = bool(_re.search(r'(over|under)\s+\d+\.?\d*', mkt, _re.IGNORECASE))
+            if not already_has_line and str(p.point) not in mkt and f"{p.point:g}" not in mkt:
                 line_txt = f" {dir_word} {p.point:g}"
         ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} @{p.odds}{edge}"
         if p.enrichment: ln+=f"  [{p.enrichment}]"
@@ -2380,6 +2384,26 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     accepted_singles=[]
     rejected=defaultdict(int)
     hr_count=0
+
+    def _sanity_line(p) -> bool:
+        """Gibt False zurück wenn Linie unrealistisch ist."""
+        pt = getattr(p, "point", None)
+        if pt is None: return True
+        mkt = (p.market or "").lower()
+        direction = (p.direction or "over").lower()
+        # Points Under 5 oder Under 3 für NBA/WNBA ist Unsinn
+        if _is_basket_pick(p) and direction == "under":
+            if "point" in mkt and pt < 8: return False
+            if "rebound" in mkt and pt < 2: return False
+            if "assist" in mkt and pt < 1.5: return False
+        # Points Over 0.5 oder Over 1 für NBA/WNBA ist Unsinn
+        if _is_basket_pick(p) and direction == "over":
+            if "point" in mkt and pt < 5: return False
+            if ("pra" in mkt or "pts+reb" in mkt) and pt < 10: return False
+        # Pitcher Strikeouts Over 1 oder Under 1 ist Unsinn
+        if "pitcher" in mkt or "strikeout" in mkt:
+            if pt < 2: return False
+        return True
     # Singles zuerst prüfen und nach Edge/EV sortieren
     singles=[p for p in picks if p.type=="single"]
     singles.sort(key=lambda p: ((p.edge_pct if p.edge_pct is not None else -999), (p.probability or 0)), reverse=True)
@@ -2390,6 +2414,8 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
             rejected["no_edge"] += 1; continue
         if edge <= 0:
             rejected["negative_edge"] += 1; continue
+        if not _sanity_line(p):
+            rejected["bad_line"] += 1; continue
         if _is_basket_pick(p):
             if getattr(p, "point", None) is None and not re.search(r"\d+(?:\.\d+)?", p.market or ""):
                 rejected["basket_no_line"] += 1; continue
