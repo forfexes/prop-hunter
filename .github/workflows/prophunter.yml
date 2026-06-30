@@ -1,4 +1,4 @@
-name: Prop Hunter V7
+name: Prop Hunter V9
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 jobs:
   run-prop-hunter:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
 
     steps:
       - name: Checkout repo
@@ -26,11 +26,13 @@ jobs:
         run: |
           HOUR_MIN="$(date -u +'%H:%M')"
           echo "UTC time: $HOUR_MIN"
+
           if [ "$HOUR_MIN" = "16:30" ] || [ "$HOUR_MIN" = "21:00" ]; then
             echo "PH_RUN_MODE=final" >> "$GITHUB_ENV"
           else
             echo "PH_RUN_MODE=data" >> "$GITHUB_ENV"
           fi
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "PH_RUN_MODE=final" >> "$GITHUB_ENV"
           fi
@@ -68,15 +70,31 @@ jobs:
             echo "prop_hunter_history_scraper.py not found, skip"
           fi
 
-      - name: Normalize Props to Supabase
+      - name: Fetch American Player Props
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEYS: ${{ secrets.ODDS_API_KEYS }}
+        run: |
+          python -m py_compile american_props_scraper.py
+          python american_props_scraper.py --sport all --regions us,eu --max-events 20 --output american_props_output.json
+          ls -lh american_props_output.json
+          python - <<'PY'
+          import json
+          p='american_props_output.json'
+          data=json.load(open(p,encoding='utf-8'))
+          print('american_props_output rows=', len(data))
+          print('sample=', data[0] if data else None)
+          PY
+
+      - name: Load American Props to Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PH_MIN_EDGE: "3.0"
         run: |
-          python -m py_compile prop_hunter_normalizer.py
-          python prop_hunter_normalizer.py
+          python -m py_compile prop_hunter_loader.py
+          python prop_hunter_loader.py --input american_props_output.json --min-edge 3.0
 
       - name: Run Prop Hunter final card
         if: env.PH_RUN_MODE == 'final'
@@ -85,6 +103,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PH_MIN_EDGE: "3.0"
           PH_MAX_PICKS_TOTAL: "50"
           PH_MAX_PER_PLAYER: "3"
@@ -95,4 +114,4 @@ jobs:
 
       - name: Data-only done
         if: env.PH_RUN_MODE == 'data'
-        run: echo "Data update + normalization done. No Telegram card on morning/data run."
+        run: echo "Data update + props load done. No Telegram card on morning/data run."
