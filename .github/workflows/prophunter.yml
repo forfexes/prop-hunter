@@ -1,4 +1,4 @@
-name: Prop Hunter Clean
+name: Prop Hunter V7
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 jobs:
   run-prop-hunter:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repo
@@ -26,13 +26,11 @@ jobs:
         run: |
           HOUR_MIN="$(date -u +'%H:%M')"
           echo "UTC time: $HOUR_MIN"
-
           if [ "$HOUR_MIN" = "16:30" ] || [ "$HOUR_MIN" = "21:00" ]; then
             echo "PH_RUN_MODE=final" >> "$GITHUB_ENV"
           else
             echo "PH_RUN_MODE=data" >> "$GITHUB_ENV"
           fi
-
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "PH_RUN_MODE=final" >> "$GITHUB_ENV"
           fi
@@ -70,6 +68,16 @@ jobs:
             echo "prop_hunter_history_scraper.py not found, skip"
           fi
 
+      - name: Normalize Props to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          PH_MIN_EDGE: "3.0"
+        run: |
+          python -m py_compile prop_hunter_normalizer.py
+          python prop_hunter_normalizer.py
+
       - name: Run Prop Hunter final card
         if: env.PH_RUN_MODE == 'final'
         env:
@@ -87,4 +95,4 @@ jobs:
 
       - name: Data-only done
         if: env.PH_RUN_MODE == 'data'
-        run: echo "Data update done. No Telegram card on morning/data run."
+        run: echo "Data update + normalization done. No Telegram card on morning/data run."
