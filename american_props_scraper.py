@@ -1,28 +1,19 @@
 #!/usr/bin/env python3
 """
-PROP HUNTER - american_props_scraper.py
+PROP HUNTER - american_props_scraper.py V9
 
-Für American Sports:
-- MLB
-- NBA
-- NFL
-- NHL
-- WNBA optional
+Holt Player-Prop-Odds von The Odds API.
 
-Zweck:
-- Holt Player-Prop-Odds von The Odds API.
-- Normalisiert Props in ein einheitliches Format.
-- Speichert JSON für Supabase Loader.
+Neu:
+- --sport all unterstützt MLB, WNBA, NBA, NFL
+- schreibt alles gemeinsam in american_props_output.json
+- kein Überschreiben pro Sport nötig
 
 ENV:
 ODDS_API_KEY
-
-Beispiele:
-python american_props_scraper.py --sport baseball_mlb
-python american_props_scraper.py --sport basketball_nba
-python american_props_scraper.py --sport americanfootball_nfl
-python american_props_scraper.py --sport icehockey_nhl
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -35,6 +26,13 @@ import requests
 
 
 BASE_URL = "https://api.the-odds-api.com/v4"
+
+DEFAULT_SPORTS = [
+    "baseball_mlb",
+    "basketball_wnba",
+    "basketball_nba",
+    "americanfootball_nfl",
+]
 
 DEFAULT_MARKETS = {
     "baseball_mlb": [
@@ -61,40 +59,59 @@ DEFAULT_MARKETS = {
         "player_reception_yds",
         "player_anytime_td",
     ],
-    "icehockey_nhl": [
-        "player_points",
-        "player_power_play_points",
-        "player_shots_on_goal",
-        "player_assists",
-    ],
     "basketball_wnba": [
         "player_points",
         "player_rebounds",
         "player_assists",
         "player_threes",
+        "player_points_rebounds_assists",
     ],
 }
 
 
-def get_api_key() -> str:
-    key = os.environ.get("ODDS_API_KEY")
-    if not key:
-        raise RuntimeError("Fehlt: ODDS_API_KEY")
-    return key
+def get_api_keys() -> List[str]:
+    raw = os.environ.get("ODDS_API_KEY") or os.environ.get("ODDS_API_KEYS") or ""
+    keys = [k.strip() for k in raw.replace("\n", ",").split(",") if k.strip()]
+    if not keys:
+        raise RuntimeError("Fehlt: ODDS_API_KEY oder ODDS_API_KEYS")
+    return keys
 
 
-def get_json(url: str, params: dict, pause: float = 1.5) -> Optional[Any]:
+class KeyRing:
+    def __init__(self, keys: List[str]):
+        self.keys = keys
+        self.i = 0
+
+    @property
+    def key(self) -> str:
+        return self.keys[self.i % len(self.keys)]
+
+    def rotate(self) -> None:
+        self.i += 1
+
+
+KEYRING = KeyRing(get_api_keys())
+
+
+def get_json(url: str, params: dict, pause: float = 1.2) -> Optional[Any]:
     time.sleep(pause)
-    try:
-        r = requests.get(url, params=params, timeout=30)
-        print(f"[GET] {r.status_code} {r.url}")
-        if r.status_code != 200:
-            print(r.text[:500])
+    for attempt in range(len(KEYRING.keys)):
+        params = dict(params)
+        params["apiKey"] = KEYRING.key
+        try:
+            r = requests.get(url, params=params, timeout=30)
+            print(f"[GET] {r.status_code} {url}")
+            if r.status_code == 200:
+                return r.json()
+            print(r.text[:300])
+            if r.status_code in {401, 402, 403, 429}:
+                KEYRING.rotate()
+                continue
             return None
-        return r.json()
-    except Exception as e:
-        print(f"[ERROR] {url} -> {e}")
-        return None
+        except Exception as e:
+            print(f"[ERROR] {url} -> {e}")
+            KEYRING.rotate()
+    return None
 
 
 def american_to_decimal(price: Any) -> Optional[float]:
@@ -102,7 +119,6 @@ def american_to_decimal(price: Any) -> Optional[float]:
         price = float(price)
     except Exception:
         return None
-
     if price > 0:
         return round(1 + price / 100, 4)
     if price < 0:
@@ -148,12 +164,9 @@ def normalize_outcome(
     }
 
 
-def fetch_events(sport: str, regions: str = "eu", odds_format: str = "american") -> List[Dict[str, Any]]:
+def fetch_events(sport: str) -> List[Dict[str, Any]]:
     url = f"{BASE_URL}/sports/{sport}/events"
-    params = {
-        "apiKey": get_api_key(),
-    }
-    data = get_json(url, params) or []
+    data = get_json(url, {}) or []
     if not isinstance(data, list):
         return []
     return data
@@ -163,12 +176,11 @@ def fetch_event_props(
     sport: str,
     event_id: str,
     markets: List[str],
-    regions: str = "eu",
+    regions: str = "us,eu",
     bookmakers: Optional[str] = None,
 ) -> Dict[str, Any]:
     url = f"{BASE_URL}/sports/{sport}/events/{event_id}/odds"
     params = {
-        "apiKey": get_api_key(),
         "regions": regions,
         "markets": ",".join(markets),
         "oddsFormat": "american",
@@ -183,16 +195,17 @@ def fetch_event_props(
 def scrape_props(
     sport: str,
     markets: Optional[List[str]] = None,
-    regions: str = "eu",
+    regions: str = "us,eu",
     bookmakers: Optional[str] = None,
     max_events: int = 20,
 ) -> List[Dict[str, Any]]:
     markets = markets or DEFAULT_MARKETS.get(sport, [])
     if not markets:
-        raise RuntimeError(f"Keine Markets definiert für Sport: {sport}")
+        print(f"[WARN] Keine Markets definiert für Sport: {sport}")
+        return []
 
-    events = fetch_events(sport, regions=regions)[:max_events]
-    print(f"[INFO] Events gefunden: {len(events)}")
+    events = fetch_events(sport)[:max_events]
+    print(f"[INFO] {sport}: Events gefunden: {len(events)}")
 
     rows: List[Dict[str, Any]] = []
 
@@ -219,43 +232,51 @@ def scrape_props(
         for bookmaker in details.get("bookmakers", []) or []:
             for market in bookmaker.get("markets", []) or []:
                 for outcome in market.get("outcomes", []) or []:
-                    rows.append(
-                        normalize_outcome(
-                            sport=sport,
-                            event=event_context,
-                            bookmaker=bookmaker,
-                            market=market,
-                            outcome=outcome,
-                        )
+                    row = normalize_outcome(
+                        sport=sport,
+                        event=event_context,
+                        bookmaker=bookmaker,
+                        market=market,
+                        outcome=outcome,
                     )
+                    if row.get("player_name") and row.get("decimal_odds"):
+                        rows.append(row)
 
+    print(f"[OK] {sport}: Props gesammelt: {len(rows)}")
     return rows
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sport", required=True, help="z.B. baseball_mlb, basketball_nba, americanfootball_nfl, icehockey_nhl")
+    parser.add_argument("--sport", default="all", help="all, baseball_mlb, basketball_wnba, basketball_nba, americanfootball_nfl")
     parser.add_argument("--markets", help="Kommagetrennte Markets, sonst Default pro Sport")
-    parser.add_argument("--regions", default="eu")
-    parser.add_argument("--bookmakers", help="Optional z.B. pinnacle,draftkings,fanduel")
+    parser.add_argument("--regions", default="us,eu")
+    parser.add_argument("--bookmakers", help="Optional z.B. draftkings,fanduel,pinnacle")
     parser.add_argument("--max-events", type=int, default=20)
     parser.add_argument("--output", default="american_props_output.json")
     args = parser.parse_args()
 
-    markets = [m.strip() for m in args.markets.split(",")] if args.markets else None
+    sports = DEFAULT_SPORTS if args.sport == "all" else [args.sport]
+    all_rows: List[Dict[str, Any]] = []
 
-    rows = scrape_props(
-        sport=args.sport,
-        markets=markets,
-        regions=args.regions,
-        bookmakers=args.bookmakers,
-        max_events=args.max_events,
-    )
+    for sport in sports:
+        markets = [m.strip() for m in args.markets.split(",")] if args.markets and args.sport != "all" else None
+        try:
+            rows = scrape_props(
+                sport=sport,
+                markets=markets,
+                regions=args.regions,
+                bookmakers=args.bookmakers,
+                max_events=args.max_events,
+            )
+            all_rows.extend(rows)
+        except Exception as e:
+            print(f"[WARN] {sport} failed: {e}")
 
-    print(f"[OK] Props gesammelt: {len(rows)}")
+    print(f"[OK] Gesamt Props gesammelt: {len(all_rows)}")
 
     with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(rows, f, ensure_ascii=False, indent=2)
+        json.dump(all_rows, f, ensure_ascii=False, indent=2)
 
     print(f"[OK] Gespeichert: {args.output}")
 
