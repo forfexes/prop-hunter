@@ -624,41 +624,69 @@ def fetch_propcruncher_as_props(sport: str) -> list:
         rows_data = asyncio.run(_scrape())
         import re as _re
         for cells in rows_data:
-            # Format: Player | Team | Matchup | Prop | Line | Grade | ...Odds...
-            if len(cells) < 5: continue
+            # ProCruncher Format: Player | Prop | Line | Over/Under | Grade | Best Odds | ...
+            if len(cells) < 4: continue
             player_raw = cells[0].split('\n')[0].strip()
-            player = _re.sub(r'[A-Z]{2,3}\s+vs\s+[A-Z]{2,3}.*$','',player_raw).strip()
+            player = _re.sub(r'\s+[A-Z]{2,3}\s+vs\s+[A-Z]{2,3}.*$','',player_raw).strip()
             player = _re.sub(r'\s+[A-Z]{2,3}$','',player).strip()
             if not player or len(player) < 3: continue
-            # Prop und Linie finden
-            prop_name = ""; line_val = None; direction = "over"; grade = ""; odds_dec = 1.85
-            for cell in cells[1:]:
-                # Grade: S/A/B/C
-                if cell in ("S","A","B","C"): grade = cell
-                # Linie: Zahl mit evtl. O/U prefix
-                m = _re.match(r'^([OoUu])\s*(\d+\.?\d*)$', cell)
+
+            prop_name = ""; line_val = None; direction = "over"; grade = ""
+            
+            for i, cell in enumerate(cells[1:], 1):
+                cell = cell.strip()
+                if not cell: continue
+                
+                # Grade erkennen
+                if cell in ("S","A","B","C"):
+                    grade = cell
+                    continue
+                
+                # Direction + Line kombiniert: "O 3.5", "U 1.5", "Over 3.5", "Under 1.5"
+                m = _re.match(r'^([OoUu](?:ver|nder)?)\s+(\d+\.?\d*)$', cell)
                 if m:
-                    direction = "under" if m.group(1).lower()=="u" else "over"
+                    direction = "under" if m.group(1).lower().startswith("u") else "over"
                     line_val = float(m.group(2))
-                # Nur reine Zahl
-                elif _re.match(r'^\d+\.?\d*$', cell):
-                    try: line_val = float(cell)
+                    continue
+                
+                # Reine Zahl = Linie
+                if _re.match(r'^\d+\.?\d*$', cell):
+                    try: 
+                        v = float(cell)
+                        # Sanity check: Linien sind normalerweise 0.5 - 100
+                        if 0.5 <= v <= 100:
+                            line_val = v
                     except: pass
-                # Prop-Name
-                elif len(cell) > 3 and not _re.match(r'^[\d\.\+\-]+$', cell):
-                    if cell not in ("Over","Under","Today","Props") and grade not in (cell,):
-                        if not prop_name: prop_name = cell
-            # Nur Grade S und A
+                    continue
+                
+                # "Over" / "Under" allein
+                if cell.lower() == "over": direction = "over"; continue
+                if cell.lower() == "under": direction = "under"; continue
+                
+                # Prop-Name (erste nicht-numerische, nicht-grade Zelle)
+                skip = {"Over","Under","Today","Props","Best","Odds","Line","Grade",
+                        "Player","Prop","Pick","Value","Score","S","A","B","C"}
+                if len(cell) > 2 and cell not in skip and not _re.match(r'^[\d\.\+\-\@\%]+$', cell):
+                    if not prop_name:
+                        prop_name = cell
+
             if grade not in ("S","A"): continue
-            if not prop_name or line_val is None: continue
-            # Fake Odds basierend auf Grade (ProCruncher hat keine Decimal Odds)
+            if not prop_name: continue
+            # Wenn keine Linie gefunden → überspringen (verhindert "Over 2" Unsinn)
+            if line_val is None: continue
+            # Sanity: Linie muss zum Markt passen
+            market_lower = prop_name.lower()
+            if any(k in market_lower for k in ("strikeout","pitcher k")) and line_val < 1:
+                continue
+            if any(k in market_lower for k in ("points","rebounds","assists","pra","rba")) and line_val < 1:
+                continue
+
             odds_map = {"S": 1.83, "A": 1.80}
-            odds_dec = odds_map.get(grade, 1.80)
             emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
             props_out.append({
                 "player": player,
                 "market": prop_name,
-                "odds": odds_dec,
+                "odds": odds_map.get(grade, 1.80),
                 "line": line_val,
                 "sport": sport,
                 "direction": direction,
