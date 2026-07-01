@@ -632,6 +632,7 @@ def fetch_propcruncher_as_props(sport: str) -> list:
             if not player or len(player) < 3: continue
 
             prop_name = ""; line_val = None; direction = "over"; grade = ""
+            line_locked = False  # True sobald Linie via O/U Pattern gefunden
             
             for i, cell in enumerate(cells[1:], 1):
                 cell = cell.strip()
@@ -647,16 +648,17 @@ def fetch_propcruncher_as_props(sport: str) -> list:
                 if m:
                     direction = "under" if m.group(1).lower().startswith("u") else "over"
                     line_val = float(m.group(2))
+                    line_locked = True
                     continue
                 
-                # Reine Zahl = Linie
+                # Reine Zahl = Linie NUR wenn noch keine via O/U gefunden
                 if _re.match(r'^\d+\.?\d*$', cell):
-                    try: 
-                        v = float(cell)
-                        # Sanity check: Linien sind normalerweise 0.5 - 100
-                        if 0.5 <= v <= 100:
-                            line_val = v
-                    except: pass
+                    if not line_locked and line_val is None:
+                        try: 
+                            v = float(cell)
+                            if 0.5 <= v <= 100:
+                                line_val = v
+                        except: pass
                     continue
                 
                 # "Over" / "Under" allein
@@ -2862,6 +2864,7 @@ def rescue_picks_from_props(props, max_picks=12):
     - max 3 Picks pro Spiel
     """
     candidates = []
+    candidates_hr = []
     rejected = defaultdict(int)
     hr_count = 0
     per_game = defaultdict(int)
@@ -2877,17 +2880,37 @@ def rescue_picks_from_props(props, max_picks=12):
         except Exception:
             rejected["bad_odds"] += 1
             continue
+        sport = (getattr(sp, "sport", "") or "").upper()
+        market = getattr(sp, "market", "") or ""
+        is_hr = sport == "MLB" and ("home run" in market.lower() or re.search(r"\bhr\b", market.lower()) is not None)
+
+        # JK-STYLE HR LANE: HR ist Lottery, kein +EV-Zwang.
+        # Kriterium: starkes HR-Profil aus DATA+ (HR-Rate/Score), Odds 3.5–8.0.
+        if is_hr:
+            feats = getattr(sp, "features", {}) or {}
+            hr_rate = feats.get("mlb_hr_rate")
+            hr_score = feats.get("mlb_hr_score") or 0
+            try:
+                odds = float(sp.odds)
+            except Exception:
+                rejected["bad_odds"] += 1; continue
+            if not (3.5 <= odds <= 8.0):
+                rejected["hr_odds"] += 1; continue
+            strong_profile = (hr_rate is not None and float(hr_rate) >= 0.05) or float(hr_score) >= 2.0
+            if not strong_profile:
+                rejected["hr_profile"] += 1; continue
+            hr_prob = prob if prob and prob > 0.10 else min(0.30, max(0.12, float(hr_rate or 0.05) * 2.2))
+            candidates_hr.append((sp, hr_prob, odds))
+            continue
+
         if edge <= 0:
             rejected["negative_edge"] += 1
             continue
 
-        sport = (getattr(sp, "sport", "") or "").upper()
-        market = getattr(sp, "market", "") or ""
         point = getattr(sp, "point", None)
         direction = _source_prop_direction(sp)
         is_basket = sport in ("NBA", "WNBA")
         is_mlb = sport == "MLB"
-        is_hr = "home run" in market.lower() or re.search(r"\bhr\b", market.lower()) is not None
         is_hits = ("hit" in market.lower()) and not is_hr
 
         if is_basket:
@@ -2959,6 +2982,34 @@ def rescue_picks_from_props(props, max_picks=12):
             rejected["pick_build_error"] += 1
 
     candidates.sort(key=lambda p: ((p.edge_pct or 0), (p.probability or 0)), reverse=True)
+
+    # JK-STYLE HR PICKS bauen (max 3, beste HR-Profile zuerst)
+    candidates_hr.sort(key=lambda t: t[1], reverse=True)
+    for sp, hr_prob, odds in candidates_hr[:3]:
+        try:
+            pk = Pick(
+                type="single",
+                category="hr_lottery",
+                player=sp.player,
+                emoji=getattr(sp, "emoji", "⚾") or "⚾",
+                team=_source_prop_team(sp),
+                market="Home Run",
+                direction="over",
+                odds=round(odds, 2),
+                stake=0.25,
+                probability=round(hr_prob, 4),
+                edge_pct=0.0,
+                ev=round(ev(hr_prob, odds), 3),
+                game=_source_prop_game(sp),
+                analysis=(getattr(sp, "enrichment", None) or "JK HR: starkes HR-Profil (DATA+)")[:140],
+            )
+            pk.point = getattr(sp, "point", None)
+            pk.source_sport = "MLB"
+            pk.source_game = _source_prop_game(sp)
+            pk.features = getattr(sp, "features", {}) or {}
+            candidates.append(pk)
+        except Exception:
+            rejected["hr_build_error"] += 1
 
     out = []
     players = set()
