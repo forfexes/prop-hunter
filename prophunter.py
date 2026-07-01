@@ -1131,6 +1131,16 @@ def _req(url,params,retries=1):
                 _next_key()
             return r.json()
         if r.status_code in (401,422) and ODDS_API_KEYS:
+            # 401 = Invalid key (nicht nur quota) → alle Keys sofort als dead markieren
+            try:
+                err = r.json()
+                if err.get("error_code") == "INVALID_KEY":
+                    log.error("Odds API key INVALID — alle Keys deaktiviert, nutze Fallback")
+                    for i in range(len(ODDS_API_KEYS)):
+                        _dead_keys.add(i)
+                    return None
+            except Exception:
+                pass
             log.warning("Odds API quota exhausted on key %d", (_kid%len(ODDS_API_KEYS))+1)
             _next_key()
             if _all_keys_dead(): log.error("ALL Odds API keys exhausted!"); return None
