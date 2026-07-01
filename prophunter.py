@@ -2994,7 +2994,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 rejected["bad_odds"] += 1; continue
             if not (3.5 <= odds <= 8.0):
                 rejected["hr_odds"] += 1; continue
-            strong_profile = (hr_rate is not None and float(hr_rate) >= 0.05) or float(hr_score) >= 2.0
+            strong_profile = (hr_rate is not None and float(hr_rate) >= 0.04) or float(hr_score) >= 1.5
             if not strong_profile:
                 rejected["hr_profile"] += 1; continue
             hr_prob = prob if prob and prob > 0.10 else min(0.30, max(0.12, float(hr_rate or 0.05) * 2.2))
@@ -3111,12 +3111,17 @@ def rescue_picks_from_props(props, max_picks=12):
 
     out = []
     players = set()
+    per_market = defaultdict(int)
     for pk in candidates:
         name = (pk.player or "").lower().strip()
         if not name or name in players:
             continue
         g = (getattr(pk, "game", None) or getattr(pk, "team", None) or "unknown").strip()
         if per_game[g] >= 3:
+            continue
+        # Max 3 Picks pro Markt-Typ (verhindert 8x RBI)
+        mkey = re.sub(r'[\d\.\s]+', '', (pk.market or "").lower())[:20]
+        if per_market[mkey] >= 3:
             continue
         if _is_hr_pick(pk):
             if hr_count >= 6:
@@ -3125,6 +3130,7 @@ def rescue_picks_from_props(props, max_picks=12):
         out.append(pk)
         players.add(name)
         per_game[g] += 1
+        per_market[mkey] += 1
         if len(out) >= max_picks:
             break
 
