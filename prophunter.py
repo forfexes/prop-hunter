@@ -57,12 +57,12 @@ AI_RETRY       = 1
 # Alle Edge-Werte sind Prozentpunkte, z.B. +3.0 = +3%.
 MIN_EDGE_SINGLE       = 3.0
 MIN_EDGE_BASKET       = 3.0
-MIN_EDGE_HR           = 5.0
+MIN_EDGE_HR           = 1.0
 MIN_PROB_BASKET       = 0.60
 MIN_PROB_MLB_HITS     = 0.62
-MIN_PROB_MLB_HR       = 0.25
+MIN_PROB_MLB_HR       = 0.12
 MAX_SINGLES_TOTAL     = 12
-MAX_HR_SINGLES        = 1
+MAX_HR_SINGLES        = 3
 MAX_COMBOS_TOTAL      = 2
 MAX_LOTTERY_TOTAL     = 2
 MAX_LOTTERY_LEGS      = 3
@@ -695,6 +695,34 @@ def fetch_propcruncher_as_props(sport: str) -> list:
                 "emoji": emoji_map.get(sport,"🎯"),
                 "source": "propcruncher",
             })
+        # Abgeleitete RA/PRA Props für Basketball (aus Over-Einzelmärkten desselben Spielers)
+        if sport in ("NBA","WNBA"):
+            odds_map = {"S": 1.83, "A": 1.80}
+            emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
+            by_player = {}
+            for pr in props_out:
+                if pr["direction"] != "over": continue
+                by_player.setdefault(pr["player"], {})[pr["market"].lower()] = pr
+            def _find(mkts, keys):
+                for k, v in mkts.items():
+                    if any(x in k for x in keys): return v
+                return None
+            for player, mkts in by_player.items():
+                pts = _find(mkts, ("point",))
+                reb = _find(mkts, ("rebound",))
+                ast = _find(mkts, ("assist",))
+                base = {"sport": sport, "direction": "over", "game": "",
+                        "emoji": emoji_map.get(sport,"🏀"), "source": "propcruncher"}
+                if reb and ast:
+                    grade = "S" if "S" in (reb["grade"], ast["grade"]) else "A"
+                    props_out.append({**base, "player": player,
+                        "market": "Rebounds+Assists", "odds": odds_map.get(grade,1.80),
+                        "line": round(reb["line"]+ast["line"],1), "grade": grade})
+                if pts and reb and ast:
+                    grade = "S" if "S" in (pts["grade"], reb["grade"], ast["grade"]) else "A"
+                    props_out.append({**base, "player": player,
+                        "market": "Pts+Rebs+Asts", "odds": odds_map.get(grade,1.80),
+                        "line": round(pts["line"]+reb["line"]+ast["line"],1), "grade": grade})
         log.info("ProCruncher props: %d picks (%s Grade S/A)", len(props_out), sport)
         _PC_PROPS_CACHE[cache_key] = props_out
         return props_out
@@ -2305,7 +2333,17 @@ def analyse(props):
         pk.emoji = pk.emoji or m.emoji
         pk.team = pk.team or getattr(m, "team", None) or m.home or ""
         pk.direction = pk.direction or getattr(m, "direction", None) or "over"
-        pk.point = getattr(m, "point", None)
+        # Linie IMMER von Source Prop nehmen — LLM darf Linie nicht erfinden
+        source_point = getattr(m, "point", None)
+        pk.point = source_point
+        # Market von Source nehmen wenn LLM-Market unrealistische Linie enthält
+        import re as _re2
+        llm_nums = _re2.findall(r'\d+\.?\d*', pk.market or "")
+        if source_point and llm_nums:
+            max_llm_num = max(float(n) for n in llm_nums)
+            if max_llm_num > source_point * 3:
+                # LLM hat viel zu hohe Zahl → Market von Source nehmen
+                pk.market = m.market
         pk.source_sport = m.sport
         pk.source_game = m.game
         pk.features = getattr(m, "features", {}) or {}
