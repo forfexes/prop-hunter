@@ -732,6 +732,95 @@ def fetch_propcruncher_as_props(sport: str) -> list:
         log.warning("ProCruncher props Playwright: %s", e)
         return []
 
+# ─────────────────────────────────────────────
+# SUPABASE SNAPSHOT PROPS (von Odds-Connectoren) + GAMELOG FAIR-PROB
+# ─────────────────────────────────────────────
+def _sb_read():
+    if not (HAS_SUPABASE and SUPABASE_URL and SUPABASE_KEY): return None
+    try: return create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception: return None
+
+def fetch_snapshot_props(sport_filter=None) -> list:
+    """Liest heutige Props aus prop_hunter_prop_snapshots (odds-api.io/SGO/OpticOdds Connectoren)."""
+    c = _sb_read()
+    if c is None: return []
+    out = []
+    try:
+        today = datetime.now(timezone.utc).date().isoformat()
+        res = c.table("prop_hunter_prop_snapshots").select(
+            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team"
+        ).gte("created_at", today).limit(2000).execute()
+        emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
+        for r in (res.data or []):
+            odds = r.get("odds_decimal"); line = r.get("line")
+            player = r.get("player_name"); market = r.get("market")
+            sport = (r.get("sport") or r.get("league") or "").upper()
+            if not (player and market and odds and 1.01 < float(odds) < 50): continue
+            if sport_filter and sport_filter.lower() not in sport.lower(): continue
+            try:
+                out.append(Prop(
+                    player=player, market=market, odds=float(odds),
+                    point=float(line) if line is not None else None,
+                    sport=sport, emoji=emoji_map.get(sport,"🎯"),
+                    game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
+                    direction="over",
+                ))
+            except Exception: continue
+        if out: log.info("Snapshot props (Supabase): %d", len(out))
+    except Exception as e:
+        log.warning("snapshot props: %s", e)
+    return out
+
+_GAMELOG_CACHE: dict = {}
+def enrich_gamelogs_fairprob(props: list) -> list:
+    """
+    Nutzt prop_hunter_player_gamelogs (5k+ rows): L10-Über-Linie-Rate → fair_prob Blend.
+    Macht Edges aus EIGENER Datenbank statt nur implied Odds.
+    """
+    c = _sb_read()
+    if c is None or not props: return props
+    STAT_MAP = {
+        "hit": "hits", "total base": "total_bases", "home run": "home_runs",
+        "rbi": "rbi", "strikeout": "pitcher_strikeouts", "pitcher k": "pitcher_strikeouts",
+        "point": "points", "rebound": "rebounds", "assist": "assists",
+        "pra": "pra", "pts+rebs": "pra", "rebounds+assists": "ra", "3-pt": "threes_made",
+        "three": "threes_made",
+    }
+    boosted = 0
+    for p in props:
+        try:
+            point = getattr(p, "point", None)
+            if point is None: continue
+            mkt = (p.market or "").lower()
+            stat = next((v for k, v in STAT_MAP.items() if k in mkt), None)
+            if not stat: continue
+            key = _norm(p.player) if "_norm" in globals() else p.player.lower().strip()
+            cache_k = f"{key}|{stat}"
+            if cache_k not in _GAMELOG_CACHE:
+                res = c.table("prop_hunter_player_gamelogs").select(stat).eq(
+                    "normalized_name", key).not_.is_(stat, "null").order(
+                    "game_date", desc=True).limit(10).execute()
+                _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
+            vals = _GAMELOG_CACHE[cache_k]
+            if len(vals) < 5: continue
+            direction = getattr(p, "direction", "over") or "over"
+            over_rate = sum(1 for v in vals if v > point) / len(vals)
+            rate = (1 - over_rate) if direction == "under" else over_rate
+            rate = max(0.05, min(0.95, rate))
+            feats = getattr(p, "features", None) or {}
+            old = feats.get("fair_prob")
+            feats["fair_prob"] = round((float(old)*0.5 + rate*0.5) if old else rate, 4)
+            feats["gamelog_l10_rate"] = round(rate, 3)
+            feats["gamelog_n"] = len(vals)
+            p.features = feats
+            avg = sum(vals)/len(vals)
+            extra = f"DB L{len(vals)} avg {avg:.1f}, {int(rate*100)}% über Linie"
+            p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
+            boosted += 1
+        except Exception: continue
+    if boosted: log.info("Gamelog fair_prob (Supabase DB): %d props", boosted)
+    return props
+
 def gather_propcruncher_fallback(sport_filter=None) -> list:
     """
     Fallback wenn Odds API exhausted + kein OddsPapi Key:
@@ -2235,12 +2324,13 @@ def gather(sport_filter=None):
     all_props=enrich_oddspedia(all_props)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
-    # OddsPapi Fallback wenn keine Props gesammelt
+    # QUELLEN-KETTE: Odds API → OddsPapi → ProCruncher → Supabase Snapshots
     if not all_props and _all_keys_dead():
         _try_oddspapi()
         if all_props:
             all_props=enrich_propsmadness(all_props)
             all_props=enrich_propcruncher(all_props)
+            all_props=enrich_gamelogs_fairprob(all_props)
             log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
             return all_props
         # ProCruncher Fallback wenn OddsPapi auch leer
@@ -2248,9 +2338,17 @@ def gather(sport_filter=None):
         all_props = gather_propcruncher_fallback(sport_filter)
         if all_props:
             all_props=enrich_statz(all_props)
+            all_props=enrich_gamelogs_fairprob(all_props)
             log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
             return all_props
+        # Letzter Fallback: Supabase Snapshots (odds-api.io/SGO/OpticOdds Connectoren)
+        all_props = fetch_snapshot_props(sport_filter)
+        if all_props:
+            all_props=enrich_gamelogs_fairprob(all_props)
+            log.info("ACTIVE (Snapshots): props: %d",len(all_props))
+            return all_props
     all_props = apply_data_plus_visible(all_props)
+    all_props = enrich_gamelogs_fairprob(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
 
