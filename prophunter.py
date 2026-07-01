@@ -2085,7 +2085,30 @@ def gather(sport_filter=None):
         sports={k:v for k,v in SPORTS.items() if v.name.lower()==sport_filter.lower()}
     for sk,cfg in sports.items():
         events=fetch_events(sk)
-        if not events: continue
+        if not events:
+            # Wenn Odds API keine Events → ProCruncher als direkte Quelle nutzen
+            sport_label = {"baseball_mlb":"MLB","basketball_nba":"NBA",
+                          "basketball_wnba":"WNBA","icehockey_nhl":"NHL",
+                          "americanfootball_nfl":"NFL"}.get(sk)
+            if sport_label and PLAYWRIGHT:
+                pc_props = fetch_propcruncher_as_props(sport_label)
+                if pc_props:
+                    log.info("ProCruncher direkt: %d props (%s, Odds API 0 events)", len(pc_props), sport_label)
+                    active.append(f"{cfg.emoji}{cfg.name}(PC:{len(pc_props)})")
+                    for raw in pc_props:
+                        try:
+                            p = Prop(
+                                player=raw["player"], market=raw["market"],
+                                odds=raw["odds"], point=raw["line"],
+                                sport=raw["sport"], game=raw.get("game",""),
+                                direction=raw["direction"],
+                                features={"pc_grade": raw["grade"]},
+                                emoji=raw["emoji"],
+                                enrichment=f"PC:{raw['grade']}",
+                            )
+                            all_props.append(p)
+                        except Exception: continue
+            continue
         active.append(f"{cfg.emoji}{cfg.name}({len(events)})")
         if sk=="baseball_mlb":
             if not mlb_b: mlb_b=fetch_mlb_batters()
@@ -3038,8 +3061,15 @@ def run(dry_run=False,sport_filter=None):
                      sum(1 for p in picks if getattr(p, "type", None) == "single"))
 
     if not picks:
-        log.warning("no picks after dedup/quality filter/rescue")
-        return
+        log.warning("no picks after dedup/quality filter/rescue — trying relaxed edge")
+        # Letzter Versuch: Edge Filter lockern
+        rescue2 = rescue_picks_from_props(props, max_picks=4)
+        if rescue2:
+            picks = rescue2
+            log.info("relaxed rescue: %d picks", len(picks))
+        else:
+            log.warning("no picks at all — nothing to post")
+            return
 
     picks = limit_singles_per_game(picks, max_per_game=3)
     picks = limit_total_singles(picks, max_singles=12)
