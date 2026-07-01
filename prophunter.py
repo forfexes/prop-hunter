@@ -2823,6 +2823,14 @@ def rescue_picks_from_props(props, max_picks=12):
             if point is None:
                 rejected["basket_no_line"] += 1
                 continue
+            # Sanity check für Basket Linien
+            mkt_lower = market.lower()
+            if "point" in mkt_lower and direction == "under" and point < 8:
+                rejected["bad_line"] += 1; continue
+            if "point" in mkt_lower and direction == "over" and point < 5:
+                rejected["bad_line"] += 1; continue
+            if ("3-pt" in mkt_lower or "three" in mkt_lower) and point < 0.5:
+                rejected["bad_line"] += 1; continue
             if prob < 0.53:
                 rejected["basket_prob"] += 1
                 continue
