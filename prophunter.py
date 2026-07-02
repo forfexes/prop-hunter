@@ -4,6 +4,7 @@ MLB / NBA / WNBA / NFL Player Props Tipster
 Inspiriert von Basket Premium (82.5% WR), Basket Blitz VIP, JK (300u+)
 """
 from __future__ import annotations
+from math import prod
 import asyncio, json, logging, os, re, time
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
@@ -732,6 +733,81 @@ def fetch_propcruncher_as_props(sport: str) -> list:
         log.warning("ProCruncher props Playwright: %s", e)
         return []
 
+_PPUD_CACHE: dict = {}
+def fetch_prizepicks_props(sport_label: str) -> list:
+    """PrizePicks Linien (kein Key). Odds synthetisch 1.85, Richtung entscheidet DB-Fairprob."""
+    if sport_label in _PPUD_CACHE: return _PPUD_CACHE[sport_label]
+    pp_ids = {"NBA":7,"WNBA":3,"MLB":2,"NFL":9,"NHL":8}
+    lid = pp_ids.get(sport_label)
+    if not lid: return []
+    out = []
+    try:
+        import cloudscraper
+        s = cloudscraper.create_scraper()
+        r = s.get(f"https://api.prizepicks.com/projections?league_id={lid}&per_page=500&single_stat=true", timeout=25)
+        if r.status_code != 200:
+            log.warning("PrizePicks %s: %s", sport_label, r.status_code); return []
+        data = r.json()
+        players = {}
+        for inc in data.get("included", []) or []:
+            if inc.get("type") == "new_player":
+                a = inc.get("attributes", {}) or {}
+                players[inc.get("id")] = a.get("display_name") or a.get("name")
+        emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
+        for item in data.get("data", []) or []:
+            a = item.get("attributes", {}) or {}
+            rel = ((item.get("relationships", {}) or {}).get("new_player", {}) or {}).get("data", {}) or {}
+            name = players.get(rel.get("id"))
+            line = a.get("line_score"); stat = a.get("stat_type")
+            if not (name and line and stat): continue
+            try:
+                out.append(Prop(player=name, market=stat, odds=1.85,
+                    point=float(line), sport=sport_label,
+                    emoji=emoji_map.get(sport_label,"🎯"), game="",
+                    direction="over"))
+            except Exception: continue
+        log.info("PrizePicks %s: %d props", sport_label, len(out))
+    except Exception as e:
+        log.warning("PrizePicks %s: %s", sport_label, e)
+    _PPUD_CACHE[sport_label] = out
+    return out
+
+def fetch_underdog_props(sport_filter=None) -> list:
+    """Underdog Fantasy Linien (offene API, kein Key)."""
+    if "UD" in _PPUD_CACHE: return _PPUD_CACHE["UD"]
+    out = []
+    try:
+        r = requests.get("https://api.underdogfantasy.com/beta/v3/over_under_lines",
+                         timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            log.warning("Underdog: %s", r.status_code); return []
+        data = r.json()
+        players = {p.get("id"): p for p in data.get("players", []) or []}
+        apps = {}
+        for ap in data.get("appearances", []) or []:
+            pl = players.get(ap.get("player_id"), {})
+            apps[ap.get("id")] = (f"{pl.get('first_name','')} {pl.get('last_name','')}".strip(),
+                                  (pl.get("sport_id") or "").upper())
+        emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
+        for ln in data.get("over_under_lines", []) or []:
+            ou = (ln.get("over_under") or {})
+            name, sport = apps.get(((ou.get("appearance_stat") or {}).get("appearance_id")), ("",""))
+            if sport not in ("NBA","WNBA","MLB","NFL","NHL"): continue
+            if sport_filter and sport_filter.lower() not in sport.lower(): continue
+            stat = (ou.get("appearance_stat") or {}).get("display_stat") or ""
+            line = ln.get("stat_value")
+            if not (name and stat and line): continue
+            try:
+                out.append(Prop(player=name, market=stat, odds=1.85,
+                    point=float(line), sport=sport,
+                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over"))
+            except Exception: continue
+        log.info("Underdog: %d props", len(out))
+    except Exception as e:
+        log.warning("Underdog: %s", e)
+    _PPUD_CACHE["UD"] = out
+    return out
+
 # ─────────────────────────────────────────────
 # SUPABASE SNAPSHOT PROPS (von Odds-Connectoren) + GAMELOG FAIR-PROB
 # ─────────────────────────────────────────────
@@ -805,6 +881,10 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             if len(vals) < 5: continue
             direction = getattr(p, "direction", "over") or "over"
             over_rate = sum(1 for v in vals if v > point) / len(vals)
+            # Richtungs-Flip für Linien-Quellen ohne eigene Richtung (PP/UD/PC):
+            # DB sagt klar Under → Pick wird Under.
+            if direction == "over" and over_rate <= 0.35 and float(getattr(p, "odds", 1.85)) <= 2.0:
+                p.direction = "under"; direction = "under"
             rate = (1 - over_rate) if direction == "under" else over_rate
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
@@ -2341,6 +2421,23 @@ def gather(sport_filter=None):
             all_props=enrich_gamelogs_fairprob(all_props)
             log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
             return all_props
+        # PrizePicks + Underdog (echte Linien, keine Keys)
+        ppud = []
+        for sl in ("MLB","NBA","WNBA","NHL","NFL"):
+            if sport_filter and sport_filter.lower() not in sl.lower(): continue
+            ppud.extend(fetch_prizepicks_props(sl))
+        ppud.extend(fetch_underdog_props(sport_filter))
+        if ppud:
+            # Dedupe player+market
+            seen=set(); uniq=[]
+            for p in ppud:
+                k=(p.player.lower(), p.market.lower())
+                if k in seen: continue
+                seen.add(k); uniq.append(p)
+            all_props = uniq
+            all_props = enrich_gamelogs_fairprob(all_props)
+            log.info("ACTIVE (PrizePicks/Underdog): props: %d", len(all_props))
+            return all_props
         # Letzter Fallback: Supabase Snapshots (odds-api.io/SGO/OpticOdds Connectoren)
         all_props = fetch_snapshot_props(sport_filter)
         if all_props:
@@ -2964,6 +3061,14 @@ def rescue_picks_from_props(props, max_picks=12):
     candidates = []
     candidates_hr = []
     rejected = defaultdict(int)
+    # Spieler→Team Map aus allen Props (Lineup-Matches), gegen falsche Team-Labels
+    player_team = {}
+    for _sp in props or []:
+        t = getattr(_sp, "team", None)
+        if t:
+            player_team[(_sp.player or "").lower().strip()] = t
+    def _team_for(sp):
+        return player_team.get((sp.player or "").lower().strip()) or _source_prop_team(sp)
     hr_count = 0
     per_game = defaultdict(int)
 
@@ -3060,7 +3165,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 type="single",
                 emoji=getattr(sp, "emoji", None),
                 player=getattr(sp, "player", None),
-                team=_source_prop_team(sp),
+                team=_team_for(sp),
                 market=_market_with_line(market, direction, point),
                 direction=direction,
                 odds=round(odds, 2),
@@ -3090,7 +3195,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 category="hr_lottery",
                 player=sp.player,
                 emoji=getattr(sp, "emoji", "⚾") or "⚾",
-                team=_source_prop_team(sp),
+                team=_team_for(sp),
                 market="Home Run",
                 direction="over",
                 odds=round(odds, 2),
@@ -3173,6 +3278,45 @@ def merge_unique_picks(primary, extra, max_singles=8, max_total=12):
     except Exception as e:
         log.warning("merge unique skipped: %s", e)
         return primary or extra or []
+
+def build_hr_321(picks):
+    """
+    JK HR-Struktur: immer die besten — 3 Singles sind schon in picks,
+    daraus 2 Doubles (Top1+Top2, Top1+Top3) und 1 Triple (Top1+2+3).
+    """
+    try:
+        hrs = [p for p in picks if p.type == "single" and _is_hr_pick(p)]
+        hrs.sort(key=lambda p: (p.probability or 0), reverse=True)
+        hrs = hrs[:3]
+        if len(hrs) < 2:
+            return []
+        out = []
+        def _combo(legs, stake):
+            odds = round(prod(float(l.odds) for l in legs), 2)
+            prob = round(prod(float(l.probability or 0.15) for l in legs), 4)
+            names = " + ".join(f"{l.player} HR" for l in legs)
+            pk = Pick(
+                type="combo", category="hr_lottery",
+                player=names, emoji="⚾", team="",
+                market=f"{len(legs)}x Home Run",
+                direction="over", odds=odds, stake=stake,
+                probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
+                game="JK HR Special",
+                analysis=f"JK Style: die {len(legs)} besten HR-Profile kombiniert.",
+            )
+            pk.legs = legs
+            return pk
+        pairs = [(0,1)] + ([(0,2)] if len(hrs) >= 3 else [])
+        for i, j in pairs:
+            out.append(_combo([hrs[i], hrs[j]], 0.15))
+        if len(hrs) >= 3:
+            out.append(_combo(hrs, 0.10))
+        log.info("JK HR 3-2-1: %d singles → %d doubles + %d triple",
+                 len(hrs), sum(1 for p in out if len(p.legs)==2), sum(1 for p in out if len(p.legs)==3))
+        return out
+    except Exception as e:
+        log.warning("HR 3-2-1 skipped: %s", e)
+        return []
 
 def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
     """
@@ -3266,8 +3410,7 @@ def run(dry_run=False,sport_filter=None):
 
     picks = limit_singles_per_game(picks, max_per_game=3)
     picks = limit_total_singles(picks, max_singles=12)
-    hr_lottery = build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3)
-    picks = picks + hr_lottery
+    picks = picks + build_hr_321(picks)
     body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
