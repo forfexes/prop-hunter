@@ -2034,6 +2034,10 @@ def call_groq(prompt):
 # ─────────────────────────────────────────────
 def _confidence_score(p: Pick) -> int:
     """Ein einfacher Confidence-Score aus Edge, Probability und Quotenrisiko."""
+    if _is_hr_pick(p):
+        hr_conf = (getattr(p, "features", {}) or {}).get("hr_confidence")
+        if hr_conf is not None:
+            return int(max(1, min(99, round(float(hr_conf)))))
     edge = max(0.0, float(p.edge_pct or 0))
     prob = float(p.probability or 0)
     odds_penalty = max(0.0, float(p.odds or 1) - 2.0) * 3.0
@@ -3103,22 +3107,33 @@ def rescue_picks_from_props(props, max_picks=12):
         is_hr = sport == "MLB" and ("home run" in market.lower() or re.search(r"\bhr\b", market.lower()) is not None)
 
         # JK-STYLE HR LANE: HR ist Lottery, kein +EV-Zwang.
-        # Kriterium: starkes HR-Profil aus DATA+ (HR-Rate/Score), Odds 3.5–8.0.
+        # Kriterium: starkes HR-Profil aus DATA+ (HR-Rate/Score), Odds 3.0–9.0.
         if is_hr:
             feats = getattr(sp, "features", {}) or {}
             hr_rate = feats.get("mlb_hr_rate")
-            hr_score = feats.get("mlb_hr_score") or 0
+            hr_score = float(feats.get("mlb_hr_score") or 0)
+            slg = feats.get("mlb_slg")
+            ops = feats.get("mlb_ops")
             try:
                 odds = float(sp.odds)
             except Exception:
                 rejected["bad_odds"] += 1; continue
-            if not (3.5 <= odds <= 8.0):
+            if not (3.0 <= odds <= 9.0):
                 rejected["hr_odds"] += 1; continue
-            strong_profile = (hr_rate is not None and float(hr_rate) >= 0.04) or float(hr_score) >= 1.5
+            strong_profile = (hr_rate is not None and float(hr_rate) >= 0.04) or hr_score >= 1.5
             if not strong_profile:
                 rejected["hr_profile"] += 1; continue
             hr_prob = prob if prob and prob > 0.10 else min(0.30, max(0.12, float(hr_rate or 0.05) * 2.2))
-            candidates_hr.append((sp, hr_prob, odds))
+            # Confidence: kombiniert HR-Rate, DATA+ Score, SLG/OPS und DB-Fairprob-Boost.
+            conf = 0.0
+            if hr_rate: conf += min(float(hr_rate), 0.15) * 300  # bis 45
+            conf += min(hr_score, 5.0) * 8                        # bis 40
+            if slg: conf += max(0.0, (float(slg) - 0.400)) * 60   # SLG-Bonus
+            if ops: conf += max(0.0, (float(ops) - 0.750)) * 30   # OPS-Bonus
+            db_rate = feats.get("gamelog_l10_rate")
+            if db_rate: conf += float(db_rate) * 20               # DB L10 Boost
+            conf = round(min(99, max(1, conf)), 1)
+            candidates_hr.append((sp, hr_prob, odds, conf))
             continue
 
         if edge <= 0:
@@ -3201,9 +3216,9 @@ def rescue_picks_from_props(props, max_picks=12):
 
     candidates.sort(key=lambda p: ((p.edge_pct or 0), (p.probability or 0)), reverse=True)
 
-    # JK-STYLE HR PICKS bauen (max 3, beste HR-Profile zuerst)
-    candidates_hr.sort(key=lambda t: t[1], reverse=True)
-    for sp, hr_prob, odds in candidates_hr[:3]:
+    # JK-STYLE HR PICKS bauen (Pool bis 5, sortiert nach Confidence — stärkste Profile zuerst)
+    candidates_hr.sort(key=lambda t: t[3], reverse=True)
+    for sp, hr_prob, odds, conf in candidates_hr[:5]:
         try:
             pk = Pick(
                 type="single",
@@ -3219,12 +3234,13 @@ def rescue_picks_from_props(props, max_picks=12):
                 edge_pct=0.0,
                 ev=round(ev(hr_prob, odds), 3),
                 game=_source_prop_game(sp),
-                analysis=(getattr(sp, "enrichment", None) or "JK HR: starkes HR-Profil (DATA+)")[:140],
+                analysis=(f"JK HR Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
             )
             pk.point = getattr(sp, "point", None)
             pk.source_sport = "MLB"
             pk.source_game = _source_prop_game(sp)
-            pk.features = getattr(sp, "features", {}) or {}
+            pk.features = dict(getattr(sp, "features", {}) or {})
+            pk.features["hr_confidence"] = conf
             candidates.append(pk)
         except Exception:
             rejected["hr_build_error"] += 1
@@ -3301,7 +3317,7 @@ def build_hr_321(picks):
     """
     try:
         hrs = [p for p in picks if p.type == "single" and _is_hr_pick(p)]
-        hrs.sort(key=lambda p: (p.probability or 0), reverse=True)
+        hrs.sort(key=lambda p: (getattr(p, "features", {}) or {}).get("hr_confidence", 0), reverse=True)
         hrs = hrs[:3]
         if len(hrs) < 2:
             return []
