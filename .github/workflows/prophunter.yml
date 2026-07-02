@@ -79,6 +79,7 @@ jobs:
           OPTICODDS_API_KEY: ${{ secrets.OPTICODDS_API_KEY }}
           PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL
         run: |
+          if [ -f prop_hunter_odds_pp_ud.py ]; then python prop_hunter_odds_pp_ud.py; fi
           if [ -f prop_hunter_odds_oddsapi_io.py ]; then python prop_hunter_odds_oddsapi_io.py; fi
           if [ -f prop_hunter_odds_sportsgameodds.py ]; then python prop_hunter_odds_sportsgameodds.py; fi
           if [ -f prop_hunter_odds_opticodds.py ]; then python prop_hunter_odds_opticodds.py; fi
