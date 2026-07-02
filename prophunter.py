@@ -2655,6 +2655,14 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
 
     def _sanity_line(p) -> bool:
         """Gibt False zurück wenn Linie unrealistisch ist."""
+        # PropsMadness Hit-Rate Blocker: <25% bei 8+ Samples = Finger weg
+        feats = getattr(p, "features", {}) or {}
+        pm = feats.get("pm_hit_rate")
+        try:
+            if pm is not None and float(pm) < 25:
+                return False
+        except Exception:
+            pass
         pt = getattr(p, "point", None)
         if pt is None: return True
         mkt = (p.market or "").lower()
@@ -3074,6 +3082,13 @@ def rescue_picks_from_props(props, max_picks=12):
 
     for sp in props or []:
         prob = _source_prop_probability(sp)
+        # PropsMadness Blocker auch im Rescue
+        _pm = (getattr(sp, "features", {}) or {}).get("pm_hit_rate")
+        try:
+            if _pm is not None and float(_pm) < 25:
+                rejected["pm_low"] += 1; continue
+        except Exception:
+            pass
         if prob is None:
             rejected["no_prob"] += 1
             continue
