@@ -213,6 +213,37 @@ def espn_mlb_player_stats(player_name, date_str):
     return None
 
 
+
+def espn_basket_player_stats(player_name, date_str, league="wnba"):
+    """ESPN Boxscore Stats für NBA/WNBA (Free, kein Key)."""
+    try:
+        r = requests.get(f"https://site.api.espn.com/apis/site/v2/sports/basketball/{league}/scoreboard",
+            params={"dates": date_str}, timeout=TIMEOUT)
+        if r.status_code != 200: return None
+        pl = player_name.lower()
+        for ev in r.json().get("events", []):
+            eid = ev.get("id")
+            if not eid: continue
+            r2 = requests.get(f"https://site.api.espn.com/apis/site/v2/sports/basketball/{league}/summary",
+                params={"event": eid}, timeout=TIMEOUT)
+            if r2.status_code != 200: continue
+            for team in (r2.json().get("boxscore", {}) or {}).get("players", []):
+                for grp in team.get("statistics", []):
+                    labels = grp.get("labels", [])
+                    for ath in grp.get("athletes", []):
+                        name = (ath.get("athlete", {}) or {}).get("displayName", "")
+                        if pl not in name.lower(): continue
+                        sm = dict(zip(labels, ath.get("stats", [])))
+                        def gi(k):
+                            try: return float(sm.get(k, 0) or 0)
+                            except: return 0.0
+                        return {"pts": gi("PTS"), "reb": gi("REB"), "ast": gi("AST"),
+                                "blk": gi("BLK"), "stl": gi("STL"),
+                                "fg3m": gi("3PM") or gi("3PT")}
+    except Exception:
+        pass
+    return None
+
 # ─── Grade single pick ───
 def grade(pick):
     market = (pick.get("market") or "").lower()
@@ -227,7 +258,10 @@ def grade(pick):
 
     stats = None
     if sport in ("NBA","WNBA"):
-        stats = nba_stats_yesterday(player)
+        stats = nba_stats_yesterday(player) if sport == "NBA" else None
+        if not stats:
+            yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y%m%d")
+            stats = espn_basket_player_stats(player, yesterday, "wnba" if sport=="WNBA" else "nba")
         if not stats: return None
         if "rebounds+assists" in market: val = stats["reb"]+stats["ast"]
         elif "pra" in market or ("points" in market and "rebounds" in market and "assists" in market):
