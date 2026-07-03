@@ -94,10 +94,23 @@ def espn_scoreboard() -> List[Dict[str, Any]]:
         })
     return rows
 
+def _clean_json(obj):
+    """Ersetzt NaN/Infinity rekursiv durch None (JSON-konform für Supabase)."""
+    import math
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj): return None
+        return obj
+    if isinstance(obj, dict):
+        return {k: _clean_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_clean_json(v) for v in obj]
+    return obj
+
 def main():
     seasons = [int(x) for x in os.getenv("NFL_RESULT_SEASONS", os.getenv("NFL_SEASON", str(datetime.utcnow().year))).split(",") if x.strip().isdigit()]
     rows = nflreadpy_weekly(seasons)
     rows.extend(espn_scoreboard())
+    rows = [_clean_json(r) for r in rows]
     safe_json_write(OUT, rows)
     upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,season,game_id,normalized_name")
     log(f"NFL results done: {len(rows)} rows")
