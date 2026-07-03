@@ -104,14 +104,16 @@ def rows_from_boxscore(game) -> List[Dict[str, Any]]:
     return rows
 
 def main():
-    date_str = os.getenv("MLB_RESULT_DATE", "").strip() or datetime.utcnow().date().isoformat()
+    date_str = os.getenv("MLB_RESULT_DATE", "").strip() or (datetime.utcnow().date() - timedelta(days=1)).isoformat()
     games = schedule(date_str)
     rows = []
     for g in games[:int(os.getenv("MLB_RESULT_GAME_CAP", "30"))]:
         rows.extend(rows_from_boxscore(g))
+    for r in rows:
+        r.setdefault("season", str(datetime.utcnow().year))
     safe_json_write(OUT, rows)
-    upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,game_id,normalized_name")
-    log(f"MLB results done: games={len(games)} rows={len(rows)}")
+    upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,season,game_id,normalized_name")
+    log(f"MLB results done: date={date_str} games={len(games)} rows={len(rows)}")
 
 if __name__ == "__main__":
     main()
