@@ -34,19 +34,22 @@ def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, 
 
     season = season or os.getenv("NBA_SEASON", "2025-26")
     wanted = {norm_name(x) for x in (players or []) if x}
+    if not wanted:
+        warn("NBA results: keine Spielernamen uebergeben, skip (verhindert All-Time-Roster-Loop)")
+        return []
     all_players = nba_players.get_players()
     selected = []
     for p in all_players:
-        if not wanted or norm_name(p.get("full_name")) in wanted:
+        if norm_name(p.get("full_name")) in wanted:
             selected.append(p)
-    if wanted and not selected:
+    if not selected:
         for p in all_players:
             pn = norm_name(p.get("full_name"))
             if any(w in pn or pn in w for w in wanted):
                 selected.append(p)
 
     rows = []
-    cap = int(os.getenv("NBA_RESULTS_PLAYER_CAP", "80"))
+    cap = int(os.getenv("NBA_RESULTS_PLAYER_CAP", "15"))
     for p in selected[:cap]:
         full = p.get("full_name")
         try:
@@ -54,7 +57,7 @@ def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, 
                 player_id=p.get("id"),
                 season=season,
                 season_type_all_star=os.getenv("NBA_SEASON_TYPE", "Regular Season"),
-                timeout=25,
+                timeout=8,
             )
             df = gl.get_data_frames()[0]
         except Exception as e:
