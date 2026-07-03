@@ -62,6 +62,10 @@ MIN_EDGE_HR           = 1.0
 MIN_PROB_BASKET       = 0.60
 MIN_PROB_MLB_HITS     = 0.62
 MIN_PROB_MLB_HR       = 0.12
+MIN_PROB_MLB_OTHER    = 0.55
+MIN_PROB_LOTTERY_LEG  = 0.58
+MIN_PROB_OTHER_SPORTS = 0.55
+MIN_EDGE_OTHER_SPORTS = 1.5
 MAX_SINGLES_TOTAL     = 12
 MAX_HR_SINGLES        = 3
 MAX_COMBOS_TOTAL      = 2
@@ -882,9 +886,11 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             direction = getattr(p, "direction", "over") or "over"
             over_rate = sum(1 for v in vals if v > point) / len(vals)
             # Richtungs-Flip für Linien-Quellen ohne eigene Richtung (PP/UD/PC):
-            # DB sagt klar Under → Pick wird Under.
-            if direction == "over" and over_rate <= 0.35 and float(getattr(p, "odds", 1.85)) <= 2.0:
+            # DB sagt klar Under → Pick wird Under. Gilt unabhängig von der Quote.
+            if direction == "over" and over_rate <= 0.35:
                 p.direction = "under"; direction = "under"
+            elif direction == "under" and over_rate >= 0.65:
+                p.direction = "over"; direction = "over"
             rate = (1 - over_rate) if direction == "under" else over_rate
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
@@ -2626,7 +2632,7 @@ def _unique_probability_legs(singles: list[Pick], max_legs: int = MAX_LOTTERY_LE
         if _is_hr_pick(p):
             if prob < MIN_PROB_MLB_HR:
                 continue
-        elif prob < 0.58:
+        elif prob < MIN_PROB_LOTTERY_LEG:
             continue
         out.append(p); players.add(name)
         if len(out) >= max_legs:
@@ -2719,6 +2725,8 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
                     rejected["hits_prob"] += 1; continue
             elif edge < MIN_EDGE_SINGLE:
                 rejected["mlb_edge"] += 1; continue
+            elif prob is not None and prob < MIN_PROB_MLB_OTHER:
+                rejected["mlb_prob"] += 1; continue
         else:
             if edge < MIN_EDGE_SINGLE:
                 rejected["edge"] += 1; continue
@@ -3158,35 +3166,30 @@ def rescue_picks_from_props(props, max_picks=12):
                 rejected["bad_line"] += 1; continue
             if ("3-pt" in mkt_lower or "three" in mkt_lower) and point < 0.5:
                 rejected["bad_line"] += 1; continue
-            if prob < 0.53:
+            if prob < MIN_PROB_BASKET:
                 rejected["basket_prob"] += 1
                 continue
-            if edge < 1.0:
+            if edge < MIN_EDGE_BASKET:
                 rejected["basket_edge"] += 1
                 continue
         elif is_mlb:
-            if is_hr:
-                # HR Hunter: mehrere HR erlaubt, aber nur mit Value.
-                # Home Runs sind High Variance, daher getrennt/kleiner Einsatz.
-                if prob < 0.14:
-                    rejected["hr_prob"] += 1
-                    continue
-                if edge < 2.5:
-                    rejected["hr_edge"] += 1
-                    continue
-            elif is_hits:
-                if prob < 0.56:
+            # HR wird bereits weiter oben von der JK-Style HR-Lane behandelt (continue).
+            if is_hits:
+                if prob < MIN_PROB_MLB_HITS:
                     rejected["hits_prob"] += 1
                     continue
-                if edge < 1.2:
+                if edge < MIN_EDGE_SINGLE:
                     rejected["hits_edge"] += 1
                     continue
             else:
-                if edge < 1.2:
+                if prob is not None and prob < MIN_PROB_MLB_OTHER:
+                    rejected["mlb_prob"] += 1
+                    continue
+                if edge < MIN_EDGE_SINGLE:
                     rejected["mlb_edge"] += 1
                     continue
         else:
-            if prob < 0.55 or edge < 1.5:
+            if prob < MIN_PROB_OTHER_SPORTS or edge < MIN_EDGE_OTHER_SPORTS:
                 rejected["other_low"] += 1
                 continue
 
