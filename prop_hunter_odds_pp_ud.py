@@ -137,11 +137,101 @@ def main():
     all_rows = []
     for lg in os.getenv("PROP_HUNTER_SPORTS", "MLB,NBA,WNBA,NFL").split(","):
         lg = lg.strip().upper()
-        if lg: all_rows.extend(fetch_prizepicks(lg))
+        if lg:
+            all_rows.extend(fetch_prizepicks(lg))
+            all_rows.extend(fetch_draftkings(lg))
     all_rows.extend(fetch_underdog())
+    all_rows.extend(fetch_sleeper())
     safe_json_write(OUT, all_rows)
     upsert_rows("prop_hunter_prop_snapshots", all_rows, "snapshot_id")
     log(f"pp+ud done: {len(all_rows)} lines")
 
 if __name__ == "__main__":
     main()
+
+# ─────────────────────────────────────────────
+# SLEEPER PICKS (offene API)
+# ─────────────────────────────────────────────
+def fetch_sleeper() -> List[Dict[str, Any]]:
+    import requests
+    rows = []
+    try:
+        r = requests.get("https://api.sleeper.app/lines/available",
+                         timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            warn(f"Sleeper {r.status_code}"); return []
+        data = r.json()
+        items = data if isinstance(data, list) else data.get("lines", []) or data.get("data", []) or []
+        for it in items:
+            sport = str(it.get("sport") or "").upper()
+            if sport not in ("NBA","WNBA","MLB","NFL","NHL"): continue
+            name = it.get("subject") or it.get("player_name") or (it.get("subject_info") or {}).get("name")
+            stat = it.get("wager_type") or it.get("stat") or it.get("market")
+            line = to_float((it.get("options") or [{}])[0].get("outcome_value") if it.get("options") else it.get("line"))
+            if not (name and stat and line is not None): continue
+            rows.append({
+                "snapshot_id": hash_key("sleeper", sport, name, stat, line),
+                "source": "sleeper", "sport": sport, "league": sport,
+                "source_sport_key": "sleeper",
+                "source_event_id": str(it.get("game_id") or ""), "game_id": str(it.get("game_id") or ""),
+                "commence_time": None,
+                "player_name": name, "normalized_name": norm_name(name),
+                "market": stat, "market_key": norm_market(stat),
+                "line": line, "odds_decimal": None, "bookmaker": "sleeper",
+                "home_team": None, "away_team": None,
+                "raw": it, "created_at": now_iso(),
+            })
+        log(f"Sleeper: {len(rows)} lines")
+    except Exception as e:
+        warn(f"Sleeper: {e}")
+    return rows
+
+# ─────────────────────────────────────────────
+# DRAFTKINGS SPORTSBOOK (öffentliches JSON, echte Odds!)
+# ─────────────────────────────────────────────
+DK_GROUPS = {"MLB": 84240, "NBA": 42648, "NFL": 88808, "NHL": 42133, "WNBA": 94682}
+
+def fetch_draftkings(league: str) -> List[Dict[str, Any]]:
+    import requests
+    gid = DK_GROUPS.get(league)
+    if not gid: return []
+    rows = []
+    try:
+        r = requests.get(
+            f"https://sportsbook.draftkings.com/sites/US-SB/api/v5/eventgroups/{gid}?format=json",
+            timeout=30, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            warn(f"DK {league}: {r.status_code}"); return []
+        eg = (r.json() or {}).get("eventGroup", {}) or {}
+        events = {str(e.get("eventId")): e for e in eg.get("events", []) or []}
+        for cat in eg.get("offerCategories", []) or []:
+            for sub in cat.get("offerSubcategoryDescriptors", []) or []:
+                osc = (sub.get("offerSubcategory") or {})
+                for offer_list in osc.get("offers", []) or []:
+                    for offer in offer_list or []:
+                        label = offer.get("label") or ""
+                        ev = events.get(str(offer.get("eventId")), {})
+                        for oc in offer.get("outcomes", []) or []:
+                            participant = oc.get("participant") or oc.get("playerNameIdentifier")
+                            line = to_float(oc.get("line"))
+                            dec = to_float(oc.get("oddsDecimal"))
+                            if not (participant and line is not None and dec): continue
+                            side = "under" if "under" in str(oc.get("label","")).lower() else "over"
+                            rows.append({
+                                "snapshot_id": hash_key("draftkings", league, participant, label, line, side),
+                                "source": "draftkings", "sport": league, "league": league,
+                                "source_sport_key": f"dk_{gid}",
+                                "source_event_id": str(offer.get("eventId") or ""),
+                                "game_id": str(offer.get("eventId") or ""),
+                                "commence_time": ev.get("startDate"),
+                                "player_name": participant, "normalized_name": norm_name(participant),
+                                "market": f"{label} {side}", "market_key": norm_market(label),
+                                "line": line, "odds_decimal": dec, "bookmaker": "draftkings",
+                                "home_team": (ev.get("team2") or {}).get("name") if isinstance(ev.get("team2"), dict) else ev.get("teamName2"),
+                                "away_team": (ev.get("team1") or {}).get("name") if isinstance(ev.get("team1"), dict) else ev.get("teamName1"),
+                                "raw": {"offer": label, "outcome": oc.get("label")}, "created_at": now_iso(),
+                            })
+        log(f"DraftKings {league}: {len(rows)} outcomes")
+    except Exception as e:
+        warn(f"DK {league}: {e}")
+    return rows
