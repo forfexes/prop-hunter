@@ -28,11 +28,19 @@ def profit_for_result(result: str, odds_decimal, stake=1.0) -> float:
         return -stake
     return 0.0
 
+def market_base(market):
+    """Linienfreie Marktgruppe: 'Total Bases Over 1.5' -> 'total bases' (stabil ueber Tage)."""
+    import re as _re
+    m = norm_market(market)
+    m = _re.sub(r"\b(over|under|o|u|plus)\b", " ", m)
+    m = _re.sub(r"\d+", " ", m)
+    return _re.sub(r"\s+", " ", m).strip()
+
 def key_parts(r):
     return {
         "sport": str(r.get("sport") or "UNKNOWN").upper(),
         "league": str(r.get("league") or "UNKNOWN").upper(),
-        "market_key": norm_market(r.get("market") or "unknown"),
+        "market_key": market_base(r.get("market") or "unknown"),
         "rule_id": str(r.get("rule_id") or r.get("pick_raw", {}).get("rule_id") or "unknown"),
         "player_key": norm_name(r.get("player_name") or "unknown"),
     }
