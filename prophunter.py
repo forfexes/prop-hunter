@@ -932,31 +932,127 @@ def enrich_gamelogs_fairprob(props: list) -> list:
     """
     c = _sb_read()
     if c is None or not props: return props
-    STAT_MAP = {
-        "hit": "hits", "total base": "total_bases", "home run": "home_runs",
-        "rbi": "rbi", "strikeout": "pitcher_strikeouts", "pitcher k": "pitcher_strikeouts",
-        "point": "points", "rebound": "rebounds", "assist": "assists",
-        "pra": "pra", "pts+rebs": "pra", "rebounds+assists": "ra", "3-pt": "threes_made",
-        "three": "threes_made",
-    }
+    # Kombi-/Nicht-unterstützte Märkte: keine eigene DB-Spalte → nicht anreichern.
+    SKIP_MARKETS = ("total hits, runs", "hits runs and rbi", "hits, runs and rbi",
+                    "race to", "most hits", "lead after", "both teams", "team total",
+                    "innings", "run line", "extra innings", "spread", "money line",
+                    "tied at", "result and", "half/quarter", "team to score",
+                    "player first", "moneyline")
+    def _detect_stat(mkt: str):
+        """Erkennt die DB-Statistik aus dem Marktnamen. Kombi-Märkte ZUERST,
+        dann HR (aber NICHT in 'threes'), dann Einzelstats."""
+        mkt = mkt.lower()
+        if any(s in mkt for s in SKIP_MARKETS):
+            return None
+
+        has_pts = "point" in mkt
+        has_reb = "rebound" in mkt
+        has_ast = "assist" in mkt
+
+        # KOMBI-Märkte zuerst (Reihenfolge der Prüfung wichtig: 3er vor 2er)
+        if has_pts and has_reb and has_ast:
+            return "pra"
+        if has_pts and has_reb:
+            return "pr"
+        if has_pts and has_ast:
+            return "pa"
+        if has_reb and has_ast:
+            return "ra"
+        if "double double" in mkt or "double-double" in mkt:
+            return "double_double"
+        if "triple double" in mkt or "triple-double" in mkt:
+            return "triple_double"
+
+        # Threes VOR HR prüfen (sonst matcht 'hr' in 'threes')
+        if "three" in mkt or "3-pt" in mkt or "3pt" in mkt or "3pm" in mkt:
+            return "threes_made"
+
+        # HR nur als ganzes Wort oder 'home run'
+        if "home run" in mkt or re.search(r"\bhr\b", mkt):
+            return "home_runs"
+        if "hits allowed" in mkt:
+            return "pitcher_hits_allowed"
+        if "strikeout" in mkt or re.search(r"\bk\b", mkt):
+            return "strikeouts_batter" if "batter" in mkt else "pitcher_strikeouts"
+
+        # Einzelstats
+        if has_pts: return "points"
+        if has_reb: return "rebounds"
+        if has_ast: return "assists"
+        if "total base" in mkt: return "total_bases"
+        if "runs batted in" in mkt or re.search(r"\brbi", mkt): return "rbi"
+        if "batter walk" in mkt or "walk" in mkt: return "walks_batter"
+        if "steal" in mkt: return "steals"
+        if "block" in mkt: return "blocks"
+        if "stolen base" in mkt: return "stolen_bases"
+        if "hit" in mkt: return "hits"
+        if "run" in mkt: return "runs"
+        return None
     boosted = 0
+    # Kombi-Stats die aus Basisspalten berechnet werden müssen (keine eigene DB-Spalte)
+    COMBO_STATS = {
+        "pra": ["points", "rebounds", "assists"],
+        "pr":  ["points", "rebounds"],
+        "pa":  ["points", "assists"],
+        "ra":  ["rebounds", "assists"],
+    }
     for p in props:
         try:
             point = getattr(p, "point", None)
             if point is None: continue
             mkt = (p.market or "").lower()
-            stat = next((v for k, v in STAT_MAP.items() if k in mkt), None)
+            stat = _detect_stat(mkt)
             if not stat: continue
             key = norm_name(p.player)
             cache_k = f"{key}|{stat}"
             if cache_k not in _GAMELOG_CACHE:
-                res = c.table("prop_hunter_player_gamelogs").select(stat).eq(
-                    "normalized_name", key).not_.is_(stat, "null").order(
-                    "game_date", desc=True).limit(10).execute()
-                _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
+                if stat in COMBO_STATS:
+                    # Kombi: mehrere Spalten holen und summieren
+                    cols = COMBO_STATS[stat]
+                    res = c.table("prop_hunter_player_gamelogs").select(
+                        ",".join(cols) + ",game_date").eq(
+                        "normalized_name", key).order(
+                        "game_date", desc=True).limit(10).execute()
+                    combo_vals = []
+                    for r in (res.data or []):
+                        parts = [r.get(col) for col in cols]
+                        if all(x is not None for x in parts):
+                            combo_vals.append(sum(float(x) for x in parts))
+                    _GAMELOG_CACHE[cache_k] = combo_vals
+                elif stat in ("double_double", "triple_double"):
+                    # aus points/rebounds/assists ableiten (>=10 in 2 bzw 3 Kategorien)
+                    res = c.table("prop_hunter_player_gamelogs").select(
+                        "points,rebounds,assists,game_date").eq(
+                        "normalized_name", key).order(
+                        "game_date", desc=True).limit(10).execute()
+                    dd_vals = []
+                    need = 2 if stat == "double_double" else 3
+                    for r in (res.data or []):
+                        cats = [r.get("points"), r.get("rebounds"), r.get("assists")]
+                        if all(x is not None for x in cats):
+                            dbl = sum(1 for x in cats if float(x) >= 10)
+                            dd_vals.append(1.0 if dbl >= need else 0.0)
+                    _GAMELOG_CACHE[cache_k] = dd_vals
+                else:
+                    res = c.table("prop_hunter_player_gamelogs").select(stat).eq(
+                        "normalized_name", key).not_.is_(stat, "null").order(
+                        "game_date", desc=True).limit(10).execute()
+                    _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
             vals = _GAMELOG_CACHE[cache_k]
             n = len(vals)
             if n < 6: continue  # unter 6 Spielen zu dünn für eine Wahrscheinlichkeits-Entscheidung
+            # Double/Triple-Double: Rate = Anteil Spiele mit DD (Linie ignoriert, ist ja Ja/Nein)
+            if stat in ("double_double", "triple_double"):
+                dd_rate = sum(vals) / n
+                feats = getattr(p, "features", None) or {}
+                old = feats.get("fair_prob")
+                feats["fair_prob"] = round((float(old)*0.5 + dd_rate*0.5) if old else dd_rate, 4)
+                feats["gamelog_dd_rate"] = round(dd_rate, 3)
+                feats["gamelog_n"] = n
+                p.features = feats
+                p.enrichment = ((getattr(p, "enrichment", "") or "") + f" | DB {stat} {int(dd_rate*100)}% ({n}g)")[:240]
+                boosted += 1
+                continue
             direction = getattr(p, "direction", "over") or "over"
             # Push-korrekt: bei ganzzahliger Linie zählt Gleichstand nicht als Treffer.
             over_hits = sum(1 for v in vals if v > point)
@@ -2555,6 +2651,21 @@ def gather(sport_filter=None):
             all_props=enrich_gamelogs_fairprob(all_props)
             log.info("ACTIVE (Snapshots): props: %d",len(all_props))
             return all_props
+    # ADDITIV: Supabase-Snapshots (DraftKings echte HR-Odds, Underdog, Sleeper) IMMER dazumischen.
+    # Nicht nur als Notfall-Fallback — sonst fehlen an Odds-API-Tagen die HR-Props mit echten Quoten.
+    try:
+        snap = fetch_snapshot_props(sport_filter)
+        if snap:
+            existing = {(p.player or "").lower() + "|" + (p.market or "").lower() for p in all_props}
+            added = 0
+            for sp in snap:
+                k = (sp.player or "").lower() + "|" + (sp.market or "").lower()
+                if k not in existing:
+                    all_props.append(sp); existing.add(k); added += 1
+            if added:
+                log.info("Snapshots additiv beigemischt: +%d props (DK/UD/Sleeper)", added)
+    except Exception as e:
+        log.warning("snapshot merge: %s", e)
     all_props = apply_data_plus_visible(all_props)
     all_props = enrich_gamelogs_fairprob(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
