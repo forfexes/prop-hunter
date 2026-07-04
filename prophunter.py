@@ -14,6 +14,13 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
+def norm_name(s) -> str:
+    """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
+    gegen normalized_name in prop_hunter_player_gamelogs."""
+    s = str(s or "").strip().lower()
+    s = re.sub(r"[^a-z0-9\s\.\-']", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
@@ -852,6 +859,72 @@ def fetch_snapshot_props(sport_filter=None) -> list:
     return out
 
 _GAMELOG_CACHE: dict = {}
+
+_LEARNING_WEIGHTS: dict = {}
+_LEARNING_LOADED: bool = False
+def load_learning_weights() -> dict:
+    """Lädt learning_weight je Markt/Regel aus prop_hunter_rule_performance (nur mit genug Samples)."""
+    global _LEARNING_LOADED
+    if _LEARNING_LOADED:
+        return _LEARNING_WEIGHTS
+    _LEARNING_LOADED = True
+    c = _sb_read()
+    if c is None:
+        return _LEARNING_WEIGHTS
+    try:
+        res = c.table("prop_hunter_rule_performance").select(
+            "group_type,group_key,learning_weight,bets,hit_rate,roi"
+        ).gte("bets", 20).execute()
+        for r in (res.data or []):
+            gt = r.get("group_type"); gk = r.get("group_key")
+            w = r.get("learning_weight")
+            if gt and gk and w is not None:
+                _LEARNING_WEIGHTS[f"{gt}:{gk}"] = {
+                    "weight": float(w),
+                    "bets": r.get("bets", 0),
+                    "hit_rate": r.get("hit_rate", 0),
+                    "roi": r.get("roi", 0),
+                }
+        if _LEARNING_WEIGHTS:
+            log.info("Learning weights geladen: %d Gruppen (>=20 bets)", len(_LEARNING_WEIGHTS))
+    except Exception as e:
+        log.warning("learning weights: %s", e)
+    return _LEARNING_WEIGHTS
+
+def norm_market(s) -> str:
+    """IDENTISCH zu prop_hunter_shared_utils.norm_market."""
+    s = str(s or "").strip().lower()
+    s = s.replace("+", " plus ")
+    s = re.sub(r"[^a-z0-9\s]", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+def market_base(market: str) -> str:
+    """Linienfreie, richtungsfreie Marktgruppe für STABILE Learning-Keys über Tage hinweg.
+    'Total Bases Over 1.5' und 'Total Bases Over 2.5' -> beide 'total bases'."""
+    m = norm_market(market)
+    m = re.sub(r"\b(over|under|o|u|plus)\b", " ", m)
+    m = re.sub(r"\d+", " ", m)
+    return re.sub(r"\s+", " ", m).strip()
+
+def market_group_key(sport: str, market: str) -> str:
+    """SPORT|LEAGUE|market_base — linienfrei, damit über Tage genug Samples zusammenkommen."""
+    s = (sport or "UNKNOWN").upper()
+    return f"{s}|{s}|{market_base(market)}"
+
+def learning_multiplier(p) -> float:
+    """Gibt den learning_weight für einen Pick zurück (1.0 wenn keine Historie).
+    <1.0 = Markt performt historisch schlecht, Stake runter / evtl. blocken."""
+    weights = load_learning_weights()
+    if not weights:
+        return 1.0
+    sport = (getattr(p, "sport", "") or getattr(p, "source_sport", "") or "").upper()
+    market = getattr(p, "market", "") or ""
+    gk = market_group_key(sport, market)
+    entry = weights.get(f"market:{gk}")
+    if entry:
+        return entry["weight"]
+    return 1.0
+
 def enrich_gamelogs_fairprob(props: list) -> list:
     """
     Nutzt prop_hunter_player_gamelogs (5k+ rows): L10-Über-Linie-Rate → fair_prob Blend.
@@ -874,7 +947,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             mkt = (p.market or "").lower()
             stat = next((v for k, v in STAT_MAP.items() if k in mkt), None)
             if not stat: continue
-            key = _norm(p.player) if "_norm" in globals() else p.player.lower().strip()
+            key = norm_name(p.player)
             cache_k = f"{key}|{stat}"
             if cache_k not in _GAMELOG_CACHE:
                 res = c.table("prop_hunter_player_gamelogs").select(stat).eq(
@@ -882,9 +955,12 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                     "game_date", desc=True).limit(10).execute()
                 _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
             vals = _GAMELOG_CACHE[cache_k]
-            if len(vals) < 5: continue
+            n = len(vals)
+            if n < 6: continue  # unter 6 Spielen zu dünn für eine Wahrscheinlichkeits-Entscheidung
             direction = getattr(p, "direction", "over") or "over"
-            over_rate = sum(1 for v in vals if v > point) / len(vals)
+            # Push-korrekt: bei ganzzahliger Linie zählt Gleichstand nicht als Treffer.
+            over_hits = sum(1 for v in vals if v > point)
+            over_rate = over_hits / n
             # Richtungs-Flip für Linien-Quellen ohne eigene Richtung (PP/UD/PC):
             # DB sagt klar Under → Pick wird Under. Gilt unabhängig von der Quote.
             if direction == "over" and over_rate <= 0.35:
@@ -895,12 +971,19 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
             old = feats.get("fair_prob")
-            feats["fair_prob"] = round((float(old)*0.5 + rate*0.5) if old else rate, 4)
+            # Blend: no-vig Marktwahrscheinlichkeit (old) + eigene L-Rate.
+            # Gewicht der DB-Rate steigt mit Sample-Größe (6 Spiele→0.35, 10+→0.5).
+            if old:
+                db_weight = min(0.5, 0.05 * n)  # n=6→0.30, n=10→0.50, capped 0.5
+                blended = float(old) * (1 - db_weight) + rate * db_weight
+                feats["fair_prob"] = round(blended, 4)
+            else:
+                feats["fair_prob"] = round(rate, 4)
             feats["gamelog_l10_rate"] = round(rate, 3)
-            feats["gamelog_n"] = len(vals)
+            feats["gamelog_n"] = n
             p.features = feats
-            avg = sum(vals)/len(vals)
-            extra = f"DB L{len(vals)} avg {avg:.1f}, {int(rate*100)}% über Linie"
+            avg = sum(vals)/n
+            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% über Linie"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue
@@ -1846,8 +1929,19 @@ def sb_insert(row):
     if not sb: return
     # Only keep columns that exist in schema
     safe = {k:v for k,v in row.items() if k not in ("closing_odds","clv_pct","features")}
-    try: sb.table("prop_picks").insert(safe).execute()
-    except Exception as e: log.warning("sb insert: %s",e)
+    try:
+        sb.table("prop_picks").insert(safe).execute()
+    except Exception as e:
+        # Falls 'league' (oder andere) Spalte fehlt: ohne sie neu versuchen
+        msg = str(e).lower()
+        if "league" in msg or "column" in msg or "schema" in msg:
+            safe2 = {k:v for k,v in safe.items() if k != "league"}
+            try:
+                sb.table("prop_picks").insert(safe2).execute()
+                return
+            except Exception as e2:
+                log.warning("sb insert retry: %s", e2); return
+        log.warning("sb insert: %s", e)
 
 
 # ─────────────────────────────────────────────
@@ -1879,13 +1973,20 @@ def persist(picks):
     singles=[p for p in picks if p.type=="single"]
     combos=[p for p in picks if p.type in ("kombi2","big","super","betbuilder","ladder")]
     sport_map={"⚾":"MLB","🏀":"NBA/WNBA","🏈":"NFL"}
+    def _clean_sport(p):
+        # Echtes Sport-Feld bevorzugen (WNBA vs NBA sauber getrennt), Emoji nur als Fallback.
+        s = (getattr(p, "source_sport", "") or getattr(p, "sport", "") or "").upper()
+        if s in ("MLB","NBA","WNBA","NFL","NHL"):
+            return s
+        return sport_map.get(p.emoji or "", "?")
     for p in singles:
         dk=dedup_key(p.player or "",p.market or "",getattr(p,"point",None),p.direction)
+        real_sport=_clean_sport(p)
         hp=HistoricalPick(date=today,player=p.player or "",team=p.team or "",
-            market=p.market or "",sport=sport_map.get(p.emoji or "","?"),
+            market=p.market or "",sport=real_sport,
             odds=p.odds,stake=p.stake,direction=p.direction,probability=p.probability,dedup_key=dk)
         entry["picks"].append(hp.model_dump())
-        sb_insert({**hp.model_dump(),"features":getattr(p,"features",{}) or {}})
+        sb_insert({**hp.model_dump(),"league":real_sport,"features":getattr(p,"features",{}) or {}})
     for p in combos:
         entry["kombis"].append({"type":p.type,"legs":p.legs or [],"odds":p.odds,"stake":p.stake,"result":"pending"})
     save_history(h)
@@ -2768,6 +2869,26 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
         lottery = _make_probability_lottery(accepted_singles)
     lottery = lottery[:MAX_LOTTERY_TOTAL]
     out = accepted_singles + combos[:MAX_COMBOS_TOTAL] + lottery
+
+    # ─── LEARNING: Stakes nach historischer Markt-Performance anpassen ───
+    weights = load_learning_weights()
+    if weights:
+        learned_out = []
+        learn_blocked = 0
+        for p in out:
+            if p.type == "single":
+                w = learning_multiplier(p)
+                if w <= 0.75:
+                    # Markt performt historisch sehr schlecht → Single blocken
+                    learn_blocked += 1
+                    continue
+                # Stake mit Gewicht skalieren (0.75–1.30 → moderate Anpassung)
+                p.stake = round((p.stake or 0.33) * w, 2)
+            learned_out.append(p)
+        if learn_blocked:
+            log.info("Learning: %d Singles geblockt (Markt-ROI historisch schlecht)", learn_blocked)
+        out = learned_out
+
     log.info("quality filter: %d → %d | rejected=%s", len(picks), len(out), dict(rejected))
     return out
 
