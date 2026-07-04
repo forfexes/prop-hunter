@@ -133,25 +133,6 @@ def fetch_underdog() -> List[Dict[str, Any]]:
     log(f"Underdog: {len(rows)} lines")
     return rows
 
-def main():
-    all_rows = []
-    for lg in os.getenv("PROP_HUNTER_SPORTS", "MLB,NBA,WNBA,NFL").split(","):
-        lg = lg.strip().upper()
-        if lg:
-            all_rows.extend(fetch_prizepicks(lg))
-            all_rows.extend(fetch_draftkings(lg))
-    all_rows.extend(fetch_underdog())
-    all_rows.extend(fetch_sleeper())
-    safe_json_write(OUT, all_rows)
-    upsert_rows("prop_hunter_prop_snapshots", all_rows, "snapshot_id")
-    log(f"pp+ud done: {len(all_rows)} lines")
-
-if __name__ == "__main__":
-    main()
-
-# ─────────────────────────────────────────────
-# SLEEPER PICKS (offene API)
-# ─────────────────────────────────────────────
 def fetch_sleeper() -> List[Dict[str, Any]]:
     import requests
     rows = []
@@ -235,3 +216,37 @@ def fetch_draftkings(league: str) -> List[Dict[str, Any]]:
     except Exception as e:
         warn(f"DK {league}: {e}")
     return rows
+
+def main():
+    all_rows = []
+    for lg in os.getenv("PROP_HUNTER_SPORTS", "MLB,NBA,WNBA,NFL").split(","):
+        lg = lg.strip().upper()
+        if not lg:
+            continue
+        for fn, arg in ((fetch_prizepicks, lg), (fetch_draftkings, lg)):
+            try:
+                all_rows.extend(fn(arg))
+            except Exception as e:
+                warn(f"{fn.__name__} {lg}: {e}")
+    for fn in (fetch_underdog, fetch_sleeper):
+        try:
+            all_rows.extend(fn())
+        except Exception as e:
+            warn(f"{fn.__name__}: {e}")
+    # Dedupe nach snapshot_id
+    seen = set(); uniq = []
+    for r in all_rows:
+        sid = r.get("snapshot_id")
+        if sid in seen:
+            continue
+        seen.add(sid); uniq.append(r)
+    safe_json_write(OUT, uniq)
+    if uniq:
+        try:
+            upsert_rows("prop_hunter_prop_snapshots", uniq, "snapshot_id")
+        except Exception as e:
+            warn(f"snapshot upsert: {e}")
+    log(f"pp+ud+dk+sleeper done: {len(uniq)} lines")
+
+if __name__ == "__main__":
+    main()
