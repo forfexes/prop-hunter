@@ -263,15 +263,17 @@ def grade(pick):
             yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y%m%d")
             stats = espn_basket_player_stats(player, yesterday, "wnba" if sport=="WNBA" else "nba")
         if not stats: return None
-        if "rebounds+assists" in market: val = stats["reb"]+stats["ast"]
-        elif "pra" in market or ("points" in market and "rebounds" in market and "assists" in market):
+        if "rebounds+assists" in market or re.search(r'\bra\b', market): val = stats["reb"]+stats["ast"]
+        elif "pra" in market or re.search(r'\bpra\b', market) or ("points" in market and "rebounds" in market and "assists" in market):
             val = stats["pts"]+stats["reb"]+stats["ast"]
+        elif re.search(r'\bpr\b', market) and "points" not in market: val = stats["pts"]+stats["reb"]
+        elif re.search(r'\bpa\b', market) and "points" not in market: val = stats["pts"]+stats["ast"]
         elif "points+rebounds" in market and "assists" not in market: val = stats["pts"]+stats["reb"]
         elif "points+assists" in market and "rebounds" not in market: val = stats["pts"]+stats["ast"]
         elif "points" in market: val = stats["pts"]
         elif "rebounds" in market: val = stats["reb"]
         elif "assists" in market: val = stats["ast"]
-        elif "3pm" in market or "three" in market: val = stats["fg3m"]
+        elif "3pm" in market or "three" in market or "3-pt" in market: val = stats["fg3m"]
         elif "blocks" in market: val = stats["blk"]
         elif "steals" in market: val = stats["stl"]
         else: return None
@@ -298,6 +300,26 @@ def grade(pick):
     return "win" if val > line else "loss"
 
 # ─── Main ───
+def fetch_clv_for_date(date_str):
+    """Holt CLV-Werte (Closing Line Value) aus prop_hunter_clv für einen Tag.
+    Positiver odds_clv = wir hatten bessere Quote als der Markt kurz vor Spielbeginn (gutes Timing).
+    Negativer odds_clv = Markt ist seit unserem Post gegen uns gelaufen."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return []
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/prop_hunter_clv",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            params={"select": "pick_id,odds_clv,line_clv,player_name,market",
+                    "computed_at": f"gte.{date_str}T00:00:00", "limit": "500"},
+            timeout=TIMEOUT,
+        )
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"CLV fetch error: {e}")
+    return []
+
 def main():
     yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y-%m-%d")
     today     = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -360,12 +382,26 @@ def main():
                 m_profit+=float(p.get("profit",0))
     m_roi = round(100*m_profit/m_total,1) if m_total else 0
 
+    # ─── CLV Auswertung (Timing-Qualität) ───
+    clv_rows = fetch_clv_for_date(yesterday)
+    clv_line = ""
+    if clv_rows:
+        odds_clvs = [float(r["odds_clv"]) for r in clv_rows if r.get("odds_clv") is not None]
+        if odds_clvs:
+            avg_clv = sum(odds_clvs) / len(odds_clvs)
+            positive = sum(1 for v in odds_clvs if v > 0)
+            clv_pct = round(100 * positive / len(odds_clvs))
+            clv_emoji = "🟢" if avg_clv > 0 else "🔴"
+            clv_line = f"\n{clv_emoji} CLV: {avg_clv*100:+.1f}% Ø · {clv_pct}% besser als Closing Line ({len(odds_clvs)} Picks)"
+
     lines += [
         "",
         "━━━━━━━━━━",
         f"{'🟢' if total_profit>=0 else '🔴'} {'Gewinn' if total_profit>=0 else 'Verlust'}: {total_profit:+.2f}u",
         f"📊 Heute: {wins}/{total} ({round(100*wins/total) if total else 0}%)",
     ]
+    if clv_line:
+        lines.append(clv_line.strip())
     if m_total:
         lines.append(f"📅 {month}: {m_wins}/{m_total} ({round(100*m_wins/m_total)}%) · ROI {m_roi}%")
     lines.append("@prophunter")
