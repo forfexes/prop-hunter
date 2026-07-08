@@ -217,36 +217,198 @@ def fetch_draftkings(league: str) -> List[Dict[str, Any]]:
         warn(f"DK {league}: {e}")
     return rows
 
+
+# ═════════════════════════════════════════════
+# ZUSÄTZLICHE ÖFFENTLICHE ODDS-QUELLEN (Fallback-Kette)
+# ═════════════════════════════════════════════
+
+def fetch_fanduel(league: str) -> List[Dict[str, Any]]:
+    """FanDuel Sportsbook öffentliche API (echte Odds)."""
+    import requests
+    FD_EVENTGROUP = {"MLB": "mlb", "NBA": "nba", "WNBA": "wnba", "NFL": "nfl", "NHL": "nhl"}
+    slug = FD_EVENTGROUP.get(league)
+    if not slug: return []
+    rows = []
+    try:
+        # FanDuel Sportsbook API (Sportsbook.fanduel.com)
+        url = f"https://sbapi.nj.sportsbook.fanduel.com/api/content-managed-page"
+        r = requests.get(url, params={"page": "CUSTOM", "customPageId": slug,
+            "_ak": "FhMFpcPWXMeyZxOx", "timezone": "America/New_York"},
+            timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            warn(f"FanDuel {league}: {r.status_code}"); return []
+        data = r.json()
+        markets = (data.get("attachments", {}) or {}).get("markets", {}) or {}
+        events = (data.get("attachments", {}) or {}).get("events", {}) or {}
+        for mid, mk in markets.items():
+            mname = (mk.get("marketName") or "").lower()
+            if not any(k in mname for k in ("player","batter","pitcher","points","rebounds","assists","home run","hits","bases","strikeout")):
+                continue
+            ev = events.get(str(mk.get("eventId")), {})
+            for rr in mk.get("runners", []) or []:
+                player = rr.get("runnerName")
+                price = ((rr.get("winRunnerOdds") or {}).get("decimalOdds") or {}).get("decimalOdds")
+                handicap = rr.get("handicap")
+                if not (player and price): continue
+                rows.append({
+                    "snapshot_id": hash_key("fanduel", league, player, mname, handicap),
+                    "source": "fanduel", "sport": league, "league": league,
+                    "source_sport_key": "fanduel", "source_event_id": str(mk.get("eventId") or ""),
+                    "game_id": str(mk.get("eventId") or ""), "commence_time": ev.get("openDate"),
+                    "player_name": player, "normalized_name": norm_name(player),
+                    "market": mk.get("marketName") or mname, "market_key": norm_market(mname),
+                    "line": to_float(handicap), "odds_decimal": to_float(price),
+                    "bookmaker": "fanduel", "home_team": None, "away_team": ev.get("name"),
+                    "raw": {}, "created_at": now_iso(),
+                })
+        log(f"FanDuel {league}: {len(rows)} outcomes")
+    except Exception as e:
+        warn(f"FanDuel {league}: {e}")
+    return rows
+
+def fetch_bovada(league: str) -> List[Dict[str, Any]]:
+    """Bovada öffentliche API (kein Key, sehr zuverlässig für Props)."""
+    import requests
+    BOVADA_PATH = {
+        "MLB": "baseball/mlb", "NBA": "basketball/nba", "WNBA": "basketball/wnba",
+        "NFL": "football/nfl", "NHL": "hockey/nhl",
+    }
+    path = BOVADA_PATH.get(league)
+    if not path: return []
+    rows = []
+    try:
+        url = f"https://www.bovada.lv/services/sports/event/coupon/events/A/description/{path}"
+        r = requests.get(url, params={"marketFilterId": "def", "preMatchOnly": "true",
+            "lang": "en"}, timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            warn(f"Bovada {league}: {r.status_code}"); return []
+        data = r.json()
+        for grp in data:
+            for ev in grp.get("events", []) or []:
+                ev_desc = ev.get("description", "")
+                for dg in ev.get("displayGroups", []) or []:
+                    for mk in dg.get("markets", []) or []:
+                        mdesc = (mk.get("description") or "").lower()
+                        if not any(k in mdesc for k in ("player","batter","pitcher","points","rebounds","assists","home run","hits","total bases","strikeout")):
+                            continue
+                        for oc in mk.get("outcomes", []) or []:
+                            player = oc.get("description")
+                            price = ((oc.get("price") or {}).get("decimal"))
+                            handicap = (oc.get("price") or {}).get("handicap")
+                            if not (player and price): continue
+                            rows.append({
+                                "snapshot_id": hash_key("bovada", league, player, mdesc, handicap),
+                                "source": "bovada", "sport": league, "league": league,
+                                "source_sport_key": "bovada", "source_event_id": str(ev.get("id") or ""),
+                                "game_id": str(ev.get("id") or ""), "commence_time": None,
+                                "player_name": player, "normalized_name": norm_name(player),
+                                "market": mk.get("description") or mdesc, "market_key": norm_market(mdesc),
+                                "line": to_float(handicap), "odds_decimal": to_float(price),
+                                "bookmaker": "bovada", "home_team": None, "away_team": ev_desc,
+                                "raw": {}, "created_at": now_iso(),
+                            })
+        log(f"Bovada {league}: {len(rows)} outcomes")
+    except Exception as e:
+        warn(f"Bovada {league}: {e}")
+    return rows
+
+def fetch_espn_bet(league: str) -> List[Dict[str, Any]]:
+    """ESPN BET / ESPN odds öffentliche API."""
+    import requests
+    ESPN_PATH = {
+        "MLB": "baseball/mlb", "NBA": "basketball/nba", "WNBA": "basketball/wnba",
+        "NFL": "football/nfl", "NHL": "hockey/nhl",
+    }
+    path = ESPN_PATH.get(league)
+    if not path: return []
+    rows = []
+    try:
+        # ESPN scoreboard → events, dann odds pro event
+        sb = requests.get(f"https://site.api.espn.com/apis/site/v2/sports/{path}/scoreboard",
+            timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        if sb.status_code != 200: return []
+        for ev in sb.json().get("events", [])[:15]:
+            eid = ev.get("id")
+            if not eid: continue
+            # ESPN Core API für Player Props
+            try:
+                pr = requests.get(
+                    f"https://sports.core.api.espn.com/v2/sports/{path}/events/{eid}/competitions/{eid}/odds",
+                    timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+                if pr.status_code != 200: continue
+                # ESPN liefert meist Spielwetten, Props begrenzt — nehmen was da ist
+            except Exception:
+                continue
+        # ESPN ist primär für Scores; Props limitiert. Soft return.
+        if rows: log(f"ESPN BET {league}: {len(rows)} outcomes")
+    except Exception as e:
+        warn(f"ESPN BET {league}: {e}")
+    return rows
+
+
 def main():
     all_rows = []
-    for lg in os.getenv("PROP_HUNTER_SPORTS", "MLB,NBA,WNBA,NFL").split(","):
-        lg = lg.strip().upper()
-        if not lg:
-            continue
-        for fn, arg in ((fetch_prizepicks, lg), (fetch_draftkings, lg)):
+    sports = [s.strip().upper() for s in os.getenv("PROP_HUNTER_SPORTS", "MLB,NBA,WNBA,NFL").split(",") if s.strip()]
+
+    # Quellen-Kette pro Sport: jede in try, keine blockiert die andere.
+    # Odds-Quellen (echte Quoten): Bovada, FanDuel, DraftKings
+    # Linien-Quellen (synthetische Odds via DB): PrizePicks, Underdog, Sleeper
+    per_sport_sources = [
+        ("Bovada", fetch_bovada),
+        ("DraftKings", fetch_draftkings),
+        ("FanDuel", fetch_fanduel),
+        ("PrizePicks", fetch_prizepicks),
+    ]
+    global_sources = [
+        ("Underdog", fetch_underdog),
+        ("Sleeper", fetch_sleeper),
+    ]
+
+    for lg in sports:
+        for name, fn in per_sport_sources:
             try:
-                all_rows.extend(fn(arg))
+                rows = fn(lg)
+                if rows:
+                    all_rows.extend(rows)
             except Exception as e:
-                warn(f"{fn.__name__} {lg}: {e}")
-    for fn in (fetch_underdog, fetch_sleeper):
+                warn(f"{name} {lg}: {e}")
+
+    for name, fn in global_sources:
         try:
-            all_rows.extend(fn())
+            rows = fn()
+            if rows:
+                all_rows.extend(rows)
         except Exception as e:
-            warn(f"{fn.__name__}: {e}")
-    # Dedupe nach snapshot_id
-    seen = set(); uniq = []
+            warn(f"{name}: {e}")
+
+    # Dedupe: pro (Spieler|Markt|Linie) die BESTE (höchste) echte Quote behalten.
+    best = {}
     for r in all_rows:
-        sid = r.get("snapshot_id")
-        if sid in seen:
-            continue
-        seen.add(sid); uniq.append(r)
+        key = f"{r.get('normalized_name')}|{r.get('market_key')}|{r.get('line')}"
+        od = r.get("odds_decimal")
+        cur = best.get(key)
+        if cur is None:
+            best[key] = r
+        else:
+            # bevorzuge Eintrag mit echter Odds > synthetisch/None
+            cur_od = cur.get("odds_decimal")
+            if od is not None and (cur_od is None or od > cur_od):
+                best[key] = r
+    uniq = list(best.values())
+
     safe_json_write(OUT, uniq)
     if uniq:
         try:
             upsert_rows("prop_hunter_prop_snapshots", uniq, "snapshot_id")
         except Exception as e:
             warn(f"snapshot upsert: {e}")
-    log(f"pp+ud+dk+sleeper done: {len(uniq)} lines")
+
+    # Quellen-Statistik loggen
+    by_src = {}
+    for r in uniq:
+        s = r.get("source", "?")
+        by_src[s] = by_src.get(s, 0) + 1
+    log(f"ALL SOURCES done: {len(uniq)} unique lines | " + ", ".join(f"{k}:{v}" for k,v in sorted(by_src.items())))
 
 if __name__ == "__main__":
     main()
