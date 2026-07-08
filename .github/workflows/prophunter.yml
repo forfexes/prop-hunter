@@ -110,6 +110,14 @@ jobs:
           if [ -f prop_hunter_settler.py ]; then python prop_hunter_settler.py; fi
           if [ -f prop_hunter_learning_update.py ]; then python prop_hunter_learning_update.py; fi
 
+      - name: Always fetch snapshot sources (DraftKings/Underdog/Sleeper/PrizePicks)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL
+        run: |
+          if [ -f prop_hunter_odds_pp_ud.py ]; then python prop_hunter_odds_pp_ud.py || echo "connector soft-fail"; fi
+
       - name: Run Prop Hunter
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
