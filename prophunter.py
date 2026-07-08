@@ -828,29 +828,38 @@ def _sb_read():
     except Exception: return None
 
 def fetch_snapshot_props(sport_filter=None) -> list:
-    """Liest heutige Props aus prop_hunter_prop_snapshots (odds-api.io/SGO/OpticOdds Connectoren)."""
+    """Liest Props aus prop_hunter_prop_snapshots (DraftKings/Underdog/Sleeper/PrizePicks-Connectoren).
+    Props ohne echte Odds (PP/UD/Sleeper) bekommen synthetische Odds — die DB-Fairprob entscheidet dann."""
     c = _sb_read()
     if c is None: return []
     out = []
     try:
-        today = datetime.now(timezone.utc).date().isoformat()
+        # Fenster: letzte 18h (fängt auch Läufe kurz vor Mitternacht UTC)
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=18)).isoformat()
         res = c.table("prop_hunter_prop_snapshots").select(
-            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team"
-        ).gte("created_at", today).limit(2000).execute()
+            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team,bookmaker"
+        ).gte("created_at", cutoff).limit(3000).execute()
         emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
         for r in (res.data or []):
             odds = r.get("odds_decimal"); line = r.get("line")
             player = r.get("player_name"); market = r.get("market")
             sport = (r.get("sport") or r.get("league") or "").upper()
-            if not (player and market and odds and 1.01 < float(odds) < 50): continue
+            if not (player and market and line is not None): continue
             if sport_filter and sport_filter.lower() not in sport.lower(): continue
+            # Synthetische Odds für Quellen ohne Preis (PrizePicks/Underdog/Sleeper)
+            try:
+                odds_val = float(odds) if odds is not None else 1.85
+            except Exception:
+                odds_val = 1.85
+            if not (1.01 < odds_val < 50): continue
             try:
                 out.append(Prop(
-                    player=player, market=market, odds=float(odds),
-                    point=float(line) if line is not None else None,
+                    player=player, market=market, odds=odds_val,
+                    point=float(line),
                     sport=sport, emoji=emoji_map.get(sport,"🎯"),
                     game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
                     direction="over",
+                    enrichment=f"src:{r.get('bookmaker','snapshot')}",
                 ))
             except Exception: continue
         if out: log.info("Snapshot props (Supabase): %d", len(out))
@@ -1057,13 +1066,44 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             # Push-korrekt: bei ganzzahliger Linie zählt Gleichstand nicht als Treffer.
             over_hits = sum(1 for v in vals if v > point)
             over_rate = over_hits / n
-            # Richtungs-Flip für Linien-Quellen ohne eigene Richtung (PP/UD/PC):
-            # DB sagt klar Under → Pick wird Under. Gilt unabhängig von der Quote.
-            if direction == "over" and over_rate <= 0.35:
-                p.direction = "under"; direction = "under"
-            elif direction == "under" and over_rate >= 0.65:
+            # HR/Home Run: NIEMALS auf Under flippen — bleibt Over-Lottery mit hoher Quote (JK-Style).
+            # Der Bot lernt über rule_performance welche HR-Profile treffen.
+            mkt_l = (p.market or "").lower()
+            is_hr_market = "home run" in mkt_l or re.search(r"\bhr\b", mkt_l) is not None
+            is_sb_market = "stolen base" in mkt_l or "stolen_base" in mkt_l
+
+            flipped = False
+            if is_hr_market:
+                # HR bleibt immer Over mit Originalquote. Rate = echte Over-Trefferrate.
                 p.direction = "over"; direction = "over"
-            rate = (1 - over_rate) if direction == "under" else over_rate
+                rate = over_rate
+            elif is_sb_market:
+                # Stolen Base Under wäre @~1.05 (fast immer keine SB) → kein Value, überspringen.
+                # SB nur als Over behalten wenn Spieler wirklich klaut (over_rate hoch).
+                if over_rate < 0.20:
+                    continue  # unspielbar niedrige Under-Quote, kein Value
+                p.direction = "over"; direction = "over"
+                rate = over_rate
+            else:
+                # Richtungs-Flip mit KORREKTER Quoten-Inversion (kein Fake-Edge mehr).
+                def _invert_odds(over_odds):
+                    try:
+                        op = 1.0 / float(over_odds); up = 1.0 - op
+                        if up <= 0.02: return None
+                        return round(max(1.02, (1.0 / up) * 0.96), 2)
+                    except Exception:
+                        return None
+                if direction == "over" and over_rate <= 0.35:
+                    new_odds = _invert_odds(getattr(p, "odds", None))
+                    if new_odds is None:
+                        continue
+                    p.direction = "under"; direction = "under"; p.odds = new_odds; flipped = True
+                elif direction == "under" and over_rate >= 0.65:
+                    new_odds = _invert_odds(getattr(p, "odds", None))
+                    if new_odds is None:
+                        continue
+                    p.direction = "over"; direction = "over"; p.odds = new_odds; flipped = True
+                rate = (1 - over_rate) if direction == "under" else over_rate
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
             old = feats.get("fair_prob")
@@ -2028,14 +2068,20 @@ def sb_insert(row):
     try:
         sb.table("prop_picks").insert(safe).execute()
     except Exception as e:
-        # Falls 'league' (oder andere) Spalte fehlt: ohne sie neu versuchen
         msg = str(e).lower()
+        # Duplicate key = Pick heute schon gepostet, kein echter Fehler → still ignorieren
+        if "duplicate key" in msg or "23505" in msg or "already exists" in msg:
+            return
+        # Falls 'league' (oder andere) Spalte fehlt: ohne sie neu versuchen
         if "league" in msg or "column" in msg or "schema" in msg:
             safe2 = {k:v for k,v in safe.items() if k != "league"}
             try:
                 sb.table("prop_picks").insert(safe2).execute()
                 return
             except Exception as e2:
+                m2 = str(e2).lower()
+                if "duplicate key" in m2 or "23505" in m2 or "already exists" in m2:
+                    return
                 log.warning("sb insert retry: %s", e2); return
         log.warning("sb insert: %s", e)
 
@@ -3635,6 +3681,94 @@ def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
         log.warning("HR lottery skipped: %s", e)
         return []
 
+def build_jk_extras(picks):
+    """
+    JK-Style Struktur garantiert aus den finalen Singles bauen:
+    - DOUBLES: 2er-Kombis aus den sichersten Singles (Prob >= 0.55)
+    - LADDER:  gestaffelte Alt-Linien desselben Spielers (sicher + value)
+    - LOTTERY: 3-Leg Wahrscheinlichkeits-Kombi ODER HR 3-2-1 wenn HR-Singles da
+    Gibt eine Liste zusätzlicher Picks zurück (Singles bleiben unberührt).
+    """
+    extras = []
+    singles = [p for p in picks if getattr(p, "type", None) == "single"]
+    if not singles:
+        return extras
+    has_lottery = any(getattr(p, "type", None) in ("big", "super") for p in picks)
+    has_combo   = any(getattr(p, "type", None) in ("kombi2", "betbuilder") for p in picks)
+    has_ladder  = any(getattr(p, "type", None) == "ladder" for p in picks)
+
+    by_prob = sorted(singles, key=lambda p: (p.probability or 0), reverse=True)
+
+    # ── DOUBLES: zwei beste Singles verschiedener Spieler ──
+    if not has_combo and len(by_prob) >= 2:
+        try:
+            top2 = []
+            seen_players = set()
+            for p in by_prob:
+                pl = (p.player or "").lower()
+                if pl in seen_players:
+                    continue
+                if (p.probability or 0) >= 0.55:
+                    top2.append(p); seen_players.add(pl)
+                if len(top2) == 2:
+                    break
+            if len(top2) == 2:
+                odds = round(prod(float(l.odds) for l in top2), 2)
+                prob = round(prod(float(l.probability or 0.55) for l in top2), 4)
+                pk = Pick(type="kombi2", category="combo",
+                    player=" + ".join(l.player for l in top2), emoji="🎯", team="",
+                    market="2-Leg Kombi", direction="over", odds=odds, stake=0.3,
+                    probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
+                    game="JK Double", analysis="Die zwei sichersten Singles kombiniert.")
+                pk.legs = [f"{l.player} {l.market}" for l in top2]
+                extras.append(pk)
+                log.info("JK Double gebaut @ %.2f", odds)
+        except Exception as e:
+            log.warning("jk double: %s", e)
+
+    # ── LADDER: gestaffelte Alt-Linien desselben Spielers ──
+    # Nimmt den sichersten Single und baut eine höhere Alt-Linie (value) dazu.
+    if not has_ladder and by_prob:
+        try:
+            anchor = by_prob[0]
+            point = getattr(anchor, "point", None)
+            if point is not None and anchor.market and float(anchor.odds) < 2.2:
+                # Höhere Alt-Linie: +30% auf die Linie, Quote grob verdreifacht
+                base_market = re.sub(r'(over|under)\s+[\d\.]+', '', (anchor.market or ''), flags=re.I).strip()
+                alt_point = round(point * 1.3, 1)
+                alt_odds = round(min(6.5, max(2.5, float(anchor.odds) * 2.6)), 2)
+                safe_leg = LadderLeg(market=anchor.market, odds=float(anchor.odds), stake=0.75)
+                value_leg = LadderLeg(
+                    market=f"{base_market} Over {alt_point}".strip(),
+                    odds=alt_odds, stake=0.25)
+                pk = Pick(type="ladder", category="ladder",
+                    player=anchor.player, emoji=anchor.emoji or "🎯",
+                    team=anchor.team or "", market=f"{base_market} Ladder",
+                    direction="over", odds=float(anchor.odds), stake=1.0,
+                    probability=anchor.probability, edge_pct=0, ev=0,
+                    game="JK Ladder",
+                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u (JK-Style).")
+                pk.picks = [safe_leg, value_leg]
+                extras.append(pk)
+                log.info("JK Ladder gebaut: %s", anchor.player)
+        except Exception as e:
+            log.warning("jk ladder: %s", e)
+
+    # ── LOTTERY: HR 3-2-1 bevorzugt, sonst Probability-Lottery ──
+    hr_extras = build_hr_321(picks)
+    if hr_extras:
+        extras.extend(hr_extras)
+    elif not has_lottery and len(by_prob) >= 3:
+        try:
+            lot = _make_probability_lottery(singles)
+            if lot:
+                extras.extend(lot[:MAX_LOTTERY_TOTAL])
+                log.info("Probability-Lottery gebaut: %d", len(lot[:MAX_LOTTERY_TOTAL]))
+        except Exception as e:
+            log.warning("prob lottery: %s", e)
+
+    return extras
+
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
     log.info("PROP HUNTER v4 DATA+ TEAM-SAFE (dry=%s sport=%s)",dry_run,sport_filter or "all")
@@ -3676,7 +3810,7 @@ def run(dry_run=False,sport_filter=None):
 
     picks = limit_singles_per_game(picks, max_per_game=3)
     picks = limit_total_singles(picks, max_singles=12)
-    picks = picks + build_hr_321(picks)
+    picks = picks + build_jk_extras(picks)
     body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
