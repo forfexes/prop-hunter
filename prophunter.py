@@ -3733,13 +3733,31 @@ def build_jk_extras(picks):
             anchor = by_prob[0]
             point = getattr(anchor, "point", None)
             if point is not None and anchor.market and float(anchor.odds) < 2.2:
-                # Höhere Alt-Linie: +30% auf die Linie, Quote grob verdreifacht
                 base_market = re.sub(r'(over|under)\s+[\d\.]+', '', (anchor.market or ''), flags=re.I).strip()
-                alt_point = round(point * 1.3, 1)
-                alt_odds = round(min(6.5, max(2.5, float(anchor.odds) * 2.6)), 2)
+                mkt_l = (anchor.market or "").lower()
+                # ECHTE nächste Wettlinie bestimmen (Sportsbooks bieten nur bestimmte Linien an)
+                def _next_real_line(pt, market_lower):
+                    # Low-count Märkte (Hits, HR, RBI, Stolen Bases, Threes): Schritt +1.0
+                    if any(k in market_lower for k in ("hit","home run","hr","rbi","stolen","3-pt","three","walk","double")):
+                        return pt + 1.0
+                    if "strikeout" in market_lower or "pitcher k" in market_lower:
+                        return pt + 1.5
+                    # Points/Rebounds/Assists/Kombis: sinnvolle Sprünge
+                    if pt < 5:   return pt + 2.0
+                    if pt < 15:  return pt + 3.0
+                    if pt < 25:  return pt + 4.0
+                    return pt + 5.0
+                alt_point = _next_real_line(point, mkt_l)
+                # Auf .5 normalisieren (echte Linien enden auf .5)
+                alt_point = round(alt_point * 2) / 2
+                if alt_point == point:
+                    alt_point = point + 1.0
+                # Quote grob: pro zusätzlicher Einheit ~2.5x, gedeckelt
+                steps = max(1.0, alt_point - point)
+                alt_odds = round(min(8.0, max(2.2, float(anchor.odds) * (1.8 + steps * 0.8))), 2)
                 safe_leg = LadderLeg(market=anchor.market, odds=float(anchor.odds), stake=0.75)
                 value_leg = LadderLeg(
-                    market=f"{base_market} Over {alt_point}".strip(),
+                    market=f"{base_market} Over {alt_point:g}".strip(),
                     odds=alt_odds, stake=0.25)
                 pk = Pick(type="ladder", category="ladder",
                     player=anchor.player, emoji=anchor.emoji or "🎯",
@@ -3750,7 +3768,7 @@ def build_jk_extras(picks):
                     analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u (JK-Style).")
                 pk.picks = [safe_leg, value_leg]
                 extras.append(pk)
-                log.info("JK Ladder gebaut: %s", anchor.player)
+                log.info("JK Ladder gebaut: %s (%.1f→%.1f)", anchor.player, point, alt_point)
         except Exception as e:
             log.warning("jk ladder: %s", e)
 
