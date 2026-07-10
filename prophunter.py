@@ -1049,7 +1049,24 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                     _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
             vals = _GAMELOG_CACHE[cache_k]
             n = len(vals)
-            if n < 6: continue  # unter 6 Spielen zu dünn für eine Wahrscheinlichkeits-Entscheidung
+            if n < 6:
+                # Zu wenig DB-Historie. ABER: hat der Prop eine ECHTE Buchmacher-Quote
+                # (nicht synthetisch 1.85/1.80/1.83), ist die no-vig-Quote selbst die Bewertung.
+                src = (getattr(p, "enrichment", "") or "").lower()
+                real_book = any(b in src for b in ("draftkings", "bovada", "fanduel", "dk", "src:draft", "src:bov", "src:fan"))
+                p_odds = float(getattr(p, "odds", 0) or 0)
+                is_synthetic = abs(p_odds - 1.85) < 0.001 or abs(p_odds - 1.83) < 0.001 or abs(p_odds - 1.80) < 0.001
+                if real_book and not is_synthetic and p_odds > 1.01:
+                    # no-vig Näherung: faire Prob leicht über implied (Marge ~4% rausrechnen)
+                    implied = 1.0 / p_odds
+                    fair = min(0.92, implied * 1.04)
+                    feats = getattr(p, "features", None) or {}
+                    if not feats.get("fair_prob"):
+                        feats["fair_prob"] = round(fair, 4)
+                        feats["fair_from"] = "novig_realbook"
+                        p.features = feats
+                        boosted += 1
+                continue  # unter 6 Spielen keine DB-Rate, aber echte Quote gesetzt
             # Double/Triple-Double: Rate = Anteil Spiele mit DD (Linie ignoriert, ist ja Ja/Nein)
             if stat in ("double_double", "triple_double"):
                 dd_rate = sum(vals) / n
@@ -1576,6 +1593,10 @@ def _req(url,params,retries=1):
 _events_cache: dict = {}
 def fetch_events(sport):
     if not ODDS_API_KEYS: return []
+    # ODDS API IST FALLBACK: wenn alle Keys tot, gar nicht erst versuchen (spart 12 Fehl-Versuche).
+    # Die Snapshot-Quellen (DraftKings/Bovada/Underdog/Sleeper) + ProCruncher tragen die Props.
+    if _all_keys_dead():
+        return []
     # Check in-memory cache first (valid for 30min)
     cached = _events_cache.get(sport)
     if cached and time.time() - cached[0] < 1800:
