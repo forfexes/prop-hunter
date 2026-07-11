@@ -840,12 +840,35 @@ def fetch_snapshot_props(sport_filter=None) -> list:
             "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team,bookmaker"
         ).gte("created_at", cutoff).limit(3000).execute()
         emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
+        # Saison-Totale / Futures rausfiltern — das sind KEINE Einzelspiel-Props!
+        SEASON_MARKERS = ("season", "futures", "to win", "mvp", "champion", "award",
+                          "regular season", "playoff", "total wins", "make the",
+                          "division", "conference", "over/under wins")
+        # Sportarten die aktuell NICHT laufen (Off-Season) überspringen
+        # NFL/NHL laufen nicht im Juli — nur MLB/WNBA aktiv
+        now_month = datetime.now(timezone.utc).month
+        active_sports = {"MLB", "WNBA"}  # Juli
+        if now_month >= 10 or now_month <= 2:
+            active_sports |= {"NFL", "NHL", "NBA"}
+        if 4 <= now_month <= 6:
+            active_sports |= {"NBA", "NHL"}
+
         for r in (res.data or []):
             odds = r.get("odds_decimal"); line = r.get("line")
             player = r.get("player_name"); market = r.get("market")
             sport = (r.get("sport") or r.get("league") or "").upper()
             if not (player and market and line is not None): continue
             if sport_filter and sport_filter.lower() not in sport.lower(): continue
+            # Season/Futures-Märkte komplett überspringen
+            mkt_low = market.lower()
+            if any(m in mkt_low for m in SEASON_MARKERS): continue
+            # Off-Season Sportarten überspringen (keine NFL-Futures im Juli)
+            if sport and sport not in active_sports: continue
+            # Unrealistisch hohe Linien = Season-Total (z.B. 824.5 Receiving Yards)
+            try:
+                if float(line) > 100 and sport != "MLB": continue  # Einzelspiel-Linien sind niedrig
+            except Exception:
+                pass
             # Synthetische Odds für Quellen ohne Preis (PrizePicks/Underdog/Sleeper)
             try:
                 odds_val = float(odds) if odds is not None else 1.85
@@ -1591,11 +1614,13 @@ def _req(url,params,retries=1):
         log.warning("Odds API %d", r.status_code); return None
     return None
 _events_cache: dict = {}
+_odds_api_given_up: bool = False
 def fetch_events(sport):
+    global _odds_api_given_up
     if not ODDS_API_KEYS: return []
-    # ODDS API IST FALLBACK: wenn alle Keys tot, gar nicht erst versuchen (spart 12 Fehl-Versuche).
-    # Die Snapshot-Quellen (DraftKings/Bovada/Underdog/Sleeper) + ProCruncher tragen die Props.
-    if _all_keys_dead():
+    # ODDS API IST FALLBACK: sobald einmal alle Keys tot waren, gar nicht mehr versuchen.
+    if _odds_api_given_up or _all_keys_dead():
+        _odds_api_given_up = True
         return []
     # Check in-memory cache first (valid for 30min)
     cached = _events_cache.get(sport)
@@ -2350,12 +2375,15 @@ def _safe_display_team(p):
         if isinstance(feats, dict):
             roster_team = (feats.get("roster_team") or feats.get("actual_team") or "").strip()
 
-        if roster_team:
+        if roster_team and roster_team.lower() not in ("none", "null", ""):
             return roster_team
 
         if emoji == "🏀" or sport in ("NBA", "WNBA"):
             return ""
 
+        # "None"-Strings und Müll rausfiltern
+        if team.lower() in ("none", "null", "@", "none @", "@ none", ""):
+            return ""
         return team
     except Exception:
         return ""
