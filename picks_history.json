@@ -7860,8 +7860,87 @@
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-07-14T01:42:05.841429+00:00"
+      },
+      {
+        "date": "2026-07-14",
+        "player": "Max Muncy",
+        "team": "National League All-Stars",
+        "market": "Hits+Runs+RBIS Under 0.5",
+        "sport": "MLB",
+        "odds": 2.12,
+        "stake": 0.33,
+        "direction": "under",
+        "probability": 0.6732,
+        "dedup_key": "max muncy|hits+runs+rbis under 0.5|0.5|under",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-07-14T08:31:50.105812+00:00"
+      },
+      {
+        "date": "2026-07-14",
+        "player": "Bobby Witt Jr.",
+        "team": "American League All-Stars",
+        "market": "Hits Over 0.5",
+        "sport": "MLB",
+        "odds": 1.8,
+        "stake": 0.55,
+        "direction": "over",
+        "probability": 0.6353,
+        "dedup_key": "bobby witt jr.|hits over 0.5|0.5|over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-07-14T08:31:50.406067+00:00"
+      },
+      {
+        "date": "2026-07-14",
+        "player": "Mike Trout",
+        "team": "American League All-Stars",
+        "market": "Home Run Over 0.5",
+        "sport": "MLB",
+        "odds": 7.18,
+        "stake": 0.1,
+        "direction": "over",
+        "probability": 0.2167,
+        "dedup_key": "mike trout|home run over 0.5|0.5|over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-07-14T08:31:50.554936+00:00"
       }
     ],
-    "kombis": []
+    "kombis": [
+      {
+        "type": "big",
+        "legs": [
+          "Bobby Witt Jr. Hits Over 0.5",
+          "Mike Trout Home Run Over 0.5"
+        ],
+        "odds": 12.92,
+        "stake": 0.25,
+        "result": "pending"
+      },
+      {
+        "type": "kombi2",
+        "legs": [
+          "Max Muncy Hits+Runs+RBIS Under 0.5",
+          "Bobby Witt Jr. Hits Over 0.5"
+        ],
+        "odds": 3.82,
+        "stake": 0.3,
+        "result": "pending"
+      },
+      {
+        "type": "ladder",
+        "legs": [],
+        "odds": 2.12,
+        "stake": 1.0,
+        "result": "pending"
+      }
+    ]
   }
 ]
