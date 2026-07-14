@@ -1894,6 +1894,79 @@ def resolve_mlb_id(name):
         mid=int(ids.iloc[0]["key_mlbam"]) if ids is not None and len(ids) else None
         _mlb_id_cache[name]=mid; return mid
     except: _mlb_id_cache[name]=None; return None
+def _is_hr_market_str(market) -> bool:
+    m = (market or "").lower()
+    return "home run" in m or re.search(r"\bhr\b", m) is not None
+
+def generate_hr_props_from_data(mlb_lineups, mlb_batters, mlb_pitchers) -> list:
+    """Generiert HR-Props DIREKT aus den geladenen MLB-Daten (Lineups + Batter-HR-Raten
+    + Gegner-Pitcher HR/9), unabhängig von externen Odds-Quellen.
+    Die HR-Wahrscheinlichkeit und faire Quote werden geschätzt — wie ein Sportsbook es tut.
+    So funktioniert die JK-Style HR-Lottery auch wenn DraftKings/Bovada blocken.
+    """
+    if not mlb_lineups or not mlb_batters:
+        return []
+    props = []
+    seen = set()
+    for team, info in mlb_lineups.items():
+        opp_sp = info.get("opp_sp", "")
+        # Gegner-Pitcher HR/9 (höher = mehr HRs erlaubt = besser für Batter)
+        opp_hr9 = 1.1  # Liga-Durchschnitt Default
+        if opp_sp and mlb_pitchers:
+            psp = mlb_pitchers.get(opp_sp.lower(), {})
+            opp_hr9 = float(psp.get("hr9", 1.1) or 1.1)
+        for name in info.get("lineup_names", []):
+            nl = name.lower().strip()
+            if nl in seen: continue
+            seen.add(nl)
+            bat = mlb_batters.get(nl)
+            if not bat: continue
+            # HR-Profil: Saison-HRs, ISO (Power), Barrel%
+            hr = float(bat.get("hr", 0) or 0)
+            iso = float(bat.get("iso", 0) or 0)
+            barrel = float(bat.get("barrel", 0) or 0)
+            # HR-Wahrscheinlichkeit pro Spiel schätzen:
+            # Basis aus Saison-HR-Rate (HR pro ~4 AB/Spiel), moduliert durch Gegner-HR/9 und Power
+            if hr < 8:  # zu wenig Power, überspringen
+                continue
+            # grobe HR-Rate pro Spiel: starke Hitter ~0.15-0.25, Durchschnitt ~0.08
+            base_p = min(0.28, max(0.06, (hr / 550) * 4.0))  # HR/AB * ~4 AB
+            # Modulation: guter Barrel% + hohe Gegner-HR/9 erhöhen
+            mod = 1.0
+            if barrel >= 12: mod += 0.15
+            if barrel >= 15: mod += 0.10
+            if iso >= 0.220: mod += 0.10
+            if opp_hr9 >= 1.3: mod += 0.15
+            if opp_hr9 >= 1.6: mod += 0.10
+            hr_prob = min(0.32, base_p * mod)
+            if hr_prob < 0.10:  # unter 10% nicht spielbar
+                continue
+            # Faire Quote aus Wahrscheinlichkeit (mit ~6% Marge wie Sportsbook)
+            fair_odds = round(min(9.0, max(3.2, (1.0 / hr_prob) * 0.94)), 2)
+            try:
+                p = Prop(
+                    player=name, market="Home Run", odds=fair_odds, point=0.5,
+                    sport="MLB", emoji="⚾", game=f"{team} vs {opp_sp or '?'}",
+                    direction="over",
+                    enrichment=f"src:datagen | HR{hr:.0f} Barrel{barrel:.0f}% vs HR/9 {opp_hr9:.1f}",
+                    features={
+                        "mlb_hr_rate": round(hr / 550, 4),
+                        "mlb_hr_score": round((barrel/5) + (iso*4) + (opp_hr9), 2),
+                        "mlb_slg": iso + 0.3,
+                        "fair_prob": round(hr_prob, 4),
+                        "roster_team": team,
+                    },
+                )
+                p.team = team
+                props.append(p)
+            except Exception:
+                continue
+    # Nach HR-Profil sortieren, Top 15 (genug für Lottery-Auswahl)
+    props.sort(key=lambda x: (x.features or {}).get("mlb_hr_score", 0), reverse=True)
+    if props:
+        log.info("HR-Props generiert (aus Batter-Daten): %d Kandidaten", len(props[:15]))
+    return props[:15]
+
 def mlb_in_lineup(player,home,away,lu):
     h=lu.get(home,{}); a=lu.get(away,{})
     if not h and not a: return True,None,None
@@ -2761,6 +2834,23 @@ def gather(sport_filter=None):
                 log.info("Snapshots additiv beigemischt: +%d props (DK/UD/Sleeper)", added)
     except Exception as e:
         log.warning("snapshot merge: %s", e)
+
+    # HR-PROPS DIREKT AUS BATTER-DATEN generieren (JK-Style, unabhängig von Odds-Quellen).
+    # Damit gibt es HR-Lottery auch wenn DraftKings/Bovada blocken.
+    try:
+        if (not sport_filter) or sport_filter.lower() == "mlb":
+            if not mlb_lu: mlb_lu = fetch_mlb_lineups()
+            if not mlb_b:  mlb_b = fetch_mlb_batters()
+            if not mlb_p:  mlb_p = fetch_mlb_pitchers()
+            hr_props = generate_hr_props_from_data(mlb_lu, mlb_b, mlb_p)
+            if hr_props:
+                existing_hr = {(p.player or "").lower() for p in all_props if _is_hr_market_str(p.market)}
+                for hp in hr_props:
+                    if (hp.player or "").lower() not in existing_hr:
+                        all_props.append(hp)
+    except Exception as e:
+        log.warning("HR generation: %s", e)
+
     all_props = apply_data_plus_visible(all_props)
     all_props = enrich_gamelogs_fairprob(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
