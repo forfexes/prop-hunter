@@ -3545,7 +3545,10 @@ def rescue_picks_from_props(props, max_picks=12):
                 rejected["bad_odds"] += 1; continue
             if not (3.0 <= odds <= 9.0):
                 rejected["hr_odds"] += 1; continue
-            strong_profile = (hr_rate is not None and float(hr_rate) >= 0.04) or hr_score >= 1.5
+            # Selbst-generierte HR-Props (src:datagen) sind schon vorselektiert → durchlassen.
+            src_tag = (getattr(sp, "enrichment", "") or "").lower()
+            is_datagen = "datagen" in src_tag
+            strong_profile = is_datagen or (hr_rate is not None and float(hr_rate) >= 0.04) or hr_score >= 1.5
             if not strong_profile:
                 rejected["hr_profile"] += 1; continue
             hr_prob = prob if prob and prob > 0.10 else min(0.30, max(0.12, float(hr_rate or 0.05) * 2.2))
@@ -3747,7 +3750,7 @@ def build_hr_321(picks):
             prob = round(prod(float(l.probability or 0.15) for l in legs), 4)
             names = " + ".join(f"{l.player} HR" for l in legs)
             pk = Pick(
-                type="combo", category="hr_lottery",
+                type="big", category="hr_lottery",
                 player=names, emoji="⚾", team="",
                 market=f"{len(legs)}x Home Run",
                 direction="over", odds=odds, stake=stake,
