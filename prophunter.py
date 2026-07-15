@@ -7,7 +7,8 @@ from __future__ import annotations
 from math import prod
 import asyncio, json, logging, os, re, time
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone, time as dt_time
+from zoneinfo import ZoneInfo
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
@@ -41,7 +42,7 @@ SHARP_BOOK     = "pinnacle"
 UA             = "Mozilla/5.0 PropHunter/3.0"
 HTTP_H         = {"User-Agent": UA}
 TIMEOUT        = 30
-MAX_EVENTS     = 8
+MAX_EVENTS     = int(os.environ.get("PH_MAX_EVENTS", "20"))
 MAX_PROPS_AI   = 70
 KELLY_F        = 0.25
 MAX_STAKE      = 1.5
@@ -50,7 +51,7 @@ CACHE_TTL      = 6*3600
 CACHE_FILE     = "odds_cache.json"
 HISTORY_FILE   = "picks_history.json"
 CLV_FILE       = "clv_history.json"
-LOOKAHEAD_H    = 12
+LOOKAHEAD_H    = int(os.environ.get("PH_LOOKAHEAD_H", "16"))
 PM_MAX         = 5
 STATCAST_DAYS  = 30
 NBA_LAST_N     = 10
@@ -58,6 +59,11 @@ NFL_LAST_N     = 5
 AI_TOKENS      = 3000
 AI_TEMP        = 0.6
 AI_RETRY       = 1
+
+# EARLY/LATE CARD CONTROL
+PH_CARD_MODE   = os.environ.get("PH_CARD_MODE", "all").strip().lower()
+PH_TZ_NAME     = os.environ.get("PH_TIMEZONE", "Europe/Zurich")
+PH_EARLY_CUTOFF = os.environ.get("PH_EARLY_CUTOFF", "00:30")
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -210,6 +216,77 @@ class Prop(BaseModel):
     commence_time:Optional[datetime]=None; pinnacle_odds:Optional[float]=None
     pinnacle_opp_odds:Optional[float]=None; game_total:Optional[float]=None
     enrichment:Optional[str]=None; features:dict=Field(default_factory=dict)
+
+
+def _card_cutoff_local(now_local: datetime) -> datetime:
+    """Return the next Early/Late split point in Europe/Zurich."""
+    try:
+        hh, mm = [int(x) for x in PH_EARLY_CUTOFF.split(":", 1)]
+    except Exception:
+        hh, mm = 0, 30
+    cutoff_day = now_local.date()
+    candidate = datetime.combine(cutoff_day, dt_time(hh, mm), tzinfo=now_local.tzinfo)
+    if candidate <= now_local:
+        candidate += timedelta(days=1)
+    return candidate
+
+
+def filter_props_for_card(props, mode: Optional[str] = None, now_utc: Optional[datetime] = None):
+    """
+    Split events without overlap:
+      early: now - 30m <= kickoff < next 00:30 Europe/Zurich
+      late:  next 00:30 <= kickoff < next 12:00 Europe/Zurich
+      all:   no time partition (manual full card)
+
+    Props without a kickoff are excluded from scheduled early/late cards to avoid
+    sending the same unknown event twice. They remain available in manual all mode.
+    """
+    mode = (mode or PH_CARD_MODE or "all").strip().lower()
+    if mode not in {"early", "late"}:
+        return list(props or [])
+
+    tz = ZoneInfo(PH_TZ_NAME)
+    now_utc = now_utc or datetime.now(timezone.utc)
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    now_local = now_utc.astimezone(tz)
+    split_local = _card_cutoff_local(now_local)
+
+    if mode == "early":
+        start_utc = now_utc - timedelta(minutes=30)
+        end_utc = split_local.astimezone(timezone.utc)
+    else:
+        start_utc = split_local.astimezone(timezone.utc)
+        end_local = datetime.combine(split_local.date(), dt_time(12, 0), tzinfo=tz)
+        if end_local <= split_local:
+            end_local += timedelta(days=1)
+        end_utc = end_local.astimezone(timezone.utc)
+
+    kept = []
+    missing_time = 0
+    for prop in props or []:
+        ct = getattr(prop, "commence_time", None)
+        if not ct:
+            missing_time += 1
+            continue
+        if isinstance(ct, str):
+            try:
+                ct = datetime.fromisoformat(ct.replace("Z", "+00:00"))
+            except Exception:
+                missing_time += 1
+                continue
+        if ct.tzinfo is None:
+            ct = ct.replace(tzinfo=timezone.utc)
+        ct = ct.astimezone(timezone.utc)
+        if start_utc <= ct < end_utc:
+            kept.append(prop)
+
+    log.info(
+        "card window %s: %s → %s UTC | props %d → %d | missing kickoff=%d",
+        mode.upper(), start_utc.isoformat(timespec="minutes"),
+        end_utc.isoformat(timespec="minutes"), len(props or []), len(kept), missing_time,
+    )
+    return kept
 
 PickType=Literal["single","ladder","betbuilder","kombi2","big","super"]
 class LadderLeg(BaseModel):
@@ -2470,7 +2547,12 @@ def build_post(picks):
     bigs=[p for p in picks if p.type in ("big","super")]
     tier2=[p for p in singles if (p.tier or 1)==2]
     tier1=[p for p in singles if (p.tier or 1)!=2]
-    out=[f"🎯 PROP HUNTER v4 — {today}",""]
+    out=["🎯 PROP HUNTER", f"📅 {today}"]
+    if PH_CARD_MODE == "early":
+        out += ["🌇 EARLY CARD"]
+    elif PH_CARD_MODE == "late":
+        out += ["🌙 LATE CARD"]
+    out += [""]
     def fmt(p):
         m=_market_with_line(p.market or "", p.direction, getattr(p, "point", None))
         team = _safe_display_team(p)
@@ -2609,6 +2691,41 @@ def fetch_oddspapi_props(sport_key: str) -> list:
     except Exception as e:
         log.warning("OddsPapi: %s", e)
         return []
+
+
+def _hub_rows_to_props(rows):
+    """Convert source-hub normalized snapshots into native Prop objects."""
+    converted=[]
+    sport_map={"MLB":"MLB","NBA":"NBA","WNBA":"WNBA","NFL":"NFL",
+               "BASEBALL_MLB":"MLB","BASKETBALL_NBA":"NBA","BASKETBALL_WNBA":"WNBA",
+               "FOOTBALL_NFL":"NFL","AMERICANFOOTBALL_NFL":"NFL"}
+    emoji_map={"MLB":"⚾","NBA":"🏀","WNBA":"🏀","NFL":"🏈"}
+    for r in rows or []:
+        try:
+            raw_s=str(r.get("sport") or r.get("league") or "").upper()
+            sport=sport_map.get(raw_s, raw_s)
+            if sport not in emoji_map: continue
+            player=str(r.get("player_name") or "").strip()
+            market=str(r.get("market") or r.get("market_key") or "").strip()
+            line=r.get("line")
+            odds=r.get("odds_decimal")
+            if not player or not market or odds in (None,""): continue
+            odds=float(odds)
+            if odds<=1.01: continue
+            raw=(r.get("raw") or {}) if isinstance(r.get("raw"),dict) else {}
+            sel=str(raw.get("selection") or raw.get("label") or r.get("selection") or market).lower()
+            direction="under" if "under" in sel else "over"
+            home=r.get("home_team") or ""; away=r.get("away_team") or ""
+            p=Prop(player=player, market=market, odds=round(odds,2), point=line,
+                   sport=sport, game=f"{away} @ {home}".strip(" @"), direction=direction,
+                   features={"source":r.get("source"),"bookmaker":r.get("bookmaker")},
+                   emoji=emoji_map[sport], enrichment="")
+            p.event_id=str(r.get("game_id") or r.get("source_event_id") or "")
+            p.sport_key=raw_s.lower()
+            converted.append(p)
+        except Exception:
+            continue
+    return converted
 
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
@@ -2779,7 +2896,25 @@ def gather(sport_filter=None):
     all_props=enrich_oddspedia(all_props)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
-    # QUELLEN-KETTE: Odds API → OddsPapi → ProCruncher → Supabase Snapshots
+
+    # V11 MULTI-SOURCE HUB: additive and fallback-safe.
+    # Uses SGO, OddsAPI.io, PrizePicks, Underdog, Sleeper, DK, FD, Bovada, ESPN Bet.
+    try:
+        from prop_hunter_source_hub import collect as _collect_source_hub
+        _hub_raw = _collect_source_hub(sport_filter)
+        _hub_props = _hub_rows_to_props(_hub_raw)
+        if _hub_props:
+            existing={(p.player or '').lower()+'|'+market_base(p.market or '')+'|'+str(getattr(p,'point',None)) for p in all_props}
+            added=0
+            for hp in _hub_props:
+                k=(hp.player or '').lower()+'|'+market_base(hp.market or '')+'|'+str(getattr(hp,'point',None))
+                if k not in existing:
+                    all_props.append(hp); existing.add(k); added+=1
+            log.info('V11 source hub additive: +%d / %d', added, len(_hub_props))
+    except Exception as e:
+        log.warning('V11 source hub: %s', e)
+
+    # QUELLEN-KETTE: Odds API → Multi-source hub → OddsPapi → ProCruncher → Snapshots
     if not all_props and _all_keys_dead():
         _try_oddspapi()
         if all_props:
@@ -3657,7 +3792,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 edge_pct=0.0,
                 ev=round(ev(hr_prob, odds), 3),
                 game=_source_prop_game(sp),
-                analysis=(f"JK HR Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
+                analysis=(f"HR Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
             )
             pk.point = getattr(sp, "point", None)
             pk.source_sport = "MLB"
@@ -3755,8 +3890,8 @@ def build_hr_321(picks):
                 market=f"{len(legs)}x Home Run",
                 direction="over", odds=odds, stake=stake,
                 probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
-                game="JK HR Special",
-                analysis=f"JK Style: die {len(legs)} besten HR-Profile kombiniert.",
+                game="HR Special",
+                analysis=f"Die {len(legs)} besten HR-Profile kombiniert.",
             )
             pk.legs = legs
             return pk
@@ -3861,7 +3996,7 @@ def build_jk_extras(picks):
                     player=" + ".join(l.player for l in top2), emoji="🎯", team="",
                     market="2-Leg Kombi", direction="over", odds=odds, stake=0.3,
                     probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
-                    game="JK Double", analysis="Die zwei sichersten Singles kombiniert.")
+                    game="Safe Builder", analysis="Die zwei sichersten Singles kombiniert.")
                 pk.legs = [f"{l.player} {l.market}" for l in top2]
                 extras.append(pk)
                 log.info("JK Double gebaut @ %.2f", odds)
@@ -3906,8 +4041,8 @@ def build_jk_extras(picks):
                     team=anchor.team or "", market=f"{base_market} Ladder",
                     direction="over", odds=float(anchor.odds), stake=1.0,
                     probability=anchor.probability, edge_pct=0, ev=0,
-                    game="JK Ladder",
-                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u (JK-Style).")
+                    game="Ladder",
+                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u.")
                 pk.picks = [safe_leg, value_leg]
                 extras.append(pk)
                 log.info("JK Ladder gebaut: %s (%.1f→%.1f)", anchor.player, point, alt_point)
@@ -3931,10 +4066,15 @@ def build_jk_extras(picks):
 
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v4 DATA+ TEAM-SAFE (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props:
         log.warning("no props found")
+        return
+
+    props = filter_props_for_card(props, PH_CARD_MODE)
+    if not props:
+        log.warning("no props in %s card time window — nothing to post", PH_CARD_MODE.upper())
         return
 
     picks=analyse(props)
@@ -3980,9 +4120,10 @@ def run(dry_run=False,sport_filter=None):
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ TEAM-SAFE")
+    parser=argparse.ArgumentParser(description="PROP HUNTER")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
+    parser.add_argument("--card-mode", choices=["all","early","late"], help="override PH_CARD_MODE")
     parser.add_argument("-v","--verbose",action="store_true")
     parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
     args=parser.parse_args()
@@ -3995,6 +4136,8 @@ if __name__=="__main__":
             log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
         raise SystemExit(0)
     if args.verbose: setup_logging(logging.DEBUG)
+    if args.card_mode:
+        PH_CARD_MODE = args.card_mode
     run(dry_run=args.dry_run,sport_filter=args.sport)
 
 
