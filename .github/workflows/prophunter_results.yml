@@ -1,41 +1,83 @@
-name: Prop Hunter Results
+name: Prop Hunter Results Automatic
+
 on:
-  schedule:
-    - cron: '0 10 * * *'
   workflow_dispatch:
+  schedule:
+    # Vor dem täglichen Daten-/ML-Lauf.
+    - cron: '30 5 * * *'
+
+concurrency:
+  group: prop-hunter-results
+  cancel-in-progress: false
+
 permissions:
   contents: write
+
 jobs:
   results:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
 
-      - name: Install
-        run: pip install requests pydantic python-dateutil MLB-StatsAPI supabase
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run Results
+      - name: Compile result pipeline
+        run: |
+          python -m py_compile \
+            prophunter_results.py \
+            prop_hunter_settler.py \
+            prop_hunter_clv_engine.py \
+            prop_hunter_learning_update.py \
+            prop_hunter_results_mlb.py \
+            prop_hunter_results_nba.py \
+            prop_hunter_results_wnba.py \
+            prop_hunter_results_nfl.py
+
+      - name: Fetch sport results
         env:
-          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
-          SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY:        ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-        run: python prophunter_results.py
+        run: |
+          python prop_hunter_results_mlb.py || true
+          python prop_hunter_results_nba.py || true
+          python prop_hunter_results_wnba.py || true
+          python prop_hunter_results_nfl.py || true
+          python espn_multisport_results.py || true
 
-      - name: Save results
+      - name: Settle picks and update CLV
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+        run: |
+          python prop_hunter_settler.py || true
+          python prophunter_results.py || true
+          python prop_hunter_clv_engine.py || true
+          python prop_hunter_learning_update.py || true
+
+      - name: Save local history changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A picks_history.json
+          git add picks_history.json odds_cache.json 2>/dev/null || true
           git diff --staged --quiet && echo "Nothing to commit" && exit 0
-          git commit -m "results $(date -u +%F)"
+          git commit -m "prop hunter results $(date -u +%F)"
           git push
