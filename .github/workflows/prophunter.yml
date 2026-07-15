@@ -1,141 +1,141 @@
-name: Prop Hunter Final Coverage
+name: Prop Hunter V11 Early + Late
 
 on:
   workflow_dispatch:
     inputs:
-      run_backfill:
-        description: 'Run backfills/results/settlement'
+      card_mode:
+        description: Which card to run manually
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - early
+          - late
+          - data
+      train_ml:
+        description: Train ML before picks
         required: false
-        default: 'true'
-      run_extra_odds:
-        description: 'Run extra odds connectors'
-        required: false
-        default: 'true'
+        default: false
+        type: boolean
   schedule:
-    - cron: '15 */3 * * *'
+    # Switzerland summer time (CEST):
+    # 10:00 data update, 18:30 Early Card, 23:00 Late Card
+    - cron: '0 8 * * *'
+    - cron: '30 16 * * *'
+    - cron: '0 21 * * *'
 
 jobs:
-  run-prop-hunter:
+  prop-hunter:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
+
+      - name: Decide run mode
+        shell: bash
+        run: |
+          MODE="data"
+          CARD="all"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ inputs.card_mode }}"
+            CARD="${{ inputs.card_mode }}"
+          else
+            UTC_NOW="$(date -u +'%H:%M')"
+            case "$UTC_NOW" in
+              "16:30") MODE="card"; CARD="early" ;;
+              "21:00") MODE="card"; CARD="late" ;;
+              *)       MODE="data"; CARD="all" ;;
+            esac
+          fi
+
+          if [ "$MODE" = "early" ] || [ "$MODE" = "late" ] || [ "$MODE" = "all" ]; then
+            MODE="card"
+          fi
+
+          echo "PH_RUN_MODE=$MODE" >> "$GITHUB_ENV"
+          echo "PH_CARD_MODE=$CARD" >> "$GITHUB_ENV"
+          echo "Resolved run mode: $MODE / card: $CARD"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || pip install requests pandas pyarrow supabase nba_api nflreadpy pybaseball MLB-StatsAPI beautifulsoup4 lxml python-dotenv rapidfuzz pydantic cloudscraper
+          pip install -r requirements.txt
           python -m playwright install chromium || true
 
-      - name: Compile check
+      - name: Compile critical files
         run: |
-          python -m py_compile prophunter.py
-          python -m py_compile prop_hunter_scraper.py || true
-          python -m py_compile prop_hunter_shared_utils.py || true
+          python -m py_compile \
+            prophunter.py \
+            prop_hunter_source_hub.py \
+            prop_hunter_odds_sportsgameodds.py \
+            prop_hunter_odds_oddsapi_io.py \
+            prop_hunter_odds_pp_ud.py
 
-      - name: Run DATA+ scraper
+      - name: Update DATA+
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-        run: |
-          if [ -f prop_hunter_scraper.py ]; then
-            python prop_hunter_scraper.py
-          else
-            echo "prop_hunter_scraper.py not found, skip"
-          fi
+        run: python prop_hunter_scraper.py || true
 
-      - name: Run History Scraper
+      - name: Refresh source snapshots
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          LAST_N_GAMES: 30
-        run: |
-          if [ -f prop_hunter_history_scraper.py ]; then
-            python prop_hunter_history_scraper.py
-          else
-            echo "prop_hunter_history_scraper.py not found, skip"
-          fi
-
-      - name: Run extra odds connectors
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_extra_odds == 'true'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
-          OPTICODDS_API_KEY: ${{ secrets.OPTICODDS_API_KEY }}
-          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL
+          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
+          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL
         run: |
-          if [ -f prop_hunter_odds_pp_ud.py ]; then python prop_hunter_odds_pp_ud.py; fi
-          if [ -f prop_hunter_odds_oddsapi_io.py ]; then python prop_hunter_odds_oddsapi_io.py; fi
-          if [ -f prop_hunter_odds_sportsgameodds.py ]; then python prop_hunter_odds_sportsgameodds.py; fi
-          if [ -f prop_hunter_odds_opticodds.py ]; then python prop_hunter_odds_opticodds.py; fi
+          python prop_hunter_odds_sportsgameodds.py || true
+          python prop_hunter_odds_oddsapi_io.py || true
+          python prop_hunter_odds_pp_ud.py || true
 
-      - name: Run results/backfill/settlement
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_backfill == 'true'
+      - name: Train ML
+        if: github.event_name == 'workflow_dispatch' && inputs.train_ml == true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          LAST_N_GAMES: 30
-          NBA_SEASON: 2025-26
-          NFL_SEASON: 2025
-          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
-        run: |
-          if [ -f prop_hunter_backfill_universal.py ]; then python prop_hunter_backfill_universal.py; fi
-          if [ -f prop_hunter_results_nba.py ]; then python prop_hunter_results_nba.py; fi
-          if [ -f prop_hunter_results_wnba.py ]; then python prop_hunter_results_wnba.py; fi
-          if [ -f prop_hunter_results_nfl.py ]; then python prop_hunter_results_nfl.py; fi
-          if [ -f prop_hunter_results_mlb.py ]; then python prop_hunter_results_mlb.py; fi
-          if [ -f espn_multisport_results.py ]; then python espn_multisport_results.py; fi
+        run: python prophunter.py --train-ml || true
 
-      - name: Run settlement + learning
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_backfill == 'true'
+      - name: Run Prop Hunter card
+        if: env.PH_RUN_MODE == 'card'
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: |
-          if [ -f prop_hunter_settler.py ]; then python prop_hunter_settler.py; fi
-          if [ -f prop_hunter_learning_update.py ]; then python prop_hunter_learning_update.py; fi
-
-      - name: Always fetch snapshot sources (DraftKings/Underdog/Sleeper/PrizePicks)
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL
-        run: |
-          if [ -f prop_hunter_odds_pp_ud.py ]; then python prop_hunter_odds_pp_ud.py || echo "connector soft-fail"; fi
-
-      - name: Run Prop Hunter
-        env:
+          PH_CARD_MODE: ${{ env.PH_CARD_MODE }}
+          PH_TIMEZONE: Europe/Zurich
+          PH_EARLY_CUTOFF: '00:30'
+          PH_LOOKAHEAD_H: '16'
+          PH_MAX_EVENTS: '20'
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEYS: ${{ secrets.ODDS_API_KEYS }}
+          ODDSPAPI: ${{ secrets.ODDSPAPI }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
+          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          ODDSPAPI: ${{ secrets.ODDSPAPI }}
-        run: python prophunter.py
+          PH_MIN_EDGE: '3.0'
+          PH_MAX_PER_PLAYER: '3'
+          PH_MAX_PER_GAME: '6'
+        run: python prophunter.py --card-mode "$PH_CARD_MODE"
 
-      - name: Save picks
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A picks_history.json odds_cache.json || true
-          git diff --staged --quiet && echo "Nothing to commit" && exit 0
-          git commit -m "picks $(date -u +%F-%H%M)"
-          git push
+      - name: Data-only done
+        if: env.PH_RUN_MODE == 'data'
+        run: echo "DATA+ and source snapshots updated. No Telegram card sent."
