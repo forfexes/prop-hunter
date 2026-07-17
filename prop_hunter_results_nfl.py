@@ -1,129 +1,178 @@
 #!/usr/bin/env python3
-"""
-PROP HUNTER — NBA RESULTS
-=========================
+"""PROP HUNTER — NFL results and player gamelog collector.
 
 Sources:
-- nba_api PlayerGameLog
-- ESPN scoreboard backup via public ESPN API
+- ESPN public scoreboard/summary
+- nflverse remains available to the feature pipeline separately
 
 Writes:
 - prop_hunter_player_gamelogs
-- prop_hunter_results_raw.json
+- prop_hunter_results_nfl_raw.json
 """
-
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from prop_hunter_shared_utils import (
-    upsert_rows, safe_json_write, log, warn, norm_name, to_float, hash_key, http_json
+    hash_key, http_json, log, norm_name, safe_json_write, to_float,
+    upsert_rows, warn,
 )
 
-OUT = "prop_hunter_results_nba_raw.json"
+OUT = "prop_hunter_results_nfl_raw.json"
 
-def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, Any]]:
-    try:
-        from nba_api.stats.static import players as nba_players
-        from nba_api.stats.endpoints import playergamelog
-    except Exception as e:
-        warn(f"nba_api unavailable: {e}")
-        return []
 
-    season = season or os.getenv("NBA_SEASON", "2025-26")
-    wanted = {norm_name(x) for x in (players or []) if x}
-    if not wanted:
-        warn("NBA results: keine Spielernamen uebergeben, skip (verhindert All-Time-Roster-Loop)")
-        return []
-    all_players = nba_players.get_players()
-    selected = []
-    for p in all_players:
-        if norm_name(p.get("full_name")) in wanted:
-            selected.append(p)
-    if not selected:
-        for p in all_players:
-            pn = norm_name(p.get("full_name"))
-            if any(w in pn or pn in w for w in wanted):
-                selected.append(p)
+def _number(mapping: Dict[str, Any], *keys: str) -> float:
+    for key in keys:
+        value = mapping.get(key.upper())
+        if value not in (None, ""):
+            try:
+                return float(str(value).split("/")[0])
+            except Exception:
+                continue
+    return 0.0
 
-    rows = []
-    cap = int(os.getenv("NBA_RESULTS_PLAYER_CAP", "15"))
-    for p in selected[:cap]:
-        full = p.get("full_name")
-        try:
-            gl = playergamelog.PlayerGameLog(
-                player_id=p.get("id"),
-                season=season,
-                season_type_all_star=os.getenv("NBA_SEASON_TYPE", "Regular Season"),
-                timeout=8,
-            )
-            df = gl.get_data_frames()[0]
-        except Exception as e:
-            warn(f"NBA gamelog failed {full}: {e}")
+
+def collect(date_yyyymmdd: str | None = None) -> List[Dict[str, Any]]:
+    date_yyyymmdd = date_yyyymmdd or (
+        datetime.now(timezone.utc) - timedelta(days=1)
+    ).strftime("%Y%m%d")
+    scoreboard = http_json(
+        "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+        params={"dates": date_yyyymmdd},
+        retries=1,
+    ) or {}
+
+    rows: List[Dict[str, Any]] = []
+    for event in scoreboard.get("events", []) or []:
+        event_id = str(event.get("id") or "")
+        if not event_id:
             continue
-        for _, r in df.head(last_n).iterrows():
-            pts = to_float(r.get("PTS"), 0) or 0
-            reb = to_float(r.get("REB"), 0) or 0
-            ast = to_float(r.get("AST"), 0) or 0
-            game_id = str(r.get("Game_ID") or r.get("GAME_ID"))
-            rows.append({
-                "sport": "BASKETBALL",
-                "league": "NBA",
-                "season": season,
-                "source": "nba_api",
-                "source_game_id": game_id,
-                "game_id": game_id,
-                "game_date": str(r.get("GAME_DATE"))[:10] if r.get("GAME_DATE") is not None else None,
-                "player_name": full,
-                "normalized_name": norm_name(full),
-                "opponent": str(r.get("MATCHUP") or ""),
-                "minutes": to_float(r.get("MIN")),
-                "points": pts,
-                "rebounds": reb,
-                "assists": ast,
-                "pra": pts + reb + ast,
-                "ra": reb + ast,
-                "threes_made": to_float(r.get("FG3M")),
-                "steals": to_float(r.get("STL")),
-                "blocks": to_float(r.get("BLK")),
-                "turnovers": to_float(r.get("TOV")),
-                "double_double": sum(1 for v in (pts, reb, ast) if v >= 10) >= 2,
-                "triple_double": sum(1 for v in (pts, reb, ast) if v >= 10) >= 3,
-                "raw": dict(r),
-            })
+        summary = http_json(
+            "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary",
+            params={"event": event_id},
+            retries=1,
+        ) or {}
+        game_date = str(event.get("date") or "")[:10]
+
+        player_rows: Dict[str, Dict[str, Any]] = {}
+        for team in (summary.get("boxscore") or {}).get("players", []) or []:
+            team_name = ((team.get("team") or {}).get("displayName") or "")
+            for group in team.get("statistics", []) or []:
+                group_name = str(group.get("name") or group.get("displayName") or "").lower()
+                labels = [str(x).upper() for x in group.get("labels", [])]
+                for athlete in group.get("athletes", []) or []:
+                    athlete_info = athlete.get("athlete") or {}
+                    player = athlete_info.get("displayName") or ""
+                    if not player:
+                        continue
+                    key = norm_name(player)
+                    row = player_rows.setdefault(key, {
+                        "sport": "AMERICAN_FOOTBALL",
+                        "league": "NFL",
+                        "season": str(datetime.now(timezone.utc).year),
+                        "source": "espn",
+                        "source_game_id": event_id,
+                        "game_id": event_id,
+                        "game_date": game_date,
+                        "player_name": player,
+                        "normalized_name": key,
+                        "team": team_name,
+                        "passing_yards": 0.0,
+                        "passing_completions": 0.0,
+                        "passing_attempts": 0.0,
+                        "passing_touchdowns": 0.0,
+                        "interceptions_thrown": 0.0,
+                        "rushing_yards": 0.0,
+                        "rushing_attempts": 0.0,
+                        "rushing_touchdowns": 0.0,
+                        "receiving_yards": 0.0,
+                        "receptions": 0.0,
+                        "receiving_touchdowns": 0.0,
+                        "longest_reception": 0.0,
+                        "defensive_sacks": 0.0,
+                        "tackles": 0.0,
+                        "tackle_assists": 0.0,
+                        "kicking_points": 0.0,
+                        "field_goals_made": 0.0,
+                        "longest_field_goal": 0.0,
+                        "longest_punt": 0.0,
+                        "raw": {},
+                    })
+                    stat_map = dict(zip(labels, athlete.get("stats", []) or []))
+
+                    if "passing" in group_name:
+                        cmp_att = stat_map.get("C/ATT") or stat_map.get("CMP/ATT")
+                        if cmp_att and "/" in str(cmp_att):
+                            try:
+                                cmp_v, att_v = str(cmp_att).split("/", 1)
+                                row["passing_completions"] += float(cmp_v)
+                                row["passing_attempts"] += float(att_v)
+                            except Exception:
+                                pass
+                        row["passing_yards"] += _number(stat_map, "YDS")
+                        row["passing_touchdowns"] += _number(stat_map, "TD")
+                        row["interceptions_thrown"] += _number(stat_map, "INT")
+                    elif "rushing" in group_name:
+                        row["rushing_attempts"] += _number(stat_map, "CAR", "ATT")
+                        row["rushing_yards"] += _number(stat_map, "YDS")
+                        row["rushing_touchdowns"] += _number(stat_map, "TD")
+                    elif "receiving" in group_name:
+                        row["receptions"] += _number(stat_map, "REC")
+                        row["receiving_yards"] += _number(stat_map, "YDS")
+                        row["receiving_touchdowns"] += _number(stat_map, "TD")
+                        row["longest_reception"] = max(
+                            row["longest_reception"], _number(stat_map, "LONG", "LNG")
+                        )
+                    elif "defensive" in group_name:
+                        row["defensive_sacks"] += _number(stat_map, "SACKS", "SACK")
+                        row["tackles"] += _number(stat_map, "TOT", "TOTAL", "TACKLES")
+                        row["tackle_assists"] += _number(stat_map, "AST", "ASSISTS")
+                    elif "kicking" in group_name:
+                        row["kicking_points"] += _number(stat_map, "PTS")
+                        row["longest_field_goal"] = max(
+                            row["longest_field_goal"], _number(stat_map, "LONG", "LNG")
+                        )
+                        fg = stat_map.get("FG") or stat_map.get("FGM/FGA")
+                        if fg and "/" in str(fg):
+                            try:
+                                row["field_goals_made"] += float(str(fg).split("/", 1)[0])
+                            except Exception:
+                                pass
+                        else:
+                            row["field_goals_made"] += _number(stat_map, "FGM")
+                    elif "punting" in group_name:
+                        row["longest_punt"] = max(
+                            row["longest_punt"], _number(stat_map, "LONG", "LNG")
+                        )
+                    row["raw"][group_name or "unknown"] = stat_map
+
+        for row in player_rows.values():
+            row["rush_receiving_yards"] = (
+                row["rushing_yards"] + row["receiving_yards"]
+            )
+            row["touchdowns"] = (
+                row["rushing_touchdowns"] + row["receiving_touchdowns"]
+            )
+            row["row_id"] = hash_key(
+                "NFL", event_id, row["normalized_name"], game_date
+            )
+            rows.append(row)
+
     return rows
 
-def espn_scoreboard(date_yyyymmdd: str | None = None) -> List[Dict[str, Any]]:
-    date_yyyymmdd = date_yyyymmdd or datetime.utcnow().strftime("%Y%m%d")
-    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
-    data = http_json(url, params={"dates": date_yyyymmdd}, retries=1) or {}
-    rows = []
-    for ev in data.get("events", []) or []:
-        comp = (ev.get("competitions") or [{}])[0]
-        for c in comp.get("competitors", []) or []:
-            team = (c.get("team") or {}).get("displayName")
-            for ath in c.get("statistics", []) or []:
-                pass
-        rows.append({
-            "sport": "BASKETBALL",
-            "league": "NBA",
-            "source": "espn_scoreboard",
-            "game_id": str(ev.get("id")),
-            "source_game_id": str(ev.get("id")),
-            "game_date": str(ev.get("date") or "")[:10],
-            "raw": ev,
-        })
-    return rows
 
-def main():
-    names = [x.strip() for x in os.getenv("NBA_RESULT_PLAYERS", "").split(",") if x.strip()]
-    rows = nba_api_player_logs(names, last_n=int(os.getenv("LAST_N_GAMES", "20")))
-    rows.extend(espn_scoreboard())
+def main() -> None:
+    rows = collect()
     safe_json_write(OUT, rows)
-    upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,season,game_id,normalized_name")
-    log(f"NBA results done: {len(rows)} rows")
+    upsert_rows(
+        "prop_hunter_player_gamelogs",
+        rows,
+        "sport,league,season,game_id,normalized_name",
+    )
+    log(f"NFL results done: {len(rows)} rows")
+
 
 if __name__ == "__main__":
     main()
