@@ -1,55 +1,63 @@
-name: Prop Hunter Results Automatic
+name: Prop Hunter Results Autonomous
 
 on:
   workflow_dispatch:
   schedule:
-    # Vor dem täglichen Daten-/ML-Lauf.
-    - cron: '30 5 * * *'
+    - cron: '0 10,11 * * *'  # 12:00 Switzerland, DST-safe candidates
+
+permissions:
+  contents: write
 
 concurrency:
   group: prop-hunter-results
   cancel-in-progress: false
 
-permissions:
-  contents: write
-
 jobs:
   results:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 45
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Resolve Switzerland result window
+        shell: bash
+        run: |
+          RUN_RESULTS="false"
+          LOCAL_NOW="$(TZ=Europe/Zurich date +'%H:%M')"
+          HH="${LOCAL_NOW%:*}"; MM="${LOCAL_NOW#*:}"
+          TOTAL=$((10#$HH * 60 + 10#$MM))
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || { [ "$TOTAL" -ge 705 ] && [ "$TOTAL" -le 765 ]; }; then
+            RUN_RESULTS="true"
+          fi
+          echo "RUN_RESULTS=$RUN_RESULTS" >> "$GITHUB_ENV"
+          echo "Europe/Zurich=$LOCAL_NOW results=$RUN_RESULTS"
+
+      - uses: actions/setup-python@v5
+        if: env.RUN_RESULTS == 'true'
         with:
           python-version: '3.11'
           cache: pip
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Install
+        if: env.RUN_RESULTS == 'true'
+        run: pip install -r requirements.txt
 
-      - name: Compile result pipeline
+      - name: Compile settlement and learning
+        if: env.RUN_RESULTS == 'true'
         run: |
           python -m py_compile \
-            prophunter_results.py \
-            prop_hunter_settler.py \
-            prop_hunter_clv_engine.py \
-            prop_hunter_learning_update.py \
-            prop_hunter_results_mlb.py \
-            prop_hunter_results_nba.py \
-            prop_hunter_results_wnba.py \
-            prop_hunter_results_nfl.py
+            prophunter_results.py prop_hunter_settler.py prop_hunter_clv_engine.py \
+            prop_hunter_learning_update.py prop_hunter_source_reliability.py \
+            prop_hunter_builder_learning.py prop_hunter_autolearn.py
 
-      - name: Fetch sport results
+      - name: Fetch and settle all sports
+        if: env.RUN_RESULTS == 'true'
         env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
@@ -59,25 +67,31 @@ jobs:
           python prop_hunter_results_wnba.py || true
           python prop_hunter_results_nfl.py || true
           python espn_multisport_results.py || true
+          python prop_hunter_settler.py || true
+          python prophunter_results.py
+          python prop_hunter_clv_engine.py || true
 
-      - name: Settle picks and update CLV
+      - name: Learn from every settled pick
+        if: env.RUN_RESULTS == 'true'
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
         run: |
-          python prop_hunter_settler.py || true
-          python prophunter_results.py || true
-          python prop_hunter_clv_engine.py || true
           python prop_hunter_learning_update.py || true
+          python prop_hunter_source_reliability.py || true
+          python prop_hunter_builder_learning.py || true
+          python prop_hunter_autolearn.py --train || true
 
-      - name: Save local history changes
+      - name: Save results and champion models
+        if: env.RUN_RESULTS == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add picks_history.json odds_cache.json 2>/dev/null || true
+          git add \
+            picks_history.json odds_cache.json \
+            prop_hunter_model_registry.json prop_hunter_autolearn_report.json \
+            prop_hunter_builder_correlations.json prop_hunter_source_trust.json \
+            2>/dev/null || true
           git diff --staged --quiet && echo "Nothing to commit" && exit 0
-          git commit -m "prop hunter results $(date -u +%F)"
+          git commit -m "prop hunter results and learning $(date -u +%F)"
           git push
