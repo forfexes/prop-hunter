@@ -30,14 +30,19 @@ jobs:
       - name: Resolve automatic Switzerland mode
         shell: bash
         run: |
+          set -euo pipefail
+
           MODE="noop"
           CARD="all"
+          EVENT_NAME="${GITHUB_EVENT_NAME:-unknown}"
           LOCAL_NOW="$(TZ=Europe/Zurich date +'%H:%M')"
           HH="${LOCAL_NOW%:*}"
           MM="${LOCAL_NOW#*:}"
           TOTAL=$((10#$HH * 60 + 10#$MM))
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          # Every non-scheduled start is an intentional manual/test run.
+          # GitHub exposes the trigger reliably through GITHUB_EVENT_NAME.
+          if [ "$EVENT_NAME" != "schedule" ]; then
             MODE="card"
             CARD="all"
           elif [ "$TOTAL" -ge 570 ] && [ "$TOTAL" -le 650 ]; then
@@ -52,7 +57,7 @@ jobs:
 
           echo "PH_RUN_MODE=$MODE" >> "$GITHUB_ENV"
           echo "PH_CARD_MODE=$CARD" >> "$GITHUB_ENV"
-          echo "Europe/Zurich=$LOCAL_NOW -> $MODE/$CARD"
+          echo "event=$EVENT_NAME Europe/Zurich=$LOCAL_NOW -> $MODE/$CARD"
 
       - name: Setup Python
         if: env.PH_RUN_MODE != 'noop'
@@ -105,6 +110,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL
+          PH_FAST_BROWSER_BOOKS: betmgm,caesars,betrivers,fanatics,hardrock
+          PH_FAST_BROWSER_JOBS: '6'
         run: python prop_hunter_source_orchestrator.py --mode fast
 
       - name: Collect all free sources and browser fallbacks
@@ -149,6 +156,8 @@ jobs:
           PH_MIN_EDGE: '3.0'
           PH_MAX_PER_PLAYER: '3'
           PH_MAX_PER_GAME: '6'
+          PH_REQUIRE_REAL_ODDS: '1'
+          PH_ALLOW_SYNTHETIC_ODDS: '0'
 
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
