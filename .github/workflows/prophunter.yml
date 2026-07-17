@@ -94,7 +94,12 @@ jobs:
             prop_hunter_source_audit.py \
             prop_hunter_odds_pp_ud.py \
             prop_hunter_feature_builder.py \
-            prop_hunter_learning_update.py
+            prop_hunter_learning_update.py \
+            prop_hunter_runtime_guard.py
+
+      - name: Verify V12.3 HR/Risk/Lottery integrity
+        if: env.PH_RUN_MODE != 'noop'
+        run: python prop_hunter_runtime_guard.py
 
       - name: Update official stats and context
         if: env.PH_RUN_MODE != 'noop'
@@ -158,6 +163,7 @@ jobs:
           PH_MAX_PER_GAME: '6'
           PH_REQUIRE_REAL_ODDS: '1'
           PH_ALLOW_SYNTHETIC_ODDS: '0'
+          PH_EXPECTED_RUNTIME_VERSION: '12.3-HR-RISK-LOTTERY'
 
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
