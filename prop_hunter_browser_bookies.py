@@ -32,7 +32,7 @@ BOOKIE_PAGES = {
     "fanatics": "https://sportsbook.fanatics.com/sports/{sport}",
     "hardrock": "https://www.hardrock.bet/sports/{sport}",
     "thescore": "https://www.thescore.bet/sports/{sport}",
-    "bet365": "https://www.bet365.com/#/AC/B{sport}",
+    "bet365": "https://www.bet365.com/",
     "action_network": "https://www.actionnetwork.com/{sport}",
     "betr": "https://www.betr.app/",
     "dabble": "https://dabble.com/",
@@ -115,7 +115,7 @@ def _normalise_candidate(book: str, sport: str, d: Dict[str, Any], stack: List[D
         label = _first(d, ("label", "name", "description", "outcomeName"))
         if _looks_like_player(label):
             player = label
-    if not (_looks_like_player(player) and market and line is not None):
+    if not (_looks_like_player(player) and market and line is not None and odds is not None):
         return None
 
     line_f = to_float(line)
@@ -142,11 +142,20 @@ def _normalise_candidate(book: str, sport: str, d: Dict[str, Any], stack: List[D
         "commence_time": commence,
         "player_name": str(player).strip(),
         "normalized_name": norm_name(player),
+        "market_original": market_text,
         "market": f"{market_text} {side}",
         "market_key": norm_market(market_text),
         "direction": side,
         "line": line_f,
         "odds_decimal": odds,
+        "period": "game",
+        "alternate_line": False,
+        "bet_builder": False,
+        "is_live": False,
+        "card_eligible": True,
+        "settlement_supported": True,
+        "price_type": "bookmaker",
+        "odds_observed": True,
         "home_team": home,
         "away_team": away,
         "raw": {"browser_capture": True},
@@ -180,6 +189,10 @@ def parse_payload(book: str, sport: str, payload: Any) -> List[Dict[str, Any]]:
 
 
 async def _capture(book: str, sport: str, timeout_ms: int = 30000) -> Tuple[List[Dict[str, Any]], str]:
+    if book == "bet365":
+        from prop_hunter_bet365 import capture_bet365
+        return await capture_bet365(sport, timeout_ms=timeout_ms)
+
     try:
         from playwright.async_api import async_playwright
     except Exception as exc:
