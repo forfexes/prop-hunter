@@ -83,6 +83,7 @@ jobs:
             prop_hunter_source_orchestrator.py \
             prop_hunter_source_hub.py \
             prop_hunter_browser_bookies.py \
+            prop_hunter_bet365.py \
             prop_hunter_market_consensus.py \
             prop_hunter_autolearn.py \
             prop_hunter_builder_learning.py \
@@ -97,7 +98,7 @@ jobs:
             prop_hunter_learning_update.py \
             prop_hunter_runtime_guard.py
 
-      - name: Verify V12.3 HR/Risk/Lottery integrity
+      - name: Verify V12.4 bet365 multisport integrity
         if: env.PH_RUN_MODE != 'noop'
         run: python prop_hunter_runtime_guard.py
 
@@ -115,8 +116,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL
-          PH_FAST_BROWSER_BOOKS: betmgm,caesars,betrivers,fanatics,hardrock
-          PH_FAST_BROWSER_JOBS: '6'
+          PH_FAST_BROWSER_BOOKS: bet365,betmgm,caesars,betrivers,fanatics,hardrock
+          PH_FAST_BROWSER_JOBS: '8'
         run: python prop_hunter_source_orchestrator.py --mode fast
 
       - name: Collect all free sources and browser fallbacks
@@ -125,8 +126,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL
-          PH_BROWSER_BOOKS: betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay
-          PH_MAX_BROWSER_JOBS: '10'
+          PH_BROWSER_BOOKS: bet365,betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay
+          PH_MAX_BROWSER_JOBS: '12'
         run: python prop_hunter_source_orchestrator.py --mode all
 
       - name: Refresh history and feature store
@@ -163,7 +164,7 @@ jobs:
           PH_MAX_PER_GAME: '6'
           PH_REQUIRE_REAL_ODDS: '1'
           PH_ALLOW_SYNTHETIC_ODDS: '0'
-          PH_EXPECTED_RUNTIME_VERSION: '12.3-HR-RISK-LOTTERY'
+          PH_EXPECTED_RUNTIME_VERSION: '12.4-BET365-MULTISPORT'
 
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
