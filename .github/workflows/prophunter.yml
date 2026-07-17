@@ -1,13 +1,15 @@
-name: Prop Hunter Automatic
+name: Prop Hunter Autonomous
 
 on:
   workflow_dispatch:
   schedule:
-    # UTC. Entspricht in der Schweizer Sommerzeit:
-    # 10:00 Daten + ML, 18:30 Early Card, 23:00 Late Card.
-    - cron: '0 8 * * *'
-    - cron: '30 16 * * *'
-    - cron: '0 21 * * *'
+    # Two UTC candidates make the local Europe/Zurich times DST-safe.
+    - cron: '0 8,9 * * *'       # 10:00 Switzerland — data + ML
+    - cron: '30 16,17 * * *'   # 18:30 Switzerland — early card
+    - cron: '0 21,22 * * *'    # 23:00 Switzerland — late card
+
+permissions:
+  contents: write
 
 concurrency:
   group: prop-hunter-main
@@ -16,136 +18,162 @@ concurrency:
 jobs:
   prop-hunter:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 80
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve automatic Switzerland mode
+        shell: bash
+        run: |
+          MODE="noop"
+          CARD="all"
+          LOCAL_NOW="$(TZ=Europe/Zurich date +'%H:%M')"
+          HH="${LOCAL_NOW%:*}"
+          MM="${LOCAL_NOW#*:}"
+          TOTAL=$((10#$HH * 60 + 10#$MM))
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="card"
+            CARD="all"
+          elif [ "$TOTAL" -ge 570 ] && [ "$TOTAL" -le 650 ]; then
+            MODE="data"
+          elif [ "$TOTAL" -ge 1080 ] && [ "$TOTAL" -le 1160 ]; then
+            MODE="card"
+            CARD="early"
+          elif [ "$TOTAL" -ge 1350 ] && [ "$TOTAL" -le 1439 ]; then
+            MODE="card"
+            CARD="late"
+          fi
+
+          echo "PH_RUN_MODE=$MODE" >> "$GITHUB_ENV"
+          echo "PH_CARD_MODE=$CARD" >> "$GITHUB_ENV"
+          echo "Europe/Zurich=$LOCAL_NOW -> $MODE/$CARD"
 
       - name: Setup Python
+        if: env.PH_RUN_MODE != 'noop'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
 
-      - name: Resolve automatic mode
-        shell: bash
-        run: |
-          MODE="data"
-          CARD="all"
-          UTC_NOW="$(date -u +'%H:%M')"
-
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            MODE="card"
-            CARD="all"
-          else
-            case "$UTC_NOW" in
-              "16:30") MODE="card"; CARD="early" ;;
-              "21:00") MODE="card"; CARD="late" ;;
-              *)       MODE="data"; CARD="all" ;;
-            esac
-          fi
-
-          echo "PH_RUN_MODE=$MODE" >> "$GITHUB_ENV"
-          echo "PH_CARD_MODE=$CARD" >> "$GITHUB_ENV"
-          echo "Automatic mode: $MODE / $CARD"
-
       - name: Install dependencies
+        if: env.PH_RUN_MODE != 'noop'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           python -m playwright install chromium || true
 
-      - name: Compile critical files
+      - name: Compile complete autonomous pipeline
+        if: env.PH_RUN_MODE != 'noop'
         run: |
           python -m py_compile \
             prophunter.py \
+            prophunter_results.py \
+            prop_hunter_source_catalog.py \
+            prop_hunter_source_orchestrator.py \
             prop_hunter_source_hub.py \
-            prop_hunter_shared_utils.py \
-            prop_hunter_odds_sportsgameodds.py \
-            prop_hunter_odds_oddsapi_io.py \
+            prop_hunter_browser_bookies.py \
+            prop_hunter_market_consensus.py \
+            prop_hunter_autolearn.py \
+            prop_hunter_builder_learning.py \
+            prop_hunter_builder_engine.py \
+            prop_hunter_github_source_scanner.py \
+            prop_hunter_web_source_scanner.py \
+            prop_hunter_candidate_tester.py \
+            prop_hunter_source_reliability.py \
+            prop_hunter_source_audit.py \
             prop_hunter_odds_pp_ud.py \
             prop_hunter_feature_builder.py \
             prop_hunter_learning_update.py
 
-      - name: Update DATA plus
+      - name: Update official stats and context
+        if: env.PH_RUN_MODE != 'noop'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
         run: python prop_hunter_scraper.py || true
 
-      - name: Refresh all source fallbacks
+      - name: Collect fast free live sources
+        if: env.PH_RUN_MODE == 'card'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
-          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL
-        run: |
-          python prop_hunter_odds_sportsgameodds.py || true
-          python prop_hunter_odds_oddsapi_io.py || true
-          python prop_hunter_odds_pp_ud.py || true
-          python prop_hunter_source_hub.py || true
+          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL
+        run: python prop_hunter_source_orchestrator.py --mode fast
 
-      - name: Update history
+      - name: Collect all free sources and browser fallbacks
+        if: env.PH_RUN_MODE == 'data'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL
+          PH_BROWSER_BOOKS: betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay
+          PH_MAX_BROWSER_JOBS: '10'
+        run: python prop_hunter_source_orchestrator.py --mode all
+
+      - name: Refresh history and feature store
         if: env.PH_RUN_MODE == 'data'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           LAST_N_GAMES: '30'
-        run: python prop_hunter_history_scraper.py || true
+        run: |
+          python prop_hunter_history_scraper.py || true
+          python prop_hunter_feature_builder.py || true
+          python prop_hunter_source_reliability.py || true
 
-      - name: Build features
-        if: env.PH_RUN_MODE == 'data'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python prop_hunter_feature_builder.py || true
-
-      - name: Train ML automatically
+      - name: Learn probabilities, sources and builder correlations
         if: env.PH_RUN_MODE == 'data'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          # prophunter.py prüft selbst, ob genug gesettelte Picks vorhanden sind.
-          python prophunter.py --train-ml || true
           python prop_hunter_learning_update.py || true
+          python prop_hunter_builder_learning.py || true
+          python prophunter.py --train-ml || true
 
-      - name: Run Early or Late card
+      - name: Generate automatic card
         if: env.PH_RUN_MODE == 'card'
         env:
           PH_CARD_MODE: ${{ env.PH_CARD_MODE }}
           PH_TIMEZONE: Europe/Zurich
           PH_EARLY_CUTOFF: '00:30'
           PH_LOOKAHEAD_H: '16'
-          PH_MAX_EVENTS: '20'
+          PH_MAX_EVENTS: '30'
+          PH_MIN_EDGE: '3.0'
+          PH_MAX_PER_PLAYER: '3'
+          PH_MAX_PER_GAME: '6'
 
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          ODDS_API_KEYS: ${{ secrets.ODDS_API_KEYS }}
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
-          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
-          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
-          PH_MIN_EDGE: '3.0'
-          PH_MAX_PER_PLAYER: '3'
-          PH_MAX_PER_GAME: '6'
         run: python prophunter.py --card-mode "$PH_CARD_MODE"
 
-      - name: Data update complete
+      - name: Persist champion models and learned weights
         if: env.PH_RUN_MODE == 'data'
-        run: echo "Data, sources, features and automatic ML update completed."
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            prop_hunter_model_registry.json \
+            prop_hunter_autolearn_report.json \
+            prop_hunter_builder_correlations.json \
+            prop_hunter_source_registry.json \
+            prop_hunter_source_trust.json \
+            2>/dev/null || true
+          git diff --staged --quiet && echo "No learned changes" && exit 0
+          git commit -m "prop hunter autonomous learning $(date -u +%F)"
+          git push
