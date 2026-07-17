@@ -25,7 +25,7 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-PH_RUNTIME_VERSION = "12.4-BET365-MULTISPORT"
+PH_RUNTIME_VERSION = "12.4.1-UNDERDOG-DIRECT"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -67,6 +67,7 @@ PH_TZ_NAME     = os.environ.get("PH_TIMEZONE", "Europe/Zurich")
 PH_EARLY_CUTOFF = os.environ.get("PH_EARLY_CUTOFF", "00:30")
 PH_REQUIRE_REAL_ODDS = os.environ.get("PH_REQUIRE_REAL_ODDS", "1").strip().lower() not in ("0", "false", "no")
 PH_ALLOW_SYNTHETIC_ODDS = os.environ.get("PH_ALLOW_SYNTHETIC_ODDS", "0").strip().lower() in ("1", "true", "yes")
+PH_ALLOW_DIRECT_FANTASY_LINES = os.environ.get("PH_ALLOW_DIRECT_FANTASY_LINES", "1").strip().lower() in ("1", "true", "yes")
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -335,6 +336,33 @@ _REAL_BOOK_MARKERS = {
 def _obj_features(obj) -> dict:
     value = getattr(obj, "features", None)
     return value if isinstance(value, dict) else {}
+
+
+def _has_direct_fantasy_line(obj) -> bool:
+    """Allow a direct Underdog line with a fixed card reference price.
+
+    This is deliberately separate from observed sportsbook odds: the player/stat/line
+    must come directly from Underdog, while the displayed 1.85 remains a configured
+    fantasy-card reference price. PrizePicks and generated analysis rows stay blocked.
+    """
+    if not PH_ALLOW_DIRECT_FANTASY_LINES:
+        return False
+    feats = _obj_features(obj)
+    source = str(feats.get("source") or getattr(obj, "source", None) or "").lower()
+    bookmaker = str(feats.get("bookmaker") or getattr(obj, "bookmaker", None) or source).lower()
+    return (
+        source == "underdog"
+        and bookmaker == "underdog"
+        and feats.get("direct_source_line") is True
+        and feats.get("source_payload_observed") is True
+        and str(feats.get("price_type") or "").lower() == "fantasy_fixed"
+        and float(getattr(obj, "odds", 0) or 0) > 1.01
+    )
+
+
+def _has_eligible_price(obj) -> bool:
+    """True for observed bookmaker odds or a verified direct Underdog fantasy line."""
+    return _has_observed_odds(obj) or _has_direct_fantasy_line(obj)
 
 
 def _has_observed_odds(obj) -> bool:
@@ -1005,7 +1033,16 @@ def fetch_underdog_props(sport_filter=None) -> list:
             try:
                 out.append(Prop(player=name, market=stat, odds=1.85,
                     point=float(line), sport=sport,
-                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over"))
+                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over",
+                    enrichment="src:underdog | direct fantasy line",
+                    features={
+                        "source": "underdog",
+                        "bookmaker": "underdog",
+                        "direct_source_line": True,
+                        "source_payload_observed": True,
+                        "odds_observed": False,
+                        "price_type": "fantasy_fixed",
+                    }))
             except Exception: continue
         log.info("Underdog: %d props", len(out))
     except Exception as e:
@@ -3551,7 +3588,7 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     for p in singles:
         edge = p.edge_pct
         prob = p.probability
-        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_observed_odds(p):
+        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_eligible_price(p):
             rejected["unverified_odds"] += 1
             continue
         if edge is None:
@@ -3999,7 +4036,7 @@ def rescue_picks_from_props(props, max_picks=12):
     per_game = defaultdict(int)
 
     for sp in props or []:
-        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_observed_odds(sp):
+        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_eligible_price(sp):
             rejected["unverified_odds"] += 1
             continue
         prob = _source_prop_probability(sp)
