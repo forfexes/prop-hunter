@@ -8,8 +8,9 @@ import inspect
 import sys
 
 import prophunter
+import prop_hunter_bet365 as bet365
 
-EXPECTED = "12.3-HR-RISK-LOTTERY"
+EXPECTED = "12.4-BET365-MULTISPORT"
 
 
 def fail(message: str) -> None:
@@ -51,9 +52,11 @@ def main() -> None:
             fail(f"prophunter.py missing marker: {marker}")
 
     for marker in (
-        'return len(books) == 1 and "" not in books',
+        'if len(books) != 1 or "" in books:',
         "Echte Alt-Linien",
         "if not _real_price(anchor)",
+        'book == "bet365"',
+        'get("bet_builder")',
     ):
         if marker not in builder_source:
             fail(f"builder missing marker: {marker}")
@@ -64,6 +67,8 @@ def main() -> None:
         odds=1.83,
         point=2.5,
         sport="MLB",
+        emoji="⚾",
+        game="TEST @ TEST",
         direction="over",
         features={
             "source": "propcruncher",
@@ -80,6 +85,8 @@ def main() -> None:
         odds=1.91,
         point=4.5,
         sport="MLB",
+        emoji="⚾",
+        game="TEST @ TEST",
         direction="over",
         features={
             "source": "betmgm",
@@ -91,11 +98,39 @@ def main() -> None:
     if not prophunter._has_observed_odds(real):
         fail("observed bookmaker price was rejected")
 
+    mlb = bet365.parse_dom_groups("MLB", [{
+        "title": "Home Runs BB",
+        "bet_builder": True,
+        "participants": [{"text": "Aaron Judge 4.50"}],
+    }])
+    if not mlb or mlb[0].get("market_key") != "batter_home_runs":
+        fail("bet365 MLB Home Runs parser failed")
+
+    nba = bet365.parse_dom_groups("NBA", [{
+        "title": "Points, Rebounds and Assists BB",
+        "bet_builder": True,
+        "participants": [{"text": "Nikola Jokic Over 48.5 1.83"}],
+    }])
+    if not nba or nba[0].get("market_key") != "player_points_rebounds_assists":
+        fail("bet365 NBA PRA parser failed")
+
+    nfl = bet365.parse_dom_groups("NFL", [{
+        "title": "Anytime Touchdown Scorer BB",
+        "bet_builder": True,
+        "participants": [{"text": "Ja'Marr Chase 2.40"}],
+    }])
+    if not nfl or nfl[0].get("market_key") != "player_anytime_touchdown":
+        fail("bet365 NFL touchdown parser failed")
+
+    if not all(row.get("odds_observed") for row in (mlb + nba + nfl)):
+        fail("bet365 parser produced unverified prices")
+
     print(f"RUNTIME GUARD OK: {EXPECTED}")
     print("Synthetic odds rejected: OK")
     print("Observed bookmaker odds accepted: OK")
     print("Same-book builder/ladders required: OK")
     print("Verified HR/Risk/Lottery engine present: OK")
+    print("bet365 MLB/NBA/WNBA/NFL parser and BB mapping: OK")
 
 
 if __name__ == "__main__":
