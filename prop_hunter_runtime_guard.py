@@ -10,7 +10,7 @@ import sys
 import prophunter
 import prop_hunter_bet365 as bet365
 
-EXPECTED = "12.4-BET365-MULTISPORT"
+EXPECTED = "12.4.1-UNDERDOG-DIRECT"
 
 
 def fail(message: str) -> None:
@@ -27,6 +27,8 @@ def main() -> None:
 
     for name in (
         "_has_observed_odds",
+        "_has_direct_fantasy_line",
+        "_has_eligible_price",
         "enforce_final_verified_market_gate",
         "_conservative_live_probability",
     ):
@@ -98,6 +100,28 @@ def main() -> None:
     if not prophunter._has_observed_odds(real):
         fail("observed bookmaker price was rejected")
 
+    underdog = prophunter.Prop(
+        player="Direct Fantasy Player", market="Points", odds=1.85, point=19.5,
+        sport="WNBA", emoji="🏀", game="TEST @ TEST", direction="over",
+        features={
+            "source": "underdog", "bookmaker": "underdog",
+            "direct_source_line": True, "source_payload_observed": True,
+            "odds_observed": False, "price_type": "fantasy_fixed",
+        },
+    )
+    if not prophunter._has_eligible_price(underdog):
+        fail("direct Underdog fantasy line was rejected")
+    if prophunter._has_observed_odds(underdog):
+        fail("Underdog fixed reference price was mislabeled as observed sportsbook odds")
+
+    prizepicks = prophunter.Prop(
+        player="Blocked Fantasy Player", market="Points", odds=1.85, point=19.5,
+        sport="WNBA", emoji="🏀", game="TEST @ TEST", direction="over",
+        features={"source": "prizepicks", "odds_observed": False, "price_type": "synthetic"},
+    )
+    if prophunter._has_eligible_price(prizepicks):
+        fail("synthetic PrizePicks price was accepted")
+
     mlb = bet365.parse_dom_groups("MLB", [{
         "title": "Home Runs BB",
         "bet_builder": True,
@@ -128,6 +152,7 @@ def main() -> None:
     print(f"RUNTIME GUARD OK: {EXPECTED}")
     print("Synthetic odds rejected: OK")
     print("Observed bookmaker odds accepted: OK")
+    print("Direct Underdog fantasy lines accepted without mislabeling odds: OK")
     print("Same-book builder/ladders required: OK")
     print("Verified HR/Risk/Lottery engine present: OK")
     print("bet365 MLB/NBA/WNBA/NFL parser and BB mapping: OK")
