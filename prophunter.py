@@ -25,7 +25,7 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-PH_RUNTIME_VERSION = "12.3-HR-RISK-LOTTERY"
+PH_RUNTIME_VERSION = "12.4-BET365-MULTISPORT"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -414,39 +414,54 @@ class SportCfg(NamedTuple):
 SPORTS:Dict[str,SportCfg]={
     "baseball_mlb":SportCfg("⚾","MLB",[
         Market("batter_home_runs","Home Run",None,3.5),
-        Market("batter_hits","Hits Over 1.5",None,1.7),
+        Market("batter_hits","Hits",None,1.7),
         Market("batter_total_bases","Total Bases",None,1.8),
-        Market("pitcher_strikeouts","Pitcher K",None,1.8),
-        Market("batter_stolen_bases","Stolen Base",None,4.0),
-        Market("batter_rbis","RBI",None,2.5),
-        Market("pitcher_outs","Outs Recorded",None,1.8),
-        Market("pitcher_earned_runs","Earned Runs U",None,1.8),
-        Market("pitcher_hits_allowed","Hits Allowed U",None,1.8),
+        Market("batter_hits_runs_rbis","Hits+Runs+RBIs",None,1.7),
+        Market("batter_runs","Runs",None,1.8),
+        Market("batter_rbis","RBI",None,1.8),
+        Market("batter_stolen_bases","Stolen Base",None,3.0),
+        Market("batter_strikeouts","Batter Strikeouts",None,1.7),
+        Market("batter_walks","Batter Walks",None,1.8),
+        Market("pitcher_strikeouts","Pitcher Strikeouts",None,1.7),
+        Market("pitcher_outs","Outs Recorded",None,1.7),
+        Market("pitcher_earned_runs","Earned Runs",None,1.7),
+        Market("pitcher_hits_allowed","Hits Allowed",None,1.7),
+        Market("pitcher_walks","Pitcher Walks",None,1.7),
+        Market("pitcher_win","Pitcher Win",None,2.0),
     ]),
     "basketball_nba":SportCfg("🏀","NBA",[
-        Market("player_rebounds_assists","Rebounds+Assists",10,1.8),
-        Market("player_points_rebounds_assists","PRA",35,1.8),
-        Market("player_points_rebounds","PR",30,1.8),
-        Market("player_points_assists","PA",30,1.8),
-        Market("player_rebounds_alternate","Rebounds",8,1.9),
-        Market("player_assists_alternate","Assists",6,1.9),
-        Market("player_threes_alternate","3PM",2,1.9),
-        Market("player_double_double","Double Double",None,2.5),
-        Market("player_points_alternate","Points",25,3.5),
-        Market("player_blocks_alternate","Blocks",2,3.5),
-        Market("player_steals_alternate","Steals",2,3.5),
-        Market("player_triple_double","Triple Double",None,6.0),
+        Market("player_points","Points",None,1.7),
+        Market("player_rebounds","Rebounds",None,1.7),
+        Market("player_assists","Assists",None,1.7),
+        Market("player_threes_made","3PM",None,1.7),
+        Market("player_turnovers","Turnovers",None,1.7),
+        Market("player_steals","Steals",None,1.8),
+        Market("player_blocks","Blocks",None,1.8),
+        Market("player_free_throws_made","Free Throws",None,1.7),
+        Market("player_rebounds_assists","Rebounds+Assists",10,1.7),
+        Market("player_points_rebounds_assists","PRA",25,1.7),
+        Market("player_points_rebounds","PR",20,1.7),
+        Market("player_points_assists","PA",20,1.7),
+        Market("player_steals_blocks","Steals+Blocks",None,1.8),
+        Market("player_double_double","Double Double",None,2.0),
+        Market("player_triple_double","Triple Double",None,5.0),
     ]),
     "basketball_wnba":SportCfg("🏀","WNBA",[
-        Market("player_rebounds_assists","Rebounds+Assists",8,1.8),
-        Market("player_points_rebounds_assists","PRA",20,1.8),
-        Market("player_points_rebounds","PR",18,1.8),
-        Market("player_points_assists","PA",18,1.8),
-        Market("player_points_alternate","Points",15,3.5),
-        Market("player_rebounds_alternate","Rebounds",6,1.9),
-        Market("player_assists_alternate","Assists",5,1.9),
-        Market("player_threes_alternate","3PM",2,2.0),
-        Market("player_double_double","Double Double",None,2.5),
+        Market("player_points","Points",None,1.7),
+        Market("player_rebounds","Rebounds",None,1.7),
+        Market("player_assists","Assists",None,1.7),
+        Market("player_threes_made","3PM",None,1.7),
+        Market("player_turnovers","Turnovers",None,1.7),
+        Market("player_steals","Steals",None,1.8),
+        Market("player_blocks","Blocks",None,1.8),
+        Market("player_free_throws_made","Free Throws",None,1.7),
+        Market("player_rebounds_assists","Rebounds+Assists",6,1.7),
+        Market("player_points_rebounds_assists","PRA",15,1.7),
+        Market("player_points_rebounds","PR",12,1.7),
+        Market("player_points_assists","PA",12,1.7),
+        Market("player_steals_blocks","Steals+Blocks",None,1.8),
+        Market("player_double_double","Double Double",None,2.0),
+        Market("player_triple_double","Triple Double",None,6.0),
     ]),
     "basketball_euroleague":SportCfg("🏀","Euroleague",[
         Market("player_points_alternate","Points",12,3.0),
@@ -455,12 +470,27 @@ SPORTS:Dict[str,SportCfg]={
         Market("player_threes_alternate","3PM",2,2.5),
     ]),
     "americanfootball_nfl":SportCfg("🏈","NFL",[
-        Market("player_anytime_td","Anytime TD",None,2.5),
-        Market("player_pass_tds_alternate","Pass TDs",None,3.0),
-        Market("player_pass_yds_alternate","Pass Yds",None,1.8),
-        Market("player_rush_yds_alternate","Rush Yds",None,3.0),
-        Market("player_reception_yds_alternate","Rec Yds",None,3.0),
-        Market("player_receptions_alternate","Receptions",None,1.8),
+        Market("player_passing_yards","Passing Yards",None,1.7),
+        Market("player_passing_completions","Passing Completions",None,1.7),
+        Market("player_passing_attempts","Passing Attempts",None,1.7),
+        Market("player_passing_touchdowns","Passing TDs",None,1.7),
+        Market("player_interceptions_thrown","Interceptions",None,1.7),
+        Market("player_rushing_yards","Rushing Yards",None,1.7),
+        Market("player_rushing_attempts","Rushing Attempts",None,1.7),
+        Market("player_receiving_yards","Receiving Yards",None,1.7),
+        Market("player_receptions","Receptions",None,1.7),
+        Market("player_longest_reception","Longest Reception",None,1.8),
+        Market("player_rush_receiving_yards","Rush+Receiving Yards",None,1.7),
+        Market("player_anytime_touchdown","Anytime TD",None,2.0),
+        Market("player_2plus_touchdowns","2+ TDs",None,4.0),
+        Market("player_defensive_sacks","Defensive Sacks",None,1.8),
+        Market("player_tackles","Tackles",None,1.7),
+        Market("player_tackle_assists","Tackle Assists",None,1.7),
+        Market("player_tackles_assists","Tackles+Assists",None,1.7),
+        Market("player_kicking_points","Kicking Points",None,1.7),
+        Market("player_field_goals_made","Field Goals Made",None,1.7),
+        Market("player_longest_field_goal","Longest Field Goal",None,1.8),
+        Market("player_longest_punt","Longest Punt",None,1.8),
     ]),
 }
 
@@ -2958,6 +2988,8 @@ def _hub_rows_to_props(rows):
             raw_s=str(r.get("sport") or r.get("league") or "").upper()
             sport=sport_map.get(raw_s, raw_s)
             if sport not in emoji_map: continue
+            if bool(r.get("is_live")): continue
+            if r.get("card_eligible") is False: continue
             player=str(r.get("player_name") or "").strip()
             market=str(r.get("market") or r.get("market_key") or "").strip()
             line=r.get("line")
@@ -2984,6 +3016,14 @@ def _hub_rows_to_props(rows):
                              "book_consensus":r.get("book_consensus"),"consensus_sources":r.get("consensus_sources",0),
                              "consensus_line":r.get("consensus_line"),"line_dispersion":r.get("line_dispersion",0),
                              "best_odds":r.get("best_odds"),
+                             "market_key":r.get("market_key"),
+                             "market_original":r.get("market_original"),
+                             "period":r.get("period") or "game",
+                             "alternate_line":bool(r.get("alternate_line")),
+                             "bet_builder":bool(r.get("bet_builder")),
+                             "is_live":bool(r.get("is_live")),
+                             "risk_class":r.get("risk_class") or "standard",
+                             "settlement_supported":r.get("settlement_supported",True),
                              "odds_observed":True,
                              "price_type":"bookmaker"},
                    emoji=emoji_map[sport], enrichment=f"src:{r.get('bookmaker') or r.get('source') or 'book'}")
