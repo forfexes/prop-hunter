@@ -1236,7 +1236,8 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             feats["gamelog_n"] = n
             p.features = feats
             avg = sum(vals)/n
-            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% über Linie"
+            richtung_txt = "unter Linie" if direction == "under" else "über Linie"
+            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% {richtung_txt}"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue
@@ -2317,15 +2318,30 @@ def persist(picks):
         if s in ("MLB","NBA","WNBA","NFL","NHL"):
             return s
         return sport_map.get(p.emoji or "", "?")
+    existing_pick_keys = {
+        x.get("dedup_key") or dedup_key(x.get("player",""), x.get("market",""), x.get("point"), x.get("direction","over"))
+        for x in entry.get("picks", [])
+    }
     for p in singles:
         dk=dedup_key(p.player or "",p.market or "",getattr(p,"point",None),p.direction)
+        if dk in existing_pick_keys:
+            continue
+        existing_pick_keys.add(dk)
         real_sport=_clean_sport(p)
         hp=HistoricalPick(date=today,player=p.player or "",team=p.team or "",
             market=p.market or "",sport=real_sport,
             odds=p.odds,stake=p.stake,direction=p.direction,probability=p.probability,dedup_key=dk)
         entry["picks"].append(hp.model_dump())
         sb_insert({**hp.model_dump(),"league":real_sport,"features":getattr(p,"features",{}) or {}})
+    existing_combo_keys = {
+        "|".join(sorted([str(x) for x in c.get("legs", [])])) + f"@{c.get('odds')}"
+        for c in entry.get("kombis", [])
+    }
     for p in combos:
+        ck = "|".join(sorted([str(x) for x in (p.legs or [])])) + f"@{p.odds}"
+        if ck in existing_combo_keys:
+            continue
+        existing_combo_keys.add(ck)
         entry["kombis"].append({"type":p.type,"legs":p.legs or [],"odds":p.odds,"stake":p.stake,"result":"pending"})
     save_history(h)
     log.info("persisted %d singles + %d combos",len(singles),len(combos))
@@ -2538,6 +2554,24 @@ def _safe_display_team(p):
     except Exception:
         return ""
 
+
+def _clean_analysis_text(txt: str) -> str:
+    """Entfernt doppelte Tags wie PC:S | PC:S und hält den Post sauber."""
+    if not txt:
+        return ""
+    parts = []
+    seen = set()
+    for raw in str(txt).split("|"):
+        part = raw.strip()
+        if not part:
+            continue
+        key = re.sub(r"\s+", " ", part.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        parts.append(part)
+    return " | ".join(parts)[:180]
+
 def build_post(picks):
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles=[p for p in picks if p.type=="single"]
@@ -2563,7 +2597,8 @@ def build_post(picks):
         if p.probability is not None: meta.append(f"Prob {p.probability*100:.0f}%")
         meta.append(f"Confidence {_confidence_score(p)}/100")
         line += "\n   📈 " + " · ".join(meta)
-        if p.analysis: line+=f"\n   💡 {p.analysis}"
+        analysis_txt = _clean_analysis_text(p.analysis)
+        if analysis_txt: line+=f"\n   💡 {analysis_txt}"
         return line
     if tier2:
         out+=["🔵 STABILE PICKS:",""]
@@ -2698,8 +2733,8 @@ def _hub_rows_to_props(rows):
     converted=[]
     sport_map={"MLB":"MLB","NBA":"NBA","WNBA":"WNBA","NFL":"NFL",
                "BASEBALL_MLB":"MLB","BASKETBALL_NBA":"NBA","BASKETBALL_WNBA":"WNBA",
-               "FOOTBALL_NFL":"NFL","AMERICANFOOTBALL_NFL":"NFL"}
-    emoji_map={"MLB":"⚾","NBA":"🏀","WNBA":"🏀","NFL":"🏈"}
+               "FOOTBALL_NFL":"NFL","AMERICANFOOTBALL_NFL":"NFL","ICEHOCKEY_NHL":"NHL"}
+    emoji_map={"MLB":"⚾","NBA":"🏀","WNBA":"🏀","NFL":"🏈","NHL":"🏒"}
     for r in rows or []:
         try:
             raw_s=str(r.get("sport") or r.get("league") or "").upper()
@@ -2714,11 +2749,21 @@ def _hub_rows_to_props(rows):
             if odds<=1.01: continue
             raw=(r.get("raw") or {}) if isinstance(r.get("raw"),dict) else {}
             sel=str(raw.get("selection") or raw.get("label") or r.get("selection") or market).lower()
-            direction="under" if "under" in sel else "over"
+            direction=str(r.get("direction") or ("under" if "under" in sel or "less" in sel else "over")).lower()
             home=r.get("home_team") or ""; away=r.get("away_team") or ""
+            commence=r.get("commence_time")
+            if isinstance(commence, str) and commence:
+                try: commence=datetime.fromisoformat(commence.replace("Z", "+00:00"))
+                except Exception: commence=None
             p=Prop(player=player, market=market, odds=round(odds,2), point=line,
                    sport=sport, game=f"{away} @ {home}".strip(" @"), direction=direction,
-                   features={"source":r.get("source"),"bookmaker":r.get("bookmaker")},
+                   commence_time=commence,
+                   features={"source":r.get("source"),"bookmaker":r.get("bookmaker"),
+                             "snapshot_id":r.get("snapshot_id"),"cache_fallback":r.get("cache_fallback",False),
+                             "source_trust":r.get("source_trust",1.0),
+                             "book_consensus":r.get("book_consensus"),"consensus_sources":r.get("consensus_sources",0),
+                             "consensus_line":r.get("consensus_line"),"line_dispersion":r.get("line_dispersion",0),
+                             "best_odds":r.get("best_odds")},
                    emoji=emoji_map[sport], enrichment="")
             p.event_id=str(r.get("game_id") or r.get("source_event_id") or "")
             p.sport_key=raw_s.lower()
@@ -2904,13 +2949,20 @@ def gather(sport_filter=None):
         _hub_raw = _collect_source_hub(sport_filter)
         _hub_props = _hub_rows_to_props(_hub_raw)
         if _hub_props:
-            existing={(p.player or '').lower()+'|'+market_base(p.market or '')+'|'+str(getattr(p,'point',None)) for p in all_props}
-            added=0
+            def _source_merge_key(p):
+                return '|'.join([(p.player or '').lower(), market_base(p.market or ''),
+                                 str(getattr(p,'point',None)), str(getattr(p,'direction','over'))])
+            index={_source_merge_key(p):i for i,p in enumerate(all_props)}
+            added=replaced=0
             for hp in _hub_props:
-                k=(hp.player or '').lower()+'|'+market_base(hp.market or '')+'|'+str(getattr(hp,'point',None))
-                if k not in existing:
-                    all_props.append(hp); existing.add(k); added+=1
-            log.info('V11 source hub additive: +%d / %d', added, len(_hub_props))
+                k=_source_merge_key(hp)
+                if k not in index:
+                    index[k]=len(all_props); all_props.append(hp); added+=1
+                else:
+                    i=index[k]
+                    if float(getattr(hp,'odds',0) or 0) > float(getattr(all_props[i],'odds',0) or 0):
+                        all_props[i]=hp; replaced+=1
+            log.info('V12 source hub: +%d best-odds replacements=%d / %d', added, replaced, len(_hub_props))
     except Exception as e:
         log.warning('V11 source hub: %s', e)
 
@@ -3459,7 +3511,14 @@ def load_ml_model():
         return None
 
 def ml_predict_proba(pick: Pick, sport_label: str) -> float | None:
-    """Returns ML win-probability for a Pick, or None if no model / not enough data."""
+    """Returns the champion calibrated probability, then falls back to legacy ML."""
+    try:
+        from prop_hunter_autolearn import predict_pick_probability
+        autonomous = predict_pick_probability(pick, sport_label)
+        if autonomous is not None:
+            return float(autonomous)
+    except Exception as exc:
+        log.debug("autonomous ML unavailable: %s", exc)
     payload = load_ml_model()
     if not payload: return None
     if payload.get("auc", 0) < 0.52:
@@ -3517,6 +3576,17 @@ def _source_prop_probability(p):
     except Exception:
         pass
 
+    # Champion AutoML before heuristic fallback.
+    try:
+        from prop_hunter_autolearn import predict_probability
+        raw_data = p.model_dump() if hasattr(p, "model_dump") else dict(vars(p))
+        raw_data["features"] = getattr(p, "features", {}) or {}
+        learned = predict_probability(raw_data)
+        if learned is not None:
+            return max(0.01, min(0.98, float(learned)))
+    except Exception:
+        pass
+
     # Fallback: aus Quote + Kontext konservativ bauen
     try:
         odds = float(getattr(p, "odds", 0) or 0)
@@ -3571,8 +3641,18 @@ def _source_prop_probability(p):
         if "hit" in market or "total base" in market or "bases" in market:
             boost += 0.015
 
-        # Untere/obere Sicherheitsgrenzen
-        prob = implied + boost
+        # Source reliability and cross-book consensus influence only the edge over market.
+        try:
+            trust = max(0.65, min(1.20, float((feats or {}).get("source_trust", 1.0) or 1.0)))
+        except Exception:
+            trust = 1.0
+        prob = implied + boost * trust
+        try:
+            consensus = float((feats or {}).get("book_consensus"))
+            if 0.01 < consensus < 0.99 and int((feats or {}).get("consensus_sources", 0) or 0) >= 2:
+                prob = 0.80 * prob + 0.20 * consensus
+        except Exception:
+            pass
 
         # Für normale Props nicht unrealistisch aufblasen
         if not is_hr:
@@ -4110,35 +4190,20 @@ def run(dry_run=False,sport_filter=None):
 
     picks = limit_singles_per_game(picks, max_per_game=3)
     picks = limit_total_singles(picks, max_singles=12)
-    picks = picks + build_jk_extras(picks)
+    try:
+        from prop_hunter_builder_engine import build_autonomous_extras
+        extras = build_autonomous_extras(picks, props, Pick, LadderLeg)
+        log.info("autonomous builder engine: %d extras", len(extras))
+    except Exception as exc:
+        log.warning("autonomous builder engine unavailable: %s", exc)
+        extras = []
+    picks = picks + extras
     body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
     if not dry_run:
         persist(picks)
     log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
-
-if __name__=="__main__":
-    import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER")
-    parser.add_argument("--dry-run",action="store_true")
-    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
-    parser.add_argument("--card-mode", choices=["all","early","late"], help="override PH_CARD_MODE")
-    parser.add_argument("-v","--verbose",action="store_true")
-    parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
-    args=parser.parse_args()
-    if args.train_ml:
-        if args.verbose: setup_logging(logging.DEBUG)
-        result = train_ml_model()
-        if result:
-            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
-        else:
-            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
-        raise SystemExit(0)
-    if args.verbose: setup_logging(logging.DEBUG)
-    if args.card_mode:
-        PH_CARD_MODE = args.card_mode
-    run(dry_run=args.dry_run,sport_filter=args.sport)
 
 
 # ─────────────────────────────────────────────
@@ -4443,3 +4508,31 @@ def player_ml_probability(player: str, sport: str, market: str,
 
     log.info("Player ML [%s %s %s @%.1f]: %.1f%%", sport, player, market, line, prob*100)
     return round(prob, 3)
+
+if __name__=="__main__":
+    import argparse,sys
+    parser=argparse.ArgumentParser(description="PROP HUNTER")
+    parser.add_argument("--dry-run",action="store_true")
+    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
+    parser.add_argument("--card-mode", choices=["all","early","late"], help="override PH_CARD_MODE")
+    parser.add_argument("-v","--verbose",action="store_true")
+    parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
+    args=parser.parse_args()
+    if args.train_ml:
+        if args.verbose: setup_logging(logging.DEBUG)
+        try:
+            from prop_hunter_autolearn import train_and_promote
+            auto_report = train_and_promote()
+            log.info("✅ Autonomous ML update: rows=%s", auto_report.get("rows", 0))
+        except Exception as exc:
+            log.warning("Autonomous ML update failed: %s", exc)
+        result = train_ml_model()
+        if result:
+            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
+        else:
+            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
+        raise SystemExit(0)
+    if args.verbose: setup_logging(logging.DEBUG)
+    if args.card_mode:
+        PH_CARD_MODE = args.card_mode
+    run(dry_run=args.dry_run,sport_filter=args.sport)
