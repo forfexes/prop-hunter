@@ -1,10 +1,12 @@
-name: Prop Hunter Maintenance Automatic
+name: Prop Hunter Source Discovery Automatic
 
 on:
   workflow_dispatch:
   schedule:
-    # Sonntags 04:15 UTC.
-    - cron: '15 4 * * 0'
+    - cron: '15 2,3 * * 0'  # Sunday 04:15 Switzerland, DST-safe candidates
+
+permissions:
+  contents: write
 
 concurrency:
   group: prop-hunter-maintenance
@@ -13,37 +15,56 @@ concurrency:
 jobs:
   maintenance:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-
+    timeout-minutes: 90
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Resolve Switzerland maintenance window
+        shell: bash
+        run: |
+          RUN_MAINTENANCE="false"
+          LOCAL_NOW="$(TZ=Europe/Zurich date +'%H:%M')"
+          HH="${LOCAL_NOW%:*}"; MM="${LOCAL_NOW#*:}"
+          TOTAL=$((10#$HH * 60 + 10#$MM))
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || { [ "$TOTAL" -ge 225 ] && [ "$TOTAL" -le 285 ]; }; then
+            RUN_MAINTENANCE="true"
+          fi
+          echo "RUN_MAINTENANCE=$RUN_MAINTENANCE" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-python@v5
+        if: env.RUN_MAINTENANCE == 'true'
         with:
           python-version: '3.11'
           cache: pip
 
-      - name: Install dependencies
+      - name: Install
+        if: env.RUN_MAINTENANCE == 'true'
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
           python -m playwright install chromium || true
 
-      - name: Source audit and reliability
+      - name: Audit and discover sources
+        if: env.RUN_MAINTENANCE == 'true'
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
-          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL
+          PH_BROWSER_BOOKS: betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,bet365,action_network,betr,dabble,chalkboard,parlayplay
+          PH_MAX_BROWSER_JOBS: '25'
         run: |
           python prop_hunter_source_audit.py || true
-          python prop_hunter_source_reliability.py || true
           python prop_hunter_github_source_scanner.py || true
+          python prop_hunter_web_source_scanner.py || true
+          python prop_hunter_candidate_tester.py || true
+          python prop_hunter_source_orchestrator.py --mode all || true
+          python prop_hunter_source_reliability.py || true
 
-      - name: Weekly backfills
+      - name: Weekly official-data backfills
+        if: env.RUN_MAINTENANCE == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -51,3 +72,21 @@ jobs:
           python prop_hunter_statcast_backfill.py || true
           python prop_hunter_retrosheet_import.py || true
           python prop_hunter_backfill_universal.py || true
+          python prop_hunter_feature_builder.py || true
+          python prop_hunter_builder_learning.py || true
+          python prop_hunter_autolearn.py --train || true
+
+      - name: Save source registry and learning
+        if: env.RUN_MAINTENANCE == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            prop_hunter_github_sources.json prop_hunter_web_sources.json \
+            prop_hunter_candidate_health.json prop_hunter_source_registry.json \
+            prop_hunter_source_trust.json prop_hunter_model_registry.json \
+            prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json \
+            2>/dev/null || true
+          git diff --staged --quiet && echo "No maintenance changes" && exit 0
+          git commit -m "prop hunter source discovery $(date -u +%F)"
+          git push
