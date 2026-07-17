@@ -231,7 +231,17 @@ def _valid_combo(legs: Sequence[Any]) -> bool:
         return False
     # A displayed builder must be placeable at one bookmaker.
     books = {_book(x) for x in legs}
-    return len(books) == 1 and "" not in books
+    if len(books) != 1 or "" in books:
+        return False
+
+    games = {_game(x) for x in legs if _game(x)}
+    same_game = len(games) == 1
+    book = next(iter(books))
+    if same_game and book == "bet365":
+        # The green BB marker is required for every leg of a bet365 Bet Builder.
+        if not all(bool(_features(x).get("bet_builder")) for x in legs):
+            return False
+    return True
 
 
 def _real_ladder(anchor: Any, props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> Optional[Any]:
