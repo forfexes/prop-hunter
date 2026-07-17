@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
-from prop_hunter_shared_utils import hash_key, now_iso, safe_json_load, safe_json_write, upsert_rows, warn
+from prop_hunter_shared_utils import hash_key, now_iso, safe_json_load, safe_json_write, to_float, upsert_rows, warn
 from prop_hunter_source_catalog import SOURCES, as_rows
 
 SPORTS = tuple(x.strip().upper() for x in os.getenv("PROP_HUNTER_SPORTS", "MLB,WNBA,NBA,NFL,NHL").split(",") if x.strip())
@@ -27,6 +27,7 @@ def _row_key(row: Dict[str, Any]) -> str:
         row.get("source"), row.get("sport"), row.get("source_event_id") or row.get("game_id"),
         row.get("player_name"), row.get("market_key") or row.get("market"),
         row.get("direction"), row.get("line"), row.get("odds_decimal"),
+        row.get("period"), row.get("is_live"),
     ))
 
 
@@ -134,10 +135,29 @@ def _direct_jobs(sports: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dic
 def _browser_jobs(sports: Iterable[str], books: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dict[str, Any]]]]]:
     from prop_hunter_browser_bookies import fetch_browser_source
     jobs: List[Tuple[str, Callable[[], List[Dict[str, Any]]]]] = []
+    # Interleave books across active sports, so a small fast-job budget covers
+    # MLB and WNBA instead of spending every browser attempt on one league.
     for book in books:
         for sport in sports:
             jobs.append((f"browser_{book}_{sport.lower()}", lambda b=book, s=sport: fetch_browser_source(b, s)[0]))
     return jobs
+
+
+def _season_active_sports(sports: Iterable[str]) -> List[str]:
+    month = datetime.now(timezone.utc).month
+    active = []
+    for sport in sports:
+        if sport == "MLB" and 3 <= month <= 11:
+            active.append(sport)
+        elif sport == "WNBA" and 5 <= month <= 10:
+            active.append(sport)
+        elif sport == "NFL" and (month >= 8 or month <= 2):
+            active.append(sport)
+        elif sport == "NBA" and (month >= 10 or month <= 6):
+            active.append(sport)
+        elif sport == "NHL" and (month >= 10 or month <= 6):
+            active.append(sport)
+    return active or list(sports)
 
 
 
@@ -173,15 +193,35 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
         all_rows.extend(rows); audits.append(audit)
         print(f"source {source}: {len(rows)} | {audit['status']}", flush=True)
 
-    # Browser-only books are deliberately maintenance/data mode; card runs stay fast.
-    if mode in {"all", "browser"}:
-        books = [x.strip() for x in os.getenv(
-            "PH_BROWSER_BOOKS", "betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay"
-        ).split(",") if x.strip()]
-        max_browser = int(os.getenv("PH_MAX_BROWSER_JOBS", "12"))
-        for source, fn in _browser_jobs(sports, books)[:max_browser]:
+    direct_odds_rows = sum(1 for row in all_rows if to_float(row.get("odds_decimal")) and float(row.get("odds_decimal")) > 1)
+
+    # Full browser sweep in data/maintenance mode. On a card run, activate a
+    # small automatic browser fallback only when direct sources produced no
+    # bookable prices.
+    run_browser = mode in {"all", "browser"} or (mode == "fast" and direct_odds_rows == 0)
+    if run_browser:
+        if mode == "fast":
+            books = [x.strip() for x in os.getenv(
+                "PH_FAST_BROWSER_BOOKS", "bet365,betmgm,caesars,betrivers,fanatics,hardrock"
+            ).split(",") if x.strip()]
+            max_browser = int(os.getenv("PH_FAST_BROWSER_JOBS", "6"))
+            browser_sports = _season_active_sports(sports)
+            print(
+                f"no verified direct prices — browser fallback: "
+                f"{','.join(browser_sports)} / {max_browser} jobs",
+                flush=True,
+            )
+        else:
+            books = [x.strip() for x in os.getenv(
+                "PH_BROWSER_BOOKS", "bet365,betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay"
+            ).split(",") if x.strip()]
+            max_browser = int(os.getenv("PH_MAX_BROWSER_JOBS", "12"))
+            browser_sports = _season_active_sports(sports)
+
+        for source, fn in _browser_jobs(browser_sports, books)[:max_browser]:
             rows, audit = _call(source, fn, max_cache_age)
-            all_rows.extend(rows); audits.append(audit)
+            all_rows.extend(rows)
+            audits.append(audit)
             print(f"source {source}: {len(rows)} | {audit['status']}", flush=True)
 
     # Final dedup across sources. Source remains part of the key so consensus survives.
