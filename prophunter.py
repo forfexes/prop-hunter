@@ -25,6 +25,7 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
+PH_RUNTIME_VERSION = "12.3-HR-RISK-LOTTERY"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -64,6 +65,8 @@ AI_RETRY       = 1
 PH_CARD_MODE   = os.environ.get("PH_CARD_MODE", "all").strip().lower()
 PH_TZ_NAME     = os.environ.get("PH_TIMEZONE", "Europe/Zurich")
 PH_EARLY_CUTOFF = os.environ.get("PH_EARLY_CUTOFF", "00:30")
+PH_REQUIRE_REAL_ODDS = os.environ.get("PH_REQUIRE_REAL_ODDS", "1").strip().lower() not in ("0", "false", "no")
+PH_ALLOW_SYNTHETIC_ODDS = os.environ.get("PH_ALLOW_SYNTHETIC_ODDS", "0").strip().lower() in ("1", "true", "yes")
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -314,6 +317,90 @@ class HistoricalPick(BaseModel):
 def dedup_key(player,market,point,direction):
     return "|".join([(player or "").lower().strip(),(market or "").lower().strip(),
                      f"{point:g}" if point is not None else "",(direction or "over").lower()])
+
+
+_ANALYSIS_ONLY_SOURCES = {
+    "propcruncher", "propsmadness", "datagen", "freeplayerprops",
+    "prizepicks", "underdog", "sleeper", "dabble", "betr",
+    "chalkboard", "parlayplay",
+}
+_REAL_BOOK_MARKERS = {
+    "draftkings", "fanduel", "bovada", "betmgm", "caesars",
+    "betrivers", "superbook", "fanatics", "hardrock", "thescore",
+    "bet365", "pinnacle", "williamhill", "oddspapi", "the_odds_api",
+    "espn_bet",
+}
+
+
+def _obj_features(obj) -> dict:
+    value = getattr(obj, "features", None)
+    return value if isinstance(value, dict) else {}
+
+
+def _has_observed_odds(obj) -> bool:
+    """True only when the displayed decimal price was actually observed at a book."""
+    feats = _obj_features(obj)
+    explicit = feats.get("odds_observed")
+    if explicit is not None:
+        return bool(explicit)
+
+    price_type = str(feats.get("price_type") or "").lower()
+    if price_type in {"synthetic", "estimated", "projection", "line_only"}:
+        return False
+    if price_type in {"bookmaker", "exchange", "observed"}:
+        return True
+
+    source = str(
+        feats.get("source") or feats.get("bookmaker") or
+        getattr(obj, "source", None) or getattr(obj, "bookmaker", None) or ""
+    ).lower()
+    enrichment = str(getattr(obj, "enrichment", "") or "").lower()
+
+    if source in _ANALYSIS_ONLY_SOURCES or any(
+        marker in enrichment for marker in ("pc:", "src:datagen", "synthetic")
+    ):
+        return False
+    if source in _REAL_BOOK_MARKERS or any(marker in source for marker in _REAL_BOOK_MARKERS):
+        return True
+    if getattr(obj, "pinnacle_odds", None):
+        return True
+    return False
+
+
+def _conservative_live_probability(prob, source_prop):
+    """Shrink small-sample estimates toward the observed market probability."""
+    try:
+        p = float(prob)
+    except Exception:
+        return prob
+    p = max(0.01, min(0.99, p))
+    feats = _obj_features(source_prop)
+    odds = float(getattr(source_prop, "odds", 0) or 0)
+    if not _has_observed_odds(source_prop) or odds <= 1.01:
+        return min(p, 0.70)
+
+    implied = max(0.02, min(0.98, 1.0 / odds))
+    try:
+        n = int(feats.get("gamelog_n") or feats.get("sample_size") or 0)
+    except Exception:
+        n = 0
+    try:
+        consensus_n = int(feats.get("consensus_sources") or 0)
+    except Exception:
+        consensus_n = 0
+
+    # With ten games the model receives ~40% weight; the rest remains anchored
+    # to the actual market. Larger settled/model samples earn more weight.
+    model_weight = min(0.72, 0.18 + n / 45.0 + min(consensus_n, 4) * 0.035)
+    shrunk = implied * (1.0 - model_weight) + p * model_weight
+
+    if n < 12:
+        cap = 0.78
+    elif n < 30:
+        cap = 0.84
+    else:
+        cap = 0.90
+    return round(max(0.02, min(cap, shrunk)), 4)
 
 
 # ─────────────────────────────────────────────
@@ -905,66 +992,124 @@ def _sb_read():
     except Exception: return None
 
 def fetch_snapshot_props(sport_filter=None) -> list:
-    """Liest Props aus prop_hunter_prop_snapshots (DraftKings/Underdog/Sleeper/PrizePicks-Connectoren).
-    Props ohne echte Odds (PP/UD/Sleeper) bekommen synthetische Odds — die DB-Fairprob entscheidet dann."""
+    """Read fresh stored snapshots. Line-only pick'em rows enrich the model but
+    are not converted into betting props unless an actual bookmaker price exists.
+    Supports both the legacy and V12 Supabase schemas.
+    """
     c = _sb_read()
-    if c is None: return []
+    if c is None:
+        return []
     out = []
     try:
-        # Fenster: letzte 18h (fängt auch Läufe kurz vor Mitternacht UTC)
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=18)).isoformat()
-        res = c.table("prop_hunter_prop_snapshots").select(
-            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team,bookmaker"
-        ).gte("created_at", cutoff).limit(3000).execute()
+        res = c.table("prop_hunter_prop_snapshots").select("*").gte(
+            "created_at", cutoff
+        ).limit(5000).execute()
+
         emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
-        # Saison-Totale / Futures rausfiltern — das sind KEINE Einzelspiel-Props!
-        SEASON_MARKERS = ("season", "futures", "to win", "mvp", "champion", "award",
-                          "regular season", "playoff", "total wins", "make the",
-                          "division", "conference", "over/under wins")
-        # Sportarten die aktuell NICHT laufen (Off-Season) überspringen
-        # NFL/NHL laufen nicht im Juli — nur MLB/WNBA aktiv
+        season_markers = (
+            "season", "futures", "to win", "mvp", "champion", "award",
+            "regular season", "playoff", "total wins", "make the",
+            "division", "conference", "over/under wins",
+        )
         now_month = datetime.now(timezone.utc).month
-        active_sports = {"MLB", "WNBA"}  # Juli
+        active_sports = {"MLB", "WNBA"}
         if now_month >= 10 or now_month <= 2:
             active_sports |= {"NFL", "NHL", "NBA"}
         if 4 <= now_month <= 6:
             active_sports |= {"NBA", "NHL"}
 
-        for r in (res.data or []):
-            odds = r.get("odds_decimal"); line = r.get("line")
-            player = r.get("player_name"); market = r.get("market")
-            sport = (r.get("sport") or r.get("league") or "").upper()
-            if not (player and market and line is not None): continue
-            if sport_filter and sport_filter.lower() not in sport.lower(): continue
-            # Season/Futures-Märkte komplett überspringen
-            mkt_low = market.lower()
-            if any(m in mkt_low for m in SEASON_MARKERS): continue
-            # Off-Season Sportarten überspringen (keine NFL-Futures im Juli)
-            if sport and sport not in active_sports: continue
-            # Unrealistisch hohe Linien = Season-Total (z.B. 824.5 Receiving Yards)
+        for db_row in (res.data or []):
+            raw = db_row.get("raw") if isinstance(db_row.get("raw"), dict) else {}
+
+            def value(*keys):
+                for source in (db_row, raw):
+                    for key in keys:
+                        val = source.get(key)
+                        if val not in (None, ""):
+                            return val
+                return None
+
+            player = value("player_name", "player")
+            market = value("market", "market_key")
+            line = value("line", "point")
+            odds = value("odds_decimal", "odds", "best_odds")
+            sport = str(value("sport", "league") or "").upper()
+            if not (player and market and line is not None):
+                continue
+            if sport_filter and sport_filter.lower() not in sport.lower():
+                continue
+            if any(marker in str(market).lower() for marker in season_markers):
+                continue
+            if sport and sport not in active_sports:
+                continue
             try:
-                if float(line) > 100 and sport != "MLB": continue  # Einzelspiel-Linien sind niedrig
+                if float(line) > 100 and sport != "MLB":
+                    continue
             except Exception:
                 pass
-            # Synthetische Odds für Quellen ohne Preis (PrizePicks/Underdog/Sleeper)
+
+            # A line without a price is useful for consensus/ML, but it is not a
+            # bookable single and must never receive a made-up 1.80/1.85 price.
             try:
-                odds_val = float(odds) if odds is not None else 1.85
+                odds_val = float(odds)
             except Exception:
-                odds_val = 1.85
-            if not (1.01 < odds_val < 50): continue
+                continue
+            if not (1.01 < odds_val < 1000):
+                continue
+
+            source = str(value("source") or "").lower()
+            bookmaker = str(value("bookmaker", "book") or source).lower()
+            price_type = str(value("price_type") or raw.get("price_type") or "bookmaker").lower()
+            if price_type in {"synthetic", "estimated", "projection", "line_only"}:
+                continue
+
+            commence = value("commence_time", "start_time")
+            if isinstance(commence, str) and commence:
+                try:
+                    commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+                except Exception:
+                    commence = None
+
+            direction = str(value("direction", "side") or "over").lower()
+            if direction in ("more",):
+                direction = "over"
+            elif direction in ("less",):
+                direction = "under"
+
             try:
-                out.append(Prop(
-                    player=player, market=market, odds=odds_val,
+                p = Prop(
+                    player=str(player),
+                    market=str(market),
+                    odds=odds_val,
                     point=float(line),
-                    sport=sport, emoji=emoji_map.get(sport,"🎯"),
-                    game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
-                    direction="over",
-                    enrichment=f"src:{r.get('bookmaker','snapshot')}",
-                ))
-            except Exception: continue
-        if out: log.info("Snapshot props (Supabase): %d", len(out))
-    except Exception as e:
-        log.warning("snapshot props: %s", e)
+                    sport=sport,
+                    emoji=emoji_map.get(sport, "🎯"),
+                    game=f"{value('away_team') or ''} @ {value('home_team') or ''}".strip(" @"),
+                    direction=direction,
+                    commence_time=commence,
+                    enrichment=f"src:{bookmaker}",
+                    features={
+                        "source": source,
+                        "bookmaker": bookmaker,
+                        "snapshot_id": value("snapshot_id"),
+                        "source_trust": value("source_trust") or 1.0,
+                        "book_consensus": value("book_consensus"),
+                        "consensus_sources": value("consensus_sources") or 0,
+                        "consensus_line": value("consensus_line"),
+                        "line_dispersion": value("line_dispersion") or 0,
+                        "best_odds": value("best_odds"),
+                        "odds_observed": True,
+                        "price_type": "bookmaker",
+                    },
+                )
+                out.append(p)
+            except Exception:
+                continue
+        if out:
+            log.info("Snapshot props with verified prices: %d", len(out))
+    except Exception as exc:
+        log.warning("snapshot props: %s", exc)
     return out
 
 _GAMELOG_CACHE: dict = {}
@@ -1269,7 +1414,7 @@ def gather_propcruncher_fallback(sport_filter=None) -> list:
                     sport=raw["sport"],
                     game=raw.get("game",""),
                     direction=raw["direction"],
-                    features={"pc_grade": raw["grade"]},
+                    features={"pc_grade": raw["grade"], "source": "propcruncher", "source_role": "analysis", "odds_observed": False, "price_type": "synthetic"},
                     emoji=raw["emoji"],
                     enrichment=f"PC:{raw['grade']}",
                 )
@@ -1629,7 +1774,7 @@ def save_cache(odds,earliest=None):
             delta=max(0,ts-time.time()); ttl=int(min(CACHE_TTL,max(60,delta/3)))
         except: pass
     # When no keys left, extend TTL to 24h so stale cache covers next run
-    if _all_keys_dead(): ttl=86400
+    if ODDS_API_KEYS and _all_keys_dead(): ttl=86400
     try: json.dump({"timestamp":time.time(),"ttl":ttl,"odds":odds},open(CACHE_FILE,"w"),indent=2)
     except: pass
 
@@ -1759,7 +1904,13 @@ def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,awa
         out.append(Prop(player=rec["player"],market=label,odds=round(avg,2),point=rec["point"],
             sport=sport,emoji=emoji,game=f"{away} @ {home}",home=home,away=away,commence_time=ct,
             pinnacle_odds=rec["po"],pinnacle_opp_odds=rec["pu"],
-            features={"fair_prob":fair} if fair else {}))
+            features={
+                "fair_prob": fair,
+                "source": "the_odds_api",
+                "bookmaker": "market_consensus",
+                "odds_observed": True,
+                "price_type": "bookmaker",
+            }))
     return out
 
 
@@ -2033,6 +2184,10 @@ def generate_hr_props_from_data(mlb_lineups, mlb_batters, mlb_pitchers) -> list:
                         "mlb_slg": iso + 0.3,
                         "fair_prob": round(hr_prob, 4),
                         "roster_team": team,
+                        "source": "datagen",
+                        "source_role": "analysis",
+                        "odds_observed": False,
+                        "price_type": "estimated",
                     },
                 )
                 p.team = team
@@ -2556,31 +2711,74 @@ def _safe_display_team(p):
 
 
 def _clean_analysis_text(txt: str) -> str:
-    """Entfernt doppelte Tags wie PC:S | PC:S und hält den Post sauber."""
+    """Remove duplicate/derived analysis fragments already shown above the note."""
     if not txt:
         return ""
     parts = []
     seen = set()
+    pc_seen = False
+    db_seen = False
     for raw in str(txt).split("|"):
-        part = raw.strip()
+        part = re.sub(r"\s+", " ", raw.strip())
         if not part:
             continue
-        key = re.sub(r"\s+", " ", part.lower())
+        low = part.lower()
+        # Edge and probability already have their own display line.
+        if low.startswith("edge ") or low.startswith("prob "):
+            continue
+        part = re.sub(r",?\s*edge\s*=\s*[+\-]?\d+(?:\.\d+)?%?", "", part, flags=re.I).strip(" ,")
+        low = part.lower()
+        if not part:
+            continue
+        if low.startswith("pc:"):
+            if pc_seen:
+                continue
+            pc_seen = True
+            # Keep only the compact grade, not a repeated market sentence.
+            match = re.match(r"(pc:[sabc])\b", low)
+            part = match.group(1).upper().replace("PC:", "PC:") if match else part
+            low = part.lower()
+        if re.match(r"db l\d+", low):
+            if db_seen:
+                continue
+            db_seen = True
+        key = re.sub(r"[^a-z0-9]+", " ", low).strip()
         if key in seen:
             continue
         seen.add(key)
         parts.append(part)
-    return " | ".join(parts)[:180]
+    return " | ".join(parts)[:170]
 
 def build_post(picks):
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles=[p for p in picks if p.type=="single"]
+    hr_singles=[
+        p for p in singles
+        if getattr(p, "category", "") in ("hr_risk", "hr_lottery")
+        or _is_hr_pick(p)
+    ]
+    normal_singles=[p for p in singles if p not in hr_singles]
     ladders=[p for p in picks if p.type=="ladder"]
-    builders=[p for p in picks if p.type=="betbuilder"]
-    kombis=[p for p in picks if p.type=="kombi2"]
-    bigs=[p for p in picks if p.type in ("big","super")]
-    tier2=[p for p in singles if (p.tier or 1)==2]
-    tier1=[p for p in singles if (p.tier or 1)!=2]
+    risk_items=[
+        p for p in picks
+        if getattr(p, "category", "") == "risk"
+        and p.type in ("betbuilder", "kombi2", "big", "super")
+    ]
+    lottery_items=[
+        p for p in picks
+        if getattr(p, "category", "") in ("lottery", "hr_lottery")
+        and p.type in ("betbuilder", "kombi2", "big", "super")
+    ]
+    builders=[
+        p for p in picks
+        if p.type=="betbuilder" and p not in risk_items and p not in lottery_items
+    ]
+    kombis=[
+        p for p in picks
+        if p.type=="kombi2" and p not in risk_items and p not in lottery_items
+    ]
+    tier2=[p for p in normal_singles if (p.tier or 1)==2]
+    tier1=[p for p in normal_singles if (p.tier or 1)!=2]
     out=["🎯 PROP HUNTER", f"📅 {today}"]
     if PH_CARD_MODE == "early":
         out += ["🌇 EARLY CARD"]
@@ -2606,6 +2804,11 @@ def build_post(picks):
     if tier1:
         out+=["🟡 VALUE PICKS:",""]
         for p in tier1: out+=[fmt(p),""]
+
+    if hr_singles:
+        out+=["⚾ HOME-RUN RISK:",""]
+        for p in hr_singles:
+            out+=[fmt(p),""]
     if ladders:
         out+=["🪜 LADDERS:"]
         for p in ladders:
@@ -2623,12 +2826,27 @@ def build_post(picks):
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
             out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
         out.append("")
-    if bigs:
-        out+=["💣 LOTTERY BIGS:"]
-        for p in bigs:
-            pfx="🚀" if p.type=="super" else "•"
+    if risk_items:
+        out+=["🟠 RISK BUILDER:"]
+        for p in risk_items:
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
-            out.append(f"{pfx} {' + '.join(legs)} @{p.odds:.1f} → {p.stake}u")
+            out.append(
+                f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u"
+                f" · Prob {(p.probability or 0)*100:.1f}%"
+            )
+        out.append("")
+
+    if lottery_items:
+        out+=["💣 LOTTERY BIGS:"]
+        for p in lottery_items:
+            pfx="⚾" if getattr(p, "category", "")=="hr_lottery" else (
+                "🚀" if p.type=="super" else "•"
+            )
+            legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
+            out.append(
+                f"{pfx} {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u"
+                f" · Prob {(p.probability or 0)*100:.1f}%"
+            )
         out.append("")
     out+=["📊 Mehr Value Picks · Keine negative Edge · Lines Pflicht 🎯","@prophunter"]
     return "\n".join(out)
@@ -2744,7 +2962,9 @@ def _hub_rows_to_props(rows):
             market=str(r.get("market") or r.get("market_key") or "").strip()
             line=r.get("line")
             odds=r.get("odds_decimal")
+            price_type=str(r.get("price_type") or (r.get("raw") or {}).get("price_type") or "bookmaker").lower()
             if not player or not market or odds in (None,""): continue
+            if price_type in {"synthetic", "estimated", "projection", "line_only"}: continue
             odds=float(odds)
             if odds<=1.01: continue
             raw=(r.get("raw") or {}) if isinstance(r.get("raw"),dict) else {}
@@ -2763,8 +2983,10 @@ def _hub_rows_to_props(rows):
                              "source_trust":r.get("source_trust",1.0),
                              "book_consensus":r.get("book_consensus"),"consensus_sources":r.get("consensus_sources",0),
                              "consensus_line":r.get("consensus_line"),"line_dispersion":r.get("line_dispersion",0),
-                             "best_odds":r.get("best_odds")},
-                   emoji=emoji_map[sport], enrichment="")
+                             "best_odds":r.get("best_odds"),
+                             "odds_observed":True,
+                             "price_type":"bookmaker"},
+                   emoji=emoji_map[sport], enrichment=f"src:{r.get('bookmaker') or r.get('source') or 'book'}")
             p.event_id=str(r.get("game_id") or r.get("source_event_id") or "")
             p.sport_key=raw_s.lower()
             converted.append(p)
@@ -2774,10 +2996,11 @@ def _hub_rows_to_props(rows):
 
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
-    cache=load_cache(); new_cache={}
-    # If all keys dead upfront, try stale cache
-    if _all_keys_dead() and not cache:
-        log.warning("All keys dead — trying stale cache")
+    cache=load_cache() if ODDS_API_KEYS else {}; new_cache={}
+    # Stale API prices are allowed only after a configured key was exhausted,
+    # never when the project intentionally runs without The Odds API.
+    if ODDS_API_KEYS and _all_keys_dead() and not cache:
+        log.warning("Configured Odds API keys exhausted — trying limited stale cache")
         cache=load_cache(force_stale=True)
 
     def _try_oddspapi():
@@ -2809,7 +3032,12 @@ def gather(sport_filter=None):
                         sport=sport_label,
                         game=f"{raw.get('away_team','')} @ {raw.get('home_team','')}",
                         direction="over" if "over" in (raw.get("selection","")).lower() else "under",
-                        features={},
+                        features={
+                            "source": "oddspapi",
+                            "bookmaker": raw.get("bookmaker"),
+                            "odds_observed": True,
+                            "price_type": "bookmaker",
+                        },
                         emoji=SPORTS.get(sk,SPORTS["baseball_mlb"]).emoji,
                     )
                     all_props.append(p)
@@ -2838,7 +3066,7 @@ def gather(sport_filter=None):
                                 odds=raw["odds"], point=raw["line"],
                                 sport=raw["sport"], game=raw.get("game",""),
                                 direction=raw["direction"],
-                                features={"pc_grade": raw["grade"]},
+                                features={"pc_grade": raw["grade"], "source": "propcruncher", "source_role": "analysis", "odds_observed": False, "price_type": "synthetic"},
                                 emoji=raw["emoji"],
                                 enrichment=f"PC:{raw['grade']}",
                             )
@@ -2967,7 +3195,7 @@ def gather(sport_filter=None):
         log.warning('V11 source hub: %s', e)
 
     # QUELLEN-KETTE: Odds API → Multi-source hub → OddsPapi → ProCruncher → Snapshots
-    if not all_props and _all_keys_dead():
+    if not all_props and (not ODDS_API_KEYS or _all_keys_dead()):
         _try_oddspapi()
         if all_props:
             all_props=enrich_propsmadness(all_props)
@@ -3138,6 +3366,8 @@ def analyse(props):
         pk.source_sport = m.sport
         pk.source_game = m.game
         pk.features = getattr(m, "features", {}) or {}
+        pk.odds = float(m.odds)
+        pk.odds_observed = _has_observed_odds(m)
         pk.market = _market_with_line(pk.market or m.market, pk.direction, pk.point)
         if m.enrichment and pk.analysis:
             # kurz halten, aber Zusatzinfos nicht verlieren
@@ -3149,6 +3379,7 @@ def analyse(props):
         sport_label = m.sport
         blended_prob = blend_with_ml(pk, base_prob, sport_label)
         if blended_prob:
+            blended_prob = _conservative_live_probability(blended_prob, m)
             pk.probability = round(float(blended_prob), 4)
             pk.edge_pct=round(edge_pct(blended_prob,pk.odds)*100,2)
             pk.ev=round(ev(blended_prob,pk.odds),3)
@@ -3280,6 +3511,9 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     for p in singles:
         edge = p.edge_pct
         prob = p.probability
+        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_observed_odds(p):
+            rejected["unverified_odds"] += 1
+            continue
         if edge is None:
             rejected["no_edge"] += 1; continue
         if edge <= 0:
@@ -3725,7 +3959,12 @@ def rescue_picks_from_props(props, max_picks=12):
     per_game = defaultdict(int)
 
     for sp in props or []:
+        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_observed_odds(sp):
+            rejected["unverified_odds"] += 1
+            continue
         prob = _source_prop_probability(sp)
+        if prob is not None:
+            prob = _conservative_live_probability(prob, sp)
         # PropsMadness Blocker auch im Rescue
         _pm = (getattr(sp, "features", {}) or {}).get("pm_hit_rate")
         try:
@@ -4144,8 +4383,139 @@ def build_jk_extras(picks):
 
     return extras
 
+
+def _verified_market_match(pick, props):
+    """Match a candidate pick to a genuinely observed bookmaker price."""
+    if _has_observed_odds(pick):
+        try:
+            if float(getattr(pick, "odds", 0) or 0) > 1.01:
+                return pick
+        except Exception:
+            pass
+
+    pick_player = norm_name(getattr(pick, "player", ""))
+    pick_market = market_base(getattr(pick, "market", ""))
+    pick_direction = str(getattr(pick, "direction", "over") or "over").lower()
+    pick_point = getattr(pick, "point", None)
+
+    matches = []
+    for source_prop in props or []:
+        if not _has_observed_odds(source_prop):
+            continue
+        try:
+            source_odds = float(getattr(source_prop, "odds", 0) or 0)
+        except Exception:
+            continue
+        if source_odds <= 1.01:
+            continue
+        if norm_name(getattr(source_prop, "player", "")) != pick_player:
+            continue
+        if market_base(getattr(source_prop, "market", "")) != pick_market:
+            continue
+        source_direction = str(
+            getattr(source_prop, "direction", "over") or "over"
+        ).lower()
+        if source_direction != pick_direction:
+            continue
+
+        source_point = getattr(source_prop, "point", None)
+        if pick_point is not None or source_point is not None:
+            try:
+                if pick_point is None or source_point is None:
+                    continue
+                if abs(float(pick_point) - float(source_point)) > 0.01:
+                    continue
+            except Exception:
+                continue
+        matches.append(source_prop)
+
+    if not matches:
+        return None
+    return max(matches, key=lambda row: float(getattr(row, "odds", 0) or 0))
+
+
+def _reprice_verified_pick(pick, source_prop):
+    """Copy observed price/provenance and recompute probability, EV and stake."""
+    pick.odds = float(getattr(source_prop, "odds", 0) or 0)
+    pick.point = getattr(source_prop, "point", getattr(pick, "point", None))
+    pick.direction = getattr(
+        source_prop, "direction", getattr(pick, "direction", "over")
+    )
+    pick.market = _market_with_line(
+        getattr(source_prop, "market", None) or getattr(pick, "market", ""),
+        pick.direction,
+        pick.point,
+    )
+    pick.features = dict(getattr(source_prop, "features", {}) or {})
+    pick.features["odds_observed"] = True
+    pick.features["price_type"] = "bookmaker"
+    pick.odds_observed = True
+
+    probability = float(getattr(pick, "probability", 0) or 0)
+    probability = _conservative_live_probability(probability, source_prop)
+    pick.probability = probability
+    implied = 1.0 / pick.odds
+    pick.implied_prob = implied
+    pick.edge_pct = round((probability - implied) * 100.0, 1)
+    pick.ev = round(probability * pick.odds - 1.0, 4)
+
+    if pick.edge_pct <= 0 or pick.ev <= 0:
+        return None
+
+    b = pick.odds - 1.0
+    q = 1.0 - probability
+    kelly = ((b * probability) - q) / b if b > 0 else 0.0
+    pick.stake = round(max(0.10, min(0.60, kelly * 0.25)), 2)
+    return pick
+
+
+def enforce_final_verified_market_gate(picks, props):
+    """Non-bypassable last gate before Telegram and persistence.
+
+    Existing LLM/legacy combos are removed. Only verified singles survive.
+    Same-book ladders/builders are regenerated after this gate.
+    """
+    accepted = []
+    rejected = 0
+    seen = set()
+
+    for pick in picks or []:
+        if getattr(pick, "type", None) != "single":
+            continue
+        source_prop = _verified_market_match(pick, props)
+        if source_prop is None:
+            rejected += 1
+            continue
+        pick = _reprice_verified_pick(pick, source_prop)
+        if pick is None:
+            rejected += 1
+            continue
+
+        key = dedup_key(
+            getattr(pick, "player", ""),
+            market_base(getattr(pick, "market", "")),
+            getattr(pick, "point", None),
+            getattr(pick, "direction", "over"),
+        )
+        book = str((getattr(pick, "features", {}) or {}).get("bookmaker") or "")
+        full_key = f"{key}|{book.lower()}"
+        if full_key in seen:
+            continue
+        seen.add(full_key)
+        accepted.append(pick)
+
+    log.info(
+        "V12.2 final verified-market gate: %d → %d singles | rejected=%d",
+        sum(1 for p in (picks or []) if getattr(p, "type", None) == "single"),
+        len(accepted),
+        rejected,
+    )
+    return accepted
+
+
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
+    log.info("PROP HUNTER %s REAL-ODDS GUARD ACTIVE", PH_RUNTIME_VERSION)
     log.info("PROP HUNTER (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props:
@@ -4190,6 +4560,16 @@ def run(dry_run=False,sport_filter=None):
 
     picks = limit_singles_per_game(picks, max_per_game=3)
     picks = limit_total_singles(picks, max_singles=12)
+
+    # Final hard integrity gate. This also removes all old LLM/legacy combos.
+    picks = enforce_final_verified_market_gate(picks, props)
+    if not picks:
+        log.warning(
+            "V12.2: no verified bookmaker prices matched the candidate picks — "
+            "nothing posted or persisted"
+        )
+        return
+
     try:
         from prop_hunter_builder_engine import build_autonomous_extras
         extras = build_autonomous_extras(picks, props, Pick, LadderLeg)
