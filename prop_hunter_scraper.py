@@ -127,10 +127,11 @@ def mlb_stats(group: str, fields: str, limit: int = 600) -> List[dict]:
 
 
 def fetch_mlb_batters() -> Dict[str, dict]:
-    fields = "stats,splits,player,fullName,stat,gamesPlayed,atBats,plateAppearances,homeRuns,avg,ops,slugging,hits,totalBases,doubles,triples,rbi,runs,strikeOuts,baseOnBalls,hitByPitch,stolenBases"
+    fields = "stats,splits,player,fullName,team,name,stat,gamesPlayed,atBats,plateAppearances,homeRuns,avg,ops,slugging,hits,totalBases,doubles,triples,rbi,runs,strikeOuts,baseOnBalls,hitByPitch,stolenBases"
     out: Dict[str, dict] = {}
     for split in mlb_stats("hitting", fields, 700):
         player = split.get("player") or {}
+        team = split.get("team") or {}
         stat = split.get("stat") or {}
         name = (player.get("fullName") or "").strip()
         if not name:
@@ -139,6 +140,7 @@ def fetch_mlb_batters() -> Dict[str, dict]:
         out[key] = {
             "player_name": name,
             "source_player_id": player.get("id"),
+            "team_name": team.get("name"),
             "games": stat.get("gamesPlayed"),
             "ab": stat.get("atBats"),
             "pa": stat.get("plateAppearances"),
@@ -227,14 +229,21 @@ def fetch_mlb_lineups() -> Dict[str, dict]:
     for g in games:
         teams = g.get("teams") or {}
         for side in ("home", "away"):
+            other = "away" if side == "home" else "home"
             block = teams.get(side) or {}
+            opponent_block = teams.get(other) or {}
             team = (block.get("team") or {}).get("name")
+            opponent = (opponent_block.get("team") or {}).get("name")
             pp = block.get("probablePitcher") or {}
+            opponent_pp = opponent_block.get("probablePitcher") or {}
             if team:
                 out[team.lower()] = {
                     "team_name": team,
+                    "opponent_team": opponent,
                     "probable_pitcher": pp.get("fullName"),
                     "probable_pitcher_id": pp.get("id"),
+                    "opponent_probable_pitcher": opponent_pp.get("fullName"),
+                    "opponent_probable_pitcher_id": opponent_pp.get("id"),
                     "game_pk": g.get("gamePk"),
                     "game_date": g.get("gameDate"),
                     "status": ((g.get("status") or {}).get("detailedState")),
@@ -259,7 +268,7 @@ def main() -> int:
 
     cache: Dict[str, Any] = {
         "generated_at": now_iso(),
-        "version": "data_plus_safe_cache_builder_v2",
+        "version": "data_plus_safe_cache_builder_v3_hr_model",
         "mlb_season": season_mlb(),
         "nba_season": season_nba_label(),
         "mlb": {},
