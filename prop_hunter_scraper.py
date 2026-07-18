@@ -127,7 +127,7 @@ def mlb_stats(group: str, fields: str, limit: int = 600) -> List[dict]:
 
 
 def fetch_mlb_batters() -> Dict[str, dict]:
-    fields = "stats,splits,player,fullName,stat,homeRuns,avg,ops,slugging,hits,totalBases,rbi,runs,strikeOuts,baseOnBalls,stolenBases"
+    fields = "stats,splits,player,fullName,stat,gamesPlayed,atBats,plateAppearances,homeRuns,avg,ops,slugging,hits,totalBases,doubles,triples,rbi,runs,strikeOuts,baseOnBalls,stolenBases"
     out: Dict[str, dict] = {}
     for split in mlb_stats("hitting", fields, 700):
         player = split.get("player") or {}
@@ -139,9 +139,14 @@ def fetch_mlb_batters() -> Dict[str, dict]:
         out[key] = {
             "player_name": name,
             "source_player_id": player.get("id"),
+            "games": stat.get("gamesPlayed"),
+            "ab": stat.get("atBats"),
+            "pa": stat.get("plateAppearances"),
             "hr": stat.get("homeRuns"),
             "hits": stat.get("hits"),
             "total_bases": stat.get("totalBases"),
+            "doubles": stat.get("doubles"),
+            "triples": stat.get("triples"),
             "rbi": stat.get("rbi"),
             "runs": stat.get("runs"),
             "avg": stat.get("avg"),
@@ -156,7 +161,7 @@ def fetch_mlb_batters() -> Dict[str, dict]:
 
 
 def fetch_mlb_pitchers() -> Dict[str, dict]:
-    fields = "stats,splits,player,fullName,stat,era,strikeOuts,strikeoutsPer9Inn,homeRunsPer9,whip,inningsPitched,wins,losses"
+    fields = "stats,splits,player,fullName,stat,gamesPlayed,gamesStarted,era,strikeOuts,strikeoutsPer9Inn,homeRunsPer9,whip,inningsPitched,hits,earnedRuns,baseOnBalls,wins,losses"
     out: Dict[str, dict] = {}
     for split in mlb_stats("pitching", fields, 500):
         player = split.get("player") or {}
@@ -168,12 +173,17 @@ def fetch_mlb_pitchers() -> Dict[str, dict]:
         out[key] = {
             "player_name": name,
             "source_player_id": player.get("id"),
+            "games": stat.get("gamesPlayed"),
+            "starts": stat.get("gamesStarted"),
             "era": stat.get("era"),
             "strikeouts": stat.get("strikeOuts"),
             "k9": stat.get("strikeoutsPer9Inn"),
             "hr9": stat.get("homeRunsPer9"),
             "whip": stat.get("whip"),
             "innings": stat.get("inningsPitched"),
+            "hits_allowed": stat.get("hits"),
+            "earned_runs": stat.get("earnedRuns"),
+            "walks": stat.get("baseOnBalls"),
             "wins": stat.get("wins"),
             "losses": stat.get("losses"),
         }
