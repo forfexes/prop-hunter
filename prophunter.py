@@ -25,7 +25,7 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-PH_RUNTIME_VERSION = "12.5-UNDERDOG-PICKEM"
+PH_RUNTIME_VERSION = "12.6-PICKEM-MODEL"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -69,6 +69,7 @@ PH_REQUIRE_REAL_ODDS = os.environ.get("PH_REQUIRE_REAL_ODDS", "1").strip().lower
 PH_ALLOW_SYNTHETIC_ODDS = os.environ.get("PH_ALLOW_SYNTHETIC_ODDS", "0").strip().lower() in ("1", "true", "yes")
 PH_ALLOW_DIRECT_FANTASY_LINES = os.environ.get("PH_ALLOW_DIRECT_FANTASY_LINES", "1").strip().lower() in ("1", "true", "yes")
 PH_MIN_PICKEM_PROB = max(0.50, min(0.75, float(os.environ.get("PH_MIN_PICKEM_PROB", "0.55"))))
+PH_MIN_PICKEM_SAMPLE = max(5, min(30, int(os.environ.get("PH_MIN_PICKEM_SAMPLE", "6"))))
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -293,7 +294,7 @@ def filter_props_for_card(props, mode: Optional[str] = None, now_utc: Optional[d
     )
     return kept
 
-PickType=Literal["single","ladder","betbuilder","kombi2","big","super"]
+PickType=Literal["single","ladder","betbuilder","kombi2","big","super","lottery"]
 class LadderLeg(BaseModel):
     market:str; odds:float=Field(gt=1); stake:float=Field(ge=0)
 class Pick(BaseModel):
@@ -367,14 +368,30 @@ def _has_eligible_price(obj) -> bool:
 
 
 def _fantasy_min_probability(obj) -> float:
-    """Minimum evidence threshold for a direct Pick'em selection."""
+    """Minimum evidence threshold for a direct Pick'em selection.
+
+    Recent game logs may qualify at the normal threshold. A weaker season-rate
+    fallback needs a little more separation, and very small samples are held to
+    60% so the bot does not manufacture picks just to fill a card.
+    """
     sport = str(getattr(obj, "source_sport", None) or getattr(obj, "sport", None) or "").upper()
     market = str(getattr(obj, "market", "") or "").lower()
+    feats = _obj_features(obj)
     threshold = PH_MIN_PICKEM_PROB
     if sport in {"NBA", "WNBA"}:
         threshold = max(threshold, 0.56)
     elif sport == "MLB" and ("hit" in market or "total base" in market):
         threshold = max(threshold, 0.56)
+
+    evidence = str(feats.get("fair_prob_source") or feats.get("fair_from") or "").lower()
+    try:
+        sample = int(feats.get("gamelog_n") or feats.get("model_sample") or feats.get("sample_size") or 0)
+    except Exception:
+        sample = 0
+    if "season" in evidence or "poisson" in evidence:
+        threshold = max(threshold, 0.58)
+    if sample and sample < 8:
+        threshold = max(threshold, 0.60)
     return threshold
 
 
@@ -1500,6 +1517,318 @@ def enrich_gamelogs_fairprob(props: list) -> list:
         except Exception: continue
     if boosted: log.info("Gamelog fair_prob (Supabase DB): %d props", boosted)
     return props
+
+
+def _ascii_player_key(value) -> str:
+    """Accent-insensitive player key used only for matching existing history rows."""
+    try:
+        import unicodedata
+        value = unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode("ascii")
+    except Exception:
+        value = str(value or "")
+    value = value.lower().strip()
+    value = re.sub(r"\b(jr|sr|ii|iii|iv)\.?$", "", value).strip()
+    value = re.sub(r"[^a-z0-9\s'\.-]", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _pickem_market_spec(market: str, sport: str = ""):
+    """Map public Pick'em labels to columns in prop_hunter_player_gamelogs.
+
+    Returns (mode, columns, factor) or None. Period-specific and fantasy-score
+    markets are intentionally skipped because full-game box scores cannot grade
+    them honestly.
+    """
+    raw = str(market or "").lower()
+    if any(x in raw for x in (
+        "fantasy point", "1q", "1st quarter", "first quarter", "first half",
+        "1h ", "quarter points", "quarter rebounds", "quarter assists",
+    )):
+        return None
+    m = raw.replace("&", " and ").replace("+", " plus ")
+    m = re.sub(r"[^a-z0-9\s]", " ", m)
+    m = re.sub(r"\s+", " ", m).strip()
+    sport = str(sport or "").upper()
+
+    # Basketball combinations before individual stats.
+    pts = bool(re.search(r"\b(points?|pts)\b", m))
+    reb = bool(re.search(r"\b(rebounds?|rebs?)\b", m))
+    ast = bool(re.search(r"\b(assists?|asts?)\b", m))
+    if sport in {"NBA", "WNBA"}:
+        if "double double" in m:
+            return ("col", ("double_double",), 1.0)
+        if "triple double" in m:
+            return ("col", ("triple_double",), 1.0)
+        if "steals plus blocks" in m or "blocks plus steals" in m or "stocks" in m:
+            return ("sum", ("steals", "blocks"), 1.0)
+        if "3pm" in m or "3 pointers" in m or "3 pointer" in m or "threes" in m:
+            return ("col", ("threes_made",), 1.0)
+        if pts and reb and ast:
+            return ("sum", ("points", "rebounds", "assists"), 1.0)
+        if pts and reb:
+            return ("sum", ("points", "rebounds"), 1.0)
+        if pts and ast:
+            return ("sum", ("points", "assists"), 1.0)
+        if reb and ast:
+            return ("sum", ("rebounds", "assists"), 1.0)
+        if "turnover" in m:
+            return ("col", ("turnovers",), 1.0)
+        if "steal" in m:
+            return ("col", ("steals",), 1.0)
+        if "block" in m:
+            return ("col", ("blocks",), 1.0)
+        if pts:
+            return ("col", ("points",), 1.0)
+        if reb:
+            return ("col", ("rebounds",), 1.0)
+        if ast:
+            return ("col", ("assists",), 1.0)
+        if "minute" in m:
+            return ("col", ("minutes",), 1.0)
+        return None
+
+    if sport == "MLB":
+        if "pitcher" in m or "pitching" in m or "allowed" in m or "outs recorded" in m:
+            if "strikeout" in m or re.search(r"\bks?\b", m):
+                return ("col", ("pitcher_strikeouts",), 1.0)
+            if "outs" in m:
+                return ("col", ("pitcher_innings",), 3.0)
+            if "hits allowed" in m:
+                return ("col", ("pitcher_hits_allowed",), 1.0)
+            if "earned run" in m:
+                return ("col", ("pitcher_earned_runs",), 1.0)
+            if "walk" in m:
+                return ("col", ("pitcher_walks",), 1.0)
+            return None
+        if "hits plus runs plus rbi" in m or "hits runs rbi" in m or "h r rbi" in m:
+            return ("sum", ("hits", "runs", "rbi"), 1.0)
+        if "hits plus runs" in m:
+            return ("sum", ("hits", "runs"), 1.0)
+        if "runs plus rbi" in m or "runs plus rbis" in m:
+            return ("sum", ("runs", "rbi"), 1.0)
+        if "total base" in m:
+            return ("col", ("total_bases",), 1.0)
+        if "home run" in m or re.search(r"\bhrs?\b", m):
+            return ("col", ("home_runs",), 1.0)
+        if "batter strikeout" in m or "strikeouts batter" in m or "batter ks" in m:
+            return ("col", ("strikeouts_batter",), 1.0)
+        if "strikeout" in m:
+            return ("col", ("strikeouts_batter",), 1.0)
+        if "walk" in m:
+            return ("col", ("walks_batter",), 1.0)
+        if "stolen base" in m:
+            return ("col", ("stolen_bases",), 1.0)
+        if re.search(r"\brbis?\b", m) or "runs batted" in m:
+            return ("col", ("rbi",), 1.0)
+        if "hit" in m:
+            return ("col", ("hits",), 1.0)
+        if "run" in m:
+            return ("col", ("runs",), 1.0)
+    return None
+
+
+def _pickem_row_value(row: dict, spec):
+    if not spec or not isinstance(row, dict):
+        return None
+    mode, cols, factor = spec
+    try:
+        vals = []
+        for col in cols:
+            value = row.get(col)
+            if value is None:
+                return None
+            if isinstance(value, bool):
+                value = 1.0 if value else 0.0
+            vals.append(float(value))
+        total = sum(vals) if mode == "sum" else vals[0]
+        return total * float(factor or 1.0)
+    except Exception:
+        return None
+
+
+def _pickem_probability_from_values(values, line: float, min_sample: int | None = None):
+    """Conservative Higher/Lower probability from recent settled game logs."""
+    clean = []
+    for value in values or []:
+        try:
+            clean.append(float(value))
+        except Exception:
+            continue
+    clean = clean[:20]
+    min_sample = int(min_sample or PH_MIN_PICKEM_SAMPLE)
+    if len(clean) < min_sample:
+        return None
+
+    def _rate(window, direction):
+        subset = clean[:window]
+        wins = den = pushes = 0
+        for value in subset:
+            if abs(value - float(line)) < 1e-9:
+                pushes += 1
+                continue
+            den += 1
+            if direction == "over" and value > float(line):
+                wins += 1
+            elif direction == "under" and value < float(line):
+                wins += 1
+        return (wins / den if den else None), den, pushes
+
+    weighted = {"over": 0.0, "under": 0.0}
+    total_w = {"over": 0.0, "under": 0.0}
+    windows = ((5, 0.45), (10, 0.35), (20, 0.20))
+    detail = {}
+    for direction in ("over", "under"):
+        for window, weight in windows:
+            rate, den, pushes = _rate(window, direction)
+            if rate is None or den < min(3, min_sample):
+                continue
+            weighted[direction] += rate * weight
+            total_w[direction] += weight
+            detail[f"{direction}_l{window}"] = round(rate, 4)
+        if total_w[direction]:
+            weighted[direction] /= total_w[direction]
+        else:
+            weighted[direction] = 0.0
+
+    direction = "over" if weighted["over"] >= weighted["under"] else "under"
+    raw_rate = weighted[direction]
+    effective = sum(1 for value in clean if abs(value - float(line)) >= 1e-9)
+    if effective < min_sample:
+        return None
+    # Shrink toward 50%. Six games receive roughly 53% model weight; twenty 82%.
+    model_weight = min(0.82, 0.35 + 0.03 * effective)
+    probability = 0.50 + (raw_rate - 0.50) * model_weight
+    probability = max(0.01, min(0.70, probability))
+    return {
+        "probability": round(probability, 4),
+        "direction": direction,
+        "raw_rate": round(raw_rate, 4),
+        "sample": len(clean),
+        "effective_sample": effective,
+        "average": round(sum(clean) / len(clean), 3),
+        **detail,
+    }
+
+
+def _recent_pickem_gamelogs(leagues) -> list[dict]:
+    """Fetch recent history in a few paginated Supabase requests, not per prop."""
+    client = _sb_read()
+    if client is None:
+        return []
+    league_list = sorted({str(x).upper() for x in leagues if x})
+    if not league_list:
+        return []
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=180)).date().isoformat()
+    columns = (
+        "normalized_name,player_name,league,game_date,minutes,"
+        "points,rebounds,assists,pra,ra,threes_made,steals,blocks,turnovers,double_double,triple_double,"
+        "hits,total_bases,home_runs,rbi,runs,strikeouts_batter,walks_batter,stolen_bases,"
+        "pitcher_strikeouts,pitcher_innings,pitcher_hits_allowed,pitcher_earned_runs,pitcher_walks"
+    )
+    rows = []
+    page_size = 1000
+    try:
+        for start in range(0, 10000, page_size):
+            query = client.table("prop_hunter_player_gamelogs").select("*")
+            query = query.in_("league", league_list).gte("game_date", cutoff)
+            result = query.order("game_date", desc=True).range(start, start + page_size - 1).execute()
+            batch = result.data or []
+            rows.extend(batch)
+            if len(batch) < page_size:
+                break
+    except Exception as exc:
+        log.warning("Pick'em bulk gamelog query failed: %s", exc)
+        return []
+    return rows
+
+
+def enrich_direct_pickem_gamelogs(props: list) -> list:
+    """Give direct Underdog lines an evidence-backed probability and direction.
+
+    Exact player names are preferred. Accent/suffix variants fall back to a unique
+    first-initial + last-name match inside the same league. Unsupported markets stay
+    unscored and therefore remain blocked by the final quality gate.
+    """
+    direct = [p for p in (props or []) if _has_direct_fantasy_line(p)]
+    if not direct:
+        return props
+    leagues = {str(getattr(p, "sport", "") or "").upper() for p in direct}
+    rows = _recent_pickem_gamelogs(leagues)
+    if not rows:
+        return props
+
+    exact = defaultdict(list)
+    short = defaultdict(set)
+    for row in rows:
+        league = str(row.get("league") or "").upper()
+        key = _ascii_player_key(row.get("player_name") or row.get("normalized_name"))
+        if not key:
+            continue
+        exact[(league, key)].append(row)
+        parts = key.split()
+        if len(parts) >= 2:
+            short[(league, parts[0][:1], parts[-1])].add(key)
+
+    boosted = 0
+    unsupported = 0
+    unmatched = 0
+    for prop in direct:
+        sport = str(getattr(prop, "sport", "") or "").upper()
+        spec = _pickem_market_spec(getattr(prop, "market", ""), sport)
+        if spec is None:
+            unsupported += 1
+            continue
+        player_key = _ascii_player_key(getattr(prop, "player", ""))
+        history = exact.get((sport, player_key), [])
+        if not history:
+            parts = player_key.split()
+            candidates = short.get((sport, parts[0][:1], parts[-1]), set()) if len(parts) >= 2 else set()
+            if len(candidates) == 1:
+                history = exact.get((sport, next(iter(candidates))), [])
+        if not history:
+            unmatched += 1
+            continue
+        values = [_pickem_row_value(row, spec) for row in history]
+        values = [value for value in values if value is not None]
+        result = _pickem_probability_from_values(values, getattr(prop, "point", None), PH_MIN_PICKEM_SAMPLE)
+        if not result:
+            continue
+
+        feats = dict(_obj_features(prop))
+        old_prob = feats.get("fair_prob")
+        old_source = str(feats.get("fair_prob_source") or "")
+        probability = float(result["probability"])
+        if old_prob is not None and str(feats.get("pickem_direction") or prop.direction) == result["direction"]:
+            try:
+                # Recent settled history is primary; a season model only stabilizes it.
+                probability = 0.80 * probability + 0.20 * float(old_prob)
+            except Exception:
+                pass
+        probability = max(0.01, min(0.70, probability))
+        prop.direction = result["direction"]
+        feats.update({
+            "fair_prob": round(probability, 4),
+            "fair_prob_source": "recent_gamelogs" + (f"+{old_source}" if old_source else ""),
+            "pickem_direction": result["direction"],
+            "gamelog_n": result["sample"],
+            "sample_size": result["sample"],
+            "gamelog_raw_rate": result["raw_rate"],
+            "gamelog_avg": result["average"],
+        })
+        for key, value in result.items():
+            if key.startswith(("over_l", "under_l")):
+                feats[key] = value
+        prop.features = feats
+        tag = f"DB L{result['sample']} avg {result['average']:.1f}, {int(result['raw_rate']*100)}% {result['direction']}"
+        prop.enrichment = ((getattr(prop, "enrichment", "") or "") + " | " + tag).strip(" |")[:240]
+        boosted += 1
+
+    log.info(
+        "Pick'em model: %d/%d scored | unsupported=%d unmatched=%d",
+        boosted, len(direct), unsupported, unmatched,
+    )
+    return props
+
 
 def gather_propcruncher_fallback(sport_filter=None) -> list:
     """
@@ -3146,6 +3475,11 @@ def _hub_rows_to_props(rows):
                              "best_odds":r.get("best_odds"),
                              "market_key":r.get("market_key"),
                              "market_original":r.get("market_original"),
+                             "source_event_id":r.get("source_event_id") or r.get("game_id"),
+                             "team":r.get("team") or r.get("team_name"),
+                             "home_team":r.get("home_team"),
+                             "away_team":r.get("away_team"),
+                             "raw_source":raw,
                              "period":r.get("period") or "game",
                              "alternate_line":bool(r.get("alternate_line")),
                              "bet_builder":bool(r.get("bet_builder")),
@@ -3441,6 +3775,7 @@ def gather(sport_filter=None):
 
     all_props = apply_data_plus_visible(all_props)
     all_props = enrich_gamelogs_fairprob(all_props)
+    all_props = enrich_direct_pickem_gamelogs(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
 
@@ -4068,7 +4403,7 @@ def _source_prop_probability(p):
             boost += 0.020
 
         # MLB HR: hohe Quoten haben kleine implied probability, nur kleiner Kontextboost
-        is_hr = "home run" in market or re.search(r"hr", market) is not None
+        is_hr = "home run" in market or re.search(r"\bhr\b", market) is not None
         if is_hr:
             boost = min(boost, 0.045)
 
@@ -4788,7 +5123,7 @@ def enforce_final_verified_market_gate(picks, props):
         seen.add(full_key); accepted.append(pick)
         if lane == "underdog_pickem": pickem_count += 1
         else: sportsbook_count += 1
-    log.info("V12.5 final market gate: %d → %d singles | sportsbook=%d pickem=%d rejected=%d",
+    log.info("V12.6 final market gate: %d → %d singles | sportsbook=%d pickem=%d rejected=%d",
              sum(1 for p in (picks or []) if getattr(p, "type", None) == "single"),
              len(accepted), sportsbook_count, pickem_count, rejected)
     return accepted
