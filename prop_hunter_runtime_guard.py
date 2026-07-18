@@ -13,7 +13,7 @@ import prop_hunter_bet365 as bet365
 import prop_hunter_odds_pp_ud as ppud
 import prop_hunter_source_orchestrator as orchestrator
 
-EXPECTED = os.getenv("PH_EXPECTED_RUNTIME_VERSION", "12.7-PICKEM-LIVE")
+EXPECTED = os.getenv("PH_EXPECTED_RUNTIME_VERSION", "12.8-HR-MODEL-123")
 
 
 def fail(message: str):
@@ -27,7 +27,7 @@ def main():
     required = (
         "_pickem_market_candidates", "_pickem_market_spec_for_prop", "_pickem_row_value",
         "enrich_direct_pickem_prices", "enrich_direct_pickem_gamelogs",
-        "rescue_picks_from_props", "enforce_final_verified_market_gate", "build_post",
+        "rescue_picks_from_props", "enforce_final_verified_market_gate", "build_post", "build_hr_model_card",
     )
     for name in required:
         if not hasattr(prophunter, name):
@@ -215,9 +215,63 @@ def main():
     except Exception as exc:
         fail(f"lottery Pick schema rejected: {exc}")
 
+    # HR model 1-2-3 fixture: one single, one double, one triple; no fake book price in Telegram.
+    hr_cache = {
+        "mlb": {
+            "batters_basic": {
+                "alpha slugger": {"player_name":"Alpha Slugger", "team_name":"Team A", "games":80, "pa":340, "hr":25, "avg":0.280, "slg":0.590, "ops":0.960},
+                "beta power": {"player_name":"Beta Power", "team_name":"Team B", "games":82, "pa":350, "hr":23, "avg":0.275, "slg":0.565, "ops":0.925},
+                "gamma bat": {"player_name":"Gamma Bat", "team_name":"Team C", "games":79, "pa":330, "hr":21, "avg":0.268, "slg":0.545, "ops":0.900},
+            },
+            "pitchers_basic": {
+                "pitcher b": {"player_name":"Pitcher B", "hr9":1.45},
+                "pitcher a": {"player_name":"Pitcher A", "hr9":1.35},
+                "pitcher d": {"player_name":"Pitcher D", "hr9":1.30},
+            },
+            "lineups": {
+                "team a": {"team_name":"Team A", "opponent_team":"Team B", "opponent_probable_pitcher":"Pitcher B", "game_date":start, "status":"Scheduled"},
+                "team b": {"team_name":"Team B", "opponent_team":"Team A", "opponent_probable_pitcher":"Pitcher A", "game_date":start, "status":"Scheduled"},
+                "team c": {"team_name":"Team C", "opponent_team":"Team D", "opponent_probable_pitcher":"Pitcher D", "game_date":start, "status":"Scheduled"},
+            },
+        }
+    }
+    hr_model = prophunter.build_hr_model_card(hr_cache)
+    if [getattr(p, "category", "") for p in hr_model] != ["hr_model_single", "hr_model_double", "hr_model_triple"]:
+        fail(f"HR model 1-2-3 structure wrong: {[getattr(p, 'category', '') for p in hr_model]}")
+    hr_post = prophunter.build_post(hr_model)
+    for required_text in ("HR MODELL-CARD", "SINGLE", "DOUBLE", "TRIPLE", "ohne bestätigte Bookmakerquote"):
+        if required_text not in hr_post:
+            fail(f"HR model Telegram missing {required_text}")
+    if "@" in "\n".join(line for line in hr_post.splitlines() if "SINGLE" in line or "DOUBLE" in line or "TRIPLE" in line):
+        fail("HR model card displayed a bookmaker price")
+
+    # Full run must post the HR card even when no sportsbook/Pick'em source returns rows.
+    old_gather = prophunter.gather
+    old_hr_builder = prophunter.build_hr_model_card
+    old_send = prophunter.send_telegram
+    old_persist = prophunter.persist
+    hr_sent = []
+    persisted = []
+    try:
+        prophunter.gather = lambda sport_filter=None: []
+        prophunter.build_hr_model_card = lambda cache_data=None: hr_model
+        prophunter.send_telegram = lambda body, dry_run=False: hr_sent.append(body)
+        prophunter.persist = lambda rows: persisted.extend(rows)
+        with redirect_stdout(io.StringIO()):
+            prophunter.run(dry_run=False)
+    finally:
+        prophunter.gather = old_gather
+        prophunter.build_hr_model_card = old_hr_builder
+        prophunter.send_telegram = old_send
+        prophunter.persist = old_persist
+    if len(hr_sent) != 1 or "HR MODELL-CARD" not in hr_sent[0]:
+        fail("HR-only run did not post")
+    if persisted:
+        fail("model-only HR card was persisted as a priced wager")
+
     workflow = (Path(__file__).parent / ".github/workflows/prophunter.yml").read_text(encoding="utf-8")
     for marker in (
-        "PH_EXPECTED_RUNTIME_VERSION: '12.7-PICKEM-LIVE'",
+        "PH_EXPECTED_RUNTIME_VERSION: '12.8-HR-MODEL-123'",
         "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL",
         "PH_FAST_BROWSER_BOOKS: bet365",
         "PH_FAST_BROWSER_JOBS: '2'",
@@ -236,9 +290,9 @@ def main():
 
     source = inspect.getsource(prophunter)
     for marker in (
-        "V12.7 final market gate", "slow web/synthetic enrichments disabled",
+        "V12.8 final market gate", "slow web/synthetic enrichments disabled",
         "enrich_direct_pickem_prices", "Pick'em fast lane",
-        "synthetic HR generation disabled for verified-price card",
+        "build_hr_model_card", "HR model card posted but not persisted as bookmaker wager",
     ):
         if marker not in source:
             fail(f"runtime source missing {marker}")
@@ -257,6 +311,8 @@ def main():
     print("Same-book builder/ladders required: OK")
     print("Lottery Pick schema: OK")
     print("bet365 MLB/NBA/NFL parser preserved: OK")
+    print("HR model single/double/triple without fake odds: OK")
+    print("HR-only card posts without sportsbook rows: OK")
     print(f"RUNTIME GUARD OK: {EXPECTED}")
 
 
