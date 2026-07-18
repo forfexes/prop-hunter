@@ -15,13 +15,13 @@ from typing import Any, Dict, List
 
 from prop_hunter_shared_utils import (
     upsert_rows, safe_json_write, hash_key, now_iso, log, warn,
-    norm_name, norm_market, to_float
+    norm_name, norm_market, to_float, american_to_decimal
 )
 
 OUT = "prop_hunter_pp_ud_props.json"
 
 PP_LEAGUES = {"NBA": 7, "WNBA": 3, "MLB": 2, "NFL": 9, "NHL": 8}
-UD_SPORTS = {"NBA", "WNBA", "MLB", "NFL", "NHL"}
+UD_SPORTS = {"NBA", "WNBA", "MLB", "NFL"}
 
 def _pp_json(url: str):
     # 1) cloudscraper
@@ -87,50 +87,169 @@ def fetch_prizepicks(league: str) -> List[Dict[str, Any]]:
     log(f"PrizePicks {league}: {len(rows)} lines")
     return rows
 
+
+def _parse_underdog_payload(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Normalize the public Underdog payload without inventing sportsbook odds.
+
+    Underdog exposes one projection with two priced choices.  We keep the projection
+    as one row, preserve both Higher/Lower prices as evidence, and join player,
+    appearance and game records so scheduled cards retain the kickoff time.
+    """
+    if not isinstance(data, dict):
+        return []
+
+    players = {str(x.get("id")): x for x in (data.get("players") or []) if isinstance(x, dict)}
+    games = {}
+    for key in ("games", "solo_games"):
+        for game in data.get(key, []) or []:
+            if isinstance(game, dict) and game.get("id") is not None:
+                games[str(game.get("id"))] = game
+
+    appearances = {}
+    for ap in data.get("appearances", []) or []:
+        if not isinstance(ap, dict) or ap.get("id") is None:
+            continue
+        player = players.get(str(ap.get("player_id")), {})
+        game = games.get(str(ap.get("match_id")), {})
+        sport = str(player.get("sport_id") or game.get("sport_id") or "").upper().strip()
+        appearances[str(ap.get("id"))] = {
+            "appearance": ap,
+            "player": player,
+            "game": game,
+            "sport": sport,
+            "name": str(
+                player.get("display_name") or player.get("name") or
+                f"{player.get('first_name', '')} {player.get('last_name', '')}".strip()
+            ).strip(),
+        }
+
+    def _choice(options, wanted):
+        for option in options or []:
+            if str((option or {}).get("choice") or "").lower() == wanted:
+                return option or {}
+        return {}
+
+    def _split_matchup(title: str):
+        title = str(title or "").strip()
+        for sep in (" @ ", " vs ", " v "):
+            if sep in title:
+                left, right = title.split(sep, 1)
+                # Underdog's standard title is AWAY @ HOME.
+                return left.strip(), right.strip()
+        return "", ""
+
+    rows: List[Dict[str, Any]] = []
+    for line_obj in data.get("over_under_lines", []) or []:
+        if not isinstance(line_obj, dict):
+            continue
+        status = str(line_obj.get("status") or "active").lower()
+        is_live = bool(line_obj.get("live_event"))
+        if status in {"suspended", "closed", "settled", "cancelled", "canceled"} or is_live:
+            continue
+
+        over_under = line_obj.get("over_under") or {}
+        appearance_stat = over_under.get("appearance_stat") or {}
+        ctx = appearances.get(str(appearance_stat.get("appearance_id")), {})
+        sport = str(ctx.get("sport") or "").upper()
+        if sport not in UD_SPORTS:
+            continue
+
+        player = ctx.get("player") or {}
+        appearance = ctx.get("appearance") or {}
+        game = ctx.get("game") or {}
+        name = str(ctx.get("name") or "").strip()
+        machine_stat = str(appearance_stat.get("stat") or "").strip()
+        display_stat = str(appearance_stat.get("display_stat") or machine_stat).strip()
+        stat_value = to_float(line_obj.get("stat_value"))
+        if not (name and display_stat and stat_value is not None):
+            continue
+
+        options = line_obj.get("options") or []
+        higher = _choice(options, "higher")
+        lower = _choice(options, "lower")
+        higher_dec = to_float(higher.get("decimal_price")) or american_to_decimal(higher.get("american_price"))
+        lower_dec = to_float(lower.get("decimal_price")) or american_to_decimal(lower.get("american_price"))
+        game_id = str(appearance.get("match_id") or game.get("id") or "")
+        game_title = str(game.get("full_team_names_title") or game.get("title") or "").strip()
+        away_team, home_team = _split_matchup(game_title)
+        scheduled_at = game.get("scheduled_at") or game.get("starts_at") or game.get("start_time")
+        price_type = "pickem_priced" if higher_dec and lower_dec else "fantasy_fixed"
+
+        raw_context = {
+            "line_id": line_obj.get("id"),
+            "line_type": line_obj.get("line_type"),
+            "status": status,
+            "stat_value": line_obj.get("stat_value"),
+            "over_under": over_under,
+            "appearance_stat": appearance_stat,
+            "options": options,
+            "appearance": {
+                "id": appearance.get("id"), "match_id": appearance.get("match_id"),
+                "match_type": appearance.get("match_type"), "player_id": appearance.get("player_id"),
+                "team_id": appearance.get("team_id"),
+            },
+            "game": {
+                "id": game.get("id"), "title": game.get("title"),
+                "full_team_names_title": game.get("full_team_names_title"),
+                "scheduled_at": scheduled_at, "status": game.get("status"),
+            },
+            "player": {
+                "id": player.get("id"), "first_name": player.get("first_name"),
+                "last_name": player.get("last_name"), "position_name": player.get("position_name"),
+                "sport_id": player.get("sport_id"), "team_id": player.get("team_id"),
+            },
+        }
+        rows.append({
+            "snapshot_id": hash_key("underdog", sport, game_id, name, machine_stat or display_stat, stat_value),
+            "source": "underdog", "sport": sport, "league": sport,
+            "source_sport_key": f"underdog_{sport.lower()}",
+            "source_event_id": game_id, "game_id": game_id,
+            "commence_time": scheduled_at,
+            "player_name": name, "normalized_name": norm_name(name),
+            "team": appearance.get("team_id") or player.get("team_id"),
+            "position": player.get("position_name"),
+            "market": display_stat, "market_original": display_stat,
+            "market_key": norm_market(machine_stat or display_stat),
+            "line": stat_value, "odds_decimal": None,
+            "higher_odds_decimal": higher_dec,
+            "lower_odds_decimal": lower_dec,
+            "higher_american": higher.get("american_price"),
+            "lower_american": lower.get("american_price"),
+            "higher_payout_multiplier": to_float(higher.get("payout_multiplier")),
+            "lower_payout_multiplier": to_float(lower.get("payout_multiplier")),
+            "bookmaker": "underdog", "price_type": price_type,
+            "source_payload_observed": True,
+            "home_team": home_team or None, "away_team": away_team or None,
+            "game_title": game_title or None,
+            "is_live": False, "card_eligible": True,
+            "settlement_supported": True,
+            "raw": raw_context, "created_at": now_iso(),
+        })
+    return rows
+
+
 def fetch_underdog() -> List[Dict[str, Any]]:
     import requests
     try:
-        r = requests.get("https://api.underdogfantasy.com/beta/v3/over_under_lines",
-                         timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        r = requests.get(
+            "https://api.underdogfantasy.com/beta/v3/over_under_lines",
+            timeout=25,
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+        )
         if r.status_code != 200:
-            warn(f"Underdog {r.status_code}"); return []
-        data = r.json()
+            warn(f"Underdog {r.status_code}")
+            return []
+        rows = _parse_underdog_payload(r.json())
     except Exception as e:
-        warn(f"Underdog: {e}"); return []
-    # Appearance→Player Map
-    players = {p.get("id"): p for p in data.get("players", []) or []}
-    appearances = {}
-    for ap in data.get("appearances", []) or []:
-        pl = players.get(ap.get("player_id"), {})
-        appearances[ap.get("id")] = {
-            "name": f"{pl.get('first_name','')} {pl.get('last_name','')}".strip(),
-            "sport": (pl.get("sport_id") or "").upper(),
-            "team": ap.get("team_id"),
-        }
-    rows = []
-    for ln in data.get("over_under_lines", []) or []:
-        ou = (ln.get("over_under") or {})
-        app = appearances.get(((ou.get("appearance_stat") or {}).get("appearance_id")), {})
-        sport = app.get("sport", "")
-        if sport not in UD_SPORTS: continue
-        stat = (ou.get("appearance_stat") or {}).get("display_stat") or ""
-        line = to_float(ln.get("stat_value"))
-        name = app.get("name")
-        if not (name and stat and line is not None): continue
-        rows.append({
-            "snapshot_id": hash_key("underdog", sport, name, stat, line),
-            "source": "underdog", "sport": sport, "league": sport,
-            "source_sport_key": "underdog",
-            "source_event_id": "", "game_id": "",
-            "commence_time": None,
-            "player_name": name, "normalized_name": norm_name(name),
-            "market": stat, "market_key": norm_market(stat),
-            "line": line, "odds_decimal": None,
-            "bookmaker": "underdog",
-            "home_team": None, "away_team": None,
-            "raw": ou, "created_at": now_iso(),
-        })
-    log(f"Underdog: {len(rows)} lines")
+        warn(f"Underdog: {e}")
+        return []
+
+    mix: Dict[str, int] = {}
+    for row in rows:
+        key = f"{row.get('sport')}:{row.get('market_key')}"
+        mix[key] = mix.get(key, 0) + 1
+    preview = ", ".join(f"{k}={v}" for k, v in sorted(mix.items(), key=lambda kv: (-kv[1], kv[0]))[:8])
+    log(f"Underdog: {len(rows)} lines" + (f" | {preview}" if preview else ""))
     return rows
 
 def fetch_sleeper() -> List[Dict[str, Any]]:
