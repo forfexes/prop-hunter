@@ -25,7 +25,7 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-PH_RUNTIME_VERSION = "12.4.2-UNDERDOG-CACHE"
+PH_RUNTIME_VERSION = "12.5-UNDERDOG-PICKEM"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -68,6 +68,7 @@ PH_EARLY_CUTOFF = os.environ.get("PH_EARLY_CUTOFF", "00:30")
 PH_REQUIRE_REAL_ODDS = os.environ.get("PH_REQUIRE_REAL_ODDS", "1").strip().lower() not in ("0", "false", "no")
 PH_ALLOW_SYNTHETIC_ODDS = os.environ.get("PH_ALLOW_SYNTHETIC_ODDS", "0").strip().lower() in ("1", "true", "yes")
 PH_ALLOW_DIRECT_FANTASY_LINES = os.environ.get("PH_ALLOW_DIRECT_FANTASY_LINES", "1").strip().lower() in ("1", "true", "yes")
+PH_MIN_PICKEM_PROB = max(0.50, min(0.75, float(os.environ.get("PH_MIN_PICKEM_PROB", "0.55"))))
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -363,6 +364,50 @@ def _has_direct_fantasy_line(obj) -> bool:
 def _has_eligible_price(obj) -> bool:
     """True for observed bookmaker odds or a verified direct Underdog fantasy line."""
     return _has_observed_odds(obj) or _has_direct_fantasy_line(obj)
+
+
+def _fantasy_min_probability(obj) -> float:
+    """Minimum evidence threshold for a direct Pick'em selection."""
+    sport = str(getattr(obj, "source_sport", None) or getattr(obj, "sport", None) or "").upper()
+    market = str(getattr(obj, "market", "") or "").lower()
+    threshold = PH_MIN_PICKEM_PROB
+    if sport in {"NBA", "WNBA"}:
+        threshold = max(threshold, 0.56)
+    elif sport == "MLB" and ("hit" in market or "total base" in market):
+        threshold = max(threshold, 0.56)
+    return threshold
+
+
+def _fantasy_stake(probability: float) -> float:
+    """Conservative units; never run Kelly against the internal 1.85 placeholder."""
+    p = float(probability or 0)
+    if p >= 0.64:
+        return 0.75
+    if p >= 0.60:
+        return 0.50
+    return 0.25
+
+
+def _fantasy_probability_from_features(obj) -> Optional[float]:
+    """Use only explicit model/stat evidence, never the internal reference price."""
+    feats = _obj_features(obj)
+    for key in ("fair_prob", "probability", "hit_prob", "model_prob", "proj_prob"):
+        try:
+            value = feats.get(key)
+            if value is not None:
+                return max(0.01, min(0.98, float(value)))
+        except Exception:
+            pass
+    try:
+        n = int(feats.get("gamelog_n") or feats.get("sample_size") or 0)
+        rate = feats.get("gamelog_l10_rate")
+        if rate is not None and n >= 6:
+            raw = max(0.01, min(0.99, float(rate)))
+            weight = min(0.70, 0.25 + n / 25.0)
+            return round(0.50 + (raw - 0.50) * weight, 4)
+    except Exception:
+        pass
+    return None
 
 
 def _has_observed_odds(obj) -> bool:
@@ -2577,7 +2622,8 @@ Inspiriert von Basket Premium (82.5% WR Nov), Basket Blitz VIP, JK (300u+).
 MUSST ausschliesslich gueltiges JSON Array zurueckgeben. Keine Code-Fences, kein Text.
 
 DATENINTERPRETATION:
-- NUR +EV Picks: edge_pct muss positiv sein, ideal >= +3%. Negative Edge niemals ausgeben.
+- Sportsbook: NUR +EV Picks mit beobachteter Einzelquote; edge_pct positiv, ideal >= +3%. Negative Edge niemals ausgeben.
+- UNDERDOG PICK'EM: direkte Spielerlinie ohne Einzelquote. Nur wählen, wenn Modellwahrscheinlichkeit >=55% (NBA/WNBA/MLB Hits >=56%). Keine Buchmacher-Edge oder Einzelquote erfinden; odds im JSON nur intern 1.85 setzen.
 - Basket/NBA/WNBA nur mit konkreter Linie/Punktzahl ausgeben (z.B. Rebounds+Assists Over 17.5). Niemals nur "Over" ohne Linie.
 - edge_pct >= 3% = +EV | avg_last > linie×1.08 = Over | < 0.87 = Under
 - Barrel% >= 12, HardHit% >= 45 = MLB HR Edge | NBA last10 > season+2 = Form Heat
@@ -2628,18 +2674,29 @@ def build_prompt(props):
     lines=[]
     for p in interleaved:
         fair=p.features.get("fair_prob"); edge=""
+        direct_pickem = _has_direct_fantasy_line(p)
         if fair:
-            ep=round((fair-implied_prob(p.odds))*100,1); edge=f" edge={ep:+.1f}%"
+            if direct_pickem:
+                edge=f" model_prob={float(fair)*100:.1f}%"
+            else:
+                ep=round((fair-implied_prob(p.odds))*100,1); edge=f" edge={ep:+.1f}%"
         line_txt = ""
         if getattr(p, "point", None) is not None:
-            dir_word = "Under" if getattr(p, "direction", "over") == "under" else "Over"
             mkt = str(p.market)
-            # Nicht hinzufügen wenn Market schon Over/Under + Zahl enthält
             import re as _re
-            already_has_line = bool(_re.search(r'(over|under)\s+\d+\.?\d*', mkt, _re.IGNORECASE))
-            if not already_has_line and str(p.point) not in mkt and f"{p.point:g}" not in mkt:
-                line_txt = f" {dir_word} {p.point:g}"
-        ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} @{p.odds}{edge}"
+            if direct_pickem:
+                already_has_line = bool(_re.search(r'\d+\.?\d*', mkt))
+                if not already_has_line:
+                    line_txt = f" Line {p.point:g} (Higher/Lower)"
+            else:
+                dir_word = "Under" if getattr(p, "direction", "over") == "under" else "Over"
+                already_has_line = bool(_re.search(r'(over|under)\s+\d+\.?\d*', mkt, _re.IGNORECASE))
+                if not already_has_line and str(p.point) not in mkt and f"{p.point:g}" not in mkt:
+                    line_txt = f" {dir_word} {p.point:g}"
+        if direct_pickem:
+            ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} | UNDERDOG PICK'EM | keine Einzelquote{edge}"
+        else:
+            ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} @{p.odds}{edge}"
         if p.enrichment: ln+=f"  [{p.enrichment}]"
         lines.append(ln)
     return f"""{SYSTEM}
@@ -2819,12 +2876,14 @@ def _clean_analysis_text(txt: str) -> str:
 def build_post(picks):
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles=[p for p in picks if p.type=="single"]
+    pickem_singles=[p for p in singles if _has_direct_fantasy_line(p)]
+    priced_singles=[p for p in singles if p not in pickem_singles]
     hr_singles=[
-        p for p in singles
+        p for p in priced_singles
         if getattr(p, "category", "") in ("hr_risk", "hr_lottery")
         or _is_hr_pick(p)
     ]
-    normal_singles=[p for p in singles if p not in hr_singles]
+    normal_singles=[p for p in priced_singles if p not in hr_singles]
     ladders=[p for p in picks if p.type=="ladder"]
     risk_items=[
         p for p in picks
@@ -2853,18 +2912,34 @@ def build_post(picks):
         out += ["🌙 LATE CARD"]
     out += [""]
     def fmt(p):
+        is_pickem = _has_direct_fantasy_line(p)
         m=_market_with_line(p.market or "", p.direction, getattr(p, "point", None))
+        if is_pickem:
+            m = re.sub(r"\bOver\b", "Higher", m, flags=re.I)
+            m = re.sub(r"\bUnder\b", "Lower", m, flags=re.I)
         team = _safe_display_team(p)
         head = f"{p.emoji or '🎯'} {team + ' — ' if team else ''}{p.player}"
-        line=f"{head}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
+        if is_pickem:
+            line=f"{head}\n   └ {m} · Underdog Pick'em → {p.stake}u"
+        else:
+            line=f"{head}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
         meta=[]
-        if p.edge_pct is not None: meta.append(f"Edge {p.edge_pct:+.1f}%")
-        if p.probability is not None: meta.append(f"Prob {p.probability*100:.0f}%")
+        if is_pickem:
+            if p.probability is not None:
+                meta.append(f"Modell {p.probability*100:.0f}%")
+                meta.append(f"Vorteil ggü. 50/50 {(p.probability-0.50)*100:+.1f}%")
+        else:
+            if p.edge_pct is not None: meta.append(f"Edge {p.edge_pct:+.1f}%")
+            if p.probability is not None: meta.append(f"Prob {p.probability*100:.0f}%")
         meta.append(f"Confidence {_confidence_score(p)}/100")
         line += "\n   📈 " + " · ".join(meta)
         analysis_txt = _clean_analysis_text(p.analysis)
         if analysis_txt: line+=f"\n   💡 {analysis_txt}"
         return line
+    if pickem_singles:
+        out+=["🟣 UNDERDOG PICK'EM:",""]
+        for p in sorted(pickem_singles, key=lambda x: (x.probability or 0), reverse=True):
+            out+=[fmt(p),""]
     if tier2:
         out+=["🔵 STABILE PICKS:",""]
         for p in tier2: out+=[fmt(p),""]
@@ -2915,7 +2990,7 @@ def build_post(picks):
                 f" · Prob {(p.probability or 0)*100:.1f}%"
             )
         out.append("")
-    out+=["📊 Mehr Value Picks · Keine negative Edge · Lines Pflicht 🎯","@prophunter"]
+    out+=["📊 Echte Bookmaker-Quoten oder klar markierte Pick'em-Lines 🎯","@prophunter"]
     return "\n".join(out)
 
 # ─────────────────────────────────────────────
@@ -3612,6 +3687,30 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
         if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_eligible_price(p):
             rejected["unverified_odds"] += 1
             continue
+        if _has_direct_fantasy_line(p):
+            if prob is None:
+                rejected["pickem_no_prob"] += 1
+                continue
+            if float(prob) < _fantasy_min_probability(p):
+                rejected["pickem_low_prob"] += 1
+                continue
+            if not _sanity_line(p):
+                rejected["bad_line"] += 1
+                continue
+            p.features = dict(_obj_features(p))
+            p.features.update({
+                "fantasy_pickem": True,
+                "settlement_mode": "hit_rate_only",
+                "odds_observed": False,
+                "price_type": "fantasy_fixed",
+            })
+            p.edge_pct = round((float(prob) - 0.50) * 100.0, 2)
+            p.ev = None
+            p.stake = _fantasy_stake(float(prob))
+            accepted_singles.append(p)
+            if len(accepted_singles) >= MAX_SINGLES_TOTAL:
+                break
+            continue
         if edge is None:
             rejected["no_edge"] += 1; continue
         if edge <= 0:
@@ -3919,7 +4018,11 @@ def _source_prop_probability(p):
     except Exception:
         pass
 
-    # Fallback: aus Quote + Kontext konservativ bauen
+    # Direct Pick'em lines have no standalone odds. Use only model/stat evidence.
+    if _has_direct_fantasy_line(p):
+        return _fantasy_probability_from_features(p)
+
+    # Fallback: aus echter Quote + Kontext konservativ bauen
     try:
         odds = float(getattr(p, "odds", 0) or 0)
         if odds <= 1.01:
@@ -4010,6 +4113,8 @@ def _source_prop_score_tuple(p):
     prob = _source_prop_probability(p)
     if prob is None:
         return (-999.0, -999.0)
+    if _has_direct_fantasy_line(p):
+        return ((prob - 0.50) * 100.0, prob)
     try:
         edge = edge_pct(prob, float(p.odds)) * 100
     except Exception:
@@ -4072,6 +4177,40 @@ def rescue_picks_from_props(props, max_picks=12):
             pass
         if prob is None:
             rejected["no_prob"] += 1
+            continue
+        if _has_direct_fantasy_line(sp):
+            sport = (getattr(sp, "sport", "") or "").upper()
+            market = getattr(sp, "market", "") or ""
+            point = getattr(sp, "point", None)
+            direction = _source_prop_direction(sp)
+            if point is None:
+                rejected["pickem_no_line"] += 1
+                continue
+            if float(prob) < _fantasy_min_probability(sp):
+                rejected["pickem_low_prob"] += 1
+                continue
+            try:
+                pk = Pick(
+                    type="single", emoji=getattr(sp, "emoji", None),
+                    player=getattr(sp, "player", None), team=_team_for(sp),
+                    market=_market_with_line(market, direction, point), direction=direction,
+                    odds=1.85, stake=_fantasy_stake(float(prob)),
+                    probability=round(float(prob), 4),
+                    edge_pct=round((float(prob) - 0.50) * 100.0, 2), ev=None,
+                    game=_source_prop_game(sp),
+                    analysis=(getattr(sp, "enrichment", None) or "Underdog Pick'em aus Modell-/Gamelog-Daten")[:140],
+                )
+                pk.point = point
+                pk.source_sport = sport
+                pk.source_game = _source_prop_game(sp)
+                pk.features = dict(getattr(sp, "features", {}) or {})
+                pk.features.update({
+                    "fantasy_pickem": True, "settlement_mode": "hit_rate_only",
+                    "odds_observed": False, "price_type": "fantasy_fixed",
+                })
+                candidates.append(pk)
+            except Exception:
+                rejected["pickem_build_error"] += 1
             continue
         try:
             odds = float(sp.odds)
@@ -4567,47 +4706,91 @@ def _reprice_verified_pick(pick, source_prop):
     return pick
 
 
+def _direct_fantasy_market_match(pick, props):
+    """Match a Pick'em candidate to the observed Underdog player/stat/line."""
+    pick_player = norm_name(getattr(pick, "player", ""))
+    pick_market = market_base(getattr(pick, "market", ""))
+    pick_point = getattr(pick, "point", None)
+    matches = []
+    for source_prop in props or []:
+        if not _has_direct_fantasy_line(source_prop):
+            continue
+        if norm_name(getattr(source_prop, "player", "")) != pick_player:
+            continue
+        if market_base(getattr(source_prop, "market", "")) != pick_market:
+            continue
+        source_point = getattr(source_prop, "point", None)
+        try:
+            if pick_point is None or source_point is None or abs(float(pick_point) - float(source_point)) > 0.01:
+                continue
+        except Exception:
+            continue
+        matches.append(source_prop)
+    return matches[0] if matches else None
+
+
+def _prepare_direct_fantasy_pick(pick, source_prop):
+    """Copy Underdog provenance and apply probability-only Pick'em rules."""
+    probability = getattr(pick, "probability", None)
+    if probability is None:
+        probability = _source_prop_probability(source_prop)
+    if probability is None:
+        return None
+    probability = max(0.01, min(0.70, float(probability)))
+    if probability < _fantasy_min_probability(source_prop):
+        return None
+    pick.point = getattr(source_prop, "point", getattr(pick, "point", None))
+    pick.direction = getattr(pick, "direction", None) or "over"
+    pick.market = _market_with_line(
+        getattr(source_prop, "market", None) or getattr(pick, "market", ""),
+        pick.direction, pick.point,
+    )
+    pick.odds = 1.85
+    pick.probability = round(probability, 4)
+    pick.edge_pct = round((probability - 0.50) * 100.0, 2)
+    pick.ev = None
+    pick.stake = _fantasy_stake(probability)
+    pick.source_sport = getattr(source_prop, "sport", getattr(pick, "source_sport", ""))
+    pick.source_game = getattr(source_prop, "game", getattr(pick, "source_game", ""))
+    pick.features = dict(getattr(source_prop, "features", {}) or {})
+    pick.features.update({
+        "fantasy_pickem": True, "settlement_mode": "hit_rate_only",
+        "odds_observed": False, "direct_source_line": True,
+        "source_payload_observed": True, "price_type": "fantasy_fixed",
+    })
+    pick.odds_observed = False
+    return pick
+
+
 def enforce_final_verified_market_gate(picks, props):
-    """Non-bypassable last gate before Telegram and persistence.
-
-    Existing LLM/legacy combos are removed. Only verified singles survive.
-    Same-book ladders/builders are regenerated after this gate.
-    """
-    accepted = []
-    rejected = 0
-    seen = set()
-
+    """Final gate: verified sportsbook prices or qualified direct Pick'em lines."""
+    accepted=[]; rejected=0; seen=set(); sportsbook_count=0; pickem_count=0
     for pick in picks or []:
         if getattr(pick, "type", None) != "single":
             continue
-        source_prop = _verified_market_match(pick, props)
-        if source_prop is None:
-            rejected += 1
-            continue
-        pick = _reprice_verified_pick(pick, source_prop)
+        if _has_direct_fantasy_line(pick):
+            source_prop = _direct_fantasy_market_match(pick, props)
+            pick = _prepare_direct_fantasy_pick(pick, source_prop) if source_prop else None
+            lane = "underdog_pickem"
+        else:
+            source_prop = _verified_market_match(pick, props)
+            pick = _reprice_verified_pick(pick, source_prop) if source_prop else None
+            lane = "sportsbook"
         if pick is None:
             rejected += 1
             continue
-
-        key = dedup_key(
-            getattr(pick, "player", ""),
-            market_base(getattr(pick, "market", "")),
-            getattr(pick, "point", None),
-            getattr(pick, "direction", "over"),
-        )
-        book = str((getattr(pick, "features", {}) or {}).get("bookmaker") or "")
-        full_key = f"{key}|{book.lower()}"
+        key = dedup_key(getattr(pick, "player", ""), market_base(getattr(pick, "market", "")),
+                        getattr(pick, "point", None), getattr(pick, "direction", "over"))
+        provider = "underdog_pickem" if lane == "underdog_pickem" else str((_obj_features(pick)).get("bookmaker") or "")
+        full_key=f"{key}|{provider.lower()}"
         if full_key in seen:
             continue
-        seen.add(full_key)
-        accepted.append(pick)
-
-    log.info(
-        "V12.2 final verified-market gate: %d → %d singles | rejected=%d",
-        sum(1 for p in (picks or []) if getattr(p, "type", None) == "single"),
-        len(accepted),
-        rejected,
-    )
+        seen.add(full_key); accepted.append(pick)
+        if lane == "underdog_pickem": pickem_count += 1
+        else: sportsbook_count += 1
+    log.info("V12.5 final market gate: %d → %d singles | sportsbook=%d pickem=%d rejected=%d",
+             sum(1 for p in (picks or []) if getattr(p, "type", None) == "single"),
+             len(accepted), sportsbook_count, pickem_count, rejected)
     return accepted
 
 
@@ -4659,19 +4842,20 @@ def run(dry_run=False,sport_filter=None):
     picks = limit_singles_per_game(picks, max_per_game=3)
     picks = limit_total_singles(picks, max_singles=12)
 
-    # Final hard integrity gate. This also removes all old LLM/legacy combos.
+    # Final hard integrity gate: observed sportsbook prices OR exact direct Pick'em lines.
     picks = enforce_final_verified_market_gate(picks, props)
     if not picks:
         log.warning(
-            "V12.2: no verified bookmaker prices matched the candidate picks — "
+            "V12.5: no verified sportsbook price or qualified direct Pick'em line — "
             "nothing posted or persisted"
         )
         return
 
     try:
         from prop_hunter_builder_engine import build_autonomous_extras
-        extras = build_autonomous_extras(picks, props, Pick, LadderLeg)
-        log.info("autonomous builder engine: %d extras", len(extras))
+        bookmaker_picks = [p for p in picks if _has_observed_odds(p)]
+        extras = build_autonomous_extras(bookmaker_picks, props, Pick, LadderLeg) if bookmaker_picks else []
+        log.info("autonomous builder engine: %d extras (sportsbook singles=%d)", len(extras), len(bookmaker_picks))
     except Exception as exc:
         log.warning("autonomous builder engine unavailable: %s", exc)
         extras = []
