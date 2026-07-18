@@ -127,7 +127,7 @@ def mlb_stats(group: str, fields: str, limit: int = 600) -> List[dict]:
 
 
 def fetch_mlb_batters() -> Dict[str, dict]:
-    fields = "stats,splits,player,fullName,stat,gamesPlayed,atBats,plateAppearances,homeRuns,avg,ops,slugging,hits,totalBases,doubles,triples,rbi,runs,strikeOuts,baseOnBalls,stolenBases"
+    fields = "stats,splits,player,fullName,stat,gamesPlayed,atBats,plateAppearances,homeRuns,avg,ops,slugging,hits,totalBases,doubles,triples,rbi,runs,strikeOuts,baseOnBalls,hitByPitch,stolenBases"
     out: Dict[str, dict] = {}
     for split in mlb_stats("hitting", fields, 700):
         player = split.get("player") or {}
@@ -154,6 +154,7 @@ def fetch_mlb_batters() -> Dict[str, dict]:
             "slg": stat.get("slugging"),
             "strikeouts": stat.get("strikeOuts"),
             "walks": stat.get("baseOnBalls"),
+            "hit_by_pitch": stat.get("hitByPitch"),
             "stolen_bases": stat.get("stolenBases"),
         }
     log(f"  MLB batters basic: {len(out)}")
@@ -161,7 +162,7 @@ def fetch_mlb_batters() -> Dict[str, dict]:
 
 
 def fetch_mlb_pitchers() -> Dict[str, dict]:
-    fields = "stats,splits,player,fullName,stat,gamesPlayed,gamesStarted,era,strikeOuts,strikeoutsPer9Inn,homeRunsPer9,whip,inningsPitched,hits,earnedRuns,baseOnBalls,wins,losses"
+    fields = "stats,splits,player,fullName,stat,gamesPlayed,gamesStarted,era,strikeOuts,strikeoutsPer9Inn,homeRunsPer9,whip,inningsPitched,hits,earnedRuns,baseOnBalls,wins,losses,qualityStarts"
     out: Dict[str, dict] = {}
     for split in mlb_stats("pitching", fields, 500):
         player = split.get("player") or {}
@@ -186,6 +187,7 @@ def fetch_mlb_pitchers() -> Dict[str, dict]:
             "walks": stat.get("baseOnBalls"),
             "wins": stat.get("wins"),
             "losses": stat.get("losses"),
+            "quality_starts": stat.get("qualityStarts"),
         }
     log(f"  MLB pitchers basic: {len(out)}")
     return out
