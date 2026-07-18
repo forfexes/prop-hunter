@@ -25,7 +25,7 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-PH_RUNTIME_VERSION = "12.7-PICKEM-LIVE"
+PH_RUNTIME_VERSION = "12.8-HR-MODEL-123"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -73,6 +73,8 @@ PH_MIN_PICKEM_SAMPLE = max(5, min(30, int(os.environ.get("PH_MIN_PICKEM_SAMPLE",
 PH_MIN_PICKEM_PRICE_PROB = max(0.50, min(0.70, float(os.environ.get("PH_MIN_PICKEM_PRICE_PROB", "0.535"))))
 PH_ENABLE_PROPCRUNCHER = os.environ.get("PH_ENABLE_PROPCRUNCHER", "0").strip().lower() in ("1", "true", "yes")
 PH_ENABLE_SLOW_ENRICHMENTS = os.environ.get("PH_ENABLE_SLOW_ENRICHMENTS", "0").strip().lower() in ("1", "true", "yes")
+PH_ENABLE_HR_MODEL_CARD = os.environ.get("PH_ENABLE_HR_MODEL_CARD", "1").strip().lower() in ("1", "true", "yes")
+PH_HR_MODEL_MIN_PROB = max(0.08, min(0.30, float(os.environ.get("PH_HR_MODEL_MIN_PROB", "0.11"))))
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -157,6 +159,192 @@ def log_data_plus_cache_status():
     except Exception as e:
         log.warning("DATA+ cache read failed: %s", e)
         return {}
+
+
+
+def _safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _hr_model_pick(obj) -> bool:
+    feats = _obj_features(obj)
+    return bool(feats.get("hr_model_only")) or str(getattr(obj, "category", "") or "").startswith("hr_model_")
+
+
+def build_hr_model_card(cache_data=None) -> list:
+    """Build one HR single, one double and one triple from official MLB season data.
+
+    These are explicitly model-only recommendations. The internal fair odds satisfy the
+    existing Pick schema but are never displayed or persisted as bookmaker prices.
+    """
+    if not PH_ENABLE_HR_MODEL_CARD:
+        return []
+    try:
+        if cache_data is None:
+            if not os.path.exists(DATA_PLUS_CACHE_FILE):
+                log.warning("HR model card skipped: DATA+ cache missing")
+                return []
+            with open(DATA_PLUS_CACHE_FILE, "r", encoding="utf-8") as handle:
+                cache_data = json.load(handle)
+        mlb = (cache_data or {}).get("mlb", {}) if isinstance(cache_data, dict) else {}
+        batters = mlb.get("batters_basic") or {}
+        pitchers = mlb.get("pitchers_basic") or {}
+        schedule = mlb.get("lineups") or {}
+        if not batters or not schedule:
+            log.warning("HR model card skipped: batters=%d scheduled_teams=%d", len(batters), len(schedule))
+            return []
+
+        candidates = []
+        for _, info in schedule.items():
+            if not isinstance(info, dict):
+                continue
+            team = str(info.get("team_name") or "").strip()
+            opponent = str(info.get("opponent_team") or "").strip()
+            game_date = str(info.get("game_date") or "").strip()
+            status = str(info.get("status") or "").lower()
+            if not team or any(word in status for word in ("final", "completed", "postponed", "cancelled", "suspended", "in progress")):
+                continue
+            opp_pitcher = str(info.get("opponent_probable_pitcher") or "").strip()
+            pitcher = pitchers.get(opp_pitcher.lower(), {}) if opp_pitcher else {}
+            opp_hr9 = _safe_float((pitcher or {}).get("hr9"), 1.10)
+
+            team_batters = []
+            for row in batters.values():
+                if not isinstance(row, dict):
+                    continue
+                batter_team = str(row.get("team_name") or row.get("team") or "").strip()
+                if batter_team.lower() != team.lower():
+                    continue
+                name = str(row.get("player_name") or "").strip()
+                games = _safe_float(row.get("games"))
+                pa = _safe_float(row.get("pa"))
+                hr = _safe_float(row.get("hr"))
+                slg = _safe_float(row.get("slg"))
+                avg = _safe_float(row.get("avg"))
+                ops = _safe_float(row.get("ops"))
+                if not name or games < 20 or pa < 60 or hr < 5:
+                    continue
+
+                per_game = hr / max(games, 1.0)
+                per_pa_game = (hr / max(pa, 1.0)) * 4.15
+                probability = 0.58 * per_game + 0.42 * per_pa_game
+                power_mult = 1.0
+                if slg >= 0.500: power_mult += 0.07
+                if slg >= 0.560: power_mult += 0.05
+                if ops >= 0.850: power_mult += 0.04
+                if ops >= 0.930: power_mult += 0.04
+                if opp_hr9 >= 1.25: power_mult += 0.08
+                if opp_hr9 >= 1.50: power_mult += 0.07
+                if opp_hr9 <= 0.85: power_mult -= 0.08
+                probability = max(0.05, min(0.34, probability * power_mult))
+                if probability < PH_HR_MODEL_MIN_PROB:
+                    continue
+
+                fair_odds = round(max(2.95, min(12.0, 1.0 / probability)), 2)
+                confidence = round(min(99.0, max(1.0,
+                    probability * 230.0
+                    + max(0.0, slg - 0.400) * 70.0
+                    + max(0.0, ops - 0.750) * 35.0
+                    + max(0.0, opp_hr9 - 1.0) * 12.0
+                )), 1)
+                game = f"{team} vs {opponent}" if opponent else team
+                analysis = (
+                    f"Saison {int(hr)} HR in {int(games)} Spielen · SLG {slg:.3f} · "
+                    f"OPS {ops:.3f} · Gegner-SP HR/9 {opp_hr9:.2f}"
+                )
+                team_batters.append({
+                    "player": name, "team": team, "game": game, "game_date": game_date,
+                    "probability": probability, "fair_odds": fair_odds,
+                    "confidence": confidence, "analysis": analysis,
+                    "hr": hr, "games": games, "pa": pa, "slg": slg,
+                    "ops": ops, "opp_hr9": opp_hr9,
+                })
+            team_batters.sort(key=lambda row: (row["confidence"], row["probability"]), reverse=True)
+            if team_batters:
+                candidates.append(team_batters[0])
+
+        candidates.sort(key=lambda row: (row["confidence"], row["probability"]), reverse=True)
+        selected = []
+        seen_games = set()
+        # Prefer different games for lower correlation.
+        for row in candidates:
+            if row["game"] in seen_games:
+                continue
+            selected.append(row); seen_games.add(row["game"])
+            if len(selected) == 3:
+                break
+        if len(selected) < 3:
+            for row in candidates:
+                if row in selected:
+                    continue
+                selected.append(row)
+                if len(selected) == 3:
+                    break
+        if not selected:
+            log.warning("HR model card: no hitter cleared %.1f%%", PH_HR_MODEL_MIN_PROB * 100.0)
+            return []
+
+        singles = []
+        for index, row in enumerate(selected):
+            pick = Pick(
+                type="single", category="hr_model_single", emoji="⚾",
+                player=row["player"], team=row["team"], market="Home Run",
+                direction="yes", odds=row["fair_odds"], stake=0.25,
+                probability=round(row["probability"], 4), edge_pct=None, ev=None,
+                game=row["game"], analysis=row["analysis"],
+            )
+            pick.source_sport = "MLB"
+            pick.source_game = row["game"]
+            pick.features = {
+                "source": "mlb_statsapi_model", "price_type": "model_fair",
+                "odds_observed": False, "hr_model_only": True,
+                "settlement_supported": True, "persist_as_wager": False,
+                "fair_odds": row["fair_odds"], "hr_confidence": row["confidence"],
+                "model_rank": index + 1, "game_date": row["game_date"],
+            }
+            singles.append(pick)
+
+        output = [singles[0]]
+        if len(singles) >= 2:
+            legs = singles[:2]
+            combo_prob = prod(float(p.probability or 0.0) for p in legs)
+            combo = Pick(
+                type="big", category="hr_model_double", emoji="🔥",
+                player=" + ".join(p.player or "" for p in legs), team="",
+                market="HR Double", direction="yes",
+                odds=round(prod(float(p.odds) for p in legs), 2), stake=0.10,
+                probability=round(combo_prob, 4), edge_pct=None, ev=None,
+                game="MLB HR Model", analysis="Die zwei stärksten unabhängigen HR-Profile.",
+                legs=[f"{p.player} HR" for p in legs],
+            )
+            combo.features = {"hr_model_only": True, "price_type": "model_fair", "odds_observed": False, "persist_as_wager": False}
+            output.append(combo)
+        if len(singles) >= 3:
+            legs = singles[:3]
+            combo_prob = prod(float(p.probability or 0.0) for p in legs)
+            combo = Pick(
+                type="big", category="hr_model_triple", emoji="🚀",
+                player=" + ".join(p.player or "" for p in legs), team="",
+                market="HR Triple", direction="yes",
+                odds=round(prod(float(p.odds) for p in legs), 2), stake=0.05,
+                probability=round(combo_prob, 4), edge_pct=None, ev=None,
+                game="MLB HR Model", analysis="Die drei stärksten HR-Profile als High-Risk-Triple.",
+                legs=[f"{p.player} HR" for p in legs],
+            )
+            combo.features = {"hr_model_only": True, "price_type": "model_fair", "odds_observed": False, "persist_as_wager": False}
+            output.append(combo)
+
+        log.info(
+            "HR model 1-2-3: candidates=%d selected=%d output=%d",
+            len(candidates), len(selected), len(output),
+        )
+        return output
+    except Exception as exc:
+        log.warning("HR model card failed: %s", exc)
+        return []
 
 def apply_data_plus_visible(props):
     data = log_data_plus_cache_status()
@@ -3407,8 +3595,10 @@ def _clean_analysis_text(txt: str) -> str:
 def build_post(picks):
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles=[p for p in picks if p.type=="single"]
-    pickem_singles=[p for p in singles if _has_direct_fantasy_line(p)]
-    priced_singles=[p for p in singles if p not in pickem_singles]
+    hr_model_items=[p for p in picks if _hr_model_pick(p)]
+    hr_model_singles=[p for p in singles if _hr_model_pick(p)]
+    pickem_singles=[p for p in singles if _has_direct_fantasy_line(p) and p not in hr_model_singles]
+    priced_singles=[p for p in singles if p not in pickem_singles and p not in hr_model_singles]
     hr_singles=[
         p for p in priced_singles
         if getattr(p, "category", "") in ("hr_risk", "hr_lottery")
@@ -3425,6 +3615,7 @@ def build_post(picks):
         p for p in picks
         if getattr(p, "category", "") in ("lottery", "hr_lottery")
         and p.type in ("betbuilder", "kombi2", "big", "super")
+        and not _hr_model_pick(p)
     ]
     builders=[
         p for p in picks
@@ -3478,6 +3669,27 @@ def build_post(picks):
         out+=["🟡 VALUE PICKS:",""]
         for p in tier1: out+=[fmt(p),""]
 
+    if hr_model_items:
+        out+=["⚾ HR MODELL-CARD (ohne bestätigte Bookmakerquote):",""]
+        model_single=next((p for p in hr_model_items if getattr(p, "category", "") == "hr_model_single"), None)
+        model_double=next((p for p in hr_model_items if getattr(p, "category", "") == "hr_model_double"), None)
+        model_triple=next((p for p in hr_model_items if getattr(p, "category", "") == "hr_model_triple"), None)
+        if model_single:
+            conf=(_obj_features(model_single)).get("hr_confidence")
+            out.append(f"🥇 SINGLE · {model_single.player} — Home Run → {model_single.stake}u")
+            out.append(f"   📈 Modell {model_single.probability*100:.1f}%" + (f" · Confidence {conf:.0f}/99" if conf is not None else ""))
+            note=_clean_analysis_text(model_single.analysis)
+            if note: out.append(f"   💡 {note}")
+            out.append("")
+        if model_double:
+            out.append(f"🔥 DOUBLE · {' + '.join(model_double.legs or [])} → {model_double.stake}u")
+            out.append(f"   📈 Modell-Kombichance {(model_double.probability or 0)*100:.2f}%")
+            out.append("")
+        if model_triple:
+            out.append(f"🚀 TRIPLE · {' + '.join(model_triple.legs or [])} → {model_triple.stake}u")
+            out.append(f"   📈 Modell-Kombichance {(model_triple.probability or 0)*100:.2f}%")
+            out.append("")
+        out += ["⚠️ Modell-Auswahl ohne bestätigte Quote. Bookmakerquote und Lineup vor Einsatz prüfen.",""]
     if hr_singles:
         out+=["⚾ HOME-RUN RISK:",""]
         for p in hr_singles:
@@ -3521,7 +3733,7 @@ def build_post(picks):
                 f" · Prob {(p.probability or 0)*100:.1f}%"
             )
         out.append("")
-    out+=["📊 Echte Bookmaker-Quoten oder klar markierte Pick'em-Lines 🎯","@prophunter"]
+    out+=["📊 Bookmaker-Picks verifiziert · HR-Modellcard klar separat markiert 🎯","@prophunter"]
     return "\n".join(out)
 
 # ─────────────────────────────────────────────
@@ -5334,7 +5546,7 @@ def enforce_final_verified_market_gate(picks, props):
         seen.add(full_key); accepted.append(pick)
         if lane == "underdog_pickem": pickem_count += 1
         else: sportsbook_count += 1
-    log.info("V12.7 final market gate: %d → %d singles | sportsbook=%d pickem=%d rejected=%d",
+    log.info("V12.8 final market gate: %d → %d singles | sportsbook=%d pickem=%d rejected=%d",
              sum(1 for p in (picks or []) if getattr(p, "type", None) == "single"),
              len(accepted), sportsbook_count, pickem_count, rejected)
     return accepted
@@ -5342,85 +5554,81 @@ def enforce_final_verified_market_gate(picks, props):
 
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER %s REAL-ODDS GUARD ACTIVE", PH_RUNTIME_VERSION)
+    log.info("PROP HUNTER %s REAL-ODDS GUARD + HR MODEL ACTIVE", PH_RUNTIME_VERSION)
     log.info("PROP HUNTER (dry=%s sport=%s)",dry_run,sport_filter or "all")
-    props=gather(sport_filter)
+
+    # The HR model card is independent from bookmaker availability. It is built from
+    # the official MLB DATA+ cache and remains clearly separated from wager prices.
+    hr_model_picks = []
+    if not sport_filter or str(sport_filter).lower() == "mlb":
+        hr_model_picks = build_hr_model_card()
+
+    props = gather(sport_filter)
+    verified_picks = []
     if not props:
-        log.warning("no props found")
-        return
-
-    props = filter_props_for_card(props, PH_CARD_MODE)
-    if not props:
-        log.warning("no props in %s card time window — nothing to post", PH_CARD_MODE.upper())
-        return
-
-    # Deterministic Pick'em fast lane: when no verified sportsbook price exists,
-    # the tested gamelog/price model should not wait for or depend on an LLM response.
-    direct_pickem_props = [p for p in props if _has_direct_fantasy_line(p)]
-    sportsbook_props = [p for p in props if _has_observed_odds(p)]
-    pickem_rescue = rescue_picks_from_props(direct_pickem_props, max_picks=12) if direct_pickem_props else []
-
-    if pickem_rescue and not sportsbook_props:
-        picks = filter_picks(pickem_rescue)
-        log.info("Pick'em fast lane: %d qualified picks; LLM skipped (no sportsbook prices)", len(picks))
+        log.warning("no sportsbook/Pick'em props found")
     else:
-        picks = analyse(props)
-        if not picks:
-            log.warning("no picks from LLM — trying source-prop rescue")
-            picks = rescue_picks_from_props(props, max_picks=12)
-            picks = filter_picks(picks)
+        props = filter_props_for_card(props, PH_CARD_MODE)
+        if not props:
+            log.warning("no sportsbook/Pick'em props in %s card time window", PH_CARD_MODE.upper())
         else:
-            picks=filter_picks(picks)
-            picks=quality_filter_picks(picks)
+            direct_pickem_props = [p for p in props if _has_direct_fantasy_line(p)]
+            sportsbook_props = [p for p in props if _has_observed_odds(p)]
+            pickem_rescue = rescue_picks_from_props(direct_pickem_props, max_picks=12) if direct_pickem_props else []
 
-            # Fill-Up: deterministic model lines complement verified sportsbook picks.
-            singles_now = sum(1 for p in picks if getattr(p, "type", None) == "single")
-            if singles_now < 5:
-                rescue = rescue_picks_from_props(props, max_picks=12)
-                before = len(picks)
-                picks = merge_unique_picks(picks, rescue, max_singles=8, max_total=12)
-                log.info("fill-up rescue: picks %d → %d (singles %d → %d)",
-                         before, len(picks), singles_now,
-                         sum(1 for p in picks if getattr(p, "type", None) == "single"))
+            if pickem_rescue and not sportsbook_props:
+                candidates = filter_picks(pickem_rescue)
+                log.info("Pick'em fast lane: %d qualified picks; LLM skipped (no sportsbook prices)", len(candidates))
+            else:
+                candidates = analyse(props)
+                if not candidates:
+                    log.warning("no picks from LLM — trying source-prop rescue")
+                    candidates = filter_picks(rescue_picks_from_props(props, max_picks=12))
+                else:
+                    candidates = quality_filter_picks(filter_picks(candidates))
+                    singles_now = sum(1 for p in candidates if getattr(p, "type", None) == "single")
+                    if singles_now < 5:
+                        rescue = rescue_picks_from_props(props, max_picks=12)
+                        before = len(candidates)
+                        candidates = merge_unique_picks(candidates, rescue, max_singles=8, max_total=12)
+                        log.info("fill-up rescue: picks %d → %d (singles %d → %d)",
+                                 before, len(candidates), singles_now,
+                                 sum(1 for p in candidates if getattr(p, "type", None) == "single"))
 
+            if not candidates:
+                log.warning("no verified candidates after filter/rescue")
+            else:
+                candidates = limit_singles_per_game(candidates, max_per_game=3)
+                candidates = limit_total_singles(candidates, max_singles=12)
+                verified_picks = enforce_final_verified_market_gate(candidates, props)
+
+    extras = []
+    if verified_picks:
+        try:
+            from prop_hunter_builder_engine import build_autonomous_extras
+            bookmaker_picks = [p for p in verified_picks if _has_observed_odds(p)]
+            extras = build_autonomous_extras(bookmaker_picks, props, Pick, LadderLeg) if bookmaker_picks else []
+            log.info("autonomous builder engine: %d extras (sportsbook singles=%d)", len(extras), len(bookmaker_picks))
+        except Exception as exc:
+            log.warning("autonomous builder engine unavailable: %s", exc)
+
+    picks = verified_picks + extras + hr_model_picks
     if not picks:
-        log.warning("no picks after dedup/quality filter/rescue — trying relaxed edge")
-        # Letzter Versuch: Edge Filter lockern
-        rescue2 = rescue_picks_from_props(props, max_picks=4)
-        if rescue2:
-            picks = rescue2
-            log.info("relaxed rescue: %d picks", len(picks))
-        else:
-            log.warning("no picks at all — nothing to post")
-            return
-
-    picks = limit_singles_per_game(picks, max_per_game=3)
-    picks = limit_total_singles(picks, max_singles=12)
-
-    # Final hard integrity gate: observed sportsbook prices OR exact direct Pick'em lines.
-    picks = enforce_final_verified_market_gate(picks, props)
-    if not picks:
-        log.warning(
-            "V12.7: no verified sportsbook price or qualified direct Pick'em line — "
-            "nothing posted or persisted"
-        )
+        log.warning("no verified market pick, qualified Pick'em or HR model card — nothing posted")
         return
 
-    try:
-        from prop_hunter_builder_engine import build_autonomous_extras
-        bookmaker_picks = [p for p in picks if _has_observed_odds(p)]
-        extras = build_autonomous_extras(bookmaker_picks, props, Pick, LadderLeg) if bookmaker_picks else []
-        log.info("autonomous builder engine: %d extras (sportsbook singles=%d)", len(extras), len(bookmaker_picks))
-    except Exception as exc:
-        log.warning("autonomous builder engine unavailable: %s", exc)
-        extras = []
-    picks = picks + extras
-    body=build_post(picks)
+    body = build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
     if not dry_run:
-        persist(picks)
-    log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
+        # Model-only HR recommendations are not persisted as priced wagers.
+        persistable = [p for p in (verified_picks + extras) if not _hr_model_pick(p)]
+        if persistable:
+            persist(persistable)
+        if hr_model_picks:
+            log.info("HR model card posted but not persisted as bookmaker wager")
+    log.info("done — %d total items (%d verified singles, %d HR model items)",
+             len(picks), sum(1 for p in verified_picks if p.type=="single"), len(hr_model_picks))
 
 
 # ─────────────────────────────────────────────
