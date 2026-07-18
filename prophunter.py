@@ -25,7 +25,7 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-PH_RUNTIME_VERSION = "12.4.1-UNDERDOG-DIRECT"
+PH_RUNTIME_VERSION = "12.4.2-UNDERDOG-CACHE"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -3031,12 +3031,28 @@ def _hub_rows_to_props(rows):
             market=str(r.get("market") or r.get("market_key") or "").strip()
             line=r.get("line")
             odds=r.get("odds_decimal")
-            price_type=str(r.get("price_type") or (r.get("raw") or {}).get("price_type") or "bookmaker").lower()
+            raw=(r.get("raw") or {}) if isinstance(r.get("raw"),dict) else {}
+            source=str(r.get("source") or "").lower()
+            bookmaker=str(r.get("bookmaker") or source).lower()
+            price_type=str(r.get("price_type") or raw.get("price_type") or "bookmaker").lower()
+
+            # Underdog has a directly observed player/stat/line but no standalone book price.
+            direct_underdog = (
+                source == "underdog"
+                and bookmaker == "underdog"
+                and player
+                and market
+                and line not in (None, "")
+            )
+            if direct_underdog and odds in (None, ""):
+                odds = 1.85
+                price_type = "fantasy_fixed"
+
             if not player or not market or odds in (None,""): continue
-            if price_type in {"synthetic", "estimated", "projection", "line_only"}: continue
+            if price_type in {"synthetic", "estimated", "projection", "line_only"} and not direct_underdog:
+                continue
             odds=float(odds)
             if odds<=1.01: continue
-            raw=(r.get("raw") or {}) if isinstance(r.get("raw"),dict) else {}
             sel=str(raw.get("selection") or raw.get("label") or r.get("selection") or market).lower()
             direction=str(r.get("direction") or ("under" if "under" in sel or "less" in sel else "over")).lower()
             home=r.get("home_team") or ""; away=r.get("away_team") or ""
@@ -3061,9 +3077,14 @@ def _hub_rows_to_props(rows):
                              "is_live":bool(r.get("is_live")),
                              "risk_class":r.get("risk_class") or "standard",
                              "settlement_supported":r.get("settlement_supported",True),
-                             "odds_observed":True,
-                             "price_type":"bookmaker"},
-                   emoji=emoji_map[sport], enrichment=f"src:{r.get('bookmaker') or r.get('source') or 'book'}")
+                             "odds_observed":False if direct_underdog else True,
+                             "direct_source_line":True if direct_underdog else False,
+                             "source_payload_observed":True if direct_underdog else bool(r.get("source_payload_observed", True)),
+                             "price_type":"fantasy_fixed" if direct_underdog else "bookmaker"},
+                   emoji=emoji_map[sport], enrichment=(
+                       "src:underdog | direct fantasy line"
+                       if direct_underdog else f"src:{r.get('bookmaker') or r.get('source') or 'book'}"
+                   ))
             p.event_id=str(r.get("game_id") or r.get("source_event_id") or "")
             p.sport_key=raw_s.lower()
             converted.append(p)
