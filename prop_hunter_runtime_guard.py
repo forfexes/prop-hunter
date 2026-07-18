@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-fast deployment guard for PROP HUNTER V12.2."""
+"""Fail-fast deployment guard for PROP HUNTER V12.6."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import sys
 import prophunter
 import prop_hunter_bet365 as bet365
 
-EXPECTED = "12.5-UNDERDOG-PICKEM"
+EXPECTED = "12.6-PICKEM-MODEL"
 
 
 def fail(message: str) -> None:
@@ -34,6 +34,8 @@ def main() -> None:
         "_fantasy_min_probability",
         "_fantasy_stake",
         "_prepare_direct_fantasy_pick",
+        "_pickem_probability_from_values",
+        "enrich_direct_pickem_gamelogs",
     ):
         if not hasattr(prophunter, name):
             fail(f"prophunter.py missing {name}")
@@ -45,7 +47,7 @@ def main() -> None:
     builder_source = builder_path.read_text(encoding="utf-8")
 
     for marker in (
-        "V12.5 final market gate",
+        "V12.6 final market gate",
         "UNDERDOG PICK'EM",
         "settlement_mode",
         "HOME-RUN RISK",
@@ -187,6 +189,68 @@ def main() -> None:
     low_candidate.probability = 0.51
     if prophunter.quality_filter_picks([low_candidate]):
         fail("low-probability Pick'em candidate was accepted")
+    # Recent-game Pick'em model: direction and conservative probability.
+    recent = prophunter._pickem_probability_from_values(
+        [2, 2, 1, 2, 2, 1, 2, 2, 2, 1], 0.5, 6
+    )
+    if not recent or recent.get("direction") != "over" or recent.get("probability", 0) < 0.55:
+        fail("recent Pick'em gamelog probability model failed")
+    if prophunter._pickem_market_spec("Fantasy Points", "WNBA") is not None:
+        fail("unsupported fantasy-points market was accepted")
+
+    # Official MLB season-rate fallback: no standalone odds and no synthetic EV.
+    from prop_hunter_scoring import apply_data_plus_to_props
+    season_prop = ud_props[0].model_copy(deep=True)
+    season_prop.player = "Season Fixture"
+    season_prop.market = "Hits"
+    season_prop.point = 0.5
+    season_prop.direction = "over"
+    season_data = {"mlb": {"batters_basic": {
+        "season fixture": {"games": 80, "hits": 96, "total_bases": 150,
+                           "hr": 15, "runs": 50, "rbi": 55, "walks": 30,
+                           "strikeouts": 70, "stolen_bases": 8}
+    }, "pitchers_basic": {}, "team_k_rates": {}}}
+    apply_data_plus_to_props([season_prop], season_data)
+    season_prob = prophunter._fantasy_probability_from_features(season_prop)
+    if season_prob is None or season_prob < 0.55:
+        fail("MLB season Pick'em fallback failed")
+    if str((season_prop.features or {}).get("fair_prob_source")) != "mlb_season_poisson":
+        fail("MLB season fallback source marker missing")
+
+    # Full cached-row -> official stats -> rescue -> Telegram smoke test.
+    rescue = prophunter.rescue_picks_from_props([season_prop], max_picks=3)
+    if len(rescue) != 1 or not prophunter._has_direct_fantasy_line(rescue[0]):
+        fail("season-scored Underdog row did not produce a rescue pick")
+    rescue_post = prophunter.build_post(rescue)
+    if "Underdog Pick'em" not in rescue_post or "@1.85" in rescue_post:
+        fail("season-scored Pick'em post contains a fake sportsbook price")
+    print("Underdog cache-to-Telegram smoke test: OK")
+
+    # Schema accepts the existing lottery lane.
+    try:
+        prophunter.Pick(type="lottery", odds=3.0, stake=0.1, legs=["A", "B"])
+    except Exception as exc:
+        fail(f"lottery Pick schema rejected: {exc}")
+    print("Recent gamelog and MLB season Pick'em models: OK")
+    print("Lottery Pick schema: OK")
+
+    workflow_path = Path(__file__).with_name(".github") / "workflows" / "prophunter.yml"
+    if not workflow_path.exists():
+        fail(".github/workflows/prophunter.yml missing")
+    workflow_source = workflow_path.read_text(encoding="utf-8")
+    for workflow_marker in (
+        "PH_EXPECTED_RUNTIME_VERSION: '12.6-PICKEM-MODEL'",
+        "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL",
+        "PH_MIN_PICKEM_SAMPLE: '6'",
+        "prop_hunter_scoring.py",
+        "prop_hunter_scraper.py",
+    ):
+        if workflow_marker not in workflow_source:
+            fail(f"workflow missing marker: {workflow_marker}")
+    if "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL" in workflow_source:
+        fail("NHL is still enabled in the daily Prop Hunter workflow")
+    print("Workflow V12.6 environment and sports list: OK")
+
     orchestrator_source = Path(__file__).with_name("prop_hunter_source_orchestrator.py").read_text(encoding="utf-8")
     if '"league": ",".join(spec["sports"]) or "ALL"' not in orchestrator_source:
         fail("source registry league fallback missing")
