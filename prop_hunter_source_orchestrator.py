@@ -155,8 +155,6 @@ def _season_active_sports(sports: Iterable[str]) -> List[str]:
             active.append(sport)
         elif sport == "NBA" and (month >= 10 or month <= 6):
             active.append(sport)
-        elif sport == "NHL" and (month >= 10 or month <= 6):
-            active.append(sport)
     return active or list(sports)
 
 
@@ -182,9 +180,25 @@ def persist_registry() -> None:
     safe_json_write("prop_hunter_source_registry.json", rows)
 
 
+def _snapshot_rows_for_db(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Keep live cache richness without requiring another Supabase migration.
+
+    The current table already stores ``raw`` JSON, so new Underdog side-price and
+    joined game/player fields remain available there while unknown top-level keys
+    are removed from the database payload.
+    """
+    transient = {
+        "higher_odds_decimal", "lower_odds_decimal",
+        "higher_american", "lower_american",
+        "higher_payout_multiplier", "lower_payout_multiplier",
+        "game_title", "position", "source_payload_observed",
+    }
+    return [{k: v for k, v in row.items() if k not in transient} for row in (rows or [])]
+
+
 def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict[str, Any]]:
     sports = [sport_filter.upper()] if sport_filter else list(SPORTS)
-    sports = [s for s in sports if s in {"MLB", "NBA", "WNBA", "NFL", "NHL"}]
+    sports = [s for s in sports if s in {"MLB", "NBA", "WNBA", "NFL"}]
     max_cache_age = 8 if mode == "fast" else 30
     all_rows: List[Dict[str, Any]] = []
     audits: List[Dict[str, Any]] = []
@@ -195,6 +209,8 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
         print(f"source {source}: {len(rows)} | {audit['status']}", flush=True)
 
     direct_odds_rows = sum(1 for row in all_rows if to_float(row.get("odds_decimal")) and float(row.get("odds_decimal")) > 1)
+    priced_pickem_rows = sum(1 for row in all_rows if to_float(row.get("higher_odds_decimal")) and to_float(row.get("lower_odds_decimal")))
+    print(f"direct coverage: sportsbook={direct_odds_rows} priced_pickem={priced_pickem_rows}", flush=True)
 
     # Full browser sweep in data/maintenance mode. On a card run, activate a
     # small automatic browser fallback only when direct sources produced no
@@ -203,9 +219,9 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
     if run_browser:
         if mode == "fast":
             books = [x.strip() for x in os.getenv(
-                "PH_FAST_BROWSER_BOOKS", "bet365,betmgm,caesars,betrivers,fanatics,hardrock"
+                "PH_FAST_BROWSER_BOOKS", "bet365"
             ).split(",") if x.strip()]
-            max_browser = int(os.getenv("PH_FAST_BROWSER_JOBS", "6"))
+            max_browser = int(os.getenv("PH_FAST_BROWSER_JOBS", "2"))
             browser_sports = _season_active_sports(sports)
             print(
                 f"no verified direct prices — browser fallback: "
@@ -238,7 +254,7 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
 
     safe_json_write(OUT_FILE, rows)
     safe_json_write("prop_hunter_source_health.json", audits)
-    _upsert_chunks("prop_hunter_prop_snapshots", rows, conflict="snapshot_id", size=200)
+    _upsert_chunks("prop_hunter_prop_snapshots", _snapshot_rows_for_db(rows), conflict="snapshot_id", size=200)
     audit_db = [{
         "source_name": a.get("item_key"), "sport": ",".join((a.get("payload") or {}).get("sports", [])),
         "check_type": "source_health", "status": a.get("status"), "message": a.get("message"),
@@ -254,7 +270,7 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["fast", "all", "browser"], default="fast")
-    parser.add_argument("--sport", choices=["MLB", "NBA", "WNBA", "NFL", "NHL"])
+    parser.add_argument("--sport", choices=["MLB", "NBA", "WNBA", "NFL"])
     args = parser.parse_args()
     collect(args.sport, args.mode)
 
