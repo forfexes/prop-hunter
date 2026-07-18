@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from prop_hunter_shared_utils import hash_key, now_iso, safe_json_load, safe_json_write, to_float, upsert_rows, warn
 from prop_hunter_source_catalog import SOURCES, as_rows
 
-SPORTS = tuple(x.strip().upper() for x in os.getenv("PROP_HUNTER_SPORTS", "MLB,WNBA,NBA,NFL,NHL").split(",") if x.strip())
+SPORTS = tuple(x.strip().upper() for x in os.getenv("PROP_HUNTER_SPORTS", "MLB,WNBA,NBA,NFL").split(",") if x.strip())
 CACHE_DIR = Path(os.getenv("PH_SOURCE_CACHE_DIR", ".prop_hunter_cache"))
 OUT_FILE = Path(os.getenv("PH_SOURCE_OUTPUT", "prop_hunter_all_sources.json"))
 
@@ -172,6 +172,7 @@ def persist_registry() -> None:
         rows.append({
             "source_name": spec["key"], "source_type": spec["category"],
             "url": spec["homepage"], "sport": ",".join(spec["sports"]),
+            "league": ",".join(spec["sports"]) or "ALL",
             "enabled": spec["active_by_default"], "priority": spec["priority"],
             "notes": spec["notes"],
             "raw": {"display_name": spec["name"], "access": spec["access"], "methods": list(spec["methods"])},
