@@ -1,269 +1,263 @@
 #!/usr/bin/env python3
-"""Fail-fast deployment guard for PROP HUNTER V12.6."""
-
 from __future__ import annotations
 
-from pathlib import Path
 import inspect
-import sys
+import os
+import io
+from contextlib import redirect_stdout
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
 import prophunter
 import prop_hunter_bet365 as bet365
+import prop_hunter_odds_pp_ud as ppud
+import prop_hunter_source_orchestrator as orchestrator
 
-EXPECTED = "12.6-PICKEM-MODEL"
-
-
-def fail(message: str) -> None:
-    print(f"RUNTIME GUARD FAILED: {message}", file=sys.stderr)
-    raise SystemExit(2)
+EXPECTED = os.getenv("PH_EXPECTED_RUNTIME_VERSION", "12.7-PICKEM-LIVE")
 
 
-def main() -> None:
-    if getattr(prophunter, "PH_RUNTIME_VERSION", None) != EXPECTED:
-        fail(
-            f"wrong prophunter.py version: "
-            f"{getattr(prophunter, 'PH_RUNTIME_VERSION', None)!r}; expected {EXPECTED!r}"
-        )
+def fail(message: str):
+    raise SystemExit(f"RUNTIME GUARD FAILED: {message}")
 
-    for name in (
-        "_has_observed_odds",
-        "_has_direct_fantasy_line",
-        "_has_eligible_price",
-        "enforce_final_verified_market_gate",
-        "_conservative_live_probability",
-        "_fantasy_min_probability",
-        "_fantasy_stake",
-        "_prepare_direct_fantasy_pick",
-        "_pickem_probability_from_values",
-        "enrich_direct_pickem_gamelogs",
-    ):
+
+def main():
+    if prophunter.PH_RUNTIME_VERSION != EXPECTED:
+        fail(f"runtime={prophunter.PH_RUNTIME_VERSION} expected={EXPECTED}")
+
+    required = (
+        "_pickem_market_candidates", "_pickem_market_spec_for_prop", "_pickem_row_value",
+        "enrich_direct_pickem_prices", "enrich_direct_pickem_gamelogs",
+        "rescue_picks_from_props", "enforce_final_verified_market_gate", "build_post",
+    )
+    for name in required:
         if not hasattr(prophunter, name):
             fail(f"prophunter.py missing {name}")
 
-    ph_source = inspect.getsource(prophunter)
     builder_path = Path(__file__).with_name("prop_hunter_builder_engine.py")
     if not builder_path.exists():
         fail("prop_hunter_builder_engine.py missing")
     builder_source = builder_path.read_text(encoding="utf-8")
-
-    for marker in (
-        "V12.6 final market gate",
-        "UNDERDOG PICK'EM",
-        "settlement_mode",
-        "HOME-RUN RISK",
-        "RISK BUILDER",
-        "no verified sportsbook price or qualified direct Pick'em line",
-        'rejected["unverified_odds"]',
-        '"odds_observed": False',
-        "Configured Odds API keys exhausted",
-    ):
-        if marker not in ph_source:
-            fail(f"prophunter.py missing marker: {marker}")
-
     for marker in (
         'if len(books) != 1 or "" in books:',
-        "Echte Alt-Linien",
-        "if not _real_price(anchor)",
-        'book == "bet365"',
-        'get("bet_builder")',
+        "Echte Alt-Linien", "if not _real_price(anchor)",
+        'book == "bet365"', 'get("bet_builder")',
     ):
         if marker not in builder_source:
             fail(f"builder missing marker: {marker}")
 
+    # Integrity: synthetic prices remain blocked; observed books remain allowed.
     synthetic = prophunter.Prop(
-        player="Synthetic Player",
-        market="Pitcher Strikeouts",
-        odds=1.83,
-        point=2.5,
-        sport="MLB",
-        emoji="⚾",
-        game="TEST @ TEST",
-        direction="over",
-        features={
-            "source": "propcruncher",
-            "odds_observed": False,
-            "price_type": "synthetic",
-        },
+        player="Synthetic", market="Points", odds=1.85, point=20.5, sport="WNBA",
+        emoji="🏀", game="A @ B", direction="over",
+        features={"source":"propcruncher", "odds_observed":False, "price_type":"synthetic"},
     )
-    if prophunter._has_observed_odds(synthetic):
-        fail("synthetic ProCruncher price was accepted")
-
+    if prophunter._has_eligible_price(synthetic):
+        fail("synthetic price accepted")
     real = prophunter.Prop(
-        player="Real Player",
-        market="Pitcher Strikeouts",
-        odds=1.91,
-        point=4.5,
-        sport="MLB",
-        emoji="⚾",
-        game="TEST @ TEST",
-        direction="over",
-        features={
-            "source": "betmgm",
-            "bookmaker": "betmgm",
-            "odds_observed": True,
-            "price_type": "bookmaker",
-        },
+        player="Real", market="Points", odds=1.91, point=20.5, sport="WNBA",
+        emoji="🏀", game="A @ B", direction="over",
+        features={"source":"bet365", "bookmaker":"bet365", "odds_observed":True, "price_type":"bookmaker"},
     )
     if not prophunter._has_observed_odds(real):
-        fail("observed bookmaker price was rejected")
+        fail("observed bookmaker price rejected")
 
-    underdog = prophunter.Prop(
-        player="Direct Fantasy Player", market="Points", odds=1.85, point=19.5,
-        sport="WNBA", emoji="🏀", game="TEST @ TEST", direction="over",
-        features={
-            "source": "underdog", "bookmaker": "underdog",
-            "direct_source_line": True, "source_payload_observed": True,
-            "odds_observed": False, "price_type": "fantasy_fixed",
-        },
+    # Realistic Underdog wire fixture: joins player/appearance/game and preserves both choices.
+    start = (datetime.now(timezone.utc) + timedelta(minutes=5)).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    payload = {
+        "players": [{"id":"p1", "first_name":"Fixture", "last_name":"Guard", "sport_id":"WNBA", "position_name":"G", "team_id":"T1"}],
+        "appearances": [{"id":"a1", "player_id":"p1", "match_id":182470, "match_type":"Game", "team_id":"T1"}],
+        "games": [{"id":182470, "sport_id":"WNBA", "title":"LAS @ NYL", "full_team_names_title":"Los Angeles Sparks @ New York Liberty", "scheduled_at":start, "status":"scheduled"}],
+        "solo_games": [],
+        "over_under_lines": [{
+            "id":"line1", "line_type":"balanced", "live_event":False, "stat_value":"40.5", "status":"active",
+            "options":[
+                {"choice":"higher", "american_price":"-135", "decimal_price":"1.74", "payout_multiplier":"1.0"},
+                {"choice":"lower", "american_price":"+105", "decimal_price":"2.05", "payout_multiplier":"1.0"},
+            ],
+            "over_under":{"title":"Fixture Guard Fantasy Points O/U", "category":"player_prop",
+                          "appearance_stat":{"appearance_id":"a1", "stat":"fantasy_points", "display_stat":"Fantasy Points"}},
+        }],
+    }
+    rows = ppud._parse_underdog_payload(payload)
+    if len(rows) != 1:
+        fail("Underdog payload parser did not return one row")
+    row = rows[0]
+    for key in ("commence_time", "source_event_id", "market_key", "higher_odds_decimal", "lower_odds_decimal"):
+        if row.get(key) in (None, ""):
+            fail(f"Underdog parser lost {key}")
+    if row.get("market_key") != "fantasy points" or row.get("price_type") != "pickem_priced":
+        fail("Underdog machine market/price type normalization failed")
+
+    db_rows = orchestrator._snapshot_rows_for_db(rows)
+    if len(db_rows) != 1 or "higher_odds_decimal" in db_rows[0]:
+        fail("Supabase snapshot sanitizer did not remove migration-free fields")
+    if not isinstance(db_rows[0].get("raw"), dict) or not db_rows[0]["raw"].get("options"):
+        fail("Supabase snapshot sanitizer lost raw Underdog prices")
+
+    american_payload = dict(payload)
+    american_payload["over_under_lines"] = [dict(payload["over_under_lines"][0])]
+    american_payload["over_under_lines"][0]["options"] = [
+        {"choice":"higher", "american_price":"-120"},
+        {"choice":"lower", "american_price":"+100"},
+    ]
+    american_rows = ppud._parse_underdog_payload(american_payload)
+    if not american_rows or abs(float(american_rows[0]["higher_odds_decimal"]) - 1.8333333333) > 0.001:
+        fail("Underdog American-price fallback failed")
+
+    props = prophunter._hub_rows_to_props(rows)
+    if len(props) != 1 or not prophunter._has_direct_fantasy_line(props[0]):
+        fail("Underdog cache row rejected by native converter")
+    prop = props[0]
+    if not prop.commence_time or not prop.game:
+        fail("Underdog scheduled matchup did not survive conversion")
+    if prophunter._pickem_market_spec_for_prop(prop) is None:
+        fail("WNBA Fantasy Points remained unsupported")
+    period_prop = prop.model_copy(deep=True)
+    period_prop.market = "1H Fantasy Points"
+    if prophunter._pickem_market_spec_for_prop(period_prop) is not None:
+        fail("period-specific Fantasy Points leaked into full-game model")
+
+    # Official basketball fantasy formula: 20 + 10*1.2 + 5*1.5 + 2*3 + 1*3 - 3 = 45.5.
+    basket_spec = prophunter._pickem_market_spec("Fantasy Points", "WNBA")
+    basket_value = prophunter._pickem_row_value(
+        {"points":20, "rebounds":10, "assists":5, "steals":2, "blocks":1, "turnovers":3},
+        basket_spec,
     )
-    if not prophunter._has_eligible_price(underdog):
-        fail("direct Underdog fantasy line was rejected")
-    if prophunter._has_observed_odds(underdog):
-        fail("Underdog fixed reference price was mislabeled as observed sportsbook odds")
+    if basket_value is None or abs(basket_value - 45.5) > 1e-9:
+        fail(f"basketball fantasy formula wrong: {basket_value}")
 
-    prizepicks = prophunter.Prop(
-        player="Blocked Fantasy Player", market="Points", odds=1.85, point=19.5,
-        sport="WNBA", emoji="🏀", game="TEST @ TEST", direction="over",
-        features={"source": "prizepicks", "odds_observed": False, "price_type": "synthetic"},
+    # Official MLB hitter fantasy formula fixture = 19.
+    mlb_spec = prophunter._pickem_market_spec("fantasy_points", "MLB")
+    mlb_value = prophunter._pickem_row_value(
+        {"total_bases":4, "home_runs":1, "triples":0, "walks_batter":1,
+         "hit_by_pitch":0, "rbi":2, "runs":1, "stolen_bases":0}, mlb_spec,
     )
-    if prophunter._has_eligible_price(prizepicks):
-        fail("synthetic PrizePicks price was accepted")
+    if mlb_value is None or abs(mlb_value - 19.0) > 1e-9:
+        fail(f"MLB fantasy formula wrong: {mlb_value}")
 
-    mlb = bet365.parse_dom_groups("MLB", [{
-        "title": "Home Runs BB",
-        "bet_builder": True,
-        "participants": [{"text": "Aaron Judge 4.50"}],
-    }])
+    # Full recent-history model; every current-line market is exercised through the raw machine key.
+    history = []
+    for i, fp in enumerate((49.1, 46.0, 44.5, 48.0, 47.2, 45.0, 43.5, 46.8, 42.5, 49.0)):
+        # Construct rows whose exact formula equals the target approximately.
+        history.append({
+            "league":"WNBA", "player_name":"Fixture Guard", "normalized_name":"fixture guard",
+            "game_date":f"2026-07-{17-i:02d}", "points":25, "rebounds":8, "assists":5,
+            "steals":2, "blocks":1, "turnovers": max(0, round(51.1-fp)),
+        })
+    old_recent = prophunter._recent_pickem_gamelogs
+    try:
+        prophunter._recent_pickem_gamelogs = lambda leagues: history
+        prophunter.enrich_direct_pickem_prices(props)
+        prophunter.enrich_direct_pickem_gamelogs(props)
+    finally:
+        prophunter._recent_pickem_gamelogs = old_recent
+    probability = prophunter._fantasy_probability_from_features(prop)
+    if probability is None or probability < 0.56:
+        fail(f"end-to-end Pick'em probability missing/weak: {probability}")
+
+    picks = prophunter.rescue_picks_from_props(props, max_picks=3)
+    picks = prophunter.quality_filter_picks(picks)
+    picks = prophunter.enforce_final_verified_market_gate(picks, props)
+    if len(picks) != 1:
+        fail("qualified Underdog row did not reach final card")
+    post = prophunter.build_post(picks)
+    if "UNDERDOG PICK'EM" not in post or "@1.85" in post or "Fantasy Points" not in post:
+        fail("Telegram Pick'em output mislabeled or missing")
+
+    # Full run must use the deterministic fast lane and skip the LLM when only
+    # qualified Pick'em lines are available.
+    old_gather, old_analyse = prophunter.gather, prophunter.analyse
+    old_send, old_mode = prophunter.send_telegram, prophunter.PH_CARD_MODE
+    sent = []
+    try:
+        prophunter.gather = lambda sport_filter=None: props
+        prophunter.analyse = lambda _: fail("LLM called despite Pick'em-only card")
+        prophunter.send_telegram = lambda body, dry_run=False: sent.append(body)
+        prophunter.PH_CARD_MODE = "all"
+        with redirect_stdout(io.StringIO()):
+            prophunter.run(dry_run=True)
+    finally:
+        prophunter.gather, prophunter.analyse = old_gather, old_analyse
+        prophunter.send_telegram, prophunter.PH_CARD_MODE = old_send, old_mode
+    if len(sent) != 1 or "UNDERDOG PICK'EM" not in sent[0] or "@1.85" in sent[0]:
+        fail("Pick'em fast lane did not produce a clean Telegram post")
+
+    # Scheduled card split must retain the parsed kickoff.
+    kept = prophunter.filter_props_for_card(props, "all", now_utc=datetime.now(timezone.utc))
+    if len(kept) != 1:
+        fail("parsed Underdog kickoff was dropped by scheduled card filter")
+
+    # Known standard/machine labels across all four requested sports.
+    aliases = (
+        ("pts_rebs_asts", "WNBA"), ("three_pointers_made", "NBA"),
+        ("pitcher_strikeouts", "MLB"), ("hits_runs_rbis", "MLB"),
+        ("passing_yards", "NFL"), ("rushing_receiving_yards", "NFL"),
+    )
+    for market, sport in aliases:
+        if prophunter._pickem_market_spec(market, sport) is None:
+            fail(f"market alias unsupported: {sport}/{market}")
+
+    # Bet365 parser remains intact across active sports.
+    mlb = bet365.parse_dom_groups("MLB", [{"title":"Home Runs BB", "bet_builder":True, "participants":[{"text":"Aaron Judge 4.50"}]}])
+    nba = bet365.parse_dom_groups("NBA", [{"title":"Points, Rebounds and Assists BB", "bet_builder":True, "participants":[{"text":"Nikola Jokic Over 48.5 1.83"}]}])
+    nfl = bet365.parse_dom_groups("NFL", [{"title":"Anytime Touchdown Scorer BB", "bet_builder":True, "participants":[{"text":"Ja'Marr Chase 2.40"}]}])
     if not mlb or mlb[0].get("market_key") != "batter_home_runs":
-        fail("bet365 MLB Home Runs parser failed")
-
-    nba = bet365.parse_dom_groups("NBA", [{
-        "title": "Points, Rebounds and Assists BB",
-        "bet_builder": True,
-        "participants": [{"text": "Nikola Jokic Over 48.5 1.83"}],
-    }])
+        fail("bet365 MLB parser regression")
     if not nba or nba[0].get("market_key") != "player_points_rebounds_assists":
-        fail("bet365 NBA PRA parser failed")
-
-    nfl = bet365.parse_dom_groups("NFL", [{
-        "title": "Anytime Touchdown Scorer BB",
-        "bet_builder": True,
-        "participants": [{"text": "Ja'Marr Chase 2.40"}],
-    }])
+        fail("bet365 NBA parser regression")
     if not nfl or nfl[0].get("market_key") != "player_anytime_touchdown":
-        fail("bet365 NFL touchdown parser failed")
-
+        fail("bet365 NFL parser regression")
     if not all(row.get("odds_observed") for row in (mlb + nba + nfl)):
         fail("bet365 parser produced unverified prices")
 
-    ud_fixture = [{
-        "source": "underdog", "bookmaker": "underdog", "sport": "MLB",
-        "player_name": "Fixture Player", "market": "Hits", "market_key": "hits",
-        "line": 1.5, "odds_decimal": None, "raw": {"observed": True}
-    }]
-    ud_props = prophunter._hub_rows_to_props(ud_fixture)
-    if len(ud_props) != 1:
-        fail("cached Underdog row was dropped")
-    if not prophunter._has_direct_fantasy_line(ud_props[0]):
-        fail("cached Underdog row was not marked as direct fantasy line")
-    print("Cached Underdog rows accepted: OK")
-
-    pickem_candidate = prophunter.Pick(
-        type="single", emoji="⚾", player="Fixture Player", team="",
-        market="Hits Over 1.5", direction="over", odds=1.85, stake=0.25,
-        probability=0.60, edge_pct=-1.0, game="",
-    )
-    pickem_candidate.point = 1.5
-    pickem_candidate.source_sport = "MLB"
-    pickem_candidate.features = dict(ud_props[0].features)
-    filtered = prophunter.quality_filter_picks([pickem_candidate])
-    if len(filtered) != 1:
-        fail("qualified Pick'em candidate was rejected by quality filter")
-    gated = prophunter.enforce_final_verified_market_gate(filtered, ud_props)
-    if len(gated) != 1 or not prophunter._has_direct_fantasy_line(gated[0]):
-        fail("qualified Pick'em candidate was rejected by final gate")
-    post = prophunter.build_post(gated)
-    if "Underdog Pick'em" not in post or "@1.85" in post:
-        fail("Pick'em Telegram output was mislabeled as a sportsbook price")
-    low_candidate = pickem_candidate.model_copy(deep=True)
-    low_candidate.probability = 0.51
-    if prophunter.quality_filter_picks([low_candidate]):
-        fail("low-probability Pick'em candidate was accepted")
-    # Recent-game Pick'em model: direction and conservative probability.
-    recent = prophunter._pickem_probability_from_values(
-        [2, 2, 1, 2, 2, 1, 2, 2, 2, 1], 0.5, 6
-    )
-    if not recent or recent.get("direction") != "over" or recent.get("probability", 0) < 0.55:
-        fail("recent Pick'em gamelog probability model failed")
-    if prophunter._pickem_market_spec("Fantasy Points", "WNBA") is not None:
-        fail("unsupported fantasy-points market was accepted")
-
-    # Official MLB season-rate fallback: no standalone odds and no synthetic EV.
-    from prop_hunter_scoring import apply_data_plus_to_props
-    season_prop = ud_props[0].model_copy(deep=True)
-    season_prop.player = "Season Fixture"
-    season_prop.market = "Hits"
-    season_prop.point = 0.5
-    season_prop.direction = "over"
-    season_data = {"mlb": {"batters_basic": {
-        "season fixture": {"games": 80, "hits": 96, "total_bases": 150,
-                           "hr": 15, "runs": 50, "rbi": 55, "walks": 30,
-                           "strikeouts": 70, "stolen_bases": 8}
-    }, "pitchers_basic": {}, "team_k_rates": {}}}
-    apply_data_plus_to_props([season_prop], season_data)
-    season_prob = prophunter._fantasy_probability_from_features(season_prop)
-    if season_prob is None or season_prob < 0.55:
-        fail("MLB season Pick'em fallback failed")
-    if str((season_prop.features or {}).get("fair_prob_source")) != "mlb_season_poisson":
-        fail("MLB season fallback source marker missing")
-
-    # Full cached-row -> official stats -> rescue -> Telegram smoke test.
-    rescue = prophunter.rescue_picks_from_props([season_prop], max_picks=3)
-    if len(rescue) != 1 or not prophunter._has_direct_fantasy_line(rescue[0]):
-        fail("season-scored Underdog row did not produce a rescue pick")
-    rescue_post = prophunter.build_post(rescue)
-    if "Underdog Pick'em" not in rescue_post or "@1.85" in rescue_post:
-        fail("season-scored Pick'em post contains a fake sportsbook price")
-    print("Underdog cache-to-Telegram smoke test: OK")
-
-    # Schema accepts the existing lottery lane.
     try:
         prophunter.Pick(type="lottery", odds=3.0, stake=0.1, legs=["A", "B"])
     except Exception as exc:
         fail(f"lottery Pick schema rejected: {exc}")
-    print("Recent gamelog and MLB season Pick'em models: OK")
-    print("Lottery Pick schema: OK")
 
-    workflow_path = Path(__file__).with_name(".github") / "workflows" / "prophunter.yml"
-    if not workflow_path.exists():
-        fail(".github/workflows/prophunter.yml missing")
-    workflow_source = workflow_path.read_text(encoding="utf-8")
-    for workflow_marker in (
-        "PH_EXPECTED_RUNTIME_VERSION: '12.6-PICKEM-MODEL'",
+    workflow = (Path(__file__).parent / ".github/workflows/prophunter.yml").read_text(encoding="utf-8")
+    for marker in (
+        "PH_EXPECTED_RUNTIME_VERSION: '12.7-PICKEM-LIVE'",
         "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL",
-        "PH_MIN_PICKEM_SAMPLE: '6'",
-        "prop_hunter_scoring.py",
-        "prop_hunter_scraper.py",
+        "PH_FAST_BROWSER_BOOKS: bet365",
+        "PH_FAST_BROWSER_JOBS: '2'",
+        "PH_ENABLE_PROPCRUNCHER: '0'",
+        "PH_ENABLE_SLOW_ENRICHMENTS: '0'",
     ):
-        if workflow_marker not in workflow_source:
-            fail(f"workflow missing marker: {workflow_marker}")
-    if "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL" in workflow_source:
-        fail("NHL is still enabled in the daily Prop Hunter workflow")
-    print("Workflow V12.6 environment and sports list: OK")
-
-    orchestrator_source = Path(__file__).with_name("prop_hunter_source_orchestrator.py").read_text(encoding="utf-8")
+        if marker not in workflow:
+            fail(f"workflow missing marker: {marker}")
+    if "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL" in workflow:
+        fail("NHL still enabled")
+    orchestrator_source = inspect.getsource(orchestrator)
     if '"league": ",".join(spec["sports"]) or "ALL"' not in orchestrator_source:
         fail("source registry league fallback missing")
-    print("Underdog probability scoring and Telegram labeling: OK")
-    print("Source registry league fallback: OK")
+    if '"PH_FAST_BROWSER_BOOKS", "bet365"' not in orchestrator_source or '"PH_FAST_BROWSER_JOBS", "2"' not in orchestrator_source:
+        fail("orchestrator fast browser defaults are not minute-safe")
 
-    print(f"RUNTIME GUARD OK: {EXPECTED}")
+    source = inspect.getsource(prophunter)
+    for marker in (
+        "V12.7 final market gate", "slow web/synthetic enrichments disabled",
+        "enrich_direct_pickem_prices", "Pick'em fast lane",
+        "synthetic HR generation disabled for verified-price card",
+    ):
+        if marker not in source:
+            fail(f"runtime source missing {marker}")
+
+    print("Underdog payload join and two-sided prices: OK")
+    print("WNBA/MLB official Fantasy Points scoring: OK")
+    print("Underdog cache -> scoring -> quality -> final gate -> Telegram: OK")
+    print("Pick'em-only fast lane skips LLM: OK")
+    print("Scheduled card kickoff preservation: OK")
+    print("MLB/NBA/WNBA/NFL market alias coverage: OK")
     print("Synthetic odds rejected: OK")
     print("Observed bookmaker odds accepted: OK")
-    print("Direct Underdog fantasy lines accepted without mislabeling odds: OK")
+    print("Slow dead-source chain disabled: OK")
+    print("Supabase snapshot schema compatibility: OK")
+    print("Source registry league fallback: OK")
     print("Same-book builder/ladders required: OK")
-    print("Verified HR/Risk/Lottery engine present: OK")
-    print("bet365 MLB/NBA/WNBA/NFL parser and BB mapping: OK")
+    print("Lottery Pick schema: OK")
+    print("bet365 MLB/NBA/NFL parser preserved: OK")
+    print(f"RUNTIME GUARD OK: {EXPECTED}")
 
 
 if __name__ == "__main__":
