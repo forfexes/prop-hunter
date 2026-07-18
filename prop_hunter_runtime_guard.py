@@ -10,7 +10,7 @@ import sys
 import prophunter
 import prop_hunter_bet365 as bet365
 
-EXPECTED = "12.4.2-UNDERDOG-CACHE"
+EXPECTED = "12.5-UNDERDOG-PICKEM"
 
 
 def fail(message: str) -> None:
@@ -31,6 +31,9 @@ def main() -> None:
         "_has_eligible_price",
         "enforce_final_verified_market_gate",
         "_conservative_live_probability",
+        "_fantasy_min_probability",
+        "_fantasy_stake",
+        "_prepare_direct_fantasy_pick",
     ):
         if not hasattr(prophunter, name):
             fail(f"prophunter.py missing {name}")
@@ -42,10 +45,12 @@ def main() -> None:
     builder_source = builder_path.read_text(encoding="utf-8")
 
     for marker in (
-        "V12.2 final verified-market gate",
+        "V12.5 final market gate",
+        "UNDERDOG PICK'EM",
+        "settlement_mode",
         "HOME-RUN RISK",
         "RISK BUILDER",
-        "no verified bookmaker prices matched",
+        "no verified sportsbook price or qualified direct Pick'em line",
         'rejected["unverified_odds"]',
         '"odds_observed": False',
         "Configured Odds API keys exhausted",
@@ -160,6 +165,33 @@ def main() -> None:
     if not prophunter._has_direct_fantasy_line(ud_props[0]):
         fail("cached Underdog row was not marked as direct fantasy line")
     print("Cached Underdog rows accepted: OK")
+
+    pickem_candidate = prophunter.Pick(
+        type="single", emoji="⚾", player="Fixture Player", team="",
+        market="Hits Over 1.5", direction="over", odds=1.85, stake=0.25,
+        probability=0.60, edge_pct=-1.0, game="",
+    )
+    pickem_candidate.point = 1.5
+    pickem_candidate.source_sport = "MLB"
+    pickem_candidate.features = dict(ud_props[0].features)
+    filtered = prophunter.quality_filter_picks([pickem_candidate])
+    if len(filtered) != 1:
+        fail("qualified Pick'em candidate was rejected by quality filter")
+    gated = prophunter.enforce_final_verified_market_gate(filtered, ud_props)
+    if len(gated) != 1 or not prophunter._has_direct_fantasy_line(gated[0]):
+        fail("qualified Pick'em candidate was rejected by final gate")
+    post = prophunter.build_post(gated)
+    if "Underdog Pick'em" not in post or "@1.85" in post:
+        fail("Pick'em Telegram output was mislabeled as a sportsbook price")
+    low_candidate = pickem_candidate.model_copy(deep=True)
+    low_candidate.probability = 0.51
+    if prophunter.quality_filter_picks([low_candidate]):
+        fail("low-probability Pick'em candidate was accepted")
+    orchestrator_source = Path(__file__).with_name("prop_hunter_source_orchestrator.py").read_text(encoding="utf-8")
+    if '"league": ",".join(spec["sports"]) or "ALL"' not in orchestrator_source:
+        fail("source registry league fallback missing")
+    print("Underdog probability scoring and Telegram labeling: OK")
+    print("Source registry league fallback: OK")
 
     print(f"RUNTIME GUARD OK: {EXPECTED}")
     print("Synthetic odds rejected: OK")
