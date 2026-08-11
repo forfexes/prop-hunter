@@ -25,7 +25,7 @@ import os
 from typing import Any, Dict, Optional, Tuple, List
 
 from prop_hunter_shared_utils import (
-    select_rows, upsert_rows, safe_json_write, log, warn, norm_name, norm_market,
+    select_rows, select_pick_rows, upsert_rows, safe_json_write, log, warn, norm_name, norm_market,
     to_float, hash_key, now_iso, pick_id
 )
 
@@ -117,10 +117,7 @@ def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]]) -> Optional[D
     return None
 
 def load_picks():
-    rows = select_rows("prop_hunter_picks", limit=int(os.getenv("SETTLE_PICK_LIMIT", "5000")))
-    if rows:
-        return rows
-    return select_rows("prop_picks", limit=int(os.getenv("SETTLE_PICK_LIMIT", "5000")))
+    return select_pick_rows(limit=int(os.getenv("SETTLE_PICK_LIMIT", "5000")))
 
 def main():
     picks = load_picks()
