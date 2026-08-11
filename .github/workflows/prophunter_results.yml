@@ -1,6 +1,6 @@
 name: Prop Hunter Results Autonomous
 
-on:
+"on":
   workflow_dispatch:
   schedule:
     - cron: '0 10,11 * * *'  # 12:00 Switzerland, DST-safe candidates
@@ -40,16 +40,17 @@ jobs:
         with:
           python-version: '3.11'
           cache: pip
+          cache-dependency-path: requirements_results.txt
 
       - name: Install
         if: env.RUN_RESULTS == 'true'
-        run: pip install -r requirements.txt
+        run: pip install -r requirements_results.txt
 
       - name: Compile settlement and learning
         if: env.RUN_RESULTS == 'true'
         run: |
           python -m py_compile \
-            prophunter_results.py prop_hunter_settler.py prop_hunter_clv_engine.py \
+            prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_clv_engine.py \
             prop_hunter_learning_update.py prop_hunter_source_reliability.py \
             prop_hunter_builder_learning.py prop_hunter_autolearn.py
 
