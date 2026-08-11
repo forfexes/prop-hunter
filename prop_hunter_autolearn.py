@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
-from prop_hunter_shared_utils import safe_json_load, safe_json_write, select_rows, to_float
+from prop_hunter_shared_utils import safe_json_load, safe_json_write, select_rows, select_pick_rows, to_float
 
 MODEL_FILE = Path(os.getenv("PH_AUTOML_MODEL_FILE", "prop_hunter_model_registry.json"))
 HISTORY_FILE = Path(os.getenv("PH_HISTORY_FILE", "picks_history.json"))
@@ -124,8 +124,8 @@ def _canonical_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 def load_training_rows(limit: int = 10000) -> List[Dict[str, Any]]:
     raw: List[Dict[str, Any]] = []
-    for table in ("prop_hunter_results", "prop_hunter_picks"):
-        raw.extend(select_rows(table, limit=limit))
+    raw.extend(select_rows("prop_hunter_results", limit=limit))
+    raw.extend(select_pick_rows(limit=limit))
     history = safe_json_load(HISTORY_FILE, {}) or {}
     for entry in history.values() if isinstance(history, dict) else []:
         if isinstance(entry, dict):
