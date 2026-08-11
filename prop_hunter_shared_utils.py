@@ -157,6 +157,92 @@ def select_rows(table: str, limit: int = 1000, filters: Optional[Dict[str, Any]]
         warn(f"{table} select failed: {e}")
         return []
 
+def _normalise_pick_row(row: Dict[str, Any], source_table: str) -> Dict[str, Any]:
+    """Return one schema-neutral pick row from either Supabase picks table."""
+    out = dict(row or {})
+    out["_source_table"] = source_table
+
+    sent_date = out.get("sent_date") or out.get("date")
+    if not sent_date and out.get("created_at"):
+        sent_date = str(out.get("created_at"))[:10]
+    if sent_date:
+        out.setdefault("sent_date", sent_date)
+        out.setdefault("date", sent_date)
+
+    side = out.get("side") or out.get("direction")
+    if side:
+        out.setdefault("side", side)
+        out.setdefault("direction", side)
+
+    prob = out.get("prob") if out.get("prob") is not None else out.get("probability")
+    if prob is not None:
+        out.setdefault("prob", prob)
+        out.setdefault("probability", prob)
+
+    status = out.get("status") or out.get("result") or "pending"
+    out.setdefault("status", status)
+    out.setdefault("result", status)
+
+    profit = out.get("profit_units") if out.get("profit_units") is not None else out.get("profit")
+    if profit is not None:
+        out.setdefault("profit_units", profit)
+        out.setdefault("profit", profit)
+
+    if not out.get("dedup_key"):
+        out["dedup_key"] = hash_key(
+            out.get("player") or out.get("player_name") or out.get("selection"),
+            out.get("market") or out.get("prop_type"),
+            out.get("line") or out.get("point"),
+            side,
+        )
+    return out
+
+
+def select_pick_rows(limit: int = 5000) -> List[Dict[str, Any]]:
+    """Read and merge legacy ``prop_picks`` and modern ``prop_hunter_picks``.
+
+    The project has used both schemas over time.  Reading only the first non-empty
+    table silently hid historical picks, settlement and learning rows.  This helper
+    normalises both tables and deduplicates by date + dedup key.
+    """
+    merged: Dict[str, Dict[str, Any]] = {}
+    for table in ("prop_hunter_picks", "prop_picks"):
+        for raw in select_rows(table, limit=limit):
+            row = _normalise_pick_row(raw, table)
+            date_key = str(row.get("sent_date") or row.get("date") or "")
+            key = f"{date_key}|{row.get('dedup_key')}"
+            current = merged.get(key)
+            if current is None:
+                row["_source_tables"] = [table]
+                merged[key] = row
+                continue
+
+            # Preserve the richest representation while preferring a settled status.
+            for field, value in row.items():
+                if field.startswith("_"):
+                    continue
+                if current.get(field) in (None, "", [], {}) and value not in (None, "", [], {}):
+                    current[field] = value
+            incoming_status = str(row.get("status") or row.get("result") or "pending").lower()
+            current_status = str(current.get("status") or current.get("result") or "pending").lower()
+            if current_status in ("", "pending", "open", "unsettled") and incoming_status not in ("", "pending", "open", "unsettled"):
+                current["status"] = incoming_status
+                current["result"] = incoming_status
+                if row.get("profit_units") is not None or row.get("profit") is not None:
+                    profit = row.get("profit_units") if row.get("profit_units") is not None else row.get("profit")
+                    current["profit_units"] = profit
+                    current["profit"] = profit
+            tables = current.setdefault("_source_tables", [])
+            if table not in tables:
+                tables.append(table)
+
+    return sorted(
+        merged.values(),
+        key=lambda row: str(row.get("sent_date") or row.get("date") or row.get("created_at") or ""),
+        reverse=True,
+    )[:limit]
+
+
 def pick_id(row: Dict[str, Any]) -> str:
     return str(row.get("pick_id") or row.get("id") or row.get("row_hash") or row.get("selection_id") or hash_key(row))
 
