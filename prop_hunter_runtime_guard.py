@@ -12,8 +12,9 @@ import prophunter
 import prop_hunter_bet365 as bet365
 import prop_hunter_odds_pp_ud as ppud
 import prop_hunter_source_orchestrator as orchestrator
+import prop_hunter_shared_utils as shared_utils
 
-EXPECTED = os.getenv("PH_EXPECTED_RUNTIME_VERSION", "12.8-HR-MODEL-123")
+EXPECTED = os.getenv("PH_EXPECTED_RUNTIME_VERSION", "13.0-FINAL-STABLE")
 
 
 def fail(message: str):
@@ -27,7 +28,7 @@ def main():
     required = (
         "_pickem_market_candidates", "_pickem_market_spec_for_prop", "_pickem_row_value",
         "enrich_direct_pickem_prices", "enrich_direct_pickem_gamelogs",
-        "rescue_picks_from_props", "enforce_final_verified_market_gate", "build_post", "build_hr_model_card",
+        "rescue_picks_from_props", "enforce_final_verified_market_gate", "build_post", "build_hr_model_card", "_is_futures_market",
     )
     for name in required:
         if not hasattr(prophunter, name):
@@ -107,6 +108,16 @@ def main():
     props = prophunter._hub_rows_to_props(rows)
     if len(props) != 1 or not prophunter._has_direct_fantasy_line(props[0]):
         fail("Underdog cache row rejected by native converter")
+
+    futures_rows = [dict(rows[0])]
+    futures_rows[0]["market"] = "Season Receiving Yards"
+    futures_rows[0]["market_key"] = "season receiving yards"
+    futures_rows[0]["raw"] = dict(futures_rows[0].get("raw") or {})
+    futures_rows[0]["raw"]["title"] = "Fixture Guard Season Receiving Yards"
+    if prophunter._hub_rows_to_props(futures_rows):
+        fail("season/futures line leaked into daily card")
+    if not prophunter._is_futures_market("Regular Season Games Started", {}):
+        fail("futures market detector missed season market")
     prop = props[0]
     if not prop.commence_time or not prop.game:
         fail("Underdog scheduled matchup did not survive conversion")
@@ -181,6 +192,31 @@ def main():
         prophunter.send_telegram, prophunter.PH_CARD_MODE = old_send, old_mode
     if len(sent) != 1 or "UNDERDOG PICK'EM" not in sent[0] or "@1.85" in sent[0]:
         fail("Pick'em fast lane did not produce a clean Telegram post")
+
+    # Unscored direct lines must never be promoted by the LLM.
+    unscored = props[0].model_copy(deep=True)
+    unscored.features = dict(unscored.features)
+    for key in (
+        "fair_prob", "probability", "hit_prob", "model_prob", "proj_prob",
+        "gamelog_probability", "higher_fair_prob", "lower_fair_prob",
+        "pickem_probability", "sample_size",
+    ):
+        unscored.features.pop(key, None)
+    old_gather, old_analyse = prophunter.gather, prophunter.analyse
+    old_hr_builder, old_send = prophunter.build_hr_model_card, prophunter.send_telegram
+    blocked_sent = []
+    try:
+        prophunter.gather = lambda sport_filter=None: [unscored]
+        prophunter.analyse = lambda _: fail("LLM called for unscored Pick'em-only card")
+        prophunter.build_hr_model_card = lambda cache_data=None: []
+        prophunter.send_telegram = lambda body, dry_run=False: blocked_sent.append(body)
+        with redirect_stdout(io.StringIO()):
+            prophunter.run(dry_run=True)
+    finally:
+        prophunter.gather, prophunter.analyse = old_gather, old_analyse
+        prophunter.build_hr_model_card, prophunter.send_telegram = old_hr_builder, old_send
+    if blocked_sent:
+        fail("unscored Pick'em line reached Telegram")
 
     # Scheduled card split must retain the parsed kickoff.
     kept = prophunter.filter_props_for_card(props, "all", now_utc=datetime.now(timezone.utc))
@@ -269,19 +305,80 @@ def main():
     if persisted:
         fail("model-only HR card was persisted as a priced wager")
 
+    # Both historical Supabase pick schemas must be merged instead of choosing one.
+    old_select_rows = shared_utils.select_rows
+    try:
+        def fake_select_rows(table, limit=1000, filters=None):
+            if table == "prop_hunter_picks":
+                return [{
+                    "sent_date": "2026-07-18", "player": "DB Fixture", "market": "Hits",
+                    "line": 1.5, "side": "over", "dedup_key": "fixture", "status": "pending",
+                }]
+            if table == "prop_picks":
+                return [{
+                    "date": "2026-07-18", "player": "DB Fixture", "market": "Hits",
+                    "direction": "over", "dedup_key": "fixture", "result": "win", "profit": 0.85,
+                }]
+            return []
+        shared_utils.select_rows = fake_select_rows
+        merged_picks = shared_utils.select_pick_rows(limit=10)
+    finally:
+        shared_utils.select_rows = old_select_rows
+    if len(merged_picks) != 1:
+        fail(f"dual picks tables were not deduplicated: {len(merged_picks)}")
+    if merged_picks[0].get("status") != "win" or set(merged_picks[0].get("_source_tables", [])) != {"prop_picks", "prop_hunter_picks"}:
+        fail("dual picks table merge lost settlement/source information")
+
+    db_audit_path = Path(__file__).with_name("prop_hunter_db_audit.py")
+    if not db_audit_path.exists():
+        fail("prop_hunter_db_audit.py missing")
+    db_audit_source = db_audit_path.read_text(encoding="utf-8")
+    for marker in (
+        "prop_hunter_prop_snapshots", "prop_hunter_source_audit",
+        "prop_hunter_source_registry", "prop_picks", "prop_hunter_picks",
+        "SUPABASE DATABASE ACTIVE",
+    ):
+        if marker not in db_audit_source:
+            fail(f"database audit missing marker: {marker}")
+
+    db_writer_source = inspect.getsource(prophunter.sb_insert)
+    for marker in ("prop_picks", "prop_hunter_picks", "legacy_row"):
+        if marker not in db_writer_source:
+            fail(f"dual Supabase writer missing marker: {marker}")
+    result_source = Path(__file__).with_name("prophunter_results.py").read_text(encoding="utf-8")
+    for marker in ("prop_picks", "prop_hunter_picks", "profit_units"):
+        if marker not in result_source:
+            fail(f"dual result update missing marker: {marker}")
+    for filename in ("prop_hunter_settler.py", "prop_hunter_clv_engine.py", "prop_hunter_autolearn.py"):
+        reader_source = Path(__file__).with_name(filename).read_text(encoding="utf-8")
+        if "select_pick_rows" not in reader_source:
+            fail(f"{filename} still reads only one picks table")
+
     workflow = (Path(__file__).parent / ".github/workflows/prophunter.yml").read_text(encoding="utf-8")
     for marker in (
-        "PH_EXPECTED_RUNTIME_VERSION: '12.8-HR-MODEL-123'",
+        "PH_EXPECTED_RUNTIME_VERSION: '13.0-FINAL-STABLE'",
         "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL",
         "PH_FAST_BROWSER_BOOKS: bet365",
         "PH_FAST_BROWSER_JOBS: '2'",
         "PH_ENABLE_PROPCRUNCHER: '0'",
         "PH_ENABLE_SLOW_ENRICHMENTS: '0'",
+        "PH_ALLOW_FUTURES: '0'",
+        "pip install -r requirements_card.txt",
+        "python prop_hunter_db_audit.py",
+        "prop_hunter_shared_utils.py",
     ):
         if marker not in workflow:
             fail(f"workflow missing marker: {marker}")
     if "PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL" in workflow:
         fail("NHL still enabled")
+    maintenance_workflow = (Path(__file__).parent / ".github/workflows/prop_hunter_maintenance.yml").read_text(encoding="utf-8")
+    for obsolete in ("prop_hunter_backfill_universal.py", "prop_hunter_retrosheet_import.py"):
+        if obsolete in maintenance_workflow:
+            fail(f"obsolete unsafe file still runs in maintenance: {obsolete}")
+        obsolete_source = Path(__file__).with_name(obsolete).read_text(encoding="utf-8")
+        if "obsolete" not in obsolete_source.lower() or "SKIP" not in obsolete_source:
+            fail(f"obsolete file is not safely disabled: {obsolete}")
+
     orchestrator_source = inspect.getsource(orchestrator)
     if '"league": ",".join(spec["sports"]) or "ALL"' not in orchestrator_source:
         fail("source registry league fallback missing")
@@ -289,8 +386,11 @@ def main():
         fail("orchestrator fast browser defaults are not minute-safe")
 
     source = inspect.getsource(prophunter)
+    if any(brand in source for brand in ("JK-STYLE", "JK Style", "JK-Style", "Basket Premium", "Basket Blitz", "Nate")):
+        fail("legacy third-party branding still present in active tipster")
+
     for marker in (
-        "V12.8 final market gate", "slow web/synthetic enrichments disabled",
+        "V13 final market gate", "slow web/synthetic enrichments disabled",
         "enrich_direct_pickem_prices", "Pick'em fast lane",
         "build_hr_model_card", "HR model card posted but not persisted as bookmaker wager",
     ):
@@ -306,7 +406,10 @@ def main():
     print("Synthetic odds rejected: OK")
     print("Observed bookmaker odds accepted: OK")
     print("Slow dead-source chain disabled: OK")
+    print("Neutral PROP HUNTER branding: OK")
     print("Supabase snapshot schema compatibility: OK")
+    print("Supabase database audit wiring: OK")
+    print("Supabase dual picks schema write/read/settlement: OK")
     print("Source registry league fallback: OK")
     print("Same-book builder/ladders required: OK")
     print("Lottery Pick schema: OK")
