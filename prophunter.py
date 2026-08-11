@@ -7,8 +7,7 @@ from __future__ import annotations
 from math import prod
 import asyncio, json, logging, os, re, time
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone, time as dt_time
-from zoneinfo import ZoneInfo
+from datetime import date, datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
@@ -25,7 +24,6 @@ def norm_name(s) -> str:
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-PH_RUNTIME_VERSION = "12.8-HR-MODEL-123"
 def _csv(k): return [x.strip() for x in os.environ.get(k,"").split(",") if x.strip()]
 ODDS_API_KEYS  = _csv("ODDS_API_KEY")
 GEMINI_KEYS    = _csv("GEMINI_API_KEY")
@@ -43,7 +41,7 @@ SHARP_BOOK     = "pinnacle"
 UA             = "Mozilla/5.0 PropHunter/3.0"
 HTTP_H         = {"User-Agent": UA}
 TIMEOUT        = 30
-MAX_EVENTS     = int(os.environ.get("PH_MAX_EVENTS", "20"))
+MAX_EVENTS     = 8
 MAX_PROPS_AI   = 70
 KELLY_F        = 0.25
 MAX_STAKE      = 1.5
@@ -52,7 +50,7 @@ CACHE_TTL      = 6*3600
 CACHE_FILE     = "odds_cache.json"
 HISTORY_FILE   = "picks_history.json"
 CLV_FILE       = "clv_history.json"
-LOOKAHEAD_H    = int(os.environ.get("PH_LOOKAHEAD_H", "16"))
+LOOKAHEAD_H    = 12
 PM_MAX         = 5
 STATCAST_DAYS  = 30
 NBA_LAST_N     = 10
@@ -60,21 +58,6 @@ NFL_LAST_N     = 5
 AI_TOKENS      = 3000
 AI_TEMP        = 0.6
 AI_RETRY       = 1
-
-# EARLY/LATE CARD CONTROL
-PH_CARD_MODE   = os.environ.get("PH_CARD_MODE", "all").strip().lower()
-PH_TZ_NAME     = os.environ.get("PH_TIMEZONE", "Europe/Zurich")
-PH_EARLY_CUTOFF = os.environ.get("PH_EARLY_CUTOFF", "00:30")
-PH_REQUIRE_REAL_ODDS = os.environ.get("PH_REQUIRE_REAL_ODDS", "1").strip().lower() not in ("0", "false", "no")
-PH_ALLOW_SYNTHETIC_ODDS = os.environ.get("PH_ALLOW_SYNTHETIC_ODDS", "0").strip().lower() in ("1", "true", "yes")
-PH_ALLOW_DIRECT_FANTASY_LINES = os.environ.get("PH_ALLOW_DIRECT_FANTASY_LINES", "1").strip().lower() in ("1", "true", "yes")
-PH_MIN_PICKEM_PROB = max(0.50, min(0.75, float(os.environ.get("PH_MIN_PICKEM_PROB", "0.55"))))
-PH_MIN_PICKEM_SAMPLE = max(5, min(30, int(os.environ.get("PH_MIN_PICKEM_SAMPLE", "6"))))
-PH_MIN_PICKEM_PRICE_PROB = max(0.50, min(0.70, float(os.environ.get("PH_MIN_PICKEM_PRICE_PROB", "0.535"))))
-PH_ENABLE_PROPCRUNCHER = os.environ.get("PH_ENABLE_PROPCRUNCHER", "0").strip().lower() in ("1", "true", "yes")
-PH_ENABLE_SLOW_ENRICHMENTS = os.environ.get("PH_ENABLE_SLOW_ENRICHMENTS", "0").strip().lower() in ("1", "true", "yes")
-PH_ENABLE_HR_MODEL_CARD = os.environ.get("PH_ENABLE_HR_MODEL_CARD", "1").strip().lower() in ("1", "true", "yes")
-PH_HR_MODEL_MIN_PROB = max(0.08, min(0.30, float(os.environ.get("PH_HR_MODEL_MIN_PROB", "0.11"))))
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -160,192 +143,6 @@ def log_data_plus_cache_status():
         log.warning("DATA+ cache read failed: %s", e)
         return {}
 
-
-
-def _safe_float(value, default=0.0):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return float(default)
-
-
-def _hr_model_pick(obj) -> bool:
-    feats = _obj_features(obj)
-    return bool(feats.get("hr_model_only")) or str(getattr(obj, "category", "") or "").startswith("hr_model_")
-
-
-def build_hr_model_card(cache_data=None) -> list:
-    """Build one HR single, one double and one triple from official MLB season data.
-
-    These are explicitly model-only recommendations. The internal fair odds satisfy the
-    existing Pick schema but are never displayed or persisted as bookmaker prices.
-    """
-    if not PH_ENABLE_HR_MODEL_CARD:
-        return []
-    try:
-        if cache_data is None:
-            if not os.path.exists(DATA_PLUS_CACHE_FILE):
-                log.warning("HR model card skipped: DATA+ cache missing")
-                return []
-            with open(DATA_PLUS_CACHE_FILE, "r", encoding="utf-8") as handle:
-                cache_data = json.load(handle)
-        mlb = (cache_data or {}).get("mlb", {}) if isinstance(cache_data, dict) else {}
-        batters = mlb.get("batters_basic") or {}
-        pitchers = mlb.get("pitchers_basic") or {}
-        schedule = mlb.get("lineups") or {}
-        if not batters or not schedule:
-            log.warning("HR model card skipped: batters=%d scheduled_teams=%d", len(batters), len(schedule))
-            return []
-
-        candidates = []
-        for _, info in schedule.items():
-            if not isinstance(info, dict):
-                continue
-            team = str(info.get("team_name") or "").strip()
-            opponent = str(info.get("opponent_team") or "").strip()
-            game_date = str(info.get("game_date") or "").strip()
-            status = str(info.get("status") or "").lower()
-            if not team or any(word in status for word in ("final", "completed", "postponed", "cancelled", "suspended", "in progress")):
-                continue
-            opp_pitcher = str(info.get("opponent_probable_pitcher") or "").strip()
-            pitcher = pitchers.get(opp_pitcher.lower(), {}) if opp_pitcher else {}
-            opp_hr9 = _safe_float((pitcher or {}).get("hr9"), 1.10)
-
-            team_batters = []
-            for row in batters.values():
-                if not isinstance(row, dict):
-                    continue
-                batter_team = str(row.get("team_name") or row.get("team") or "").strip()
-                if batter_team.lower() != team.lower():
-                    continue
-                name = str(row.get("player_name") or "").strip()
-                games = _safe_float(row.get("games"))
-                pa = _safe_float(row.get("pa"))
-                hr = _safe_float(row.get("hr"))
-                slg = _safe_float(row.get("slg"))
-                avg = _safe_float(row.get("avg"))
-                ops = _safe_float(row.get("ops"))
-                if not name or games < 20 or pa < 60 or hr < 5:
-                    continue
-
-                per_game = hr / max(games, 1.0)
-                per_pa_game = (hr / max(pa, 1.0)) * 4.15
-                probability = 0.58 * per_game + 0.42 * per_pa_game
-                power_mult = 1.0
-                if slg >= 0.500: power_mult += 0.07
-                if slg >= 0.560: power_mult += 0.05
-                if ops >= 0.850: power_mult += 0.04
-                if ops >= 0.930: power_mult += 0.04
-                if opp_hr9 >= 1.25: power_mult += 0.08
-                if opp_hr9 >= 1.50: power_mult += 0.07
-                if opp_hr9 <= 0.85: power_mult -= 0.08
-                probability = max(0.05, min(0.34, probability * power_mult))
-                if probability < PH_HR_MODEL_MIN_PROB:
-                    continue
-
-                fair_odds = round(max(2.95, min(12.0, 1.0 / probability)), 2)
-                confidence = round(min(99.0, max(1.0,
-                    probability * 230.0
-                    + max(0.0, slg - 0.400) * 70.0
-                    + max(0.0, ops - 0.750) * 35.0
-                    + max(0.0, opp_hr9 - 1.0) * 12.0
-                )), 1)
-                game = f"{team} vs {opponent}" if opponent else team
-                analysis = (
-                    f"Saison {int(hr)} HR in {int(games)} Spielen · SLG {slg:.3f} · "
-                    f"OPS {ops:.3f} · Gegner-SP HR/9 {opp_hr9:.2f}"
-                )
-                team_batters.append({
-                    "player": name, "team": team, "game": game, "game_date": game_date,
-                    "probability": probability, "fair_odds": fair_odds,
-                    "confidence": confidence, "analysis": analysis,
-                    "hr": hr, "games": games, "pa": pa, "slg": slg,
-                    "ops": ops, "opp_hr9": opp_hr9,
-                })
-            team_batters.sort(key=lambda row: (row["confidence"], row["probability"]), reverse=True)
-            if team_batters:
-                candidates.append(team_batters[0])
-
-        candidates.sort(key=lambda row: (row["confidence"], row["probability"]), reverse=True)
-        selected = []
-        seen_games = set()
-        # Prefer different games for lower correlation.
-        for row in candidates:
-            if row["game"] in seen_games:
-                continue
-            selected.append(row); seen_games.add(row["game"])
-            if len(selected) == 3:
-                break
-        if len(selected) < 3:
-            for row in candidates:
-                if row in selected:
-                    continue
-                selected.append(row)
-                if len(selected) == 3:
-                    break
-        if not selected:
-            log.warning("HR model card: no hitter cleared %.1f%%", PH_HR_MODEL_MIN_PROB * 100.0)
-            return []
-
-        singles = []
-        for index, row in enumerate(selected):
-            pick = Pick(
-                type="single", category="hr_model_single", emoji="⚾",
-                player=row["player"], team=row["team"], market="Home Run",
-                direction="yes", odds=row["fair_odds"], stake=0.25,
-                probability=round(row["probability"], 4), edge_pct=None, ev=None,
-                game=row["game"], analysis=row["analysis"],
-            )
-            pick.source_sport = "MLB"
-            pick.source_game = row["game"]
-            pick.features = {
-                "source": "mlb_statsapi_model", "price_type": "model_fair",
-                "odds_observed": False, "hr_model_only": True,
-                "settlement_supported": True, "persist_as_wager": False,
-                "fair_odds": row["fair_odds"], "hr_confidence": row["confidence"],
-                "model_rank": index + 1, "game_date": row["game_date"],
-            }
-            singles.append(pick)
-
-        output = [singles[0]]
-        if len(singles) >= 2:
-            legs = singles[:2]
-            combo_prob = prod(float(p.probability or 0.0) for p in legs)
-            combo = Pick(
-                type="big", category="hr_model_double", emoji="🔥",
-                player=" + ".join(p.player or "" for p in legs), team="",
-                market="HR Double", direction="yes",
-                odds=round(prod(float(p.odds) for p in legs), 2), stake=0.10,
-                probability=round(combo_prob, 4), edge_pct=None, ev=None,
-                game="MLB HR Model", analysis="Die zwei stärksten unabhängigen HR-Profile.",
-                legs=[f"{p.player} HR" for p in legs],
-            )
-            combo.features = {"hr_model_only": True, "price_type": "model_fair", "odds_observed": False, "persist_as_wager": False}
-            output.append(combo)
-        if len(singles) >= 3:
-            legs = singles[:3]
-            combo_prob = prod(float(p.probability or 0.0) for p in legs)
-            combo = Pick(
-                type="big", category="hr_model_triple", emoji="🚀",
-                player=" + ".join(p.player or "" for p in legs), team="",
-                market="HR Triple", direction="yes",
-                odds=round(prod(float(p.odds) for p in legs), 2), stake=0.05,
-                probability=round(combo_prob, 4), edge_pct=None, ev=None,
-                game="MLB HR Model", analysis="Die drei stärksten HR-Profile als High-Risk-Triple.",
-                legs=[f"{p.player} HR" for p in legs],
-            )
-            combo.features = {"hr_model_only": True, "price_type": "model_fair", "odds_observed": False, "persist_as_wager": False}
-            output.append(combo)
-
-        log.info(
-            "HR model 1-2-3: candidates=%d selected=%d output=%d",
-            len(candidates), len(selected), len(output),
-        )
-        return output
-    except Exception as exc:
-        log.warning("HR model card failed: %s", exc)
-        return []
-
 def apply_data_plus_visible(props):
     data = log_data_plus_cache_status()
     before = len(props or [])
@@ -414,77 +211,6 @@ class Prop(BaseModel):
     pinnacle_opp_odds:Optional[float]=None; game_total:Optional[float]=None
     enrichment:Optional[str]=None; features:dict=Field(default_factory=dict)
 
-
-def _card_cutoff_local(now_local: datetime) -> datetime:
-    """Return the next Early/Late split point in Europe/Zurich."""
-    try:
-        hh, mm = [int(x) for x in PH_EARLY_CUTOFF.split(":", 1)]
-    except Exception:
-        hh, mm = 0, 30
-    cutoff_day = now_local.date()
-    candidate = datetime.combine(cutoff_day, dt_time(hh, mm), tzinfo=now_local.tzinfo)
-    if candidate <= now_local:
-        candidate += timedelta(days=1)
-    return candidate
-
-
-def filter_props_for_card(props, mode: Optional[str] = None, now_utc: Optional[datetime] = None):
-    """
-    Split events without overlap:
-      early: now - 30m <= kickoff < next 00:30 Europe/Zurich
-      late:  next 00:30 <= kickoff < next 12:00 Europe/Zurich
-      all:   no time partition (manual full card)
-
-    Props without a kickoff are excluded from scheduled early/late cards to avoid
-    sending the same unknown event twice. They remain available in manual all mode.
-    """
-    mode = (mode or PH_CARD_MODE or "all").strip().lower()
-    if mode not in {"early", "late"}:
-        return list(props or [])
-
-    tz = ZoneInfo(PH_TZ_NAME)
-    now_utc = now_utc or datetime.now(timezone.utc)
-    if now_utc.tzinfo is None:
-        now_utc = now_utc.replace(tzinfo=timezone.utc)
-    now_local = now_utc.astimezone(tz)
-    split_local = _card_cutoff_local(now_local)
-
-    if mode == "early":
-        start_utc = now_utc - timedelta(minutes=30)
-        end_utc = split_local.astimezone(timezone.utc)
-    else:
-        start_utc = split_local.astimezone(timezone.utc)
-        end_local = datetime.combine(split_local.date(), dt_time(12, 0), tzinfo=tz)
-        if end_local <= split_local:
-            end_local += timedelta(days=1)
-        end_utc = end_local.astimezone(timezone.utc)
-
-    kept = []
-    missing_time = 0
-    for prop in props or []:
-        ct = getattr(prop, "commence_time", None)
-        if not ct:
-            missing_time += 1
-            continue
-        if isinstance(ct, str):
-            try:
-                ct = datetime.fromisoformat(ct.replace("Z", "+00:00"))
-            except Exception:
-                missing_time += 1
-                continue
-        if ct.tzinfo is None:
-            ct = ct.replace(tzinfo=timezone.utc)
-        ct = ct.astimezone(timezone.utc)
-        if start_utc <= ct < end_utc:
-            kept.append(prop)
-
-    log.info(
-        "card window %s: %s → %s UTC | props %d → %d | missing kickoff=%d",
-        mode.upper(), start_utc.isoformat(timespec="minutes"),
-        end_utc.isoformat(timespec="minutes"), len(props or []), len(kept), missing_time,
-    )
-    return kept
-
 PickType=Literal["single","ladder","betbuilder","kombi2","big","super","lottery"]
 class LadderLeg(BaseModel):
     market:str; odds:float=Field(gt=1); stake:float=Field(ge=0)
@@ -513,177 +239,6 @@ def dedup_key(player,market,point,direction):
                      f"{point:g}" if point is not None else "",(direction or "over").lower()])
 
 
-_ANALYSIS_ONLY_SOURCES = {
-    "propcruncher", "propsmadness", "datagen", "freeplayerprops",
-    "prizepicks", "underdog", "sleeper", "dabble", "betr",
-    "chalkboard", "parlayplay",
-}
-_REAL_BOOK_MARKERS = {
-    "draftkings", "fanduel", "bovada", "betmgm", "caesars",
-    "betrivers", "superbook", "fanatics", "hardrock", "thescore",
-    "bet365", "pinnacle", "williamhill", "oddspapi", "the_odds_api",
-    "espn_bet",
-}
-
-
-def _obj_features(obj) -> dict:
-    value = getattr(obj, "features", None)
-    return value if isinstance(value, dict) else {}
-
-
-def _has_direct_fantasy_line(obj) -> bool:
-    """Allow a direct Underdog line with a fixed card reference price.
-
-    This is deliberately separate from observed sportsbook odds: the player/stat/line
-    must come directly from Underdog, while the displayed 1.85 remains a configured
-    fantasy-card reference price. PrizePicks and generated analysis rows stay blocked.
-    """
-    if not PH_ALLOW_DIRECT_FANTASY_LINES:
-        return False
-    feats = _obj_features(obj)
-    source = str(feats.get("source") or getattr(obj, "source", None) or "").lower()
-    bookmaker = str(feats.get("bookmaker") or getattr(obj, "bookmaker", None) or source).lower()
-    return (
-        source == "underdog"
-        and bookmaker == "underdog"
-        and feats.get("direct_source_line") is True
-        and feats.get("source_payload_observed") is True
-        and str(feats.get("price_type") or "").lower() in {"fantasy_fixed", "pickem_priced"}
-        and float(getattr(obj, "odds", 0) or 0) > 1.01
-    )
-
-
-def _has_eligible_price(obj) -> bool:
-    """True for observed bookmaker odds or a verified direct Underdog fantasy line."""
-    return _has_observed_odds(obj) or _has_direct_fantasy_line(obj)
-
-
-def _fantasy_min_probability(obj) -> float:
-    """Minimum evidence threshold for a direct Pick'em selection.
-
-    Recent game logs may qualify at the normal threshold. A weaker season-rate
-    fallback needs a little more separation, and very small samples are held to
-    60% so the bot does not manufacture picks just to fill a card.
-    """
-    sport = str(getattr(obj, "source_sport", None) or getattr(obj, "sport", None) or "").upper()
-    market = str(getattr(obj, "market", "") or "").lower()
-    feats = _obj_features(obj)
-    threshold = PH_MIN_PICKEM_PROB
-    if sport in {"NBA", "WNBA"}:
-        threshold = max(threshold, 0.56)
-    elif sport == "MLB" and ("hit" in market or "total base" in market):
-        threshold = max(threshold, 0.56)
-
-    evidence = str(feats.get("fair_prob_source") or feats.get("fair_from") or "").lower()
-    try:
-        sample = int(feats.get("gamelog_n") or feats.get("model_sample") or feats.get("sample_size") or 0)
-    except Exception:
-        sample = 0
-    if "season" in evidence or "poisson" in evidence:
-        threshold = max(threshold, 0.58)
-    if sample and sample < 8:
-        threshold = max(threshold, 0.60)
-    return threshold
-
-
-def _fantasy_stake(probability: float) -> float:
-    """Conservative units; never run Kelly against the internal 1.85 placeholder."""
-    p = float(probability or 0)
-    if p >= 0.64:
-        return 0.75
-    if p >= 0.60:
-        return 0.50
-    return 0.25
-
-
-def _fantasy_probability_from_features(obj) -> Optional[float]:
-    """Use only explicit model/stat evidence, never the internal reference price."""
-    feats = _obj_features(obj)
-    for key in ("fair_prob", "probability", "hit_prob", "model_prob", "proj_prob"):
-        try:
-            value = feats.get(key)
-            if value is not None:
-                return max(0.01, min(0.98, float(value)))
-        except Exception:
-            pass
-    try:
-        n = int(feats.get("gamelog_n") or feats.get("sample_size") or 0)
-        rate = feats.get("gamelog_l10_rate")
-        if rate is not None and n >= 6:
-            raw = max(0.01, min(0.99, float(rate)))
-            weight = min(0.70, 0.25 + n / 25.0)
-            return round(0.50 + (raw - 0.50) * weight, 4)
-    except Exception:
-        pass
-    return None
-
-
-def _has_observed_odds(obj) -> bool:
-    """True only when the displayed decimal price was actually observed at a book."""
-    feats = _obj_features(obj)
-    explicit = feats.get("odds_observed")
-    if explicit is not None:
-        return bool(explicit)
-
-    price_type = str(feats.get("price_type") or "").lower()
-    if price_type in {"synthetic", "estimated", "projection", "line_only"}:
-        return False
-    if price_type in {"bookmaker", "exchange", "observed"}:
-        return True
-
-    source = str(
-        feats.get("source") or feats.get("bookmaker") or
-        getattr(obj, "source", None) or getattr(obj, "bookmaker", None) or ""
-    ).lower()
-    enrichment = str(getattr(obj, "enrichment", "") or "").lower()
-
-    if source in _ANALYSIS_ONLY_SOURCES or any(
-        marker in enrichment for marker in ("pc:", "src:datagen", "synthetic")
-    ):
-        return False
-    if source in _REAL_BOOK_MARKERS or any(marker in source for marker in _REAL_BOOK_MARKERS):
-        return True
-    if getattr(obj, "pinnacle_odds", None):
-        return True
-    return False
-
-
-def _conservative_live_probability(prob, source_prop):
-    """Shrink small-sample estimates toward the observed market probability."""
-    try:
-        p = float(prob)
-    except Exception:
-        return prob
-    p = max(0.01, min(0.99, p))
-    feats = _obj_features(source_prop)
-    odds = float(getattr(source_prop, "odds", 0) or 0)
-    if not _has_observed_odds(source_prop) or odds <= 1.01:
-        return min(p, 0.70)
-
-    implied = max(0.02, min(0.98, 1.0 / odds))
-    try:
-        n = int(feats.get("gamelog_n") or feats.get("sample_size") or 0)
-    except Exception:
-        n = 0
-    try:
-        consensus_n = int(feats.get("consensus_sources") or 0)
-    except Exception:
-        consensus_n = 0
-
-    # With ten games the model receives ~40% weight; the rest remains anchored
-    # to the actual market. Larger settled/model samples earn more weight.
-    model_weight = min(0.72, 0.18 + n / 45.0 + min(consensus_n, 4) * 0.035)
-    shrunk = implied * (1.0 - model_weight) + p * model_weight
-
-    if n < 12:
-        cap = 0.78
-    elif n < 30:
-        cap = 0.84
-    else:
-        cap = 0.90
-    return round(max(0.02, min(cap, shrunk)), 4)
-
-
 # ─────────────────────────────────────────────
 # SPORTS / MARKETS
 # ─────────────────────────────────────────────
@@ -695,54 +250,39 @@ class SportCfg(NamedTuple):
 SPORTS:Dict[str,SportCfg]={
     "baseball_mlb":SportCfg("⚾","MLB",[
         Market("batter_home_runs","Home Run",None,3.5),
-        Market("batter_hits","Hits",None,1.7),
+        Market("batter_hits","Hits Over 1.5",None,1.7),
         Market("batter_total_bases","Total Bases",None,1.8),
-        Market("batter_hits_runs_rbis","Hits+Runs+RBIs",None,1.7),
-        Market("batter_runs","Runs",None,1.8),
-        Market("batter_rbis","RBI",None,1.8),
-        Market("batter_stolen_bases","Stolen Base",None,3.0),
-        Market("batter_strikeouts","Batter Strikeouts",None,1.7),
-        Market("batter_walks","Batter Walks",None,1.8),
-        Market("pitcher_strikeouts","Pitcher Strikeouts",None,1.7),
-        Market("pitcher_outs","Outs Recorded",None,1.7),
-        Market("pitcher_earned_runs","Earned Runs",None,1.7),
-        Market("pitcher_hits_allowed","Hits Allowed",None,1.7),
-        Market("pitcher_walks","Pitcher Walks",None,1.7),
-        Market("pitcher_win","Pitcher Win",None,2.0),
+        Market("pitcher_strikeouts","Pitcher K",None,1.8),
+        Market("batter_stolen_bases","Stolen Base",None,4.0),
+        Market("batter_rbis","RBI",None,2.5),
+        Market("pitcher_outs","Outs Recorded",None,1.8),
+        Market("pitcher_earned_runs","Earned Runs U",None,1.8),
+        Market("pitcher_hits_allowed","Hits Allowed U",None,1.8),
     ]),
     "basketball_nba":SportCfg("🏀","NBA",[
-        Market("player_points","Points",None,1.7),
-        Market("player_rebounds","Rebounds",None,1.7),
-        Market("player_assists","Assists",None,1.7),
-        Market("player_threes_made","3PM",None,1.7),
-        Market("player_turnovers","Turnovers",None,1.7),
-        Market("player_steals","Steals",None,1.8),
-        Market("player_blocks","Blocks",None,1.8),
-        Market("player_free_throws_made","Free Throws",None,1.7),
-        Market("player_rebounds_assists","Rebounds+Assists",10,1.7),
-        Market("player_points_rebounds_assists","PRA",25,1.7),
-        Market("player_points_rebounds","PR",20,1.7),
-        Market("player_points_assists","PA",20,1.7),
-        Market("player_steals_blocks","Steals+Blocks",None,1.8),
-        Market("player_double_double","Double Double",None,2.0),
-        Market("player_triple_double","Triple Double",None,5.0),
+        Market("player_rebounds_assists","Rebounds+Assists",10,1.8),
+        Market("player_points_rebounds_assists","PRA",35,1.8),
+        Market("player_points_rebounds","PR",30,1.8),
+        Market("player_points_assists","PA",30,1.8),
+        Market("player_rebounds_alternate","Rebounds",8,1.9),
+        Market("player_assists_alternate","Assists",6,1.9),
+        Market("player_threes_alternate","3PM",2,1.9),
+        Market("player_double_double","Double Double",None,2.5),
+        Market("player_points_alternate","Points",25,3.5),
+        Market("player_blocks_alternate","Blocks",2,3.5),
+        Market("player_steals_alternate","Steals",2,3.5),
+        Market("player_triple_double","Triple Double",None,6.0),
     ]),
     "basketball_wnba":SportCfg("🏀","WNBA",[
-        Market("player_points","Points",None,1.7),
-        Market("player_rebounds","Rebounds",None,1.7),
-        Market("player_assists","Assists",None,1.7),
-        Market("player_threes_made","3PM",None,1.7),
-        Market("player_turnovers","Turnovers",None,1.7),
-        Market("player_steals","Steals",None,1.8),
-        Market("player_blocks","Blocks",None,1.8),
-        Market("player_free_throws_made","Free Throws",None,1.7),
-        Market("player_rebounds_assists","Rebounds+Assists",6,1.7),
-        Market("player_points_rebounds_assists","PRA",15,1.7),
-        Market("player_points_rebounds","PR",12,1.7),
-        Market("player_points_assists","PA",12,1.7),
-        Market("player_steals_blocks","Steals+Blocks",None,1.8),
-        Market("player_double_double","Double Double",None,2.0),
-        Market("player_triple_double","Triple Double",None,6.0),
+        Market("player_rebounds_assists","Rebounds+Assists",8,1.8),
+        Market("player_points_rebounds_assists","PRA",20,1.8),
+        Market("player_points_rebounds","PR",18,1.8),
+        Market("player_points_assists","PA",18,1.8),
+        Market("player_points_alternate","Points",15,3.5),
+        Market("player_rebounds_alternate","Rebounds",6,1.9),
+        Market("player_assists_alternate","Assists",5,1.9),
+        Market("player_threes_alternate","3PM",2,2.0),
+        Market("player_double_double","Double Double",None,2.5),
     ]),
     "basketball_euroleague":SportCfg("🏀","Euroleague",[
         Market("player_points_alternate","Points",12,3.0),
@@ -751,27 +291,12 @@ SPORTS:Dict[str,SportCfg]={
         Market("player_threes_alternate","3PM",2,2.5),
     ]),
     "americanfootball_nfl":SportCfg("🏈","NFL",[
-        Market("player_passing_yards","Passing Yards",None,1.7),
-        Market("player_passing_completions","Passing Completions",None,1.7),
-        Market("player_passing_attempts","Passing Attempts",None,1.7),
-        Market("player_passing_touchdowns","Passing TDs",None,1.7),
-        Market("player_interceptions_thrown","Interceptions",None,1.7),
-        Market("player_rushing_yards","Rushing Yards",None,1.7),
-        Market("player_rushing_attempts","Rushing Attempts",None,1.7),
-        Market("player_receiving_yards","Receiving Yards",None,1.7),
-        Market("player_receptions","Receptions",None,1.7),
-        Market("player_longest_reception","Longest Reception",None,1.8),
-        Market("player_rush_receiving_yards","Rush+Receiving Yards",None,1.7),
-        Market("player_anytime_touchdown","Anytime TD",None,2.0),
-        Market("player_2plus_touchdowns","2+ TDs",None,4.0),
-        Market("player_defensive_sacks","Defensive Sacks",None,1.8),
-        Market("player_tackles","Tackles",None,1.7),
-        Market("player_tackle_assists","Tackle Assists",None,1.7),
-        Market("player_tackles_assists","Tackles+Assists",None,1.7),
-        Market("player_kicking_points","Kicking Points",None,1.7),
-        Market("player_field_goals_made","Field Goals Made",None,1.7),
-        Market("player_longest_field_goal","Longest Field Goal",None,1.8),
-        Market("player_longest_punt","Longest Punt",None,1.8),
+        Market("player_anytime_td","Anytime TD",None,2.5),
+        Market("player_pass_tds_alternate","Pass TDs",None,3.0),
+        Market("player_pass_yds_alternate","Pass Yds",None,1.8),
+        Market("player_rush_yds_alternate","Rush Yds",None,3.0),
+        Market("player_reception_yds_alternate","Rec Yds",None,3.0),
+        Market("player_receptions_alternate","Receptions",None,1.8),
     ]),
 }
 
@@ -1286,16 +811,7 @@ def fetch_underdog_props(sport_filter=None) -> list:
             try:
                 out.append(Prop(player=name, market=stat, odds=1.85,
                     point=float(line), sport=sport,
-                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over",
-                    enrichment="src:underdog | direct fantasy line",
-                    features={
-                        "source": "underdog",
-                        "bookmaker": "underdog",
-                        "direct_source_line": True,
-                        "source_payload_observed": True,
-                        "odds_observed": False,
-                        "price_type": "fantasy_fixed",
-                    }))
+                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over"))
             except Exception: continue
         log.info("Underdog: %d props", len(out))
     except Exception as e:
@@ -1312,124 +828,66 @@ def _sb_read():
     except Exception: return None
 
 def fetch_snapshot_props(sport_filter=None) -> list:
-    """Read fresh stored snapshots. Line-only pick'em rows enrich the model but
-    are not converted into betting props unless an actual bookmaker price exists.
-    Supports both the legacy and V12 Supabase schemas.
-    """
+    """Liest Props aus prop_hunter_prop_snapshots (DraftKings/Underdog/Sleeper/PrizePicks-Connectoren).
+    Props ohne echte Odds (PP/UD/Sleeper) bekommen synthetische Odds — die DB-Fairprob entscheidet dann."""
     c = _sb_read()
-    if c is None:
-        return []
+    if c is None: return []
     out = []
     try:
+        # Fenster: letzte 18h (fängt auch Läufe kurz vor Mitternacht UTC)
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=18)).isoformat()
-        res = c.table("prop_hunter_prop_snapshots").select("*").gte(
-            "created_at", cutoff
-        ).limit(5000).execute()
-
+        res = c.table("prop_hunter_prop_snapshots").select(
+            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team,bookmaker"
+        ).gte("created_at", cutoff).limit(3000).execute()
         emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
-        season_markers = (
-            "season", "futures", "to win", "mvp", "champion", "award",
-            "regular season", "playoff", "total wins", "make the",
-            "division", "conference", "over/under wins",
-        )
+        # Saison-Totale / Futures rausfiltern — das sind KEINE Einzelspiel-Props!
+        SEASON_MARKERS = ("season", "futures", "to win", "mvp", "champion", "award",
+                          "regular season", "playoff", "total wins", "make the",
+                          "division", "conference", "over/under wins")
+        # Sportarten die aktuell NICHT laufen (Off-Season) überspringen
+        # NFL/NHL laufen nicht im Juli — nur MLB/WNBA aktiv
         now_month = datetime.now(timezone.utc).month
-        active_sports = {"MLB", "WNBA"}
+        active_sports = {"MLB", "WNBA"}  # Juli
         if now_month >= 10 or now_month <= 2:
             active_sports |= {"NFL", "NHL", "NBA"}
         if 4 <= now_month <= 6:
             active_sports |= {"NBA", "NHL"}
 
-        for db_row in (res.data or []):
-            raw = db_row.get("raw") if isinstance(db_row.get("raw"), dict) else {}
-
-            def value(*keys):
-                for source in (db_row, raw):
-                    for key in keys:
-                        val = source.get(key)
-                        if val not in (None, ""):
-                            return val
-                return None
-
-            player = value("player_name", "player")
-            market = value("market", "market_key")
-            line = value("line", "point")
-            odds = value("odds_decimal", "odds", "best_odds")
-            sport = str(value("sport", "league") or "").upper()
-            if not (player and market and line is not None):
-                continue
-            if sport_filter and sport_filter.lower() not in sport.lower():
-                continue
-            if any(marker in str(market).lower() for marker in season_markers):
-                continue
-            if sport and sport not in active_sports:
-                continue
+        for r in (res.data or []):
+            odds = r.get("odds_decimal"); line = r.get("line")
+            player = r.get("player_name"); market = r.get("market")
+            sport = (r.get("sport") or r.get("league") or "").upper()
+            if not (player and market and line is not None): continue
+            if sport_filter and sport_filter.lower() not in sport.lower(): continue
+            # Season/Futures-Märkte komplett überspringen
+            mkt_low = market.lower()
+            if any(m in mkt_low for m in SEASON_MARKERS): continue
+            # Off-Season Sportarten überspringen (keine NFL-Futures im Juli)
+            if sport and sport not in active_sports: continue
+            # Unrealistisch hohe Linien = Season-Total (z.B. 824.5 Receiving Yards)
             try:
-                if float(line) > 100 and sport != "MLB":
-                    continue
+                if float(line) > 100 and sport != "MLB": continue  # Einzelspiel-Linien sind niedrig
             except Exception:
                 pass
-
-            # A line without a price is useful for consensus/ML, but it is not a
-            # bookable single and must never receive a made-up 1.80/1.85 price.
+            # Synthetische Odds für Quellen ohne Preis (PrizePicks/Underdog/Sleeper)
             try:
-                odds_val = float(odds)
+                odds_val = float(odds) if odds is not None else 1.85
             except Exception:
-                continue
-            if not (1.01 < odds_val < 1000):
-                continue
-
-            source = str(value("source") or "").lower()
-            bookmaker = str(value("bookmaker", "book") or source).lower()
-            price_type = str(value("price_type") or raw.get("price_type") or "bookmaker").lower()
-            if price_type in {"synthetic", "estimated", "projection", "line_only"}:
-                continue
-
-            commence = value("commence_time", "start_time")
-            if isinstance(commence, str) and commence:
-                try:
-                    commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
-                except Exception:
-                    commence = None
-
-            direction = str(value("direction", "side") or "over").lower()
-            if direction in ("more",):
-                direction = "over"
-            elif direction in ("less",):
-                direction = "under"
-
+                odds_val = 1.85
+            if not (1.01 < odds_val < 50): continue
             try:
-                p = Prop(
-                    player=str(player),
-                    market=str(market),
-                    odds=odds_val,
+                out.append(Prop(
+                    player=player, market=market, odds=odds_val,
                     point=float(line),
-                    sport=sport,
-                    emoji=emoji_map.get(sport, "🎯"),
-                    game=f"{value('away_team') or ''} @ {value('home_team') or ''}".strip(" @"),
-                    direction=direction,
-                    commence_time=commence,
-                    enrichment=f"src:{bookmaker}",
-                    features={
-                        "source": source,
-                        "bookmaker": bookmaker,
-                        "snapshot_id": value("snapshot_id"),
-                        "source_trust": value("source_trust") or 1.0,
-                        "book_consensus": value("book_consensus"),
-                        "consensus_sources": value("consensus_sources") or 0,
-                        "consensus_line": value("consensus_line"),
-                        "line_dispersion": value("line_dispersion") or 0,
-                        "best_odds": value("best_odds"),
-                        "odds_observed": True,
-                        "price_type": "bookmaker",
-                    },
-                )
-                out.append(p)
-            except Exception:
-                continue
-        if out:
-            log.info("Snapshot props with verified prices: %d", len(out))
-    except Exception as exc:
-        log.warning("snapshot props: %s", exc)
+                    sport=sport, emoji=emoji_map.get(sport,"🎯"),
+                    game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
+                    direction="over",
+                    enrichment=f"src:{r.get('bookmaker','snapshot')}",
+                ))
+            except Exception: continue
+        if out: log.info("Snapshot props (Supabase): %d", len(out))
+    except Exception as e:
+        log.warning("snapshot props: %s", e)
     return out
 
 _GAMELOG_CACHE: dict = {}
@@ -1572,8 +1030,6 @@ def enrich_gamelogs_fairprob(props: list) -> list:
     }
     for p in props:
         try:
-            if _has_direct_fantasy_line(p):
-                continue
             point = getattr(p, "point", None)
             if point is None: continue
             mkt = (p.market or "").lower()
@@ -1703,522 +1159,12 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             feats["gamelog_n"] = n
             p.features = feats
             avg = sum(vals)/n
-            richtung_txt = "unter Linie" if direction == "under" else "über Linie"
-            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% {richtung_txt}"
+            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% über Linie"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue
     if boosted: log.info("Gamelog fair_prob (Supabase DB): %d props", boosted)
     return props
-
-
-def _ascii_player_key(value) -> str:
-    """Accent-insensitive player key used only for matching existing history rows."""
-    try:
-        import unicodedata
-        value = unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode("ascii")
-    except Exception:
-        value = str(value or "")
-    value = value.lower().strip()
-    value = re.sub(r"\b(jr|sr|ii|iii|iv)\.?$", "", value).strip()
-    value = re.sub(r"[^a-z0-9\s'\.-]", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
-
-
-
-def _pickem_market_candidates(prop) -> list[str]:
-    """Return every market label preserved across the Underdog join/cache path."""
-    feats = _obj_features(prop)
-    raw = feats.get("raw_source") if isinstance(feats.get("raw_source"), dict) else {}
-    values = [
-        getattr(prop, "market", ""), feats.get("market_key"), feats.get("market_original"),
-    ]
-    for node in (
-        raw.get("appearance_stat"),
-        (raw.get("over_under") or {}).get("appearance_stat") if isinstance(raw.get("over_under"), dict) else None,
-    ):
-        if isinstance(node, dict):
-            values.extend([node.get("stat"), node.get("display_stat")])
-    values.extend([raw.get("title"), (raw.get("over_under") or {}).get("title") if isinstance(raw.get("over_under"), dict) else None])
-    out = []
-    seen = set()
-    for value in values:
-        value = str(value or "").strip()
-        key = value.lower()
-        if value and key not in seen:
-            seen.add(key); out.append(value)
-    return out
-
-
-def _pickem_market_spec(market: str, sport: str = ""):
-    """Map public/display and machine stat labels to gamelog calculations."""
-    raw = str(market or "").lower().replace("_", " ").replace("-", " ")
-    if any(x in raw for x in (
-        "1q", "1st quarter", "first quarter", "first half", "1h ",
-        "first 5", "first five", "quarter points", "quarter rebounds", "quarter assists",
-        "first inning", "1st inning", "first plate appearance", "plate appearance result",
-    )):
-        return None
-    m = raw.replace("&", " and ").replace("+", " plus ")
-    m = re.sub(r"[^a-z0-9\s]", " ", m)
-    m = re.sub(r"\s+", " ", m).strip()
-    compact = m.replace(" ", "")
-    sport = str(sport or "").upper()
-
-    if sport in {"NBA", "WNBA"}:
-        if "fantasy point" in m or compact in {"fantasypoints", "fantasyscore"}:
-            return ("weighted_sum", (("points", 1.0), ("rebounds", 1.2), ("assists", 1.5),
-                                     ("steals", 3.0), ("blocks", 3.0), ("turnovers", -1.0)), 1.0)
-        pts = bool(re.search(r"\b(points?|pts)\b", m)) or "pts" in compact
-        reb = bool(re.search(r"\b(rebounds?|rebs?)\b", m)) or "rebs" in compact
-        ast = bool(re.search(r"\b(assists?|asts?)\b", m)) or "asts" in compact
-        if "double double" in m or compact == "doubledouble":
-            return ("col", ("double_double",), 1.0)
-        if "triple double" in m or compact == "tripledouble":
-            return ("col", ("triple_double",), 1.0)
-        if any(x in compact for x in ("stealsblocks", "blockssteals", "stocks")):
-            return ("sum", ("steals", "blocks"), 1.0)
-        if any(x in compact for x in ("3pm", "threepointersmade", "threesmade", "3pointersmade")) or "3 pointer" in m or "threes" in m:
-            return ("col", ("threes_made",), 1.0)
-        if pts and reb and ast:
-            return ("sum", ("points", "rebounds", "assists"), 1.0)
-        if pts and reb:
-            return ("sum", ("points", "rebounds"), 1.0)
-        if pts and ast:
-            return ("sum", ("points", "assists"), 1.0)
-        if reb and ast:
-            return ("sum", ("rebounds", "assists"), 1.0)
-        if "free throw" in m:
-            return ("col", ("free_throws_made",), 1.0)
-        if "turnover" in m:
-            return ("col", ("turnovers",), 1.0)
-        if "personal foul" in m or compact == "fouls":
-            return ("col", ("personal_fouls",), 1.0)
-        if "steal" in m:
-            return ("col", ("steals",), 1.0)
-        if "block" in m:
-            return ("col", ("blocks",), 1.0)
-        if pts:
-            return ("col", ("points",), 1.0)
-        if reb:
-            return ("col", ("rebounds",), 1.0)
-        if ast:
-            return ("col", ("assists",), 1.0)
-        if "minute" in m:
-            return ("col", ("minutes",), 1.0)
-        return None
-
-    if sport == "MLB":
-        if "fantasy point" in m or compact in {"fantasypoints", "fantasyscore", "hitterfantasypoints", "pitcherfantasypoints"}:
-            return ("mlb_fantasy", (), 1.0)
-        pitcher_hint = bool(
-            "pitcher" in m or "pitching" in m or "allowed" in m or "outs recorded" in m
-            or compact.startswith("pitcher") or compact.startswith("pitching")
-        )
-        if pitcher_hint:
-            if "strikeout" in m or compact in {"pitcherks", "pitcherstrikeouts"}:
-                return ("col", ("pitcher_strikeouts",), 1.0)
-            if "outs" in m:
-                return ("pitching_outs", ("pitcher_innings",), 1.0)
-            if "hits allowed" in m or compact == "pitcherhitsallowed":
-                return ("col", ("pitcher_hits_allowed",), 1.0)
-            if "earned run" in m or compact == "pitcherearnedruns":
-                return ("col", ("pitcher_earned_runs",), 1.0)
-            if "walk" in m:
-                return ("col", ("pitcher_walks",), 1.0)
-            if "win" in m:
-                return ("col", ("pitcher_win",), 1.0)
-            return None
-        if any(x in compact for x in ("hitsrunsrbis", "hitsrunsrbi", "hrrbi")) or "hits plus runs plus rbi" in m:
-            return ("sum", ("hits", "runs", "rbi"), 1.0)
-        if "hits plus runs" in m or compact == "hitsruns":
-            return ("sum", ("hits", "runs"), 1.0)
-        if "runs plus rbi" in m or compact in {"runsrbis", "runsrbi"}:
-            return ("sum", ("runs", "rbi"), 1.0)
-        if "total base" in m or compact == "totalbases":
-            return ("col", ("total_bases",), 1.0)
-        if "home run" in m or compact in {"homeruns", "hr"}:
-            return ("col", ("home_runs",), 1.0)
-        if "batter strikeout" in m or compact in {"batterstrikeouts", "batterks"}:
-            return ("col", ("strikeouts_batter",), 1.0)
-        if "strikeout" in m:
-            return ("col", ("strikeouts_batter",), 1.0)
-        if "walk" in m:
-            return ("col", ("walks_batter",), 1.0)
-        if "stolen base" in m or compact == "stolenbases":
-            return ("col", ("stolen_bases",), 1.0)
-        if "single" in m:
-            return ("mlb_singles", (), 1.0)
-        if "double" in m:
-            return ("col", ("doubles",), 1.0)
-        if "triple" in m:
-            return ("col", ("triples",), 1.0)
-        if re.search(r"\brbis?\b", m) or "runs batted" in m:
-            return ("col", ("rbi",), 1.0)
-        if "hit" in m:
-            return ("col", ("hits",), 1.0)
-        if "run" in m:
-            return ("col", ("runs",), 1.0)
-        return None
-
-    if sport == "NFL":
-        aliases = (
-            (("passing yards", "pass yards"), "passing_yards"),
-            (("passing touchdowns", "passing tds", "pass tds"), "passing_touchdowns"),
-            (("interceptions", "passing interceptions"), "interceptions"),
-            (("completions",), "passing_completions"),
-            (("passing attempts", "pass attempts"), "passing_attempts"),
-            (("rushing yards", "rush yards"), "rushing_yards"),
-            (("rushing attempts", "rush attempts", "carries"), "rushing_attempts"),
-            (("receiving yards", "rec yards"), "receiving_yards"),
-            (("receptions",), "receptions"),
-            (("rush plus receiving yards", "rushing plus receiving yards"), "rush_receiving_yards"),
-            (("touchdowns", "anytime td"), "touchdowns"),
-            (("tackles plus assists", "tackles assists"), "tackles_assists"),
-            (("tackles",), "tackles"),
-            (("sacks",), "sacks"),
-        )
-        for labels, col in aliases:
-            if any(label in m for label in labels) or compact == col.replace("_", ""):
-                if col == "rush_receiving_yards":
-                    return ("sum", ("rushing_yards", "receiving_yards"), 1.0)
-                if col == "tackles_assists":
-                    return ("sum", ("tackles", "tackle_assists"), 1.0)
-                return ("col", (col,), 1.0)
-    return None
-
-
-def _pickem_market_spec_for_prop(prop):
-    sport = str(getattr(prop, "sport", "") or "").upper()
-    candidates = _pickem_market_candidates(prop)
-    # A machine key such as ``fantasy_points`` must not turn a displayed 1H/1Q
-    # projection into a full-game model. Period models stay blocked until matching
-    # period gamelogs exist.
-    primary = str(candidates[0] if candidates else "").lower().replace("_", " ").replace("-", " ")
-    if any(x in primary for x in (
-        "1q", "1st quarter", "first quarter", "first half", "1h ",
-        "first 5", "first five", "quarter points", "quarter rebounds", "quarter assists",
-        "first inning", "1st inning", "first plate appearance", "plate appearance result",
-    )):
-        return None
-    for market in candidates:
-        spec = _pickem_market_spec(market, sport)
-        if spec is not None:
-            return spec
-    return None
-
-
-def _baseball_innings_value(value):
-    """Convert MLB notation 5.1/5.2 to 5⅓/5⅔ when needed."""
-    if value is None:
-        return None
-    try:
-        text = str(value).strip()
-        whole, dot, frac = text.partition(".")
-        if dot and frac in {"1", "2"}:
-            return float(whole) + int(frac) / 3.0
-        return float(text)
-    except Exception:
-        return None
-
-
-def _pickem_row_value(row: dict, spec):
-    if not spec or not isinstance(row, dict):
-        return None
-    mode, cols, factor = spec
-    try:
-        if mode == "weighted_sum":
-            total = 0.0
-            for col, weight in cols:
-                value = row.get(col)
-                if value is None:
-                    return None
-                total += float(value) * float(weight)
-            return total * float(factor or 1.0)
-        if mode == "pitching_outs":
-            innings = _baseball_innings_value(row.get(cols[0]))
-            return None if innings is None else innings * 3.0
-        if mode == "mlb_singles":
-            hits = row.get("hits"); doubles = row.get("doubles"); triples = row.get("triples"); hrs = row.get("home_runs")
-            if hits is None or doubles is None or triples is None or hrs is None:
-                return None
-            return max(0.0, float(hits) - float(doubles) - float(triples) - float(hrs))
-        if mode == "mlb_fantasy":
-            # Hitter daily scoring. 3*TB - triples - 2*HR is exactly
-            # 3*1B + 6*2B + 8*3B + 10*HR.
-            tb = row.get("total_bases")
-            hr = row.get("home_runs")
-            if tb is not None and hr is not None:
-                triples = float(row.get("triples") or 0)
-                hit_points = 3.0 * float(tb) - triples - 2.0 * float(hr)
-                return (
-                    hit_points
-                    + 3.0 * float(row.get("walks_batter") or row.get("walks") or 0)
-                    + 3.0 * float(row.get("hit_by_pitch") or row.get("hbp") or 0)
-                    + 2.0 * float(row.get("rbi") or 0)
-                    + 2.0 * float(row.get("runs") or 0)
-                    + 4.0 * float(row.get("stolen_bases") or 0)
-                )
-            # Pitcher daily scoring.
-            k = row.get("pitcher_strikeouts")
-            innings = _baseball_innings_value(row.get("pitcher_innings"))
-            er = row.get("pitcher_earned_runs")
-            if k is None or innings is None or er is None:
-                return None
-            win = float(row.get("pitcher_win") or row.get("win") or 0)
-            qs_raw = row.get("quality_start")
-            qs = float(qs_raw) if qs_raw is not None else (1.0 if innings >= 6.0 and float(er) <= 3.0 else 0.0)
-            return 2.0 * win + 3.0 * qs + float(k) + innings - float(er)
-
-        vals = []
-        for col in cols:
-            value = row.get(col)
-            if value is None:
-                return None
-            if isinstance(value, bool):
-                value = 1.0 if value else 0.0
-            vals.append(float(value))
-        total = sum(vals) if mode == "sum" else vals[0]
-        return total * float(factor or 1.0)
-    except Exception:
-        return None
-
-def _pickem_probability_from_values(values, line: float, min_sample: int | None = None):
-    """Conservative Higher/Lower probability from recent settled game logs."""
-    clean = []
-    for value in values or []:
-        try:
-            clean.append(float(value))
-        except Exception:
-            continue
-    clean = clean[:20]
-    min_sample = int(min_sample or PH_MIN_PICKEM_SAMPLE)
-    if len(clean) < min_sample:
-        return None
-
-    def _rate(window, direction):
-        subset = clean[:window]
-        wins = den = pushes = 0
-        for value in subset:
-            if abs(value - float(line)) < 1e-9:
-                pushes += 1
-                continue
-            den += 1
-            if direction == "over" and value > float(line):
-                wins += 1
-            elif direction == "under" and value < float(line):
-                wins += 1
-        return (wins / den if den else None), den, pushes
-
-    weighted = {"over": 0.0, "under": 0.0}
-    total_w = {"over": 0.0, "under": 0.0}
-    windows = ((5, 0.45), (10, 0.35), (20, 0.20))
-    detail = {}
-    for direction in ("over", "under"):
-        for window, weight in windows:
-            rate, den, pushes = _rate(window, direction)
-            if rate is None or den < min(3, min_sample):
-                continue
-            weighted[direction] += rate * weight
-            total_w[direction] += weight
-            detail[f"{direction}_l{window}"] = round(rate, 4)
-        if total_w[direction]:
-            weighted[direction] /= total_w[direction]
-        else:
-            weighted[direction] = 0.0
-
-    direction = "over" if weighted["over"] >= weighted["under"] else "under"
-    raw_rate = weighted[direction]
-    effective = sum(1 for value in clean if abs(value - float(line)) >= 1e-9)
-    if effective < min_sample:
-        return None
-    # Shrink toward 50%. Six games receive roughly 53% model weight; twenty 82%.
-    model_weight = min(0.82, 0.35 + 0.03 * effective)
-    probability = 0.50 + (raw_rate - 0.50) * model_weight
-    probability = max(0.01, min(0.70, probability))
-    return {
-        "probability": round(probability, 4),
-        "direction": direction,
-        "raw_rate": round(raw_rate, 4),
-        "sample": len(clean),
-        "effective_sample": effective,
-        "average": round(sum(clean) / len(clean), 3),
-        **detail,
-    }
-
-
-def _recent_pickem_gamelogs(leagues) -> list[dict]:
-    """Fetch recent history in a few paginated Supabase requests, not per prop."""
-    client = _sb_read()
-    if client is None:
-        return []
-    league_list = sorted({str(x).upper() for x in leagues if x})
-    if not league_list:
-        return []
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=180)).date().isoformat()
-    columns = (
-        "normalized_name,player_name,league,game_date,minutes,"
-        "points,rebounds,assists,pra,ra,threes_made,steals,blocks,turnovers,double_double,triple_double,"
-        "hits,total_bases,home_runs,rbi,runs,strikeouts_batter,walks_batter,stolen_bases,"
-        "pitcher_strikeouts,pitcher_innings,pitcher_hits_allowed,pitcher_earned_runs,pitcher_walks"
-    )
-    rows = []
-    page_size = 1000
-    try:
-        for start in range(0, 10000, page_size):
-            query = client.table("prop_hunter_player_gamelogs").select("*")
-            query = query.in_("league", league_list).gte("game_date", cutoff)
-            result = query.order("game_date", desc=True).range(start, start + page_size - 1).execute()
-            batch = result.data or []
-            rows.extend(batch)
-            if len(batch) < page_size:
-                break
-    except Exception as exc:
-        log.warning("Pick'em bulk gamelog query failed: %s", exc)
-        return []
-    return rows
-
-
-
-def enrich_direct_pickem_prices(props: list) -> list:
-    """Use Underdog's observed Higher/Lower prices as a conservative prior.
-
-    These prices are never displayed as a standalone sportsbook quote.  They only
-    break ties or provide evidence when the two sides are genuinely asymmetric.
-    """
-    priced = directional = 0
-    for prop in props or []:
-        if not _has_direct_fantasy_line(prop):
-            continue
-        feats = dict(_obj_features(prop))
-        try:
-            higher = float(feats.get("higher_odds_decimal"))
-            lower = float(feats.get("lower_odds_decimal"))
-            if higher <= 1.01 or lower <= 1.01:
-                continue
-        except Exception:
-            continue
-        priced += 1
-        ih, il = 1.0 / higher, 1.0 / lower
-        total = ih + il
-        if total <= 0:
-            continue
-        probs = {"over": ih / total, "under": il / total}
-        direction = "over" if probs["over"] >= probs["under"] else "under"
-        probability = probs[direction]
-        feats.update({
-            "underdog_higher_novig": round(probs["over"], 4),
-            "underdog_lower_novig": round(probs["under"], 4),
-            "underdog_price_direction": direction,
-        })
-        if probability >= PH_MIN_PICKEM_PRICE_PROB:
-            old = feats.get("fair_prob")
-            old_direction = str(feats.get("pickem_direction") or getattr(prop, "direction", "") or "").lower()
-            if old is None:
-                feats["fair_prob"] = round(min(0.62, probability), 4)
-                feats["fair_prob_source"] = "underdog_two_sided_price"
-                feats["pickem_direction"] = direction
-                prop.direction = direction
-            elif old_direction == direction:
-                try:
-                    feats["fair_prob"] = round(0.85 * float(old) + 0.15 * probability, 4)
-                    feats["fair_prob_source"] = str(feats.get("fair_prob_source") or "model") + "+underdog_price"
-                except Exception:
-                    pass
-            directional += 1
-        prop.features = feats
-    if priced:
-        log.info("Underdog two-sided prices: %d priced | %d directional", priced, directional)
-    return props
-
-
-def enrich_direct_pickem_gamelogs(props: list) -> list:
-    """Give direct Underdog lines an evidence-backed probability and direction.
-
-    Exact player names are preferred. Accent/suffix variants fall back to a unique
-    first-initial + last-name match inside the same league. Unsupported markets stay
-    unscored and therefore remain blocked by the final quality gate.
-    """
-    direct = [p for p in (props or []) if _has_direct_fantasy_line(p)]
-    if not direct:
-        return props
-    leagues = {str(getattr(p, "sport", "") or "").upper() for p in direct}
-    rows = _recent_pickem_gamelogs(leagues)
-    if not rows:
-        return props
-
-    exact = defaultdict(list)
-    short = defaultdict(set)
-    for row in rows:
-        league = str(row.get("league") or "").upper()
-        key = _ascii_player_key(row.get("player_name") or row.get("normalized_name"))
-        if not key:
-            continue
-        exact[(league, key)].append(row)
-        parts = key.split()
-        if len(parts) >= 2:
-            short[(league, parts[0][:1], parts[-1])].add(key)
-
-    boosted = 0
-    unsupported = 0
-    unmatched = 0
-    for prop in direct:
-        sport = str(getattr(prop, "sport", "") or "").upper()
-        spec = _pickem_market_spec_for_prop(prop)
-        if spec is None:
-            unsupported += 1
-            continue
-        player_key = _ascii_player_key(getattr(prop, "player", ""))
-        history = exact.get((sport, player_key), [])
-        if not history:
-            parts = player_key.split()
-            candidates = short.get((sport, parts[0][:1], parts[-1]), set()) if len(parts) >= 2 else set()
-            if len(candidates) == 1:
-                history = exact.get((sport, next(iter(candidates))), [])
-        if not history:
-            unmatched += 1
-            continue
-        values = [_pickem_row_value(row, spec) for row in history]
-        values = [value for value in values if value is not None]
-        result = _pickem_probability_from_values(values, getattr(prop, "point", None), PH_MIN_PICKEM_SAMPLE)
-        if not result:
-            continue
-
-        feats = dict(_obj_features(prop))
-        old_prob = feats.get("fair_prob")
-        old_source = str(feats.get("fair_prob_source") or "")
-        probability = float(result["probability"])
-        if old_prob is not None and str(feats.get("pickem_direction") or prop.direction) == result["direction"]:
-            try:
-                # Recent settled history is primary; a season model only stabilizes it.
-                probability = 0.80 * probability + 0.20 * float(old_prob)
-            except Exception:
-                pass
-        probability = max(0.01, min(0.70, probability))
-        prop.direction = result["direction"]
-        feats.update({
-            "fair_prob": round(probability, 4),
-            "fair_prob_source": "recent_gamelogs" + (f"+{old_source}" if old_source else ""),
-            "pickem_direction": result["direction"],
-            "gamelog_n": result["sample"],
-            "sample_size": result["sample"],
-            "gamelog_raw_rate": result["raw_rate"],
-            "gamelog_avg": result["average"],
-        })
-        for key, value in result.items():
-            if key.startswith(("over_l", "under_l")):
-                feats[key] = value
-        prop.features = feats
-        tag = f"DB L{result['sample']} avg {result['average']:.1f}, {int(result['raw_rate']*100)}% {result['direction']}"
-        prop.enrichment = ((getattr(prop, "enrichment", "") or "") + " | " + tag).strip(" |")[:240]
-        boosted += 1
-
-    log.info(
-        "Pick'em model: %d/%d scored | unsupported=%d unmatched=%d",
-        boosted, len(direct), unsupported, unmatched,
-    )
-    return props
-
 
 def gather_propcruncher_fallback(sport_filter=None) -> list:
     """
@@ -2245,7 +1191,7 @@ def gather_propcruncher_fallback(sport_filter=None) -> list:
                     sport=raw["sport"],
                     game=raw.get("game",""),
                     direction=raw["direction"],
-                    features={"pc_grade": raw["grade"], "source": "propcruncher", "source_role": "analysis", "odds_observed": False, "price_type": "synthetic"},
+                    features={"pc_grade": raw["grade"]},
                     emoji=raw["emoji"],
                     enrichment=f"PC:{raw['grade']}",
                 )
@@ -2605,7 +1551,7 @@ def save_cache(odds,earliest=None):
             delta=max(0,ts-time.time()); ttl=int(min(CACHE_TTL,max(60,delta/3)))
         except: pass
     # When no keys left, extend TTL to 24h so stale cache covers next run
-    if ODDS_API_KEYS and _all_keys_dead(): ttl=86400
+    if _all_keys_dead(): ttl=86400
     try: json.dump({"timestamp":time.time(),"ttl":ttl,"odds":odds},open(CACHE_FILE,"w"),indent=2)
     except: pass
 
@@ -2735,13 +1681,7 @@ def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,awa
         out.append(Prop(player=rec["player"],market=label,odds=round(avg,2),point=rec["point"],
             sport=sport,emoji=emoji,game=f"{away} @ {home}",home=home,away=away,commence_time=ct,
             pinnacle_odds=rec["po"],pinnacle_opp_odds=rec["pu"],
-            features={
-                "fair_prob": fair,
-                "source": "the_odds_api",
-                "bookmaker": "market_consensus",
-                "odds_observed": True,
-                "price_type": "bookmaker",
-            }))
+            features={"fair_prob":fair} if fair else {}))
     return out
 
 
@@ -3015,10 +1955,6 @@ def generate_hr_props_from_data(mlb_lineups, mlb_batters, mlb_pitchers) -> list:
                         "mlb_slg": iso + 0.3,
                         "fair_prob": round(hr_prob, 4),
                         "roster_team": team,
-                        "source": "datagen",
-                        "source_role": "analysis",
-                        "odds_observed": False,
-                        "price_type": "estimated",
                     },
                 )
                 p.team = team
@@ -3304,30 +2240,15 @@ def persist(picks):
         if s in ("MLB","NBA","WNBA","NFL","NHL"):
             return s
         return sport_map.get(p.emoji or "", "?")
-    existing_pick_keys = {
-        x.get("dedup_key") or dedup_key(x.get("player",""), x.get("market",""), x.get("point"), x.get("direction","over"))
-        for x in entry.get("picks", [])
-    }
     for p in singles:
         dk=dedup_key(p.player or "",p.market or "",getattr(p,"point",None),p.direction)
-        if dk in existing_pick_keys:
-            continue
-        existing_pick_keys.add(dk)
         real_sport=_clean_sport(p)
         hp=HistoricalPick(date=today,player=p.player or "",team=p.team or "",
             market=p.market or "",sport=real_sport,
             odds=p.odds,stake=p.stake,direction=p.direction,probability=p.probability,dedup_key=dk)
         entry["picks"].append(hp.model_dump())
         sb_insert({**hp.model_dump(),"league":real_sport,"features":getattr(p,"features",{}) or {}})
-    existing_combo_keys = {
-        "|".join(sorted([str(x) for x in c.get("legs", [])])) + f"@{c.get('odds')}"
-        for c in entry.get("kombis", [])
-    }
     for p in combos:
-        ck = "|".join(sorted([str(x) for x in (p.legs or [])])) + f"@{p.odds}"
-        if ck in existing_combo_keys:
-            continue
-        existing_combo_keys.add(ck)
         entry["kombis"].append({"type":p.type,"legs":p.legs or [],"odds":p.odds,"stake":p.stake,"result":"pending"})
     save_history(h)
     log.info("persisted %d singles + %d combos",len(singles),len(combos))
@@ -3341,8 +2262,7 @@ Inspiriert von Basket Premium (82.5% WR Nov), Basket Blitz VIP, JK (300u+).
 MUSST ausschliesslich gueltiges JSON Array zurueckgeben. Keine Code-Fences, kein Text.
 
 DATENINTERPRETATION:
-- Sportsbook: NUR +EV Picks mit beobachteter Einzelquote; edge_pct positiv, ideal >= +3%. Negative Edge niemals ausgeben.
-- UNDERDOG PICK'EM: direkte Spielerlinie ohne Einzelquote. Nur wählen, wenn Modellwahrscheinlichkeit >=55% (NBA/WNBA/MLB Hits >=56%). Keine Buchmacher-Edge oder Einzelquote erfinden; odds im JSON nur intern 1.85 setzen.
+- NUR +EV Picks: edge_pct muss positiv sein, ideal >= +3%. Negative Edge niemals ausgeben.
 - Basket/NBA/WNBA nur mit konkreter Linie/Punktzahl ausgeben (z.B. Rebounds+Assists Over 17.5). Niemals nur "Over" ohne Linie.
 - edge_pct >= 3% = +EV | avg_last > linie×1.08 = Over | < 0.87 = Under
 - Barrel% >= 12, HardHit% >= 45 = MLB HR Edge | NBA last10 > season+2 = Form Heat
@@ -3393,29 +2313,18 @@ def build_prompt(props):
     lines=[]
     for p in interleaved:
         fair=p.features.get("fair_prob"); edge=""
-        direct_pickem = _has_direct_fantasy_line(p)
         if fair:
-            if direct_pickem:
-                edge=f" model_prob={float(fair)*100:.1f}%"
-            else:
-                ep=round((fair-implied_prob(p.odds))*100,1); edge=f" edge={ep:+.1f}%"
+            ep=round((fair-implied_prob(p.odds))*100,1); edge=f" edge={ep:+.1f}%"
         line_txt = ""
         if getattr(p, "point", None) is not None:
+            dir_word = "Under" if getattr(p, "direction", "over") == "under" else "Over"
             mkt = str(p.market)
+            # Nicht hinzufügen wenn Market schon Over/Under + Zahl enthält
             import re as _re
-            if direct_pickem:
-                already_has_line = bool(_re.search(r'\d+\.?\d*', mkt))
-                if not already_has_line:
-                    line_txt = f" Line {p.point:g} (Higher/Lower)"
-            else:
-                dir_word = "Under" if getattr(p, "direction", "over") == "under" else "Over"
-                already_has_line = bool(_re.search(r'(over|under)\s+\d+\.?\d*', mkt, _re.IGNORECASE))
-                if not already_has_line and str(p.point) not in mkt and f"{p.point:g}" not in mkt:
-                    line_txt = f" {dir_word} {p.point:g}"
-        if direct_pickem:
-            ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} | UNDERDOG PICK'EM | keine Einzelquote{edge}"
-        else:
-            ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} @{p.odds}{edge}"
+            already_has_line = bool(_re.search(r'(over|under)\s+\d+\.?\d*', mkt, _re.IGNORECASE))
+            if not already_has_line and str(p.point) not in mkt and f"{p.point:g}" not in mkt:
+                line_txt = f" {dir_word} {p.point:g}"
+        ln=f"- {p.emoji} {p.player} ({p.game}) {p.market}{line_txt} @{p.odds}{edge}"
         if p.enrichment: ln+=f"  [{p.enrichment}]"
         lines.append(ln)
     return f"""{SYSTEM}
@@ -3552,148 +2461,34 @@ def _safe_display_team(p):
     except Exception:
         return ""
 
-
-def _clean_analysis_text(txt: str) -> str:
-    """Remove duplicate/derived analysis fragments already shown above the note."""
-    if not txt:
-        return ""
-    parts = []
-    seen = set()
-    pc_seen = False
-    db_seen = False
-    for raw in str(txt).split("|"):
-        part = re.sub(r"\s+", " ", raw.strip())
-        if not part:
-            continue
-        low = part.lower()
-        # Edge and probability already have their own display line.
-        if low.startswith("edge ") or low.startswith("prob "):
-            continue
-        part = re.sub(r",?\s*edge\s*=\s*[+\-]?\d+(?:\.\d+)?%?", "", part, flags=re.I).strip(" ,")
-        low = part.lower()
-        if not part:
-            continue
-        if low.startswith("pc:"):
-            if pc_seen:
-                continue
-            pc_seen = True
-            # Keep only the compact grade, not a repeated market sentence.
-            match = re.match(r"(pc:[sabc])\b", low)
-            part = match.group(1).upper().replace("PC:", "PC:") if match else part
-            low = part.lower()
-        if re.match(r"db l\d+", low):
-            if db_seen:
-                continue
-            db_seen = True
-        key = re.sub(r"[^a-z0-9]+", " ", low).strip()
-        if key in seen:
-            continue
-        seen.add(key)
-        parts.append(part)
-    return " | ".join(parts)[:170]
-
 def build_post(picks):
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     singles=[p for p in picks if p.type=="single"]
-    hr_model_items=[p for p in picks if _hr_model_pick(p)]
-    hr_model_singles=[p for p in singles if _hr_model_pick(p)]
-    pickem_singles=[p for p in singles if _has_direct_fantasy_line(p) and p not in hr_model_singles]
-    priced_singles=[p for p in singles if p not in pickem_singles and p not in hr_model_singles]
-    hr_singles=[
-        p for p in priced_singles
-        if getattr(p, "category", "") in ("hr_risk", "hr_lottery")
-        or _is_hr_pick(p)
-    ]
-    normal_singles=[p for p in priced_singles if p not in hr_singles]
     ladders=[p for p in picks if p.type=="ladder"]
-    risk_items=[
-        p for p in picks
-        if getattr(p, "category", "") == "risk"
-        and p.type in ("betbuilder", "kombi2", "big", "super")
-    ]
-    lottery_items=[
-        p for p in picks
-        if getattr(p, "category", "") in ("lottery", "hr_lottery")
-        and p.type in ("betbuilder", "kombi2", "big", "super")
-        and not _hr_model_pick(p)
-    ]
-    builders=[
-        p for p in picks
-        if p.type=="betbuilder" and p not in risk_items and p not in lottery_items
-    ]
-    kombis=[
-        p for p in picks
-        if p.type=="kombi2" and p not in risk_items and p not in lottery_items
-    ]
-    tier2=[p for p in normal_singles if (p.tier or 1)==2]
-    tier1=[p for p in normal_singles if (p.tier or 1)!=2]
-    out=["🎯 PROP HUNTER", f"📅 {today}"]
-    if PH_CARD_MODE == "early":
-        out += ["🌇 EARLY CARD"]
-    elif PH_CARD_MODE == "late":
-        out += ["🌙 LATE CARD"]
-    out += [""]
+    builders=[p for p in picks if p.type=="betbuilder"]
+    kombis=[p for p in picks if p.type=="kombi2"]
+    bigs=[p for p in picks if p.type in ("big","super")]
+    tier2=[p for p in singles if (p.tier or 1)==2]
+    tier1=[p for p in singles if (p.tier or 1)!=2]
+    out=[f"🎯 PROP HUNTER v4 — {today}",""]
     def fmt(p):
-        is_pickem = _has_direct_fantasy_line(p)
         m=_market_with_line(p.market or "", p.direction, getattr(p, "point", None))
-        if is_pickem:
-            m = re.sub(r"\bOver\b", "Higher", m, flags=re.I)
-            m = re.sub(r"\bUnder\b", "Lower", m, flags=re.I)
         team = _safe_display_team(p)
         head = f"{p.emoji or '🎯'} {team + ' — ' if team else ''}{p.player}"
-        if is_pickem:
-            line=f"{head}\n   └ {m} · Underdog Pick'em → {p.stake}u"
-        else:
-            line=f"{head}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
+        line=f"{head}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
         meta=[]
-        if is_pickem:
-            if p.probability is not None:
-                meta.append(f"Modell {p.probability*100:.0f}%")
-                meta.append(f"Vorteil ggü. 50/50 {(p.probability-0.50)*100:+.1f}%")
-        else:
-            if p.edge_pct is not None: meta.append(f"Edge {p.edge_pct:+.1f}%")
-            if p.probability is not None: meta.append(f"Prob {p.probability*100:.0f}%")
+        if p.edge_pct is not None: meta.append(f"Edge {p.edge_pct:+.1f}%")
+        if p.probability is not None: meta.append(f"Prob {p.probability*100:.0f}%")
         meta.append(f"Confidence {_confidence_score(p)}/100")
         line += "\n   📈 " + " · ".join(meta)
-        analysis_txt = _clean_analysis_text(p.analysis)
-        if analysis_txt: line+=f"\n   💡 {analysis_txt}"
+        if p.analysis: line+=f"\n   💡 {p.analysis}"
         return line
-    if pickem_singles:
-        out+=["🟣 UNDERDOG PICK'EM:",""]
-        for p in sorted(pickem_singles, key=lambda x: (x.probability or 0), reverse=True):
-            out+=[fmt(p),""]
     if tier2:
         out+=["🔵 STABILE PICKS:",""]
         for p in tier2: out+=[fmt(p),""]
     if tier1:
         out+=["🟡 VALUE PICKS:",""]
         for p in tier1: out+=[fmt(p),""]
-
-    if hr_model_items:
-        out+=["⚾ HR MODELL-CARD (ohne bestätigte Bookmakerquote):",""]
-        model_single=next((p for p in hr_model_items if getattr(p, "category", "") == "hr_model_single"), None)
-        model_double=next((p for p in hr_model_items if getattr(p, "category", "") == "hr_model_double"), None)
-        model_triple=next((p for p in hr_model_items if getattr(p, "category", "") == "hr_model_triple"), None)
-        if model_single:
-            conf=(_obj_features(model_single)).get("hr_confidence")
-            out.append(f"🥇 SINGLE · {model_single.player} — Home Run → {model_single.stake}u")
-            out.append(f"   📈 Modell {model_single.probability*100:.1f}%" + (f" · Confidence {conf:.0f}/99" if conf is not None else ""))
-            note=_clean_analysis_text(model_single.analysis)
-            if note: out.append(f"   💡 {note}")
-            out.append("")
-        if model_double:
-            out.append(f"🔥 DOUBLE · {' + '.join(model_double.legs or [])} → {model_double.stake}u")
-            out.append(f"   📈 Modell-Kombichance {(model_double.probability or 0)*100:.2f}%")
-            out.append("")
-        if model_triple:
-            out.append(f"🚀 TRIPLE · {' + '.join(model_triple.legs or [])} → {model_triple.stake}u")
-            out.append(f"   📈 Modell-Kombichance {(model_triple.probability or 0)*100:.2f}%")
-            out.append("")
-        out += ["⚠️ Modell-Auswahl ohne bestätigte Quote. Bookmakerquote und Lineup vor Einsatz prüfen.",""]
-    if hr_singles:
-        out+=["⚾ HOME-RUN RISK:",""]
-        for p in hr_singles:
-            out+=[fmt(p),""]
     if ladders:
         out+=["🪜 LADDERS:"]
         for p in ladders:
@@ -3711,29 +2506,14 @@ def build_post(picks):
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
             out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
         out.append("")
-    if risk_items:
-        out+=["🟠 RISK BUILDER:"]
-        for p in risk_items:
-            legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
-            out.append(
-                f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u"
-                f" · Prob {(p.probability or 0)*100:.1f}%"
-            )
-        out.append("")
-
-    if lottery_items:
+    if bigs:
         out+=["💣 LOTTERY BIGS:"]
-        for p in lottery_items:
-            pfx="⚾" if getattr(p, "category", "")=="hr_lottery" else (
-                "🚀" if p.type=="super" else "•"
-            )
+        for p in bigs:
+            pfx="🚀" if p.type=="super" else "•"
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
-            out.append(
-                f"{pfx} {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u"
-                f" · Prob {(p.probability or 0)*100:.1f}%"
-            )
+            out.append(f"{pfx} {' + '.join(legs)} @{p.odds:.1f} → {p.stake}u")
         out.append("")
-    out+=["📊 Bookmaker-Picks verifiziert · HR-Modellcard klar separat markiert 🎯","@prophunter"]
+    out+=["📊 Mehr Value Picks · Keine negative Edge · Lines Pflicht 🎯","@prophunter"]
     return "\n".join(out)
 
 # ─────────────────────────────────────────────
@@ -3830,95 +2610,12 @@ def fetch_oddspapi_props(sport_key: str) -> list:
         log.warning("OddsPapi: %s", e)
         return []
 
-
-
-def _hub_rows_to_props(rows):
-    """Convert normalized source rows into native Props without losing Pick'em context."""
-    converted = []
-    sport_map = {"MLB":"MLB","NBA":"NBA","WNBA":"WNBA","NFL":"NFL",
-                 "BASEBALL_MLB":"MLB","BASKETBALL_NBA":"NBA","BASKETBALL_WNBA":"WNBA",
-                 "FOOTBALL_NFL":"NFL","AMERICANFOOTBALL_NFL":"NFL"}
-    emoji_map = {"MLB":"⚾","NBA":"🏀","WNBA":"🏀","NFL":"🏈"}
-    for r in rows or []:
-        try:
-            raw_s = str(r.get("sport") or r.get("league") or "").upper()
-            sport = sport_map.get(raw_s, raw_s)
-            if sport not in emoji_map or bool(r.get("is_live")) or r.get("card_eligible") is False:
-                continue
-            player = str(r.get("player_name") or "").strip()
-            market = str(r.get("market") or r.get("market_original") or r.get("market_key") or "").strip()
-            line = r.get("line")
-            raw = (r.get("raw") or {}) if isinstance(r.get("raw"), dict) else {}
-            source = str(r.get("source") or "").lower()
-            bookmaker = str(r.get("bookmaker") or source).lower()
-            direct_underdog = source == "underdog" and bookmaker == "underdog" and player and market and line not in (None, "")
-            price_type = str(r.get("price_type") or raw.get("price_type") or "bookmaker").lower()
-            odds = r.get("odds_decimal")
-            if direct_underdog:
-                odds = 1.85  # internal schema value only; never printed as a book price
-                if price_type not in {"fantasy_fixed", "pickem_priced"}:
-                    price_type = "pickem_priced" if r.get("higher_odds_decimal") and r.get("lower_odds_decimal") else "fantasy_fixed"
-            if not player or not market or odds in (None, ""):
-                continue
-            if price_type in {"synthetic", "estimated", "projection", "line_only"} and not direct_underdog:
-                continue
-            odds = float(odds)
-            if odds <= 1.01:
-                continue
-            selection = str(raw.get("selection") or raw.get("label") or r.get("selection") or market).lower()
-            direction = str(r.get("direction") or ("under" if "under" in selection or "less" in selection else "over")).lower()
-            home, away = r.get("home_team") or "", r.get("away_team") or ""
-            game_title = str(r.get("game_title") or f"{away} @ {home}").strip(" @")
-            commence = r.get("commence_time")
-            if isinstance(commence, str) and commence:
-                try:
-                    commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
-                except Exception:
-                    commence = None
-            features = {
-                "source": source, "bookmaker": bookmaker,
-                "snapshot_id": r.get("snapshot_id"), "cache_fallback": r.get("cache_fallback", False),
-                "source_trust": r.get("source_trust", 1.0), "book_consensus": r.get("book_consensus"),
-                "consensus_sources": r.get("consensus_sources", 0), "consensus_line": r.get("consensus_line"),
-                "line_dispersion": r.get("line_dispersion", 0), "best_odds": r.get("best_odds"),
-                "market_key": r.get("market_key"), "market_original": r.get("market_original"),
-                "source_event_id": r.get("source_event_id") or r.get("game_id"),
-                "team": r.get("team") or r.get("team_name"), "position": r.get("position"),
-                "home_team": r.get("home_team"), "away_team": r.get("away_team"),
-                "raw_source": raw, "period": r.get("period") or "game",
-                "alternate_line": bool(r.get("alternate_line")), "bet_builder": bool(r.get("bet_builder")),
-                "is_live": bool(r.get("is_live")), "risk_class": r.get("risk_class") or "standard",
-                "settlement_supported": r.get("settlement_supported", True),
-                "odds_observed": False if direct_underdog else True,
-                "direct_source_line": bool(direct_underdog),
-                "source_payload_observed": True if direct_underdog else bool(r.get("source_payload_observed", True)),
-                "price_type": price_type if direct_underdog else "bookmaker",
-                "higher_odds_decimal": r.get("higher_odds_decimal"),
-                "lower_odds_decimal": r.get("lower_odds_decimal"),
-                "higher_american": r.get("higher_american"), "lower_american": r.get("lower_american"),
-                "higher_payout_multiplier": r.get("higher_payout_multiplier"),
-                "lower_payout_multiplier": r.get("lower_payout_multiplier"),
-            }
-            p = Prop(
-                player=player, market=market, odds=round(odds, 2), point=line,
-                sport=sport, game=game_title, direction=direction, commence_time=commence,
-                features=features, emoji=emoji_map[sport],
-                enrichment="src:underdog | direct fantasy line" if direct_underdog else f"src:{bookmaker or source or 'book'}",
-            )
-            p.event_id = str(r.get("game_id") or r.get("source_event_id") or "")
-            p.sport_key = raw_s.lower()
-            converted.append(p)
-        except Exception:
-            continue
-    return converted
-
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
-    cache=load_cache() if ODDS_API_KEYS else {}; new_cache={}
-    # Stale API prices are allowed only after a configured key was exhausted,
-    # never when the project intentionally runs without The Odds API.
-    if ODDS_API_KEYS and _all_keys_dead() and not cache:
-        log.warning("Configured Odds API keys exhausted — trying limited stale cache")
+    cache=load_cache(); new_cache={}
+    # If all keys dead upfront, try stale cache
+    if _all_keys_dead() and not cache:
+        log.warning("All keys dead — trying stale cache")
         cache=load_cache(force_stale=True)
 
     def _try_oddspapi():
@@ -3950,12 +2647,7 @@ def gather(sport_filter=None):
                         sport=sport_label,
                         game=f"{raw.get('away_team','')} @ {raw.get('home_team','')}",
                         direction="over" if "over" in (raw.get("selection","")).lower() else "under",
-                        features={
-                            "source": "oddspapi",
-                            "bookmaker": raw.get("bookmaker"),
-                            "odds_observed": True,
-                            "price_type": "bookmaker",
-                        },
+                        features={},
                         emoji=SPORTS.get(sk,SPORTS["baseball_mlb"]).emoji,
                     )
                     all_props.append(p)
@@ -3972,7 +2664,7 @@ def gather(sport_filter=None):
             sport_label = {"baseball_mlb":"MLB","basketball_nba":"NBA",
                           "basketball_wnba":"WNBA","icehockey_nhl":"NHL",
                           "americanfootball_nfl":"NFL"}.get(sk)
-            if PH_ENABLE_PROPCRUNCHER and sport_label and PLAYWRIGHT:
+            if sport_label and PLAYWRIGHT:
                 pc_props = fetch_propcruncher_as_props(sport_label)
                 if pc_props:
                     log.info("ProCruncher direkt: %d props (%s, Odds API 0 events)", len(pc_props), sport_label)
@@ -3984,7 +2676,7 @@ def gather(sport_filter=None):
                                 odds=raw["odds"], point=raw["line"],
                                 sport=raw["sport"], game=raw.get("game",""),
                                 direction=raw["direction"],
-                                features={"pc_grade": raw["grade"], "source": "propcruncher", "source_role": "analysis", "odds_observed": False, "price_type": "synthetic"},
+                                features={"pc_grade": raw["grade"]},
                                 emoji=raw["emoji"],
                                 enrichment=f"PC:{raw['grade']}",
                             )
@@ -4078,66 +2770,35 @@ def gather(sport_filter=None):
         if ws:
             tags=[f"PTS{ws.get('avg_pts')}","REB{:.1f}".format(ws.get('avg_reb') or 0)]
             p.enrichment=(p.enrichment+" | " if p.enrichment else "")+" ".join(t for t in tags if t)
-    if PH_ENABLE_SLOW_ENRICHMENTS:
-        all_props=enrich_propsmadness(all_props)
-        all_props=enrich_statz(all_props)
-        if PH_ENABLE_PROPCRUNCHER:
-            all_props=enrich_propcruncher(all_props)
-        all_props=enrich_bdl_props(all_props)
-        all_props=enrich_datastreak(all_props)
-        all_props=enrich_oddspedia(all_props)
-    else:
-        log.info("slow web/synthetic enrichments disabled for card run")
+    all_props=enrich_propsmadness(all_props)
+    all_props=enrich_statz(all_props)
+    all_props=enrich_propcruncher(all_props)
+    all_props=enrich_fpp_nhl(all_props)
+    all_props=enrich_bdl_props(all_props)
+    all_props=enrich_datastreak(all_props)
+    all_props=enrich_oddspedia(all_props)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
-
-    # V11 MULTI-SOURCE HUB: additive and fallback-safe.
-    # Uses SGO, OddsAPI.io, PrizePicks, Underdog, Sleeper, DK, FD, Bovada, ESPN Bet.
-    try:
-        from prop_hunter_source_hub import collect as _collect_source_hub
-        _hub_raw = _collect_source_hub(sport_filter)
-        _hub_props = _hub_rows_to_props(_hub_raw)
-        if _hub_props:
-            def _source_merge_key(p):
-                return '|'.join([(p.player or '').lower(), market_base(p.market or ''),
-                                 str(getattr(p,'point',None)), str(getattr(p,'direction','over'))])
-            index={_source_merge_key(p):i for i,p in enumerate(all_props)}
-            added=replaced=0
-            for hp in _hub_props:
-                k=_source_merge_key(hp)
-                if k not in index:
-                    index[k]=len(all_props); all_props.append(hp); added+=1
-                else:
-                    i=index[k]
-                    if float(getattr(hp,'odds',0) or 0) > float(getattr(all_props[i],'odds',0) or 0):
-                        all_props[i]=hp; replaced+=1
-            log.info('V12 source hub: +%d best-odds replacements=%d / %d', added, replaced, len(_hub_props))
-    except Exception as e:
-        log.warning('V11 source hub: %s', e)
-
-    # QUELLEN-KETTE: Odds API → Multi-source hub → OddsPapi → ProCruncher → Snapshots
-    if not all_props and (not ODDS_API_KEYS or _all_keys_dead()):
+    # QUELLEN-KETTE: Odds API → OddsPapi → ProCruncher → Supabase Snapshots
+    if not all_props and _all_keys_dead():
         _try_oddspapi()
         if all_props:
-            if PH_ENABLE_SLOW_ENRICHMENTS:
-                all_props=enrich_propsmadness(all_props)
-                if PH_ENABLE_PROPCRUNCHER:
-                    all_props=enrich_propcruncher(all_props)
+            all_props=enrich_propsmadness(all_props)
+            all_props=enrich_propcruncher(all_props)
             all_props=enrich_gamelogs_fairprob(all_props)
             log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
             return all_props
-        # Synthetic ProCruncher is analysis-only and disabled by default.
-        if PH_ENABLE_PROPCRUNCHER:
-            log.info("ProCruncher Fallback aktiviert")
-            all_props = gather_propcruncher_fallback(sport_filter)
-            if all_props:
-                all_props=enrich_statz(all_props)
-                all_props=enrich_gamelogs_fairprob(all_props)
-                log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
-                return all_props
+        # ProCruncher Fallback wenn OddsPapi auch leer
+        log.info("ProCruncher Fallback aktiviert")
+        all_props = gather_propcruncher_fallback(sport_filter)
+        if all_props:
+            all_props=enrich_statz(all_props)
+            all_props=enrich_gamelogs_fairprob(all_props)
+            log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
+            return all_props
         # PrizePicks + Underdog (echte Linien, keine Keys)
         ppud = []
-        for sl in ("MLB","NBA","WNBA","NFL"):
+        for sl in ("MLB","NBA","WNBA","NHL","NFL"):
             if sport_filter and sport_filter.lower() not in sl.lower(): continue
             ppud.extend(fetch_prizepicks_props(sl))
         ppud.extend(fetch_underdog_props(sport_filter))
@@ -4149,9 +2810,7 @@ def gather(sport_filter=None):
                 if k in seen: continue
                 seen.add(k); uniq.append(p)
             all_props = uniq
-            all_props = enrich_direct_pickem_prices(all_props)
             all_props = enrich_gamelogs_fairprob(all_props)
-            all_props = enrich_direct_pickem_gamelogs(all_props)
             log.info("ACTIVE (PrizePicks/Underdog): props: %d", len(all_props))
             return all_props
         # Letzter Fallback: Supabase Snapshots (odds-api.io/SGO/OpticOdds Connectoren)
@@ -4176,29 +2835,24 @@ def gather(sport_filter=None):
     except Exception as e:
         log.warning("snapshot merge: %s", e)
 
-    # Synthetic HR rows are analysis-only. In the verified-price card mode they
-    # would be rejected later anyway, so do not spend extra API/runtime minutes.
-    if PH_ALLOW_SYNTHETIC_ODDS:
-        try:
-            if (not sport_filter) or sport_filter.lower() == "mlb":
-                if not mlb_lu: mlb_lu = fetch_mlb_lineups()
-                if not mlb_b:  mlb_b = fetch_mlb_batters()
-                if not mlb_p:  mlb_p = fetch_mlb_pitchers()
-                hr_props = generate_hr_props_from_data(mlb_lu, mlb_b, mlb_p)
-                if hr_props:
-                    existing_hr = {(p.player or "").lower() for p in all_props if _is_hr_market_str(p.market)}
-                    for hp in hr_props:
-                        if (hp.player or "").lower() not in existing_hr:
-                            all_props.append(hp)
-        except Exception as e:
-            log.warning("HR generation: %s", e)
-    else:
-        log.info("synthetic HR generation disabled for verified-price card")
+    # HR-PROPS DIREKT AUS BATTER-DATEN generieren (JK-Style, unabhängig von Odds-Quellen).
+    # Damit gibt es HR-Lottery auch wenn DraftKings/Bovada blocken.
+    try:
+        if (not sport_filter) or sport_filter.lower() == "mlb":
+            if not mlb_lu: mlb_lu = fetch_mlb_lineups()
+            if not mlb_b:  mlb_b = fetch_mlb_batters()
+            if not mlb_p:  mlb_p = fetch_mlb_pitchers()
+            hr_props = generate_hr_props_from_data(mlb_lu, mlb_b, mlb_p)
+            if hr_props:
+                existing_hr = {(p.player or "").lower() for p in all_props if _is_hr_market_str(p.market)}
+                for hp in hr_props:
+                    if (hp.player or "").lower() not in existing_hr:
+                        all_props.append(hp)
+    except Exception as e:
+        log.warning("HR generation: %s", e)
 
     all_props = apply_data_plus_visible(all_props)
-    all_props = enrich_direct_pickem_prices(all_props)
     all_props = enrich_gamelogs_fairprob(all_props)
-    all_props = enrich_direct_pickem_gamelogs(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
 
@@ -4297,8 +2951,6 @@ def analyse(props):
         pk.source_sport = m.sport
         pk.source_game = m.game
         pk.features = getattr(m, "features", {}) or {}
-        pk.odds = float(m.odds)
-        pk.odds_observed = _has_observed_odds(m)
         pk.market = _market_with_line(pk.market or m.market, pk.direction, pk.point)
         if m.enrichment and pk.analysis:
             # kurz halten, aber Zusatzinfos nicht verlieren
@@ -4310,7 +2962,6 @@ def analyse(props):
         sport_label = m.sport
         blended_prob = blend_with_ml(pk, base_prob, sport_label)
         if blended_prob:
-            blended_prob = _conservative_live_probability(blended_prob, m)
             pk.probability = round(float(blended_prob), 4)
             pk.edge_pct=round(edge_pct(blended_prob,pk.odds)*100,2)
             pk.ev=round(ev(blended_prob,pk.odds),3)
@@ -4442,33 +3093,6 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     for p in singles:
         edge = p.edge_pct
         prob = p.probability
-        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_eligible_price(p):
-            rejected["unverified_odds"] += 1
-            continue
-        if _has_direct_fantasy_line(p):
-            if prob is None:
-                rejected["pickem_no_prob"] += 1
-                continue
-            if float(prob) < _fantasy_min_probability(p):
-                rejected["pickem_low_prob"] += 1
-                continue
-            if not _sanity_line(p):
-                rejected["bad_line"] += 1
-                continue
-            p.features = dict(_obj_features(p))
-            p.features.update({
-                "fantasy_pickem": True,
-                "settlement_mode": "hit_rate_only",
-                "odds_observed": False,
-                "price_type": "fantasy_fixed",
-            })
-            p.edge_pct = round((float(prob) - 0.50) * 100.0, 2)
-            p.ev = None
-            p.stake = _fantasy_stake(float(prob))
-            accepted_singles.append(p)
-            if len(accepted_singles) >= MAX_SINGLES_TOTAL:
-                break
-            continue
         if edge is None:
             rejected["no_edge"] += 1; continue
         if edge <= 0:
@@ -4700,14 +3324,7 @@ def load_ml_model():
         return None
 
 def ml_predict_proba(pick: Pick, sport_label: str) -> float | None:
-    """Returns the champion calibrated probability, then falls back to legacy ML."""
-    try:
-        from prop_hunter_autolearn import predict_pick_probability
-        autonomous = predict_pick_probability(pick, sport_label)
-        if autonomous is not None:
-            return float(autonomous)
-    except Exception as exc:
-        log.debug("autonomous ML unavailable: %s", exc)
+    """Returns ML win-probability for a Pick, or None if no model / not enough data."""
     payload = load_ml_model()
     if not payload: return None
     if payload.get("auc", 0) < 0.52:
@@ -4765,22 +3382,7 @@ def _source_prop_probability(p):
     except Exception:
         pass
 
-    # Champion AutoML before heuristic fallback.
-    try:
-        from prop_hunter_autolearn import predict_probability
-        raw_data = p.model_dump() if hasattr(p, "model_dump") else dict(vars(p))
-        raw_data["features"] = getattr(p, "features", {}) or {}
-        learned = predict_probability(raw_data)
-        if learned is not None:
-            return max(0.01, min(0.98, float(learned)))
-    except Exception:
-        pass
-
-    # Direct Pick'em lines have no standalone odds. Use only model/stat evidence.
-    if _has_direct_fantasy_line(p):
-        return _fantasy_probability_from_features(p)
-
-    # Fallback: aus echter Quote + Kontext konservativ bauen
+    # Fallback: aus Quote + Kontext konservativ bauen
     try:
         odds = float(getattr(p, "odds", 0) or 0)
         if odds <= 1.01:
@@ -4826,7 +3428,7 @@ def _source_prop_probability(p):
             boost += 0.020
 
         # MLB HR: hohe Quoten haben kleine implied probability, nur kleiner Kontextboost
-        is_hr = "home run" in market or re.search(r"\bhr\b", market) is not None
+        is_hr = "home run" in market or re.search(r"hr", market) is not None
         if is_hr:
             boost = min(boost, 0.045)
 
@@ -4834,18 +3436,8 @@ def _source_prop_probability(p):
         if "hit" in market or "total base" in market or "bases" in market:
             boost += 0.015
 
-        # Source reliability and cross-book consensus influence only the edge over market.
-        try:
-            trust = max(0.65, min(1.20, float((feats or {}).get("source_trust", 1.0) or 1.0)))
-        except Exception:
-            trust = 1.0
-        prob = implied + boost * trust
-        try:
-            consensus = float((feats or {}).get("book_consensus"))
-            if 0.01 < consensus < 0.99 and int((feats or {}).get("consensus_sources", 0) or 0) >= 2:
-                prob = 0.80 * prob + 0.20 * consensus
-        except Exception:
-            pass
+        # Untere/obere Sicherheitsgrenzen
+        prob = implied + boost
 
         # Für normale Props nicht unrealistisch aufblasen
         if not is_hr:
@@ -4871,8 +3463,6 @@ def _source_prop_score_tuple(p):
     prob = _source_prop_probability(p)
     if prob is None:
         return (-999.0, -999.0)
-    if _has_direct_fantasy_line(p):
-        return ((prob - 0.50) * 100.0, prob)
     try:
         edge = edge_pct(prob, float(p.odds)) * 100
     except Exception:
@@ -4920,12 +3510,7 @@ def rescue_picks_from_props(props, max_picks=12):
     per_game = defaultdict(int)
 
     for sp in props or []:
-        if PH_REQUIRE_REAL_ODDS and not PH_ALLOW_SYNTHETIC_ODDS and not _has_eligible_price(sp):
-            rejected["unverified_odds"] += 1
-            continue
         prob = _source_prop_probability(sp)
-        if prob is not None:
-            prob = _conservative_live_probability(prob, sp)
         # PropsMadness Blocker auch im Rescue
         _pm = (getattr(sp, "features", {}) or {}).get("pm_hit_rate")
         try:
@@ -4935,40 +3520,6 @@ def rescue_picks_from_props(props, max_picks=12):
             pass
         if prob is None:
             rejected["no_prob"] += 1
-            continue
-        if _has_direct_fantasy_line(sp):
-            sport = (getattr(sp, "sport", "") or "").upper()
-            market = getattr(sp, "market", "") or ""
-            point = getattr(sp, "point", None)
-            direction = _source_prop_direction(sp)
-            if point is None:
-                rejected["pickem_no_line"] += 1
-                continue
-            if float(prob) < _fantasy_min_probability(sp):
-                rejected["pickem_low_prob"] += 1
-                continue
-            try:
-                pk = Pick(
-                    type="single", emoji=getattr(sp, "emoji", None),
-                    player=getattr(sp, "player", None), team=_team_for(sp),
-                    market=_market_with_line(market, direction, point), direction=direction,
-                    odds=1.85, stake=_fantasy_stake(float(prob)),
-                    probability=round(float(prob), 4),
-                    edge_pct=round((float(prob) - 0.50) * 100.0, 2), ev=None,
-                    game=_source_prop_game(sp),
-                    analysis=(getattr(sp, "enrichment", None) or "Underdog Pick'em aus Modell-/Gamelog-Daten")[:140],
-                )
-                pk.point = point
-                pk.source_sport = sport
-                pk.source_game = _source_prop_game(sp)
-                pk.features = dict(getattr(sp, "features", {}) or {})
-                pk.features.update({
-                    "fantasy_pickem": True, "settlement_mode": "hit_rate_only",
-                    "odds_observed": False, "price_type": "fantasy_fixed",
-                })
-                candidates.append(pk)
-            except Exception:
-                rejected["pickem_build_error"] += 1
             continue
         try:
             odds = float(sp.odds)
@@ -5106,7 +3657,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 edge_pct=0.0,
                 ev=round(ev(hr_prob, odds), 3),
                 game=_source_prop_game(sp),
-                analysis=(f"HR Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
+                analysis=(f"JK HR Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
             )
             pk.point = getattr(sp, "point", None)
             pk.source_sport = "MLB"
@@ -5204,8 +3755,8 @@ def build_hr_321(picks):
                 market=f"{len(legs)}x Home Run",
                 direction="over", odds=odds, stake=stake,
                 probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
-                game="HR Special",
-                analysis=f"Die {len(legs)} besten HR-Profile kombiniert.",
+                game="JK HR Special",
+                analysis=f"JK Style: die {len(legs)} besten HR-Profile kombiniert.",
             )
             pk.legs = legs
             return pk
@@ -5310,7 +3861,7 @@ def build_jk_extras(picks):
                     player=" + ".join(l.player for l in top2), emoji="🎯", team="",
                     market="2-Leg Kombi", direction="over", odds=odds, stake=0.3,
                     probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
-                    game="Safe Builder", analysis="Die zwei sichersten Singles kombiniert.")
+                    game="JK Double", analysis="Die zwei sichersten Singles kombiniert.")
                 pk.legs = [f"{l.player} {l.market}" for l in top2]
                 extras.append(pk)
                 log.info("JK Double gebaut @ %.2f", odds)
@@ -5355,8 +3906,8 @@ def build_jk_extras(picks):
                     team=anchor.team or "", market=f"{base_market} Ladder",
                     direction="over", odds=float(anchor.odds), stake=1.0,
                     probability=anchor.probability, edge_pct=0, ev=0,
-                    game="Ladder",
-                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u.")
+                    game="JK Ladder",
+                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u (JK-Style).")
                 pk.picks = [safe_leg, value_leg]
                 extras.append(pk)
                 log.info("JK Ladder gebaut: %s (%.1f→%.1f)", anchor.player, point, alt_point)
@@ -5378,257 +3929,73 @@ def build_jk_extras(picks):
 
     return extras
 
-
-def _verified_market_match(pick, props):
-    """Match a candidate pick to a genuinely observed bookmaker price."""
-    if _has_observed_odds(pick):
-        try:
-            if float(getattr(pick, "odds", 0) or 0) > 1.01:
-                return pick
-        except Exception:
-            pass
-
-    pick_player = norm_name(getattr(pick, "player", ""))
-    pick_market = market_base(getattr(pick, "market", ""))
-    pick_direction = str(getattr(pick, "direction", "over") or "over").lower()
-    pick_point = getattr(pick, "point", None)
-
-    matches = []
-    for source_prop in props or []:
-        if not _has_observed_odds(source_prop):
-            continue
-        try:
-            source_odds = float(getattr(source_prop, "odds", 0) or 0)
-        except Exception:
-            continue
-        if source_odds <= 1.01:
-            continue
-        if norm_name(getattr(source_prop, "player", "")) != pick_player:
-            continue
-        if market_base(getattr(source_prop, "market", "")) != pick_market:
-            continue
-        source_direction = str(
-            getattr(source_prop, "direction", "over") or "over"
-        ).lower()
-        if source_direction != pick_direction:
-            continue
-
-        source_point = getattr(source_prop, "point", None)
-        if pick_point is not None or source_point is not None:
-            try:
-                if pick_point is None or source_point is None:
-                    continue
-                if abs(float(pick_point) - float(source_point)) > 0.01:
-                    continue
-            except Exception:
-                continue
-        matches.append(source_prop)
-
-    if not matches:
-        return None
-    return max(matches, key=lambda row: float(getattr(row, "odds", 0) or 0))
-
-
-def _reprice_verified_pick(pick, source_prop):
-    """Copy observed price/provenance and recompute probability, EV and stake."""
-    pick.odds = float(getattr(source_prop, "odds", 0) or 0)
-    pick.point = getattr(source_prop, "point", getattr(pick, "point", None))
-    pick.direction = getattr(
-        source_prop, "direction", getattr(pick, "direction", "over")
-    )
-    pick.market = _market_with_line(
-        getattr(source_prop, "market", None) or getattr(pick, "market", ""),
-        pick.direction,
-        pick.point,
-    )
-    pick.features = dict(getattr(source_prop, "features", {}) or {})
-    pick.features["odds_observed"] = True
-    pick.features["price_type"] = "bookmaker"
-    pick.odds_observed = True
-
-    probability = float(getattr(pick, "probability", 0) or 0)
-    probability = _conservative_live_probability(probability, source_prop)
-    pick.probability = probability
-    implied = 1.0 / pick.odds
-    pick.implied_prob = implied
-    pick.edge_pct = round((probability - implied) * 100.0, 1)
-    pick.ev = round(probability * pick.odds - 1.0, 4)
-
-    if pick.edge_pct <= 0 or pick.ev <= 0:
-        return None
-
-    b = pick.odds - 1.0
-    q = 1.0 - probability
-    kelly = ((b * probability) - q) / b if b > 0 else 0.0
-    pick.stake = round(max(0.10, min(0.60, kelly * 0.25)), 2)
-    return pick
-
-
-def _direct_fantasy_market_match(pick, props):
-    """Match a Pick'em candidate to the observed Underdog player/stat/line."""
-    pick_player = norm_name(getattr(pick, "player", ""))
-    pick_market = market_base(getattr(pick, "market", ""))
-    pick_point = getattr(pick, "point", None)
-    matches = []
-    for source_prop in props or []:
-        if not _has_direct_fantasy_line(source_prop):
-            continue
-        if norm_name(getattr(source_prop, "player", "")) != pick_player:
-            continue
-        if market_base(getattr(source_prop, "market", "")) != pick_market:
-            continue
-        source_point = getattr(source_prop, "point", None)
-        try:
-            if pick_point is None or source_point is None or abs(float(pick_point) - float(source_point)) > 0.01:
-                continue
-        except Exception:
-            continue
-        matches.append(source_prop)
-    return matches[0] if matches else None
-
-
-def _prepare_direct_fantasy_pick(pick, source_prop):
-    """Copy Underdog provenance and apply probability-only Pick'em rules."""
-    probability = getattr(pick, "probability", None)
-    if probability is None:
-        probability = _source_prop_probability(source_prop)
-    if probability is None:
-        return None
-    probability = max(0.01, min(0.70, float(probability)))
-    if probability < _fantasy_min_probability(source_prop):
-        return None
-    pick.point = getattr(source_prop, "point", getattr(pick, "point", None))
-    pick.direction = getattr(pick, "direction", None) or "over"
-    pick.market = _market_with_line(
-        getattr(source_prop, "market", None) or getattr(pick, "market", ""),
-        pick.direction, pick.point,
-    )
-    pick.odds = 1.85
-    pick.probability = round(probability, 4)
-    pick.edge_pct = round((probability - 0.50) * 100.0, 2)
-    pick.ev = None
-    pick.stake = _fantasy_stake(probability)
-    pick.source_sport = getattr(source_prop, "sport", getattr(pick, "source_sport", ""))
-    pick.source_game = getattr(source_prop, "game", getattr(pick, "source_game", ""))
-    pick.features = dict(getattr(source_prop, "features", {}) or {})
-    pick.features.update({
-        "fantasy_pickem": True, "settlement_mode": "hit_rate_only",
-        "odds_observed": False, "direct_source_line": True,
-        "source_payload_observed": True, "price_type": "fantasy_fixed",
-    })
-    pick.odds_observed = False
-    return pick
-
-
-def enforce_final_verified_market_gate(picks, props):
-    """Final gate: verified sportsbook prices or qualified direct Pick'em lines."""
-    accepted=[]; rejected=0; seen=set(); sportsbook_count=0; pickem_count=0
-    for pick in picks or []:
-        if getattr(pick, "type", None) != "single":
-            continue
-        if _has_direct_fantasy_line(pick):
-            source_prop = _direct_fantasy_market_match(pick, props)
-            pick = _prepare_direct_fantasy_pick(pick, source_prop) if source_prop else None
-            lane = "underdog_pickem"
-        else:
-            source_prop = _verified_market_match(pick, props)
-            pick = _reprice_verified_pick(pick, source_prop) if source_prop else None
-            lane = "sportsbook"
-        if pick is None:
-            rejected += 1
-            continue
-        key = dedup_key(getattr(pick, "player", ""), market_base(getattr(pick, "market", "")),
-                        getattr(pick, "point", None), getattr(pick, "direction", "over"))
-        provider = "underdog_pickem" if lane == "underdog_pickem" else str((_obj_features(pick)).get("bookmaker") or "")
-        full_key=f"{key}|{provider.lower()}"
-        if full_key in seen:
-            continue
-        seen.add(full_key); accepted.append(pick)
-        if lane == "underdog_pickem": pickem_count += 1
-        else: sportsbook_count += 1
-    log.info("V12.8 final market gate: %d → %d singles | sportsbook=%d pickem=%d rejected=%d",
-             sum(1 for p in (picks or []) if getattr(p, "type", None) == "single"),
-             len(accepted), sportsbook_count, pickem_count, rejected)
-    return accepted
-
-
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER %s REAL-ODDS GUARD + HR MODEL ACTIVE", PH_RUNTIME_VERSION)
-    log.info("PROP HUNTER (dry=%s sport=%s)",dry_run,sport_filter or "all")
-
-    # The HR model card is independent from bookmaker availability. It is built from
-    # the official MLB DATA+ cache and remains clearly separated from wager prices.
-    hr_model_picks = []
-    if not sport_filter or str(sport_filter).lower() == "mlb":
-        hr_model_picks = build_hr_model_card()
-
-    props = gather(sport_filter)
-    verified_picks = []
+    log.info("PROP HUNTER v4 DATA+ TEAM-SAFE (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    props=gather(sport_filter)
     if not props:
-        log.warning("no sportsbook/Pick'em props found")
-    else:
-        props = filter_props_for_card(props, PH_CARD_MODE)
-        if not props:
-            log.warning("no sportsbook/Pick'em props in %s card time window", PH_CARD_MODE.upper())
-        else:
-            direct_pickem_props = [p for p in props if _has_direct_fantasy_line(p)]
-            sportsbook_props = [p for p in props if _has_observed_odds(p)]
-            pickem_rescue = rescue_picks_from_props(direct_pickem_props, max_picks=12) if direct_pickem_props else []
-
-            if pickem_rescue and not sportsbook_props:
-                candidates = filter_picks(pickem_rescue)
-                log.info("Pick'em fast lane: %d qualified picks; LLM skipped (no sportsbook prices)", len(candidates))
-            else:
-                candidates = analyse(props)
-                if not candidates:
-                    log.warning("no picks from LLM — trying source-prop rescue")
-                    candidates = filter_picks(rescue_picks_from_props(props, max_picks=12))
-                else:
-                    candidates = quality_filter_picks(filter_picks(candidates))
-                    singles_now = sum(1 for p in candidates if getattr(p, "type", None) == "single")
-                    if singles_now < 5:
-                        rescue = rescue_picks_from_props(props, max_picks=12)
-                        before = len(candidates)
-                        candidates = merge_unique_picks(candidates, rescue, max_singles=8, max_total=12)
-                        log.info("fill-up rescue: picks %d → %d (singles %d → %d)",
-                                 before, len(candidates), singles_now,
-                                 sum(1 for p in candidates if getattr(p, "type", None) == "single"))
-
-            if not candidates:
-                log.warning("no verified candidates after filter/rescue")
-            else:
-                candidates = limit_singles_per_game(candidates, max_per_game=3)
-                candidates = limit_total_singles(candidates, max_singles=12)
-                verified_picks = enforce_final_verified_market_gate(candidates, props)
-
-    extras = []
-    if verified_picks:
-        try:
-            from prop_hunter_builder_engine import build_autonomous_extras
-            bookmaker_picks = [p for p in verified_picks if _has_observed_odds(p)]
-            extras = build_autonomous_extras(bookmaker_picks, props, Pick, LadderLeg) if bookmaker_picks else []
-            log.info("autonomous builder engine: %d extras (sportsbook singles=%d)", len(extras), len(bookmaker_picks))
-        except Exception as exc:
-            log.warning("autonomous builder engine unavailable: %s", exc)
-
-    picks = verified_picks + extras + hr_model_picks
-    if not picks:
-        log.warning("no verified market pick, qualified Pick'em or HR model card — nothing posted")
+        log.warning("no props found")
         return
 
-    body = build_post(picks)
+    picks=analyse(props)
+
+    if not picks:
+        log.warning("no picks from LLM — trying source-prop rescue")
+        picks = rescue_picks_from_props(props, max_picks=12)
+        picks = filter_picks(picks)
+    else:
+        picks=filter_picks(picks)
+        picks=quality_filter_picks(picks)
+
+        # Fill-Up: Wenn die KI zu wenig übrig lässt, füllen wir aus den besten Source-Props auf.
+        singles_now = sum(1 for p in picks if getattr(p, "type", None) == "single")
+        if singles_now < 5:
+            rescue = rescue_picks_from_props(props, max_picks=12)
+            before = len(picks)
+            picks = merge_unique_picks(picks, rescue, max_singles=8, max_total=12)
+            log.info("fill-up rescue: picks %d → %d (singles %d → %d)",
+                     before, len(picks), singles_now,
+                     sum(1 for p in picks if getattr(p, "type", None) == "single"))
+
+    if not picks:
+        log.warning("no picks after dedup/quality filter/rescue — trying relaxed edge")
+        # Letzter Versuch: Edge Filter lockern
+        rescue2 = rescue_picks_from_props(props, max_picks=4)
+        if rescue2:
+            picks = rescue2
+            log.info("relaxed rescue: %d picks", len(picks))
+        else:
+            log.warning("no picks at all — nothing to post")
+            return
+
+    picks = limit_singles_per_game(picks, max_per_game=3)
+    picks = limit_total_singles(picks, max_singles=12)
+    picks = picks + build_jk_extras(picks)
+    body=build_post(picks)
     print("\n"+body+"\n")
     send_telegram(body,dry_run=dry_run)
     if not dry_run:
-        # Model-only HR recommendations are not persisted as priced wagers.
-        persistable = [p for p in (verified_picks + extras) if not _hr_model_pick(p)]
-        if persistable:
-            persist(persistable)
-        if hr_model_picks:
-            log.info("HR model card posted but not persisted as bookmaker wager")
-    log.info("done — %d total items (%d verified singles, %d HR model items)",
-             len(picks), sum(1 for p in verified_picks if p.type=="single"), len(hr_model_picks))
+        persist(picks)
+    log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
+
+if __name__=="__main__":
+    import argparse,sys
+    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ TEAM-SAFE")
+    parser.add_argument("--dry-run",action="store_true")
+    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
+    parser.add_argument("-v","--verbose",action="store_true")
+    parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
+    args=parser.parse_args()
+    if args.train_ml:
+        if args.verbose: setup_logging(logging.DEBUG)
+        result = train_ml_model()
+        if result:
+            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
+        else:
+            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
+        raise SystemExit(0)
+    if args.verbose: setup_logging(logging.DEBUG)
+    run(dry_run=args.dry_run,sport_filter=args.sport)
 
 
 # ─────────────────────────────────────────────
@@ -5933,31 +4300,3 @@ def player_ml_probability(player: str, sport: str, market: str,
 
     log.info("Player ML [%s %s %s @%.1f]: %.1f%%", sport, player, market, line, prob*100)
     return round(prob, 3)
-
-if __name__=="__main__":
-    import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER")
-    parser.add_argument("--dry-run",action="store_true")
-    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl"])
-    parser.add_argument("--card-mode", choices=["all","early","late"], help="override PH_CARD_MODE")
-    parser.add_argument("-v","--verbose",action="store_true")
-    parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
-    args=parser.parse_args()
-    if args.train_ml:
-        if args.verbose: setup_logging(logging.DEBUG)
-        try:
-            from prop_hunter_autolearn import train_and_promote
-            auto_report = train_and_promote()
-            log.info("✅ Autonomous ML update: rows=%s", auto_report.get("rows", 0))
-        except Exception as exc:
-            log.warning("Autonomous ML update failed: %s", exc)
-        result = train_ml_model()
-        if result:
-            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
-        else:
-            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
-        raise SystemExit(0)
-    if args.verbose: setup_logging(logging.DEBUG)
-    if args.card_mode:
-        PH_CARD_MODE = args.card_mode
-    run(dry_run=args.dry_run,sport_filter=args.sport)
