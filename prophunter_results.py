@@ -18,30 +18,59 @@ HISTORY  = "picks_history.json"
 TIMEOUT  = 30
 
 def update_supabase_result(pick, result, profit):
-    """Writes win/loss + profit back to Supabase prop_picks table, matched by dedup_key+date."""
+    """Update both supported Supabase pick schemas.
+
+    The project historically wrote ``prop_picks`` while newer tools read
+    ``prop_hunter_picks``.  Settlement now mirrors the result to both tables so
+    learning and reporting cannot silently diverge.
+    """
     if not SUPABASE_URL or not SUPABASE_KEY:
         return False
     dedup_key = pick.get("dedup_key")
-    pick_date = pick.get("date")
+    pick_date = pick.get("sent_date") or pick.get("date")
     if not dedup_key or not pick_date:
         return False
-    try:
-        r = requests.patch(
-            f"{SUPABASE_URL}/rest/v1/prop_picks",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal",
-            },
-            params={"dedup_key": f"eq.{dedup_key}", "date": f"eq.{pick_date}"},
-            json={"result": result, "profit": profit},
-            timeout=TIMEOUT,
-        )
-        return r.status_code in (200, 204)
-    except Exception as e:
-        print(f"Supabase update error: {e}")
-        return False
+
+    headers={
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+    }
+
+    updates=(
+        (
+            "prop_picks",
+            {"dedup_key": f"eq.{dedup_key}", "date": f"eq.{str(pick_date)[:10]}"},
+            {"result": result, "profit": profit},
+        ),
+        (
+            "prop_hunter_picks",
+            {"dedup_key": f"eq.{dedup_key}", "sent_date": f"eq.{str(pick_date)[:10]}"},
+            {"status": result, "profit_units": profit},
+        ),
+    )
+    success=False
+    errors=[]
+    for table, params, payload in updates:
+        try:
+            response=requests.patch(
+                f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}",
+                headers=headers,
+                params=params,
+                json=payload,
+                timeout=TIMEOUT,
+            )
+            if response.status_code in (200,204):
+                success=True
+            elif response.status_code not in (404,400):
+                errors.append(f"{table} HTTP {response.status_code}: {response.text[:160]}")
+        except Exception as exc:
+            errors.append(f"{table}: {exc}")
+    if errors:
+        print("Supabase result update warning: " + " | ".join(errors))
+    return success
+
 
 def send(text):
     if not TG_TOKEN or not TG_CHAT: print(text); return
