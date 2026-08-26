@@ -775,7 +775,8 @@ def fetch_prizepicks_props(sport_label: str) -> list:
                 out.append(Prop(player=name, market=stat, odds=1.85,
                     point=float(line), sport=sport_label,
                     emoji=emoji_map.get(sport_label,"🎯"), game="",
-                    direction="over"))
+                    direction="over",
+                    features={"odds_observed": False, "price_type": "pickem_line"}))
             except Exception: continue
         log.info("PrizePicks %s: %d props", sport_label, len(out))
     except Exception as e:
@@ -811,7 +812,8 @@ def fetch_underdog_props(sport_filter=None) -> list:
             try:
                 out.append(Prop(player=name, market=stat, odds=1.85,
                     point=float(line), sport=sport,
-                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over"))
+                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over",
+                    features={"odds_observed": False, "price_type": "pickem_line"}))
             except Exception: continue
         log.info("Underdog: %d props", len(out))
     except Exception as e:
@@ -883,6 +885,13 @@ def fetch_snapshot_props(sport_filter=None) -> list:
                     game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
                     direction="over",
                     enrichment=f"src:{r.get('bookmaker','snapshot')}",
+                    features={
+                        "odds_observed": bool(r.get("odds_decimal") is not None and
+                                              str(r.get("bookmaker") or "").strip().lower()
+                                              not in {"", "underdog", "sleeper", "prizepicks"}),
+                        "price_type": "bookmaker" if r.get("odds_decimal") is not None else "pickem_line",
+                        "bookmaker": r.get("bookmaker") or "",
+                    },
                 ))
             except Exception: continue
         if out: log.info("Snapshot props (Supabase): %d", len(out))
@@ -1950,6 +1959,8 @@ def generate_hr_props_from_data(mlb_lineups, mlb_batters, mlb_pitchers) -> list:
                     direction="over",
                     enrichment=f"src:datagen | HR{hr:.0f} Barrel{barrel:.0f}% vs HR/9 {opp_hr9:.1f}",
                     features={
+                        "odds_observed": False,
+                        "price_type": "estimated",
                         "mlb_hr_rate": round(hr / 550, 4),
                         "mlb_hr_score": round((barrel/5) + (iso*4) + (opp_hr9), 2),
                         "mlb_slg": iso + 0.3,
@@ -3093,6 +3104,12 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     for p in singles:
         edge = p.edge_pct
         prob = p.probability
+        # Never publish an estimated/synthetic price as a bookmaker quote.
+        # Legacy props without an explicit marker remain compatible.
+        feats = getattr(p, "features", {}) or {}
+        if feats.get("odds_observed") is False:
+            rejected["synthetic_odds"] += 1
+            continue
         if edge is None:
             rejected["no_edge"] += 1; continue
         if edge <= 0:
@@ -4269,6 +4286,7 @@ def player_ml_probability(player: str, sport: str, market: str,
     # Features berechnen
     feats = compute_player_features(games, line, stat_key)
     if not feats: return None
+    is_home_game = bool(games[0].get("is_home", True)) if games else True
 
     # Einfaches gewichtetes Modell (kein Training nötig — direkte Heuristik)
     # Gewichtung: L5 Hit Rate 40%, L10 Hit Rate 35%, L20 Hit Rate 15%, Streak 10%
