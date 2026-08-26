@@ -46,8 +46,8 @@ def update_supabase_result(pick, result, profit):
         ),
         (
             "prop_hunter_picks",
-            {"dedup_key": f"eq.{dedup_key}", "sent_date": f"eq.{str(pick_date)[:10]}"},
-            {"status": result, "profit_units": profit},
+            {"dedup_key": f"eq.{dedup_key}", "date": f"eq.{str(pick_date)[:10]}"},
+            {"status": result, "profit_units": profit, "result": result, "profit": profit},
         ),
     )
     success=False
@@ -537,6 +537,8 @@ def grade(pick):
         return None
 
     if line is None: return None
+    if val == line:
+        return "push"
     if direction == "under": return "win" if val < line else "loss"
     return "win" if val > line else "loss"
 
@@ -551,7 +553,7 @@ def fetch_clv_for_date(date_str):
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/prop_hunter_clv",
             headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
-            params={"select": "pick_id,odds_clv,line_clv,player_name,market",
+            params={"select": "pick_id,clv_odds_pct,clv_line_diff,player_name,market",
                     "computed_at": f"gte.{date_str}T00:00:00", "limit": "500"},
             timeout=TIMEOUT,
         )
@@ -602,7 +604,10 @@ def main():
         if result is None:
             results.append(("❓",p,0))
             continue
-        profit = round((odds-1)*stake if result=="win" else -stake, 2)
+        if result == "push":
+            profit = 0.0
+        else:
+            profit = round((odds-1)*stake if result=="win" else -stake, 2)
         p["result"] = result
         p["profit"] = profit
         update_supabase_result(p, result, profit)
@@ -642,7 +647,8 @@ def main():
     clv_rows = fetch_clv_for_date(yesterday)
     clv_line = ""
     if clv_rows:
-        odds_clvs = [float(r["odds_clv"]) for r in clv_rows if r.get("odds_clv") is not None]
+        odds_clvs = [float(r["clv_odds_pct"]) / 100.0 for r in clv_rows
+                      if r.get("clv_odds_pct") is not None]
         if odds_clvs:
             avg_clv = sum(odds_clvs) / len(odds_clvs)
             positive = sum(1 for v in odds_clvs if v > 0)
