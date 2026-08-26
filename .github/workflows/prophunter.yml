@@ -30,11 +30,25 @@ jobs:
           pip install -r requirements.txt || pip install requests pandas pyarrow supabase nba_api nflreadpy pybaseball MLB-StatsAPI beautifulsoup4 lxml python-dotenv rapidfuzz pydantic cloudscraper
           python -m playwright install chromium || true
 
-      - name: Compile check
+      - name: Compile all Python sources
         run: |
-          python -m py_compile prophunter.py
-          python -m py_compile prop_hunter_scraper.py || true
-          python -m py_compile prop_hunter_shared_utils.py || true
+          python -m compileall -q .
+
+      - name: Run automatic free-source/bookmaker orchestrator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL
+          PH_FAST_BROWSER_BOOKS: bet365,betmgm,caesars,betrivers,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay
+          PH_FAST_BROWSER_JOBS: '10'
+        run: |
+          if [ -f prop_hunter_source_orchestrator.py ]; then
+            python prop_hunter_source_orchestrator.py --mode fast
+          else
+            echo "source orchestrator missing"
+            exit 1
+          fi
 
       - name: Run DATA+ scraper
         env:
