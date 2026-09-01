@@ -12,7 +12,15 @@ import math
 import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
-from prop_hunter_builder_learning import market_group, pair_key
+try:
+    from prop_hunter_builder_learning import market_group, pair_key
+except Exception:
+    def market_group(market):
+        s = re.sub(r"\s+(over|under)\s+[-+]?\d+(?:\.\d+)?", "", str(market or "").lower()).strip()
+        aliases = {"3-pt made":"three_pointers_made","3pm":"three_pointers_made","home run":"home_runs"}
+        return aliases.get(s, s.replace(" ", "_"))
+    def pair_key(a, b):
+        return "|".join(sorted((str(a), str(b))))
 from prop_hunter_shared_utils import safe_json_load, to_float
 
 CORR_FILE = "prop_hunter_builder_correlations.json"
@@ -146,6 +154,8 @@ def _candidate_from_prop(prop: Any, PickCls: Any) -> Optional[Any]:
     stake = _kelly(probability, odds, fraction, cap)
     if stake <= 0:
         stake = 0.05 if _is_hr(prop) else 0.10
+    if _is_hr(prop):
+        stake = max(0.05, stake)
 
     point = _point(prop)
     direction = _direction(prop)
@@ -197,7 +207,7 @@ def _leg_text(p: Any) -> str:
 def _kelly(prob: float, odds: float, fraction: float, cap: float) -> float:
     if odds <= 1: return 0.0
     full = (prob * odds - 1) / (odds - 1)
-    return round(max(0.0, min(cap, full * fraction)), 2)
+    return max(0.0, min(cap, full * fraction))
 
 
 def _pair_factor(a: Any, b: Any, pairs: Dict[str, Any]) -> Tuple[float, int]:
@@ -299,7 +309,7 @@ def _real_ladder(anchor: Any, props: Iterable[Any], PickCls: Any, LadderLegCls: 
 
     safe_market = f"{base.title()} {direction.title()} {safe[0]:g}"
     risk_market = f"{base.title()} {direction.title()} {risk[0]:g}"
-    return PickCls(
+    built = PickCls(
         type="ladder", category="ladder", player=_player(anchor),
         team=getattr(anchor, "team", "") or "", emoji=getattr(anchor, "emoji", "🎯") or "🎯",
         market=f"{base.title()} Ladder", direction=direction,
@@ -312,6 +322,14 @@ def _real_ladder(anchor: Any, props: Iterable[Any], PickCls: Any, LadderLegCls: 
             LadderLegCls(market=risk_market, odds=risk[1], stake=0.2),
         ],
     )
+    built.sport = _sport(anchor)
+    built.point = safe[0]
+    built.features = {"odds_observed": True, "price_type": "bookmaker", "bookmaker": anchor_book}
+    built.leg_details = [
+        {"player": _player(anchor), "sport": _sport(anchor), "market": safe_market, "direction": direction, "point": safe[0], "odds": safe[1], "bookmaker": anchor_book, "game": _game(anchor)},
+        {"player": _player(anchor), "sport": _sport(anchor), "market": risk_market, "direction": direction, "point": risk[0], "odds": risk[1], "bookmaker": anchor_book, "game": _game(anchor)},
+    ]
+    return built
 
 
 def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str, Any]) -> Optional[Any]:
@@ -332,12 +350,15 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
     stake = _kelly(prob, odds, fractions[label], caps[label])
     if stake <= 0:
         return None
+    # High-odds positive-EV tickets often have a tiny fractional-Kelly stake.
+    # Preserve them at a small explicit unit floor instead of rounding to zero.
+    stake = max({"SAFE":0.10,"VALUE":0.10,"RISK":0.05,"LOTTERY":0.05}[label], stake)
 
     same_game = bool(_game(legs[0])) and len({_game(x) for x in legs}) == 1
     all_hr = all(_is_hr(x) for x in legs)
     category = "hr_lottery" if all_hr and label in {"RISK", "LOTTERY"} else label.lower()
     ptype = "betbuilder" if same_game and label in {"SAFE", "VALUE"} else (
-        "big" if label in {"RISK", "LOTTERY"} else "kombi2"
+        "big" if label in {"RISK", "LOTTERY"} else ("kombi2" if len(legs) == 2 else "kombi3")
     )
 
     analysis = (
@@ -347,7 +368,7 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
     if corr_n:
         analysis += f" ({corr_n}+ Settlements)"
 
-    return PickCls(
+    built = PickCls(
         type=ptype,
         category=category,
         player=" + ".join(_player(x) for x in legs),
@@ -364,6 +385,13 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
         analysis=analysis,
         legs=[_leg_text(x) for x in legs],
     )
+    built.leg_details = [{
+        "player": _player(x), "sport": _sport(x), "market": getattr(x, "market", ""),
+        "direction": _direction(x), "point": _point(x), "odds": _odds(x),
+        "bookmaker": _book(x), "game": _game(x),
+    } for x in legs]
+    built.features = {"odds_observed": True, "price_type": "bookmaker", "bookmaker": _book(legs[0])}
+    return built
 
 
 def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List[Any]:
