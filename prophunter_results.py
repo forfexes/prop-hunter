@@ -2,6 +2,13 @@
 """PROP HUNTER — Results Evaluator v2 Style"""
 import json, os, requests, time, re
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
+ZURICH = ZoneInfo("Europe/Zurich")
+
+def _target_date(offset_days: int = -1) -> str:
+    return (datetime.now(ZURICH) + timedelta(days=offset_days)).strftime("%Y-%m-%d")
+
 
 # ─── Day-level cache (1 API call covers all picks of that day) ───
 _NBA_DAY_CACHE = {}
@@ -17,6 +24,20 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY","")
 HISTORY  = "picks_history.json"
 TIMEOUT  = 30
 
+def _supabase_rest_headers(extra=None):
+    """Build REST headers compatible with legacy JWT keys and new sb_* API keys.
+
+    New Supabase secret/publishable keys are opaque API keys, not JWTs, so they
+    must not be forced into an Authorization: Bearer header. Legacy anon/service_role
+    JWT keys keep the Bearer header for backwards compatibility.
+    """
+    headers = {"apikey": SUPABASE_KEY}
+    if SUPABASE_KEY and not SUPABASE_KEY.startswith(("sb_secret_", "sb_publishable_")):
+        headers["Authorization"] = f"Bearer {SUPABASE_KEY}"
+    if extra:
+        headers.update(extra)
+    return headers
+
 def update_supabase_result(pick, result, profit):
     """Update both supported Supabase pick schemas.
 
@@ -31,12 +52,10 @@ def update_supabase_result(pick, result, profit):
     if not dedup_key or not pick_date:
         return False
 
-    headers={
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
+    headers = _supabase_rest_headers({
         "Content-Type": "application/json",
         "Prefer": "return=minimal",
-    }
+    })
 
     updates=(
         (
@@ -46,8 +65,8 @@ def update_supabase_result(pick, result, profit):
         ),
         (
             "prop_hunter_picks",
-            {"dedup_key": f"eq.{dedup_key}", "date": f"eq.{str(pick_date)[:10]}"},
-            {"status": result, "profit_units": profit, "result": result, "profit": profit},
+            {"dedup_key": f"eq.{dedup_key}", "sent_date": f"eq.{str(pick_date)[:10]}"},
+            {"status": result, "profit_units": profit},
         ),
     )
     success=False
@@ -80,6 +99,39 @@ def send(text):
         print(f"Telegram: {r.status_code}")
     except Exception as e: print(f"Telegram: {e}")
 
+
+def edit_telegram_message(message_id, text, chat_id=None):
+    """Edit an existing PROP HUNTER card instead of posting a second result message."""
+    if not TG_TOKEN or not message_id:
+        return False
+    target_chat = str(chat_id or TG_CHAT or "").strip()
+    if not target_chat:
+        return False
+    if len(text) > 4096:
+        print(f"Telegram edit skipped: message too long ({len(text)})")
+        return False
+    try:
+        r = requests.post(
+            f"https://api.telegram.org/bot{TG_TOKEN}/editMessageText",
+            json={
+                "chat_id": target_chat,
+                "message_id": int(message_id),
+                "text": text,
+                "disable_web_page_preview": True,
+            },
+            timeout=TIMEOUT,
+        )
+        if r.status_code == 200:
+            print(f"Telegram edit OK message_id={message_id}")
+            return True
+        # Telegram returns 400 if content is already identical; treat that as success.
+        if r.status_code == 400 and "message is not modified" in r.text.lower():
+            return True
+        print(f"Telegram edit {r.status_code}: {r.text[:200]}")
+    except Exception as exc:
+        print(f"Telegram edit: {exc}")
+    return False
+
 def load():
     if not os.path.exists(HISTORY): return []
     try: return json.load(open(HISTORY))
@@ -111,9 +163,141 @@ def _team_player_line(p):
 def _is_duplicate_result(p):
     return str(p.get("result","")).lower() == "duplicate"
 
+
+def _status_icon(status):
+    return {"win":"✅", "won":"✅", "loss":"❌", "lost":"❌", "push":"↔️"}.get(str(status or "").lower())
+
+def _norm_text(value):
+    return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
+
+def _decorate_single(lines, pick, used):
+    icon = _status_icon(pick.get("result"))
+    if not icon:
+        return False
+    player = _norm_text(pick.get("player") or pick.get("player_name"))
+    market = _norm_text(pick.get("market"))
+    if not player:
+        return False
+    market_words = [w for w in market.split() if w not in {"over","under"}][:3]
+    for i, line in enumerate(lines):
+        if i in used or player not in _norm_text(line):
+            continue
+        for j in range(i + 1, min(i + 4, len(lines))):
+            block = _norm_text(lines[j])
+            if market_words and not all(w in block for w in market_words[:2]):
+                continue
+            # Replace the tree marker, so the evaluation is literally inside the original tip.
+            if "└" in lines[j]:
+                lines[j] = lines[j].replace("└", icon, 1)
+            elif not lines[j].lstrip().startswith(("✅","❌","↔️")):
+                prefix = lines[j][:len(lines[j]) - len(lines[j].lstrip())]
+                lines[j] = prefix + icon + " " + lines[j].lstrip()
+
+            # Actual stat + unit result stay inside the original tip message.
+            extras = []
+            actual = pick.get("actual_value")
+            if actual is not None:
+                try:
+                    extras.append(f"Ist {float(actual):g}")
+                except Exception:
+                    extras.append(f"Ist {actual}")
+            try:
+                profit = float(pick.get("profit") or 0)
+                if str(pick.get("result") or "").lower() in ("win","won","loss","lost","push"):
+                    extras.append(f"{profit:+.2f}u")
+            except Exception:
+                pass
+            if extras and " · Ist " not in lines[j]:
+                lines[j] += " · " + " · ".join(extras)
+            used.add(i); used.add(j)
+            return True
+    return False
+
+def _decorate_combo(lines, combo, used):
+    icon = _status_icon(combo.get("result"))
+    if not icon:
+        return False
+    odds = combo.get("odds")
+    stake = combo.get("stake")
+    odds_tokens = []
+    try:
+        odds_tokens.extend([f"@{float(odds):.2f}", f"@{float(odds):.1f}"])
+    except Exception:
+        pass
+    for i, line in enumerate(lines):
+        if i in used:
+            continue
+        stripped = line.lstrip()
+        if not stripped.startswith(("•","🚀")):
+            continue
+        if odds_tokens and not any(tok in line for tok in odds_tokens):
+            continue
+        prefix = line[:len(line)-len(stripped)]
+        rest = stripped[1:].lstrip() if stripped else stripped
+        lines[i] = prefix + icon + " " + rest
+        used.add(i)
+        return True
+    return False
+
+def decorate_original_card(card, picks, combos):
+    """Return the original card with ✅/❌/↔️ markers placed on each settled tip."""
+    base = str(card.get("text") or "")
+    if not base:
+        return None
+    lines = base.splitlines()
+    used = set()
+    pick_map = {str(p.get("dedup_key")): p for p in picks if p.get("dedup_key")}
+    combo_map = {str(c.get("combo_id")): c for c in combos if c.get("combo_id")}
+    card_picks = [pick_map[k] for k in map(str, card.get("pick_keys") or []) if k in pick_map]
+    card_combos = [combo_map[k] for k in map(str, card.get("combo_ids") or []) if k in combo_map]
+
+    closed = 0; wins = 0; losses = 0; pushes = 0; profit = 0.0
+    for pick in card_picks:
+        if _decorate_single(lines, pick, used):
+            st = str(pick.get("result") or "").lower()
+            closed += 1
+            wins += int(st in ("win","won")); losses += int(st in ("loss","lost")); pushes += int(st == "push")
+            profit += float(pick.get("profit") or 0)
+    for combo in card_combos:
+        if _decorate_combo(lines, combo, used):
+            st = str(combo.get("result") or "").lower()
+            closed += 1
+            wins += int(st in ("win","won")); losses += int(st in ("loss","lost")); pushes += int(st == "push")
+            profit += float(combo.get("profit") or 0)
+
+    if not closed:
+        return None
+    summary = f"🏁 Auswertung: {wins}✅ {losses}❌" + (f" {pushes}↔️" if pushes else "") + f" · {profit:+.2f}u"
+    # Put the compact evaluation inside the same card, immediately before the channel tag.
+    insert_at = next((i for i, line in enumerate(lines) if line.strip() == "@prophunter"), len(lines))
+    candidate = lines[:insert_at] + [summary] + lines[insert_at:]
+    text = "\n".join(candidate)
+    if len(text) <= 4096:
+        return text
+    # Original cards can be close to Telegram's limit. The inline symbols are the priority.
+    text = "\n".join(lines)
+    return text if len(text) <= 4096 else None
+
+def edit_original_cards(entry):
+    cards = entry.get("cards") or []
+    if not cards:
+        return 0
+    picks = entry.get("picks") or []
+    combos = entry.get("kombis") or []
+    edited = 0
+    for card in cards:
+        text = decorate_original_card(card, picks, combos)
+        if not text:
+            continue
+        if edit_telegram_message(card.get("message_id"), text, card.get("chat_id")):
+            edited += 1
+            card["settlement_text"] = text
+            card["settlement_updated_at"] = datetime.now(timezone.utc).isoformat()
+    return edited
+
 # ─── NBA via balldontlie ───
 def nba_stats_yesterday(player):
-    yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday = _target_date(-1)
     h = {"Accept":"application/json"}
     if BDL_KEY: h["Authorization"] = BDL_KEY
     try:
@@ -142,7 +326,7 @@ def nba_stats_yesterday(player):
 def mlb_stats_yesterday(player):
     try:
         import statsapi
-        yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y-%m-%d")
+        yesterday = _target_date(-1)
         for game in statsapi.schedule(date=yesterday):
             try:
                 box = statsapi.boxscore_data(game.get("game_id"))
@@ -421,7 +605,7 @@ def grade(pick):
     if sport in ("NBA","WNBA"):
         stats = nba_stats_yesterday(player) if sport == "NBA" else None
         if not stats:
-            yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y%m%d")
+            yesterday = _target_date(-1).replace("-", "")
             stats = espn_basket_player_stats(player, yesterday, "wnba" if sport=="WNBA" else "nba")
         if not stats: return None
         if "rebounds+assists" in market or re.search(r'\bra\b', market):
@@ -461,7 +645,7 @@ def grade(pick):
     elif sport == "MLB":
         stats = mlb_stats_yesterday(player)
         if not stats:
-            yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y%m%d")
+            yesterday = _target_date(-1).replace("-", "")
             stats = espn_mlb_player_stats(player, yesterday)
         if not stats: return None
         if "hits+runs+rbis" in market or "hits+runs+rbi" in market or "hits runs rbis" in market or "hits runs rbi" in market:
@@ -483,7 +667,7 @@ def grade(pick):
         elif "earned runs" in market: val = stats["er"]
         else: return None
     elif sport == "NFL":
-        yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y%m%d")
+        yesterday = _target_date(-1).replace("-", "")
         stats = espn_nfl_player_stats(player, yesterday)
         if not stats:
             return None
@@ -537,23 +721,91 @@ def grade(pick):
         return None
 
     if line is None: return None
-    if val == line:
-        return "push"
+    # Persist realised stat on the pick so the ORIGINAL Telegram tip can show it.
+    pick["actual_value"] = val
+    pick["settled_line"] = line
+    try:
+        if float(val) == float(line): return "push"
+    except Exception:
+        pass
     if direction == "under": return "win" if val < line else "loss"
     return "win" if val > line else "loss"
+
+def _match_old_leg(leg_text, singles):
+    low = str(leg_text or "").lower()
+    matches = []
+    for p in singles:
+        name = str(p.get("player") or "").strip().lower()
+        if name and (name in low or name.split()[-1] in low):
+            matches.append(p)
+    return matches[0].copy() if len(matches) == 1 else None
+
+
+def _combo_leg_rows(combo, singles):
+    details = combo.get("leg_details") or []
+    if details:
+        return [dict(x) for x in details if isinstance(x, dict)]
+    if combo.get("type") == "ladder" and combo.get("ladder_legs"):
+        rows = []
+        for leg in combo.get("ladder_legs") or []:
+            row = {
+                "player": combo.get("player"), "sport": combo.get("sport"),
+                "market": leg.get("market"), "direction": combo.get("direction") or "over",
+                "odds": leg.get("odds"), "stake": leg.get("stake"),
+            }
+            rows.append(row)
+        return rows
+    rows = []
+    for text in combo.get("legs") or []:
+        matched = _match_old_leg(text, singles)
+        if matched:
+            rows.append(matched)
+    return rows
+
+
+def grade_combo(combo, singles):
+    """Return (result, profit, leg_results). Never guesses an unresolved leg."""
+    legs = _combo_leg_rows(combo, singles)
+    expected = len(combo.get("leg_details") or combo.get("ladder_legs") or combo.get("legs") or [])
+    if not legs or (expected and len(legs) != expected):
+        return None, 0.0, []
+    graded = []
+    for leg in legs:
+        res = grade(leg)
+        graded.append((leg, res))
+        if res is None:
+            return None, 0.0, graded
+    if combo.get("type") == "ladder":
+        profit = 0.0
+        for leg, res in graded:
+            stake = float(leg.get("stake") or 0)
+            odds = float(leg.get("odds") or 0)
+            if res == "win": profit += (odds - 1.0) * stake
+            elif res == "loss": profit -= stake
+        status = "win" if profit > 0 else "loss" if profit < 0 else "push"
+        return status, round(profit, 2), graded
+    states = [res for _, res in graded]
+    if "loss" in states:
+        return "loss", -float(combo.get("stake") or 0), graded
+    if "push" in states:
+        # Exact reduced parlay payout needs per-leg settlement rules; don't invent it.
+        return "push", 0.0, graded
+    stake = float(combo.get("stake") or 0)
+    odds = float(combo.get("odds") or 0)
+    return "win", round((odds - 1.0) * stake, 2), graded
+
 
 # ─── Main ───
 def fetch_clv_for_date(date_str):
     """Holt CLV-Werte (Closing Line Value) aus prop_hunter_clv für einen Tag.
-    Positiver odds_clv = wir hatten bessere Quote als der Markt kurz vor Spielbeginn (gutes Timing).
-    Negativer odds_clv = Markt ist seit unserem Post gegen uns gelaufen."""
+    Positiver clv_odds_pct = unser gesendeter Preis war besser als der Closing-Preis."""
     if not SUPABASE_URL or not SUPABASE_KEY:
         return []
     try:
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/prop_hunter_clv",
-            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
-            params={"select": "pick_id,clv_odds_pct,clv_line_diff,player_name,market",
+            headers=_supabase_rest_headers(),
+            params={"select": "pick_id,clv_odds_pct,clv_line_diff,raw",
                     "computed_at": f"gte.{date_str}T00:00:00", "limit": "500"},
             timeout=TIMEOUT,
         )
@@ -564,8 +816,8 @@ def fetch_clv_for_date(date_str):
     return []
 
 def main():
-    yesterday = (datetime.now(timezone.utc)-timedelta(days=1)).strftime("%Y-%m-%d")
-    today     = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday = _target_date(-1)
+    today     = datetime.now(ZURICH).strftime("%Y-%m-%d")
     month     = today[:7]
     print(f"Grading: {yesterday}")
 
@@ -604,15 +856,27 @@ def main():
         if result is None:
             results.append(("❓",p,0))
             continue
-        if result == "push":
-            profit = 0.0
-        else:
-            profit = round((odds-1)*stake if result=="win" else -stake, 2)
+        profit = round((odds-1)*stake if result=="win" else -stake if result=="loss" else 0.0, 2)
         p["result"] = result
         p["profit"] = profit
         update_supabase_result(p, result, profit)
-        results.append(("✅" if result=="win" else "❌", p, profit))
+        results.append(("✅" if result=="win" else "❌" if result=="loss" else "↔️", p, profit))
         time.sleep(0.3)
+
+    combo_results = []
+    for combo in [c for c in entry.get("kombis", []) if c.get("result", "pending") == "pending"]:
+        status, profit, legs = grade_combo(combo, picks)
+        if status is None:
+            combo_results.append(("❓", combo, 0.0, legs))
+            continue
+        combo["result"] = status
+        combo["profit"] = profit
+        combo["leg_results"] = [
+            {"player": leg.get("player"), "market": leg.get("market"), "result": leg_status}
+            for leg, leg_status in legs
+        ]
+        icon = "✅" if status == "win" else "❌" if status == "loss" else "↔️"
+        combo_results.append((icon, combo, profit, legs))
 
     save(history)
 
@@ -620,9 +884,10 @@ def main():
     wins   = sum(1 for ic,_,_ in results if ic=="✅")
     losses = sum(1 for ic,_,_ in results if ic=="❌")
     total  = wins+losses
-    total_profit = sum(profit for _,_,profit in results if profit!=0)
+    total_profit = sum(profit for _,_,profit in results if profit!=0) + sum(profit for _,_,profit,_ in combo_results if profit!=0)
 
     stakes_settled = sum(float(p.get("stake",1)) for _,p,_ in results if p.get("result") in ("win","loss"))
+    stakes_settled += sum(float(c.get("stake",0)) for _,c,_,_ in combo_results if c.get("result") in ("win","loss"))
     roi = round(100*total_profit/stakes_settled,1) if stakes_settled>0 else 0
 
     lines = [f"📊 PROP HUNTER — Auswertung {yesterday}", ""]
@@ -631,6 +896,15 @@ def main():
         ps = f"+{profit:.2f}u" if profit>0 else f"{profit:.2f}u" if profit!=0 else ""
         lines.append(f"{icon} {_team_player_line(p)}")
         lines.append(f"   └ {p.get('market','')} @{odds:.2f} → {stake}u  {ps}")
+
+    if combo_results:
+        lines += ["", "🧩 BUILDER / LADDERS:"]
+        for icon, combo, profit, leg_rows in combo_results:
+            ps = f"+{profit:.2f}u" if profit > 0 else f"{profit:.2f}u" if profit < 0 else ""
+            lines.append(f"{icon} {str(combo.get('type') or 'combo').upper()} @{float(combo.get('odds') or 0):.2f} → {float(combo.get('stake') or 0):.2f}u {ps}")
+            for leg, status in leg_rows:
+                leg_icon = "✅" if status == "win" else "❌" if status == "loss" else "↔️" if status == "push" else "❓"
+                lines.append(f"   {leg_icon} {leg.get('player','')} · {leg.get('market','')}")
 
     # Monthly stats
     m_wins=m_total=0; m_profit=0.0
@@ -647,8 +921,7 @@ def main():
     clv_rows = fetch_clv_for_date(yesterday)
     clv_line = ""
     if clv_rows:
-        odds_clvs = [float(r["clv_odds_pct"]) / 100.0 for r in clv_rows
-                      if r.get("clv_odds_pct") is not None]
+        odds_clvs = [float(r["clv_odds_pct"]) / 100.0 for r in clv_rows if r.get("clv_odds_pct") is not None]
         if odds_clvs:
             avg_clv = sum(odds_clvs) / len(odds_clvs)
             positive = sum(1 for v in odds_clvs if v > 0)
@@ -670,7 +943,16 @@ def main():
 
     msg = "\n".join(lines)
     print("\n"+msg+"\n")
-    send(msg)
+
+    # V13.3: edit the original Telegram tip/card in place.
+    # Old cards from before V13.3 have no message_id metadata and therefore fall back
+    # to the separate evaluation post for backwards compatibility.
+    edited_cards = edit_original_cards(entry)
+    if edited_cards:
+        save(history)
+        print(f"Original Telegram cards edited: {edited_cards}")
+    else:
+        send(msg)
 
 if __name__=="__main__":
     main()
