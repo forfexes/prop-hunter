@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """PROP HUNTER v3 — Single File Edition
 MLB / NBA / WNBA / NFL Player Props Tipster
-Inspiriert von Basket Premium (82.5% WR), Basket Blitz VIP, JK (300u+)
+Verified multisport player-prop engine
 """
 from __future__ import annotations
 from math import prod
-import asyncio, json, logging, os, re, time
+import asyncio, hashlib, json, logging, os, re, time
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
+
+PH_RUNTIME_VERSION = "13.4-PRESEASON-READY"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -192,9 +194,9 @@ def season_for(sport, now=None):
     if sport=="baseball_mlb": return y if 3<=m<=11 else y-1
     if sport in ("basketball_nba","basketball_euroleague"): return y-1 if m<10 else y
     if sport=="basketball_wnba": return y if 5<=m<=10 else y-1
-    if sport=="americanfootball_nfl": return y-1 if m<9 else y
+    if sport=="americanfootball_nfl": return y-1 if m<8 else y
     return y
-def is_nfl_offseason(): return datetime.now(timezone.utc).month in (3,4,5,6,7,8)
+def is_nfl_offseason(): return datetime.now(timezone.utc).month in (2,3,4,5,6,7)
 YEAR_MLB=season_for("baseball_mlb"); YEAR_NBA=season_for("basketball_nba")
 YEAR_NFL=season_for("americanfootball_nfl")
 log.info("seasons: MLB=%s | NBA=%s-%02d | NFL=%s%s",
@@ -211,7 +213,7 @@ class Prop(BaseModel):
     pinnacle_opp_odds:Optional[float]=None; game_total:Optional[float]=None
     enrichment:Optional[str]=None; features:dict=Field(default_factory=dict)
 
-PickType=Literal["single","ladder","betbuilder","kombi2","big","super","lottery"]
+PickType=Literal["single","ladder","betbuilder","kombi2","kombi3","big","super","lottery"]
 class LadderLeg(BaseModel):
     market:str; odds:float=Field(gt=1); stake:float=Field(ge=0)
 class Pick(BaseModel):
@@ -775,8 +777,7 @@ def fetch_prizepicks_props(sport_label: str) -> list:
                 out.append(Prop(player=name, market=stat, odds=1.85,
                     point=float(line), sport=sport_label,
                     emoji=emoji_map.get(sport_label,"🎯"), game="",
-                    direction="over",
-                    features={"odds_observed": False, "price_type": "pickem_line"}))
+                    direction="over"))
             except Exception: continue
         log.info("PrizePicks %s: %d props", sport_label, len(out))
     except Exception as e:
@@ -812,8 +813,7 @@ def fetch_underdog_props(sport_filter=None) -> list:
             try:
                 out.append(Prop(player=name, market=stat, odds=1.85,
                     point=float(line), sport=sport,
-                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over",
-                    features={"odds_observed": False, "price_type": "pickem_line"}))
+                    emoji=emoji_map.get(sport,"🎯"), game="", direction="over"))
             except Exception: continue
         log.info("Underdog: %d props", len(out))
     except Exception as e:
@@ -830,30 +830,30 @@ def _sb_read():
     except Exception: return None
 
 def fetch_snapshot_props(sport_filter=None) -> list:
-    """Liest Props aus prop_hunter_prop_snapshots (DraftKings/Underdog/Sleeper/PrizePicks-Connectoren).
-    Props ohne echte Odds (PP/UD/Sleeper) bekommen synthetische Odds — die DB-Fairprob entscheidet dann."""
+    """Read recent sportsbook snapshots from Supabase.
+
+    Only rows with an actually observed decimal price are converted into sportsbook
+    Props. Pick'em/fantasy rows without a standalone price stay in the database for
+    analysis but are never disguised as @1.85 bets.
+    """
     c = _sb_read()
     if c is None: return []
     out = []
     try:
-        # Fenster: letzte 18h (fängt auch Läufe kurz vor Mitternacht UTC)
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=18)).isoformat()
         res = c.table("prop_hunter_prop_snapshots").select(
-            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team,bookmaker"
+            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team,bookmaker,source"
         ).gte("created_at", cutoff).limit(3000).execute()
-        emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NHL":"🏒","NFL":"🏈"}
-        # Saison-Totale / Futures rausfiltern — das sind KEINE Einzelspiel-Props!
+        emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NFL":"🏈"}
         SEASON_MARKERS = ("season", "futures", "to win", "mvp", "champion", "award",
                           "regular season", "playoff", "total wins", "make the",
                           "division", "conference", "over/under wins")
-        # Sportarten die aktuell NICHT laufen (Off-Season) überspringen
-        # NFL/NHL laufen nicht im Juli — nur MLB/WNBA aktiv
         now_month = datetime.now(timezone.utc).month
-        active_sports = {"MLB", "WNBA"}  # Juli
-        if now_month >= 10 or now_month <= 2:
-            active_sports |= {"NFL", "NHL", "NBA"}
+        active_sports = {"MLB", "WNBA"}
+        if now_month >= 9 or now_month <= 2:
+            active_sports |= {"NFL", "NBA"}
         if 4 <= now_month <= 6:
-            active_sports |= {"NBA", "NHL"}
+            active_sports |= {"NBA"}
 
         for r in (res.data or []):
             odds = r.get("odds_decimal"); line = r.get("line")
@@ -861,40 +861,29 @@ def fetch_snapshot_props(sport_filter=None) -> list:
             sport = (r.get("sport") or r.get("league") or "").upper()
             if not (player and market and line is not None): continue
             if sport_filter and sport_filter.lower() not in sport.lower(): continue
-            # Season/Futures-Märkte komplett überspringen
-            mkt_low = market.lower()
-            if any(m in mkt_low for m in SEASON_MARKERS): continue
-            # Off-Season Sportarten überspringen (keine NFL-Futures im Juli)
+            if any(m in market.lower() for m in SEASON_MARKERS): continue
             if sport and sport not in active_sports: continue
-            # Unrealistisch hohe Linien = Season-Total (z.B. 824.5 Receiving Yards)
             try:
-                if float(line) > 100 and sport != "MLB": continue  # Einzelspiel-Linien sind niedrig
+                if float(line) > 100 and sport not in ("MLB", "NFL"): continue
+                odds_val = float(odds)
             except Exception:
-                pass
-            # Synthetische Odds für Quellen ohne Preis (PrizePicks/Underdog/Sleeper)
-            try:
-                odds_val = float(odds) if odds is not None else 1.85
-            except Exception:
-                odds_val = 1.85
+                continue
             if not (1.01 < odds_val < 50): continue
+            book = str(r.get("bookmaker") or r.get("source") or "").strip().lower()
+            if not book: continue
             try:
                 out.append(Prop(
                     player=player, market=market, odds=odds_val,
-                    point=float(line),
-                    sport=sport, emoji=emoji_map.get(sport,"🎯"),
+                    point=float(line), sport=sport, emoji=emoji_map.get(sport,"🎯"),
                     game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
-                    direction="over",
-                    enrichment=f"src:{r.get('bookmaker','snapshot')}",
-                    features={
-                        "odds_observed": bool(r.get("odds_decimal") is not None and
-                                              str(r.get("bookmaker") or "").strip().lower()
-                                              not in {"", "underdog", "sleeper", "prizepicks"}),
-                        "price_type": "bookmaker" if r.get("odds_decimal") is not None else "pickem_line",
-                        "bookmaker": r.get("bookmaker") or "",
-                    },
+                    direction="under" if "under" in market.lower() else "over",
+                    enrichment=f"src:{book}",
+                    features={"odds_observed": True, "price_type": "bookmaker", "bookmaker": book,
+                              "source": r.get("source") or book},
                 ))
-            except Exception: continue
-        if out: log.info("Snapshot props (Supabase): %d", len(out))
+            except Exception:
+                continue
+        if out: log.info("Snapshot sportsbook props (Supabase): %d", len(out))
     except Exception as e:
         log.warning("snapshot props: %s", e)
     return out
@@ -1115,7 +1104,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             # Push-korrekt: bei ganzzahliger Linie zählt Gleichstand nicht als Treffer.
             over_hits = sum(1 for v in vals if v > point)
             over_rate = over_hits / n
-            # HR/Home Run: NIEMALS auf Under flippen — bleibt Over-Lottery mit hoher Quote (JK-Style).
+            # HR/Home Run: NIEMALS auf Under flippen — bleibt Over-Lottery mit hoher Quote (Verified).
             # Der Bot lernt über rule_performance welche HR-Profile treffen.
             mkt_l = (p.market or "").lower()
             is_hr_market = "home run" in mkt_l or re.search(r"\bhr\b", mkt_l) is not None
@@ -1200,7 +1189,7 @@ def gather_propcruncher_fallback(sport_filter=None) -> list:
                     sport=raw["sport"],
                     game=raw.get("game",""),
                     direction=raw["direction"],
-                    features={"pc_grade": raw["grade"]},
+                    features={"pc_grade": raw["grade"], "odds_observed": False, "price_type": "synthetic", "source": "propcruncher"},
                     emoji=raw["emoji"],
                     enrichment=f"PC:{raw['grade']}",
                 )
@@ -1656,9 +1645,16 @@ def extract_total(data):
                     if o.get("name")=="Over" and o.get("point"): tots.append(float(o["point"]))
     return round(sum(tots)/len(tots),1) if tots else None
 def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,away,ct_iso):
+    """Normalize The Odds API rows while preserving a real, placeable book price.
+
+    The old implementation averaged prices across books and then displayed that
+    average as if it were a bookmaker quote. This version keeps the best actually
+    observed Over/Yes price and its bookmaker. Pinnacle/sharp two-way prices are
+    still used only for fair-probability estimation.
+    """
     agg={}
     for bm in data.get("bookmakers",[]):
-        bk=bm.get("key","")
+        bk=str(bm.get("key","") or "").lower()
         for mkt in bm.get("markets",[]):
             if mkt.get("key")!=mkey: continue
             for o in mkt.get("outcomes",[]):
@@ -1669,28 +1665,31 @@ def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,awa
                 else: pl,ot=nf,desc
                 if not pl or pl in {"Over","Under","Yes","No",""}: continue
                 if min_pt and pt is not None and pt<min_pt: continue
+                try: price=float(price)
+                except Exception: continue
                 if price<=1: continue
                 k=f"{pl}|{pt if pt is not None else ''}"
                 rec=agg.setdefault(k,{"player":pl,"point":pt,"prices":[],"po":None,"pu":None})
                 if bk==SHARP_BOOK:
                     if ot in ("Over","Yes"): rec["po"]=price
                     elif ot in ("Under","No"): rec["pu"]=price
-                if ot in ("Over","Yes") or ot=="": rec["prices"].append(price)
+                if ot in ("Over","Yes") or ot=="": rec["prices"].append((price,bk))
     out=[]
     ct=None
     if ct_iso:
         try: ct=datetime.fromisoformat(ct_iso.replace("Z","+00:00"))
         except: pass
     for rec in agg.values():
-        prices=[p for p in rec["prices"] if p>1]
+        prices=[x for x in rec["prices"] if x[0]>1 and x[1]]
         if not prices: continue
-        avg=sum(prices)/len(prices)
-        if avg<min_odds: continue
+        best_price,best_book=max(prices,key=lambda x:x[0])
+        if best_price<min_odds: continue
         fair=no_vig(rec["po"],rec["pu"]) if rec["po"] and rec["pu"] else None
-        out.append(Prop(player=rec["player"],market=label,odds=round(avg,2),point=rec["point"],
+        feats={"odds_observed":True,"price_type":"bookmaker","bookmaker":best_book,"source":"the_odds_api"}
+        if fair is not None: feats["fair_prob"]=fair
+        out.append(Prop(player=rec["player"],market=label,odds=round(best_price,2),point=rec["point"],
             sport=sport,emoji=emoji,game=f"{away} @ {home}",home=home,away=away,commence_time=ct,
-            pinnacle_odds=rec["po"],pinnacle_opp_odds=rec["pu"],
-            features={"fair_prob":fair} if fair else {}))
+            pinnacle_odds=rec["po"],pinnacle_opp_odds=rec["pu"],features=feats))
     return out
 
 
@@ -1911,7 +1910,7 @@ def generate_hr_props_from_data(mlb_lineups, mlb_batters, mlb_pitchers) -> list:
     """Generiert HR-Props DIREKT aus den geladenen MLB-Daten (Lineups + Batter-HR-Raten
     + Gegner-Pitcher HR/9), unabhängig von externen Odds-Quellen.
     Die HR-Wahrscheinlichkeit und faire Quote werden geschätzt — wie ein Sportsbook es tut.
-    So funktioniert die JK-Style HR-Lottery auch wenn DraftKings/Bovada blocken.
+    So funktioniert die Verified HR-Lottery auch wenn DraftKings/Bovada blocken.
     """
     if not mlb_lineups or not mlb_batters:
         return []
@@ -1959,8 +1958,6 @@ def generate_hr_props_from_data(mlb_lineups, mlb_batters, mlb_pitchers) -> list:
                     direction="over",
                     enrichment=f"src:datagen | HR{hr:.0f} Barrel{barrel:.0f}% vs HR/9 {opp_hr9:.1f}",
                     features={
-                        "odds_observed": False,
-                        "price_type": "estimated",
                         "mlb_hr_rate": round(hr / 550, 4),
                         "mlb_hr_score": round((barrel/5) + (iso*4) + (opp_hr9), 2),
                         "mlb_slg": iso + 0.3,
@@ -2237,13 +2234,13 @@ def already_posted():
             pl=(p.get("player") or "").lower()
             if pl: players.add(pl)
     return keys,players
-def persist(picks):
+def persist(picks, telegram_message_id=None, telegram_text=None):
     today=datetime.now(timezone.utc).strftime("%Y-%m-%d")
     h=load_history()
     entry=next((e for e in h if e.get("date")==today),None)
     if entry is None: entry={"date":today,"picks":[],"kombis":[]}; h.append(entry)
     singles=[p for p in picks if p.type=="single"]
-    combos=[p for p in picks if p.type in ("kombi2","big","super","betbuilder","ladder")]
+    combos=[p for p in picks if p.type in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")]
     sport_map={"⚾":"MLB","🏀":"NBA/WNBA","🏈":"NFL"}
     def _clean_sport(p):
         # Echtes Sport-Feld bevorzugen (WNBA vs NBA sauber getrennt), Emoji nur als Fallback.
@@ -2260,7 +2257,43 @@ def persist(picks):
         entry["picks"].append(hp.model_dump())
         sb_insert({**hp.model_dump(),"league":real_sport,"features":getattr(p,"features",{}) or {}})
     for p in combos:
-        entry["kombis"].append({"type":p.type,"legs":p.legs or [],"odds":p.odds,"stake":p.stake,"result":"pending"})
+        combo = {"type":p.type,"category":getattr(p,"category",None),"player":p.player or "",
+                 "market":p.market or "","sport":_clean_sport(p),"legs":p.legs or [],
+                 "leg_details":getattr(p,"leg_details",[]) or [],"odds":p.odds,"stake":p.stake,
+                 "probability":p.probability,"result":"pending","created_at":datetime.now(timezone.utc).isoformat()}
+        if p.type == "ladder":
+            combo["ladder_legs"]=[x.model_dump() for x in (p.picks or [])]
+            combo["direction"]=p.direction or "over"
+            combo["point"]=getattr(p,"point",None)
+        entry["kombis"].append(combo)
+    # Telegram card metadata: required to edit the ORIGINAL tip message after settlement.
+    # One day can have multiple card runs, so keep one record per sent card.
+    if telegram_message_id:
+        cards = entry.setdefault("cards", [])
+        pick_keys = [
+            dedup_key(p.player or "", p.market or "", getattr(p, "point", None), p.direction)
+            for p in singles
+        ]
+        combo_ids = []
+        for idx, combo in enumerate(entry.get("kombis", [])[-len(combos):] if combos else []):
+            cid = combo.get("combo_id")
+            if not cid:
+                raw = json.dumps({
+                    "type": combo.get("type"), "legs": combo.get("legs"),
+                    "leg_details": combo.get("leg_details"), "odds": combo.get("odds"),
+                    "stake": combo.get("stake"), "created_at": combo.get("created_at"),
+                }, sort_keys=True, default=str)
+                cid = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+                combo["combo_id"] = cid
+            combo_ids.append(cid)
+        cards.append({
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "message_id": int(telegram_message_id),
+            "chat_id": str(TG_CHAT),
+            "text": telegram_text or "",
+            "pick_keys": pick_keys,
+            "combo_ids": combo_ids,
+        })
     save_history(h)
     log.info("persisted %d singles + %d combos",len(singles),len(combos))
 
@@ -2420,7 +2453,9 @@ def _confidence_score(p: Pick) -> int:
     edge = max(0.0, float(p.edge_pct or 0))
     prob = float(p.probability or 0)
     odds_penalty = max(0.0, float(p.odds or 1) - 2.0) * 3.0
-    score = 50 + edge * 4 + max(0, prob - 0.50) * 80 - odds_penalty
+    # Calibrated display score: probability dominates; edge adds only moderate confidence.
+    # This avoids routine 99/100 scores for ordinary 59-65% props.
+    score = 35 + prob * 50 + min(edge, 20.0) * 1.0 - odds_penalty
     if _is_hr_pick(p):
         score -= 8
     return int(max(1, min(99, round(score))))
@@ -2478,10 +2513,11 @@ def build_post(picks):
     ladders=[p for p in picks if p.type=="ladder"]
     builders=[p for p in picks if p.type=="betbuilder"]
     kombis=[p for p in picks if p.type=="kombi2"]
-    bigs=[p for p in picks if p.type in ("big","super")]
+    triples=[p for p in picks if p.type=="kombi3"]
+    bigs=[p for p in picks if p.type in ("big","super","lottery")]
     tier2=[p for p in singles if (p.tier or 1)==2]
     tier1=[p for p in singles if (p.tier or 1)!=2]
-    out=[f"🎯 PROP HUNTER v4 — {today}",""]
+    out=[f"🎯 PROP HUNTER v13 — {today}",""]
     def fmt(p):
         m=_market_with_line(p.market or "", p.direction, getattr(p, "point", None))
         team = _safe_display_team(p)
@@ -2517,6 +2553,12 @@ def build_post(picks):
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
             out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
         out.append("")
+    if triples:
+        out+=["🔥 3-LEG TRIPLES:"]
+        for p in triples:
+            legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
+            out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
+        out.append("")
     if bigs:
         out+=["💣 LOTTERY BIGS:"]
         for p in bigs:
@@ -2531,14 +2573,26 @@ def build_post(picks):
 # TELEGRAM
 # ─────────────────────────────────────────────
 def send_telegram(text,dry_run=False):
-    if dry_run: log.info("DRY-RUN Telegram (%d chars)",len(text)); return True
-    if not TG_TOKEN or not TG_CHAT: log.warning("Telegram not configured"); return False
+    """Send the card and return Telegram message_id for in-place settlement edits."""
+    if dry_run:
+        log.info("DRY-RUN Telegram (%d chars)",len(text))
+        return 0
+    if not TG_TOKEN or not TG_CHAT:
+        log.warning("Telegram not configured")
+        return None
     try:
         r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
             json={"chat_id":TG_CHAT,"text":text,"disable_web_page_preview":True},timeout=TIMEOUT)
-        if r.status_code==200: log.info("Telegram OK"); return True
-        log.error("Telegram %d: %s",r.status_code,r.text[:160]); return False
-    except Exception as e: log.error("Telegram: %s",e); return False
+        if r.status_code==200:
+            data = r.json() if r.content else {}
+            mid = ((data.get("result") or {}).get("message_id"))
+            log.info("Telegram OK message_id=%s", mid)
+            return int(mid) if mid is not None else None
+        log.error("Telegram %d: %s",r.status_code,r.text[:160])
+        return None
+    except Exception as e:
+        log.error("Telegram: %s",e)
+        return None
 
 
 # ─────────────────────────────────────────────
@@ -2687,7 +2741,7 @@ def gather(sport_filter=None):
                                 odds=raw["odds"], point=raw["line"],
                                 sport=raw["sport"], game=raw.get("game",""),
                                 direction=raw["direction"],
-                                features={"pc_grade": raw["grade"]},
+                                features={"pc_grade": raw["grade"], "odds_observed": False, "price_type": "synthetic", "source": "propcruncher"},
                                 emoji=raw["emoji"],
                                 enrichment=f"PC:{raw['grade']}",
                             )
@@ -2846,22 +2900,8 @@ def gather(sport_filter=None):
     except Exception as e:
         log.warning("snapshot merge: %s", e)
 
-    # HR-PROPS DIREKT AUS BATTER-DATEN generieren (JK-Style, unabhängig von Odds-Quellen).
-    # Damit gibt es HR-Lottery auch wenn DraftKings/Bovada blocken.
-    try:
-        if (not sport_filter) or sport_filter.lower() == "mlb":
-            if not mlb_lu: mlb_lu = fetch_mlb_lineups()
-            if not mlb_b:  mlb_b = fetch_mlb_batters()
-            if not mlb_p:  mlb_p = fetch_mlb_pitchers()
-            hr_props = generate_hr_props_from_data(mlb_lu, mlb_b, mlb_p)
-            if hr_props:
-                existing_hr = {(p.player or "").lower() for p in all_props if _is_hr_market_str(p.market)}
-                for hp in hr_props:
-                    if (hp.player or "").lower() not in existing_hr:
-                        all_props.append(hp)
-    except Exception as e:
-        log.warning("HR generation: %s", e)
-
+    # No synthetic HR betting rows: HR picks require a real observed sportsbook price.
+    # Statistical HR profiles remain enrichment/model inputs only.
     all_props = apply_data_plus_visible(all_props)
     all_props = enrich_gamelogs_fairprob(all_props)
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
@@ -3065,6 +3105,13 @@ def _make_probability_lottery(singles: list[Pick]) -> list[Pick]:
     return [Pick(type="big", legs=leg_txt, odds=round(odds, 2), stake=stake, analysis="Probability Lottery: höchste Trefferwahrscheinlichkeiten")]
 
 
+def _has_observed_price(p) -> bool:
+    feats = getattr(p, "features", {}) or {}
+    explicit = feats.get("odds_observed")
+    if explicit is not None:
+        return bool(explicit)
+    return str(feats.get("price_type") or "").lower() in {"bookmaker", "observed", "exchange"}
+
 def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     """Strenger v4 Filter: weniger Picks, keine negativen Edges, Basket nur mit Line."""
     accepted_singles=[]
@@ -3104,12 +3151,8 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     for p in singles:
         edge = p.edge_pct
         prob = p.probability
-        # Never publish an estimated/synthetic price as a bookmaker quote.
-        # Legacy props without an explicit marker remain compatible.
-        feats = getattr(p, "features", {}) or {}
-        if feats.get("odds_observed") is False:
-            rejected["synthetic_odds"] += 1
-            continue
+        if not _has_observed_price(p):
+            rejected["unverified_odds"] += 1; continue
         if edge is None:
             rejected["no_edge"] += 1; continue
         if edge <= 0:
@@ -3148,40 +3191,10 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
         if len(accepted_singles) >= MAX_SINGLES_TOTAL:
             break
 
-    # Kombis/Builder streng; Lottery wird neu aus Top-Wahrscheinlichkeiten gebaut.
-    combos=[]
-    lottery=[]
-    for p in [x for x in picks if x.type in ("betbuilder","kombi2","big","super","ladder")]:
-        legs = p.legs or []
-        if p.type in ("big", "super"):
-            # AI-Lottery nur behalten, wenn ALLE Legs aus den besten Probability-Singles kommen.
-            top_prob = _unique_probability_legs(accepted_singles, MAX_LOTTERY_LEGS)
-            if legs and top_prob and all(_leg_matches_accepted(leg, top_prob) for leg in legs):
-                p.type = "big"
-                p.stake = min(p.stake or 0.25, 0.25)
-                lottery.append(p)
-            else:
-                rejected["lottery_low_prob"] += 1
-            continue
-        if p.type == "ladder":
-            if any((p.player or "").lower() == (s.player or "").lower() for s in accepted_singles):
-                combos.append(p)
-            continue
-        if not legs:
-            rejected["combo_no_legs"] += 1; continue
-        matched=sum(1 for leg in legs if _leg_matches_accepted(leg, accepted_singles))
-        if matched >= min(2, len(legs)):
-            combos.append(p)
-        else:
-            rejected["combo_untrusted"] += 1
-        if len(combos) >= MAX_COMBOS_TOTAL:
-            break
-
-    # Falls AI keine gute Lottery gebaut hat: selbst eine bauen aus den höchsten Wahrscheinlichkeiten.
-    if not lottery:
-        lottery = _make_probability_lottery(accepted_singles)
-    lottery = lottery[:MAX_LOTTERY_TOTAL]
-    out = accepted_singles + combos[:MAX_COMBOS_TOTAL] + lottery
+    # AI-generated combos/ladders are intentionally discarded here. The dedicated
+    # verified builder runs after final singles selection and requires same-book,
+    # observed prices for every leg.
+    out = accepted_singles
 
     # ─── LEARNING: Stakes nach historischer Markt-Performance anpassen ───
     weights = load_learning_weights()
@@ -3547,8 +3560,11 @@ def rescue_picks_from_props(props, max_picks=12):
         sport = (getattr(sp, "sport", "") or "").upper()
         market = getattr(sp, "market", "") or ""
         is_hr = sport == "MLB" and ("home run" in market.lower() or re.search(r"\bhr\b", market.lower()) is not None)
+        if not _has_observed_price(sp):
+            rejected["unverified_odds"] += 1
+            continue
 
-        # JK-STYLE HR LANE: HR ist Lottery, kein +EV-Zwang.
+        # VERIFIED HR LANE: HR ist Lottery, kein +EV-Zwang.
         # Kriterium: starkes HR-Profil aus DATA+ (HR-Rate/Score), Odds 3.0–9.0.
         if is_hr:
             feats = getattr(sp, "features", {}) or {}
@@ -3562,10 +3578,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 rejected["bad_odds"] += 1; continue
             if not (3.0 <= odds <= 9.0):
                 rejected["hr_odds"] += 1; continue
-            # Selbst-generierte HR-Props (src:datagen) sind schon vorselektiert → durchlassen.
-            src_tag = (getattr(sp, "enrichment", "") or "").lower()
-            is_datagen = "datagen" in src_tag
-            strong_profile = is_datagen or (hr_rate is not None and float(hr_rate) >= 0.04) or hr_score >= 1.5
+            strong_profile = (hr_rate is not None and float(hr_rate) >= 0.04) or hr_score >= 1.5
             if not strong_profile:
                 rejected["hr_profile"] += 1; continue
             hr_prob = prob if prob and prob > 0.10 else min(0.30, max(0.12, float(hr_rate or 0.05) * 2.2))
@@ -3610,7 +3623,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 rejected["basket_edge"] += 1
                 continue
         elif is_mlb:
-            # HR wird bereits weiter oben von der JK-Style HR-Lane behandelt (continue).
+            # HR wird bereits weiter oben von der Verified HR-Lane behandelt (continue).
             if is_hits:
                 if prob < MIN_PROB_MLB_HITS:
                     rejected["hits_prob"] += 1
@@ -3656,7 +3669,7 @@ def rescue_picks_from_props(props, max_picks=12):
 
     candidates.sort(key=lambda p: ((p.edge_pct or 0), (p.probability or 0)), reverse=True)
 
-    # JK-STYLE HR PICKS bauen (Pool bis 5, sortiert nach Confidence — stärkste Profile zuerst)
+    # VERIFIED HR PICKS bauen (Pool bis 5, sortiert nach Confidence — stärkste Profile zuerst)
     candidates_hr.sort(key=lambda t: t[3], reverse=True)
     for sp, hr_prob, odds, conf in candidates_hr[:5]:
         try:
@@ -3674,7 +3687,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 edge_pct=0.0,
                 ev=round(ev(hr_prob, odds), 3),
                 game=_source_prop_game(sp),
-                analysis=(f"JK HR Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
+                analysis=(f"HR Model Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
             )
             pk.point = getattr(sp, "point", None)
             pk.source_sport = "MLB"
@@ -3773,7 +3786,7 @@ def build_hr_321(picks):
                 direction="over", odds=odds, stake=stake,
                 probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
                 game="JK HR Special",
-                analysis=f"JK Style: die {len(legs)} besten HR-Profile kombiniert.",
+                analysis=f"Verified: die {len(legs)} besten HR-Profile kombiniert.",
             )
             pk.legs = legs
             return pk
@@ -3842,7 +3855,7 @@ def build_hr_lottery_from_picks(picks, max_tickets=2, legs_per_ticket=3):
 
 def build_jk_extras(picks):
     """
-    JK-Style Struktur garantiert aus den finalen Singles bauen:
+    Verified Struktur garantiert aus den finalen Singles bauen:
     - DOUBLES: 2er-Kombis aus den sichersten Singles (Prob >= 0.55)
     - LADDER:  gestaffelte Alt-Linien desselben Spielers (sicher + value)
     - LOTTERY: 3-Leg Wahrscheinlichkeits-Kombi ODER HR 3-2-1 wenn HR-Singles da
@@ -3878,10 +3891,10 @@ def build_jk_extras(picks):
                     player=" + ".join(l.player for l in top2), emoji="🎯", team="",
                     market="2-Leg Kombi", direction="over", odds=odds, stake=0.3,
                     probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
-                    game="JK Double", analysis="Die zwei sichersten Singles kombiniert.")
+                    game="Verified Double", analysis="Die zwei sichersten Singles kombiniert.")
                 pk.legs = [f"{l.player} {l.market}" for l in top2]
                 extras.append(pk)
-                log.info("JK Double gebaut @ %.2f", odds)
+                log.info("Verified Double gebaut @ %.2f", odds)
         except Exception as e:
             log.warning("jk double: %s", e)
 
@@ -3923,11 +3936,11 @@ def build_jk_extras(picks):
                     team=anchor.team or "", market=f"{base_market} Ladder",
                     direction="over", odds=float(anchor.odds), stake=1.0,
                     probability=anchor.probability, edge_pct=0, ev=0,
-                    game="JK Ladder",
-                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u (JK-Style).")
+                    game="Verified Ladder",
+                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u (Verified).")
                 pk.picks = [safe_leg, value_leg]
                 extras.append(pk)
-                log.info("JK Ladder gebaut: %s (%.1f→%.1f)", anchor.player, point, alt_point)
+                log.info("Verified Ladder gebaut: %s (%.1f→%.1f)", anchor.player, point, alt_point)
         except Exception as e:
             log.warning("jk ladder: %s", e)
 
@@ -3948,7 +3961,7 @@ def build_jk_extras(picks):
 
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v4 DATA+ TEAM-SAFE (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER v13 VERIFIED MULTISPORT (dry=%s sport=%s)",dry_run,sport_filter or "all")
     props=gather(sport_filter)
     if not props:
         log.warning("no props found")
@@ -3987,17 +4000,25 @@ def run(dry_run=False,sport_filter=None):
 
     picks = limit_singles_per_game(picks, max_per_game=3)
     picks = limit_total_singles(picks, max_singles=12)
-    picks = picks + build_jk_extras(picks)
+    # Real-price builder only: no invented ladder lines/odds. Supports same-book
+    # 2/3/4-leg combinations, including mixed sports, plus verified HR tickets.
+    try:
+        from prop_hunter_builder_engine import build_autonomous_extras
+        extras = build_autonomous_extras(picks, props, Pick, LadderLeg)
+        picks = picks + extras
+        log.info("verified builder extras: +%d", len(extras))
+    except Exception as exc:
+        log.warning("verified builder skipped: %s", exc)
     body=build_post(picks)
     print("\n"+body+"\n")
-    send_telegram(body,dry_run=dry_run)
+    telegram_message_id = send_telegram(body,dry_run=dry_run)
     if not dry_run:
-        persist(picks)
+        persist(picks, telegram_message_id=telegram_message_id, telegram_text=body)
     log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v4 DATA+ TEAM-SAFE")
+    parser=argparse.ArgumentParser(description="PROP HUNTER v13 VERIFIED MULTISPORT")
     parser.add_argument("--dry-run",action="store_true")
     parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
@@ -4064,6 +4085,40 @@ def fetch_nhl_player_gamelogs(player_name: str, num_games: int = 20) -> list:
 
 _PLAYER_STATS_CACHE = {}
 
+def _nba_season_label(start_year: int | None = None) -> str:
+    y = YEAR_NBA if start_year is None else int(start_year)
+    return f"{y}-{(y+1)%100:02d}"
+
+def fetch_nba_api_gamelogs(player_name: str, num_games: int = 30, include_prior: bool = True) -> list:
+    """Current NBA season first; at season start append prior-season games as a controlled prior."""
+    try:
+        from nba_api.stats.static import players as nba_players
+        from nba_api.stats.endpoints import playergamelog
+        wanted = norm_name(player_name)
+        matches = [p for p in nba_players.get_players() if norm_name(p.get("full_name")) == wanted]
+        if not matches:
+            matches = [p for p in nba_players.get_players() if wanted in norm_name(p.get("full_name")) or norm_name(p.get("full_name")) in wanted]
+        if not matches: return []
+        pid = matches[0].get("id")
+        seasons = [_nba_season_label()]
+        if include_prior: seasons.append(_nba_season_label(YEAR_NBA-1))
+        out=[]
+        for idx, season in enumerate(seasons):
+            try:
+                df=playergamelog.PlayerGameLog(player_id=pid,season=season,season_type_all_star="Regular Season",timeout=25).get_data_frames()[0]
+            except Exception as exc:
+                log.warning("NBA API gamelog %s %s: %s", player_name, season, exc); continue
+            for _,g in df.iterrows():
+                pts=float(g.get("PTS") or 0); reb=float(g.get("REB") or 0); ast=float(g.get("AST") or 0)
+                matchup=str(g.get("MATCHUP") or "")
+                out.append({"date":str(g.get("GAME_DATE") or "")[:10],"pts":pts,"reb":reb,"ast":ast,"pra":pts+reb+ast,"pa":pts+ast,"pr":pts+reb,"ra":reb+ast,"fg3m":float(g.get("FG3M") or 0),"blk":float(g.get("BLK") or 0),"stl":float(g.get("STL") or 0),"min":float(g.get("MIN") or 0),"is_home":" vs. " in matchup,"opponent":matchup,"season":season,"prior_season":idx>0})
+            # once current season has 10 games, no prior-season prior is needed
+            if idx == 0 and len(out) >= 10: break
+        out.sort(key=lambda x:x.get("date") or "", reverse=True)
+        return out[:num_games]
+    except Exception as exc:
+        log.warning("NBA API gamelogs error %s: %s", player_name, exc); return []
+
 def fetch_nba_player_gamelogs(player_name: str, num_games: int = 30) -> list:
     """Holt historische NBA Game Logs — nba_api zuerst, balldontlie als Fallback."""
     cache_key = f"nba_gl_{player_name}"
@@ -4084,7 +4139,7 @@ def fetch_nba_player_gamelogs(player_name: str, num_games: int = 30) -> list:
         if not players: return []
         pid = players[0]["id"]
         r2 = requests.get("https://api.balldontlie.io/v1/stats",
-            params={"player_ids[]": pid, "per_page": num_games, "seasons[]": [2024, 2025]},
+            params=[("player_ids[]", pid),("per_page", num_games),("seasons[]", YEAR_NBA),("seasons[]", YEAR_NBA-1)],
             headers=h, timeout=20)
         if r2.status_code != 200: return []
         games = r2.json().get("data", [])
@@ -4203,7 +4258,7 @@ def save_gamelogs_to_supabase(player: str, sport: str, games: list):
     rows = []
     for g in games:
         row = {"player": player, "sport": sport,
-               "game_date": g.get("date"), "season": 2025}
+               "game_date": g.get("date"), "season": (YEAR_NBA if sport in ("NBA","WNBA") else YEAR_MLB)}
         row.update({k: v for k, v in g.items() if k not in ("date",)})
         rows.append(row)
     try:
@@ -4257,8 +4312,9 @@ def player_ml_probability(player: str, sport: str, market: str,
         "rbi": "rbi", "stolen base": "sb", "strikeout": "k_pitcher",
         # NBA/WNBA
         "points": "pts", "rebounds": "reb", "assists": "ast",
-        "pra": "pts", "3pm": "fg3m", "blocks": "blk", "steals": "stl",
-        "rebounds+assists": "reb",
+        "pra": "pra", "points+assists": "pa", "points+rebounds": "pr", "pa": "pa", "pr": "pr",
+        "3pm": "fg3m", "3-pt": "fg3m", "blocks": "blk", "steals": "stl",
+        "rebounds+assists": "ra",
         # NHL
         "shots on goal": "shots", "goals": "goals",
         "power play": "ppp", "nhl assists": "assists",
@@ -4286,7 +4342,6 @@ def player_ml_probability(player: str, sport: str, market: str,
     # Features berechnen
     feats = compute_player_features(games, line, stat_key)
     if not feats: return None
-    is_home_game = bool(games[0].get("is_home", True)) if games else True
 
     # Einfaches gewichtetes Modell (kein Training nötig — direkte Heuristik)
     # Gewichtung: L5 Hit Rate 40%, L10 Hit Rate 35%, L20 Hit Rate 15%, Streak 10%
@@ -4295,7 +4350,8 @@ def player_ml_probability(player: str, sport: str, market: str,
             0.35 * feats["hit_rate_l10"] +
             0.15 * feats["hit_rate_l20"] +
             0.10 * min(feats["streak"] / 5, 1.0))
-    if is_home_game: prob += location_adj * 0.3
+    # location_adj already reflects home-vs-away split; apply conservatively.
+    prob += location_adj * 0.15
 
     # Bonus/Malus für Linie vs Durchschnitt
     if feats["line_vs_avg"] > 3: prob -= 0.05   # Linie viel über Schnitt → Malus
