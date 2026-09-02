@@ -13163,9 +13163,100 @@
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-09-02T16:38:45.443910+00:00"
+      },
+      {
+        "date": "2026-09-02",
+        "player": "Yordan Alvarez",
+        "team": "Houston Astros",
+        "market": "Home Run",
+        "sport": "MLB",
+        "odds": 3.95,
+        "stake": 0.25,
+        "direction": "over",
+        "probability": 0.2563,
+        "dedup_key": "yordan alvarez|home run|0.5|over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-09-02T21:08:51.765571+00:00"
+      },
+      {
+        "date": "2026-09-02",
+        "player": "Junior Caminero",
+        "team": "Tampa Bay Rays",
+        "market": "Home Run",
+        "sport": "MLB",
+        "odds": 3.98,
+        "stake": 0.25,
+        "direction": "over",
+        "probability": 0.2511,
+        "dedup_key": "junior caminero|home run|0.5|over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-09-02T21:08:52.072382+00:00"
+      },
+      {
+        "date": "2026-09-02",
+        "player": "Munetaka Murakami",
+        "team": "Chicago White Sox",
+        "market": "Home Run",
+        "sport": "MLB",
+        "odds": 4.27,
+        "stake": 0.25,
+        "direction": "over",
+        "probability": 0.2346,
+        "dedup_key": "munetaka murakami|home run|0.5|over",
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-09-02T21:08:52.283357+00:00"
       }
     ],
-    "kombis": [],
+    "kombis": [
+      {
+        "type": "big",
+        "category": "risk",
+        "player": "Yordan Alvarez + Chandler Simpson",
+        "market": "2-Leg RISK",
+        "sport": "?",
+        "legs": [
+          "Yordan Alvarez Hits Over 1.5 @2.92",
+          "Chandler Simpson Hits Over 1.5 @2.94"
+        ],
+        "leg_details": [
+          {
+            "player": "Yordan Alvarez",
+            "sport": "MLB",
+            "market": "Hits Over 1.5",
+            "direction": "over",
+            "point": 1.5,
+            "odds": 2.92,
+            "bookmaker": "draftkings",
+            "game": "Chicago White Sox @ Houston Astros"
+          },
+          {
+            "player": "Chandler Simpson",
+            "sport": "MLB",
+            "market": "Hits Over 1.5",
+            "direction": "over",
+            "point": 1.5,
+            "odds": 2.94,
+            "bookmaker": "draftkings",
+            "game": "New York Mets @ Tampa Bay Rays"
+          }
+        ],
+        "odds": 8.58,
+        "stake": 0.05,
+        "probability": 0.1227,
+        "result": "pending",
+        "created_at": "2026-09-02T21:08:52.479700+00:00",
+        "combo_id": "fcbd8851c573e77f"
+      }
+    ],
     "cards": [
       {
         "created_at": "2026-09-02T16:38:45.656847+00:00",
@@ -13178,6 +13269,20 @@
           "matt olson|home run|0.5|over"
         ],
         "combo_ids": []
+      },
+      {
+        "created_at": "2026-09-02T21:08:52.479803+00:00",
+        "message_id": 314,
+        "chat_id": "-1003861013124",
+        "text": "\ud83c\udfaf PROP HUNTER v13 \u2014 02.09.2026\n\n\ud83d\udfe1 VALUE PICKS:\n\n\u26be Houston Astros \u2014 Yordan Alvarez\n   \u2514 Home Run @3.95 \u2192 0.25u\n   \ud83d\udcc8 Edge +0.0% \u00b7 Prob 26% \u00b7 Confidence 65/100\n   \ud83d\udca1 HR Model Confidence 64/99 \u2014 Park103 | WX:Dome | O/U8.5 | DATA+: starker HR/AB 7.5%; starke OPS 1.036\n\n\u26be Tampa Bay Rays \u2014 Junior Caminero\n   \u2514 Home Run @3.98 \u2192 0.25u\n   \ud83d\udcc8 Edge +0.0% \u00b7 Prob 25% \u00b7 Confidence 51/100\n   \ud83d\udca1 HR Model Confidence 51/99 \u2014 Park96 | WX:Dome | O/U8.1 | PC:S Hits+Runs+RBIS o 0.5 | DATA+: guter HR/AB 7.0%; starke OPS 0.904\n\n\u26be Chicago White Sox \u2014 Munetaka Murakami\n   \u2514 Home Run @4.27 \u2192 0.25u\n   \ud83d\udcc8 Edge +0.0% \u00b7 Prob 23% \u00b7 Confidence 51/100\n   \ud83d\udca1 HR Model Confidence 50/99 \u2014 Park103 | WX:Dome | O/U8.5 | DATA+: starker HR/AB 7.9%\n\n\ud83d\udca3 LOTTERY BIGS:\n\u2022 Yordan Alvarez Hits Over 1.5 @2.92 + Chandler Simpson Hits Over 1.5 @2.94 @8.6 \u2192 0.05u\n\n\ud83d\udcca Mehr Value Picks \u00b7 Keine negative Edge \u00b7 Lines Pflicht \ud83c\udfaf\n@prophunter",
+        "pick_keys": [
+          "yordan alvarez|home run|0.5|over",
+          "junior caminero|home run|0.5|over",
+          "munetaka murakami|home run|0.5|over"
+        ],
+        "combo_ids": [
+          "fcbd8851c573e77f"
+        ]
       }
     ]
   }
