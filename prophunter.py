@@ -81,7 +81,7 @@ MAX_COMBOS_TOTAL      = 2
 MAX_LOTTERY_TOTAL     = 2
 MAX_LOTTERY_LEGS      = 3
 
-GEMINI_MODEL   = "gemini-2.0-flash"
+GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip() or "gemini-3.6-flash"
 GROQ_MODELS    = ["llama-3.3-70b-versatile","llama-3.1-70b-versatile","mixtral-8x7b-32768"]
 FUZZY_THR      = 85
 LINEUP_THR     = 88
@@ -2633,7 +2633,7 @@ def gather(sport_filter=None):
     def _try_oddspapi():
         """OddsPapi als Fallback wenn Odds API Keys exhausted."""
         if not ODDSPAPI_KEY: return False
-        log.info("OddsPapi Backup aktiviert — Odds API exhausted")
+        log.info("OddsPapi source aktiviert — dynamische Player-Prop Discovery")
         sports_to_try = list(SPORTS.keys()) if not sport_filter else \
             [k for k,v in SPORTS.items() if v.name.lower()==sport_filter.lower()]
         found = False
@@ -2765,6 +2765,12 @@ def gather(sport_filter=None):
                     if extras: p.enrichment=" | ".join(extras)
                     p.event_id=ev["id"]; p.sport_key=sk
                     all_props.append(p)
+    # OddsPapi: always query as a real observed-odds source (quota-capped/cached).
+    # It must not wait until every The Odds API key is dead; otherwise we never
+    # compare its Pinnacle/Bet365/etc. player-prop prices on normal runs.
+    if ODDSPAPI_KEY:
+        _try_oddspapi()
+
     # NBA/WNBA batch enrichment
     nba=[p for p in all_props if p.sport=="NBA"]
     if nba:
@@ -3529,6 +3535,12 @@ def rescue_picks_from_props(props, max_picks=12):
             if not strong_profile:
                 rejected["hr_profile"] += 1; continue
             hr_prob = prob if prob and prob > 0.10 else min(0.30, max(0.12, float(hr_rate or 0.05) * 2.2))
+            # A "Value" HR pick must have genuinely positive edge at the observed
+            # sportsbook price. Never publish an HR with a fabricated 0.0% edge.
+            hr_edge = edge_pct(hr_prob, odds) * 100
+            if hr_edge < MIN_EDGE_HR:
+                rejected["hr_edge"] += 1
+                continue
             # Confidence: kombiniert HR-Rate, DATA+ Score, SLG/OPS und DB-Fairprob-Boost.
             conf = 0.0
             if hr_rate: conf += min(float(hr_rate), 0.15) * 300  # bis 45
@@ -3538,7 +3550,7 @@ def rescue_picks_from_props(props, max_picks=12):
             db_rate = feats.get("gamelog_l10_rate")
             if db_rate: conf += float(db_rate) * 20               # DB L10 Boost
             conf = round(min(99, max(1, conf)), 1)
-            candidates_hr.append((sp, hr_prob, odds, conf))
+            candidates_hr.append((sp, hr_prob, odds, conf, hr_edge))
             continue
 
         if edge <= 0:
@@ -3618,7 +3630,7 @@ def rescue_picks_from_props(props, max_picks=12):
 
     # VERIFIED HR PICKS bauen (Pool bis 5, sortiert nach Confidence — stärkste Profile zuerst)
     candidates_hr.sort(key=lambda t: t[3], reverse=True)
-    for sp, hr_prob, odds, conf in candidates_hr[:5]:
+    for sp, hr_prob, odds, conf, hr_edge in candidates_hr[:5]:
         try:
             pk = Pick(
                 type="single",
@@ -3631,7 +3643,7 @@ def rescue_picks_from_props(props, max_picks=12):
                 odds=round(odds, 2),
                 stake=0.25,
                 probability=round(hr_prob, 4),
-                edge_pct=0.0,
+                edge_pct=round(hr_edge, 2),
                 ev=round(ev(hr_prob, odds), 3),
                 game=_source_prop_game(sp),
                 analysis=(f"HR Model Confidence {int(conf)}/99 — " + (getattr(sp, "enrichment", None) or "starkes HR-Profil (DATA+)"))[:160],
@@ -3908,7 +3920,7 @@ def build_jk_extras(picks):
 
 def run(dry_run=False,sport_filter=None):
     log.info("="*40)
-    log.info("PROP HUNTER v13 VERIFIED MULTISPORT (dry=%s sport=%s)",dry_run,sport_filter or "all")
+    log.info("PROP HUNTER %s (dry=%s sport=%s)", PH_RUNTIME_VERSION, dry_run, sport_filter or "all")
     props=gather(sport_filter)
     if not props:
         log.warning("no props found")
@@ -3965,9 +3977,9 @@ def run(dry_run=False,sport_filter=None):
 
 if __name__=="__main__":
     import argparse,sys
-    parser=argparse.ArgumentParser(description="PROP HUNTER v13 VERIFIED MULTISPORT")
+    parser=argparse.ArgumentParser(description=f"PROP HUNTER {PH_RUNTIME_VERSION}")
     parser.add_argument("--dry-run",action="store_true")
-    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","euroleague"])
+    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","nhl","euroleague"])
     parser.add_argument("-v","--verbose",action="store_true")
     parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
     args=parser.parse_args()
