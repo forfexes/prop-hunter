@@ -3,7 +3,7 @@ name: Prop Hunter Source Discovery Automatic
 "on":
   workflow_dispatch:
   schedule:
-    - cron: '15 2,3 * * 0'  # Sunday 04:15 Switzerland, DST-safe candidates
+    - cron: '15 3 * * 0'  # one weekly run; saves Actions minutes
 
 permissions:
   contents: write
@@ -22,61 +22,69 @@ jobs:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Resolve Switzerland maintenance window
-        shell: bash
-        run: |
-          RUN_MAINTENANCE="false"
-          LOCAL_NOW="$(TZ=Europe/Zurich date +'%H:%M')"
-          HH="${LOCAL_NOW%:*}"; MM="${LOCAL_NOW#*:}"
-          TOTAL=$((10#$HH * 60 + 10#$MM))
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || { [ "$TOTAL" -ge 225 ] && [ "$TOTAL" -le 285 ]; }; then
-            RUN_MAINTENANCE="true"
-          fi
-          echo "RUN_MAINTENANCE=$RUN_MAINTENANCE" >> "$GITHUB_ENV"
-
       - uses: actions/setup-python@v5
-        if: env.RUN_MAINTENANCE == 'true'
         with:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: requirements.txt
 
+
+      - name: Supabase preflight
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python - <<'PY'
+          import os, urllib.error, urllib.request
+          url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+          key = os.environ.get("SUPABASE_KEY", "")
+          if not url or not key:
+              raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
+          req = urllib.request.Request(
+              f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",
+              headers={"apikey": key},
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=15) as response:
+                  if response.status != 200:
+                      raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
+          except urllib.error.HTTPError as exc:
+              body = exc.read().decode("utf-8", "ignore")[:300]
+              raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
+          except Exception as exc:
+              raise SystemExit(f"Supabase preflight failed: {exc}")
+          print("Supabase preflight OK")
+          PY
+
       - name: Install
-        if: env.RUN_MAINTENANCE == 'true'
         run: |
           pip install -r requirements.txt
           python -m playwright install chromium || true
 
       - name: Audit and discover sources
-        if: env.RUN_MAINTENANCE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL
           PH_BROWSER_BOOKS: betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,bet365,action_network,betr,dabble,chalkboard,parlayplay
-          PH_MAX_BROWSER_JOBS: '25'
+          PH_MAX_BROWSER_JOBS: '12'
         run: |
           python prop_hunter_source_audit.py || true
           python prop_hunter_github_source_scanner.py || true
           python prop_hunter_web_source_scanner.py || true
           python prop_hunter_candidate_tester.py || true
           python prop_hunter_source_orchestrator.py --mode all || true
-          python prop_hunter_source_reliability.py || true
 
       - name: Weekly official-data backfills
-        if: env.RUN_MAINTENANCE == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           python prop_hunter_statcast_backfill.py || true
           python prop_hunter_feature_builder.py || true
-          python prop_hunter_builder_learning.py || true
-          python prop_hunter_autolearn.py --train || true
 
       - name: Save source registry and learning
-        if: env.RUN_MAINTENANCE == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
