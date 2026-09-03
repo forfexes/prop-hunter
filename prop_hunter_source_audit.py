@@ -19,7 +19,7 @@ FILES = [
     ".github/workflows/prop_hunter_maintenance.yml", "requirements.txt",
 ]
 REQUIRED_SECRETS = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "SUPABASE_URL", "SUPABASE_KEY"]
-OPTIONAL_SECRETS = ["GEMINI_API_KEY", "GEMINI_API_KEYS", "GROQ_API_KEY", "GROQ_API_KEYS", "BALLDONTLIE_API_KEY", "ODDSPAPI", "GITHUB_TOKEN"]
+OPTIONAL_SECRETS = ["GEMINI_API_KEY", "GEMINI_API_KEYS", "GROQ_API_KEY", "GROQ_API_KEYS", "BALLDONTLIE_API_KEY", "ODDSPAPI_KEY", "ODDSPAPI", "GITHUB_TOKEN"]
 PACKAGES = ["requests", "pandas", "supabase", "nba_api", "nflreadpy", "pybaseball", "bs4", "rapidfuzz", "pydantic", "playwright", "sklearn"]
 
 
