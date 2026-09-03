@@ -3,10 +3,19 @@ from statistics import mean
 from prop_hunter_shared_utils import select_rows, upsert_rows, safe_json_write, log, norm_name, to_float, hash_key, now_iso
 
 OUT="prop_hunter_player_features.json"
-STATS=["points","rebounds","assists","pra","ra","double_double","triple_double","hits","total_bases","home_runs","rbi","runs","pitcher_strikeouts","receptions","receiving_yards","rushing_yards","passing_yards","touchdowns","anytime_td","two_plus_td"]
-LINES={"pra":[24.5,29.5,34.5,39.5,44.5],"ra":[9.5,11.5,13.5,15.5,17.5],"points":[14.5,19.5,24.5,29.5],"rebounds":[5.5,7.5,9.5,11.5],"assists":[3.5,5.5,7.5,9.5],"hits":[0.5,1.5],"total_bases":[1.5,2.5,3.5],"home_runs":[0.5],"pitcher_strikeouts":[3.5,4.5,5.5,6.5,7.5],"receiving_yards":[24.5,39.5,49.5,59.5,69.5],"rushing_yards":[24.5,39.5,49.5,59.5],"passing_yards":[199.5,224.5,249.5,274.5],"receptions":[2.5,3.5,4.5,5.5]}
+STATS=["points","rebounds","assists","pra","ra","pa","pr","threes_made","double_double","triple_double","hits","total_bases","home_runs","rbi","runs","stolen_bases","hits_runs_rbis","pitcher_strikeouts","receptions","receiving_yards","receiving_touchdowns","rushing_yards","passing_yards","touchdowns","anytime_td","two_plus_td"]
+LINES={"pra":[24.5,29.5,34.5,39.5,44.5],"ra":[9.5,11.5,13.5,15.5,17.5],"pa":[14.5,19.5,24.5,29.5,34.5],"pr":[14.5,19.5,24.5,29.5,34.5],"points":[14.5,19.5,24.5,29.5],"rebounds":[5.5,7.5,9.5,11.5],"assists":[3.5,5.5,7.5,9.5],"threes_made":[0.5,1.5,2.5,3.5],"hits":[0.5,1.5],"total_bases":[1.5,2.5,3.5],"home_runs":[0.5],"stolen_bases":[0.5],"hits_runs_rbis":[0.5,1.5,2.5,3.5],"pitcher_strikeouts":[3.5,4.5,5.5,6.5,7.5],"receiving_yards":[24.5,39.5,49.5,59.5,69.5],"rushing_yards":[24.5,39.5,49.5,59.5],"passing_yards":[199.5,224.5,249.5,274.5],"receptions":[2.5,3.5,4.5,5.5]}
 
 def val(r,k):
+    if k == "pa":
+        a,b=to_float(r.get("points")),to_float(r.get("assists"))
+        return None if a is None or b is None else a+b
+    if k == "pr":
+        a,b=to_float(r.get("points")),to_float(r.get("rebounds"))
+        return None if a is None or b is None else a+b
+    if k == "hits_runs_rbis":
+        xs=[to_float(r.get(x)) for x in ("hits","runs","rbi")]
+        return None if any(x is None for x in xs) else sum(xs)
     x=r.get(k)
     if isinstance(x,bool): return 1.0 if x else 0.0
     return to_float(x)
