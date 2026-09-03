@@ -52,6 +52,12 @@ SOURCES: tuple[SourceSpec, ...] = (
                ("MLB", "NBA", "WNBA", "NFL", "NHL"), ("playwright", "cache"),
                "https://parlayplay.io/"),
 
+    # Aggregated sportsbook odds / player props
+    SourceSpec("oddspapi", "OddsPapi", "sportsbook_aggregator", "free_key_required", 99, True,
+               ("MLB", "NBA", "WNBA", "NFL", "NHL"), ("official_json", "market_discovery", "cache"),
+               "https://oddspapi.io/",
+               "Dynamic sports/market discovery; real bookmaker lines and prices."),
+
     # Sportsbooks / bookmakers
     SourceSpec("draftkings", "DraftKings", "sportsbook", "free_public_web", 92, True,
                ("MLB", "NBA", "WNBA", "NFL", "NHL"), ("json", "playwright", "cache"),
