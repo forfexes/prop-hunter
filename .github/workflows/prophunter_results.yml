@@ -1,9 +1,9 @@
 name: Prop Hunter Results Autonomous
 
 "on":
-  workflow_dispatch:
+  workflow_dispatch: {}
   schedule:
-    - cron: '0 10,11 * * *'  # 12:00 Switzerland, DST-safe candidates
+    - cron: '15 10 * * *'
 
 permissions:
   contents: write
@@ -15,50 +15,58 @@ concurrency:
 jobs:
   results:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Resolve Switzerland result window
-        shell: bash
-        run: |
-          RUN_RESULTS="false"
-          LOCAL_NOW="$(TZ=Europe/Zurich date +'%H:%M')"
-          HH="${LOCAL_NOW%:*}"; MM="${LOCAL_NOW#*:}"
-          TOTAL=$((10#$HH * 60 + 10#$MM))
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || { [ "$TOTAL" -ge 705 ] && [ "$TOTAL" -le 765 ]; }; then
-            RUN_RESULTS="true"
-          fi
-          echo "RUN_RESULTS=$RUN_RESULTS" >> "$GITHUB_ENV"
-          echo "Europe/Zurich=$LOCAL_NOW results=$RUN_RESULTS"
-
       - uses: actions/setup-python@v5
-        if: env.RUN_RESULTS == 'true'
         with:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: requirements_results.txt
 
+
+      - name: Supabase preflight
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python - <<'PY'
+          import os, urllib.error, urllib.request
+          url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+          key = os.environ.get("SUPABASE_KEY", "")
+          if not url or not key:
+              raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
+          req = urllib.request.Request(
+              f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",
+              headers={"apikey": key},
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=15) as response:
+                  if response.status != 200:
+                      raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
+          except urllib.error.HTTPError as exc:
+              body = exc.read().decode("utf-8", "ignore")[:300]
+              raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
+          except Exception as exc:
+              raise SystemExit(f"Supabase preflight failed: {exc}")
+          print("Supabase preflight OK")
+          PY
+
       - name: Install
-        if: env.RUN_RESULTS == 'true'
         run: pip install -r requirements_results.txt
 
-      - name: Compile settlement and learning
-        if: env.RUN_RESULTS == 'true'
+      - name: Compile results path
         run: |
-          python -m py_compile \
-            prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_clv_engine.py \
-            prop_hunter_learning_update.py prop_hunter_source_reliability.py \
-            prop_hunter_builder_learning.py prop_hunter_autolearn.py
+          python -m py_compile prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_feature_builder.py
+          python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py
+          python -m py_compile prop_hunter_learning_update.py
 
-      - name: Fetch and settle all sports
-        if: env.RUN_RESULTS == 'true'
+      - name: Fetch official results and gamelogs
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
@@ -67,32 +75,33 @@ jobs:
           python prop_hunter_results_nba.py || true
           python prop_hunter_results_wnba.py || true
           python prop_hunter_results_nfl.py || true
+          python prop_hunter_results_nhl.py || true
           python espn_multisport_results.py || true
-          python prop_hunter_settler.py || true
-          python prophunter_results.py
-          python prop_hunter_clv_engine.py || true
 
-      - name: Learn from every settled pick
-        if: env.RUN_RESULTS == 'true'
+      - name: Settle and publish evaluation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+        run: |
+          python prop_hunter_feature_builder.py || true
+          python prop_hunter_settler.py
+          python prophunter_results.py
+
+      - name: Learn from settled picks
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           python prop_hunter_learning_update.py || true
-          python prop_hunter_source_reliability.py || true
-          python prop_hunter_builder_learning.py || true
-          python prop_hunter_autolearn.py --train || true
 
-      - name: Save results and champion models
-        if: env.RUN_RESULTS == 'true'
+      - name: Save results and learning
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add \
-            picks_history.json odds_cache.json \
-            prop_hunter_model_registry.json prop_hunter_autolearn_report.json \
-            prop_hunter_builder_correlations.json prop_hunter_source_trust.json \
-            2>/dev/null || true
-          git diff --staged --quiet && echo "Nothing to commit" && exit 0
-          git commit -m "prop hunter results and learning $(date -u +%F)"
+          git add picks_history.json prop_hunter_model_registry.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_source_trust.json 2>/dev/null || true
+          git diff --staged --quiet && exit 0
+          git commit -m "prop hunter results $(date -u +%F)"
           git push
