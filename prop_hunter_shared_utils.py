@@ -82,14 +82,16 @@ def hash_key(*parts: Any) -> str:
 
 def http_get(url: str, params=None, headers=None, retries: int = 2, sleep: float = 1.0):
     h = {
-        "User-Agent": "PropHunterFinalCoverage/1.0",
+        "User-Agent": "PropHunterFinalCoverage/13.6",
         "Accept": "application/json,text/html,*/*",
     }
     if headers:
         h.update(headers)
     for attempt in range(retries + 1):
         try:
-            r = requests.get(url, params=params or {}, headers=h, timeout=TIMEOUT)
+            from prop_hunter_http import get as browser_aware_get
+            r = browser_aware_get(url, params=params or {}, headers=h, timeout=TIMEOUT, allow_curl_fallback=True)
+            # Never try to disguise/retry a server-side quota response.
             if r.status_code in (401, 403, 404, 429):
                 return r
             if r.status_code >= 500 and attempt < retries:
