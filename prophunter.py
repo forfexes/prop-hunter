@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.4-PRESEASON-READY"
+PH_RUNTIME_VERSION = "13.6-ODDSPLUS"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -32,7 +32,7 @@ GEMINI_KEYS    = _csv("GEMINI_API_KEY")
 GROQ_KEYS      = _csv("GROQ_API_KEY")
 BALLDONTLIE_KEY= os.environ.get("BALLDONTLIE_API_KEY","")
 BDL_KEY = BALLDONTLIE_KEY
-ODDSPAPI_KEY   = os.environ.get("ODDSPAPI","")
+ODDSPAPI_KEY   = (os.environ.get("ODDSPAPI_KEY","") or os.environ.get("ODDSPAPI","") or os.environ.get("ODDSPAPI_API_KEY","")).strip()
 SUPABASE_URL   = os.environ.get("SUPABASE_URL","")
 SUPABASE_KEY   = os.environ.get("SUPABASE_KEY","")
 TG_TOKEN       = os.environ.get("TELEGRAM_BOT_TOKEN","")
@@ -195,12 +195,15 @@ def season_for(sport, now=None):
     if sport in ("basketball_nba","basketball_euroleague"): return y-1 if m<10 else y
     if sport=="basketball_wnba": return y if 5<=m<=10 else y-1
     if sport=="americanfootball_nfl": return y-1 if m<8 else y
+    if sport=="icehockey_nhl": return y-1 if m<9 else y
     return y
 def is_nfl_offseason(): return datetime.now(timezone.utc).month in (2,3,4,5,6,7)
 YEAR_MLB=season_for("baseball_mlb"); YEAR_NBA=season_for("basketball_nba")
 YEAR_NFL=season_for("americanfootball_nfl")
-log.info("seasons: MLB=%s | NBA=%s-%02d | NFL=%s%s",
-    YEAR_MLB, YEAR_NBA, (YEAR_NBA+1)%100, YEAR_NFL, " (OFF)" if is_nfl_offseason() else "")
+YEAR_NHL=season_for("icehockey_nhl")
+log.info("seasons: MLB=%s | NBA=%s-%02d | NFL=%s%s | NHL=%s-%02d",
+    YEAR_MLB, YEAR_NBA, (YEAR_NBA+1)%100, YEAR_NFL, " (OFF)" if is_nfl_offseason() else "",
+    YEAR_NHL, (YEAR_NHL+1)%100)
 
 # ─────────────────────────────────────────────
 # MODELS
@@ -2600,80 +2603,24 @@ def send_telegram(text,dry_run=False):
 # ─────────────────────────────────────────────
 
 # ─────────────────────────────────────────────
-# ODDSPAPI SAFE FALLBACK
+# ODDSPAPI — dynamic American-sports player props
 # ─────────────────────────────────────────────
-_ODDSPAPI_CACHE: dict = {}
-ODDSPAPI_SPORT_MAP = {
-    "baseball_mlb":         (10, "mlb"),
-    "basketball_nba":       (11, "nba"),
-    "basketball_wnba":      (11, "wnba"),
-    "americanfootball_nfl": (12, "nfl"),
-    "icehockey_nhl":        (13, "nhl"),
-}
-
 def fetch_oddspapi_props(sport_key: str) -> list:
-    """Holt Player Props von OddsPapi als Backup fuer The Odds API."""
+    """Real OddsPapi player props with dynamic sport/market discovery.
+
+    The dedicated module is intentionally isolated so failures never stop the card.
+    """
     if not ODDSPAPI_KEY:
         return []
-    if sport_key in _ODDSPAPI_CACHE:
-        return _ODDSPAPI_CACHE[sport_key]
-    sport_info = ODDSPAPI_SPORT_MAP.get(sport_key)
-    if not sport_info:
-        return []
-    sport_id, tournament_slug = sport_info
-    now = datetime.now(timezone.utc)
-    base = "https://api.oddspapi.io/v4"
     try:
-        r = requests.get(f"{base}/fixtures", params={
-            "apiKey": ODDSPAPI_KEY,
-            "sportId": sport_id,
-            "status": "prematch",
-            "from": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "to": (now + timedelta(hours=LOOKAHEAD_H)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }, timeout=20)
-        if r.status_code != 200:
-            log.warning("OddsPapi fixtures: %s", r.status_code)
-            return []
-        fixtures = [f for f in (r.json() or []) if tournament_slug in f.get("tournamentSlug","").lower()]
-        log.info("OddsPapi: %d fixtures (%s)", len(fixtures), sport_key)
-        if not fixtures: return []
-        all_props = []
-        for fix in fixtures[:MAX_EVENTS]:
-            fid = fix.get("fixtureId")
-            if not fid: continue
-            r2 = requests.get(f"{base}/odds", params={"apiKey": ODDSPAPI_KEY, "fixtureId": fid}, timeout=20)
-            if r2.status_code != 200: continue
-            bk_odds = (r2.json() or {}).get("bookmakerOdds", {})
-            for bk_slug, bk_data in bk_odds.items():
-                for market_id, market in (bk_data.get("markets") or {}).items():
-                    market_name = market.get("marketName","").lower()
-                    if not any(k in market_name for k in ("player","pitcher","batter")): continue
-                    for out_id, outcome in (market.get("outcomes") or {}).items():
-                        for p_key, pd in (outcome.get("players") or {}).items():
-                            price = pd.get("price")
-                            if not price: continue
-                            all_props.append({
-                                "source": "oddspapi",
-                                "sport": sport_key,
-                                "event_id": str(fid),
-                                "home_team": fix.get("participant1Name",""),
-                                "away_team": fix.get("participant2Name",""),
-                                "commence_time": fix.get("startTime",""),
-                                "bookmaker": bk_slug,
-                                "market_key": market_name,
-                                "player_name": pd.get("name",""),
-                                "selection": outcome.get("outcomeName",""),
-                                "line": pd.get("line"),
-                                "decimal_odds": price,
-                                "implied_probability": round(1/price,4) if price>1 else None,
-                            })
-            time.sleep(0.5)
-        log.info("OddsPapi: %d props (%s)", len(all_props), sport_key)
-        _ODDSPAPI_CACHE[sport_key] = all_props
-        return all_props
-    except Exception as e:
-        log.warning("OddsPapi: %s", e)
+        from prop_hunter_oddspapi import fetch_oddspapi_props as _fetch
+        rows = _fetch(sport_key, lookahead_hours=max(LOOKAHEAD_H, 18), max_events=MAX_EVENTS)
+        log.info("OddsPapi: %d observed player-prop quotes (%s)", len(rows), sport_key)
+        return rows
+    except Exception as exc:
+        log.warning("OddsPapi: %s", exc)
         return []
+
 
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
@@ -2702,17 +2649,17 @@ def gather(sport_filter=None):
                         "basketball_wnba":"WNBA","americanfootball_nfl":"NFL",
                         "icehockey_nhl":"NHL"
                     }.get(raw["sport"],"?")
-                    dec = raw.get("decimal_odds",0)
+                    dec = raw.get("decimal_odds") or raw.get("odds_decimal") or 0
                     if not dec or dec<=1: continue
                     p = Prop(
                         player=raw.get("player_name",""),
-                        market=raw.get("market_key",""),
+                        market=raw.get("market") or raw.get("market_key", ""),
                         odds=round(dec,2),
                         point=raw.get("line"),
                         sport=sport_label,
                         game=f"{raw.get('away_team','')} @ {raw.get('home_team','')}",
-                        direction="over" if "over" in (raw.get("selection","")).lower() else "under",
-                        features={},
+                        direction=(raw.get("direction") or ("over" if "over" in (raw.get("selection","")).lower() or "+" in (raw.get("selection","")).lower() else "under" if "under" in (raw.get("selection","")).lower() else "yes")), 
+                        features={"odds_observed": True, "price_type": "sportsbook_observed", "source": "oddspapi", "bookmaker": raw.get("bookmaker")},
                         emoji=SPORTS.get(sk,SPORTS["baseball_mlb"]).emoji,
                     )
                     all_props.append(p)
