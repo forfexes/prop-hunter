@@ -14,12 +14,24 @@ Writes:
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from prop_hunter_shared_utils import http_json, upsert_rows, safe_json_write, log, warn, norm_name, to_float, hash_key
 
 OUT = "prop_hunter_results_wnba_raw.json"
+
+def _wnba_season(date_value: str | None = None) -> str:
+    """WNBA seasons are calendar-year seasons (e.g. 2026), not NBA-style 2025-26."""
+    env = str(os.getenv("WNBA_SEASON") or "").strip()
+    if env:
+        return env
+    raw = str(date_value or "")
+    m = __import__("re").search(r"(20\d{2})", raw)
+    if m:
+        return m.group(1)
+    return str(datetime.now(timezone.utc).year)
+
 
 def espn_scoreboard(date_yyyymmdd: str | None = None) -> List[Dict[str, Any]]:
     date_yyyymmdd = date_yyyymmdd or datetime.utcnow().strftime("%Y%m%d")
@@ -27,14 +39,15 @@ def espn_scoreboard(date_yyyymmdd: str | None = None) -> List[Dict[str, Any]]:
     data = http_json(url, params={"dates": date_yyyymmdd}, retries=1) or {}
     games = []
     for ev in data.get("events", []) or []:
+        game_date = str(ev.get("date") or "")[:10]
         games.append({
             "sport": "BASKETBALL",
             "league": "WNBA",
-            "season": "2025-26",
+            "season": _wnba_season(game_date),
             "source": "espn_scoreboard",
             "game_id": str(ev.get("id")),
             "source_game_id": str(ev.get("id")),
-            "game_date": str(ev.get("date") or "")[:10],
+            "game_date": game_date,
             "raw": ev,
         })
     return games
@@ -59,14 +72,15 @@ def espn_summary_players(game_id: str) -> List[Dict[str, Any]]:
                 pts = to_float(stat_map.get("PTS"), 0) or 0
                 reb = to_float(stat_map.get("REB"), 0) or 0
                 ast = to_float(stat_map.get("AST"), 0) or 0
+                game_date = str((data.get("header") or {}).get("competitions", [{}])[0].get("date") or "")[:10]
                 rows.append({
                     "sport": "BASKETBALL",
                     "league": "WNBA",
-                    "season": "2025-26",
+                    "season": _wnba_season(game_date),
                     "source": "espn_summary",
                     "source_game_id": str(game_id),
                     "game_id": str(game_id),
-                    "game_date": str((data.get("header") or {}).get("competitions", [{}])[0].get("date") or "")[:10],
+                    "game_date": game_date,
                     "player_name": name,
                     "normalized_name": norm_name(name),
                     "team": team,
