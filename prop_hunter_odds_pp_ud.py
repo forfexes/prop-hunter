@@ -21,7 +21,7 @@ from prop_hunter_shared_utils import (
 OUT = "prop_hunter_pp_ud_props.json"
 
 PP_LEAGUES = {"NBA": 7, "WNBA": 3, "MLB": 2, "NFL": 9, "NHL": 8}
-UD_SPORTS = {"NBA", "WNBA", "MLB", "NFL"}
+UD_SPORTS = {"NBA", "WNBA", "MLB", "NFL", "NHL"}
 
 def _pp_json(url: str):
     # 1) cloudscraper
@@ -34,7 +34,16 @@ def _pp_json(url: str):
         warn(f"PP cloudscraper {r.status_code}")
     except Exception as e:
         warn(f"PP cloudscraper: {e}")
-    # 2) Playwright Fallback
+    # 2) curl_cffi: public endpoint with a real Chrome TLS/browser fingerprint
+    try:
+        from prop_hunter_http import get
+        r = get(url, timeout=25, allow_curl_fallback=True)
+        if r.status_code == 200:
+            return r.json()
+        warn(f"PP curl_cffi/http {r.status_code}")
+    except Exception as e:
+        warn(f"PP curl_cffi/http: {e}")
+    # 3) Playwright Fallback
     try:
         import asyncio
         from playwright.async_api import async_playwright
