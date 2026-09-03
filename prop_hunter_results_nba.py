@@ -15,7 +15,7 @@ Writes:
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from prop_hunter_shared_utils import (
@@ -23,6 +23,11 @@ from prop_hunter_shared_utils import (
 )
 
 OUT = "prop_hunter_results_nba_raw.json"
+
+def current_nba_season(now=None):
+    now = now or datetime.now(timezone.utc)
+    start = now.year if now.month >= 10 else now.year - 1
+    return f"{start}-{(start+1)%100:02d}"
 
 def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, Any]]:
     try:
@@ -32,24 +37,21 @@ def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, 
         warn(f"nba_api unavailable: {e}")
         return []
 
-    season = season or os.getenv("NBA_SEASON", "2025-26")
+    season = season or os.getenv("NBA_SEASON") or current_nba_season()
     wanted = {norm_name(x) for x in (players or []) if x}
-    if not wanted:
-        warn("NBA results: keine Spielernamen uebergeben, skip (verhindert All-Time-Roster-Loop)")
-        return []
     all_players = nba_players.get_players()
     selected = []
     for p in all_players:
-        if norm_name(p.get("full_name")) in wanted:
+        if not wanted or norm_name(p.get("full_name")) in wanted:
             selected.append(p)
-    if not selected:
+    if wanted and not selected:
         for p in all_players:
             pn = norm_name(p.get("full_name"))
             if any(w in pn or pn in w for w in wanted):
                 selected.append(p)
 
     rows = []
-    cap = int(os.getenv("NBA_RESULTS_PLAYER_CAP", "15"))
+    cap = int(os.getenv("NBA_RESULTS_PLAYER_CAP", "80"))
     for p in selected[:cap]:
         full = p.get("full_name")
         try:
@@ -57,7 +59,7 @@ def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, 
                 player_id=p.get("id"),
                 season=season,
                 season_type_all_star=os.getenv("NBA_SEASON_TYPE", "Regular Season"),
-                timeout=8,
+                timeout=25,
             )
             df = gl.get_data_frames()[0]
         except Exception as e:
