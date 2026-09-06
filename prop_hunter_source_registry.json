@@ -1,22 +1,621 @@
-#!/usr/bin/env python3
-"""PROP HUNTER V13.5 — league/source capability registry."""
-from prop_hunter_league_config import LEAGUES
-MARKETS={
- 'BASEBALL':['HR','HITS','TOTAL_BASES','RBI','RUNS','STOLEN_BASES','PITCHER_K'],
- 'BASKETBALL':['POINTS','REBOUNDS','ASSISTS','PRA','PA','PR','RA','3PM','STEALS','BLOCKS'],
- 'AMERICAN_FOOTBALL':['ANYTIME_TD','RECEIVING','RUSHING','PASSING','RECEPTIONS'],
- 'HOCKEY':['SHOTS_ON_GOAL','GOALS','POINTS','ASSISTS','GOALIE_SAVES','BLOCKED_SHOTS','POWER_PLAY_POINTS'],
-}
-SOURCE_REGISTRY={}
-for family, leagues in LEAGUES.items():
- SOURCE_REGISTRY[family]={}
- for cfg in leagues:
-  SOURCE_REGISTRY[family][cfg['league']]={
-   'priority':cfg['priority'],'props_key':cfg['props_key'],'history_sources':[cfg['history']],
-   'markets':MARKETS[family], 'status':cfg.get('status','prepared'), 'country':cfg.get('country')}
-def iter_sources(active_only=False):
- for sport,leagues in SOURCE_REGISTRY.items():
-  for league,cfg in leagues.items():
-   if active_only and cfg.get('status')!='active': continue
-   x=dict(cfg); x['sport']=sport; x['league']=league; yield x
-def get_source(sport,league): return SOURCE_REGISTRY.get(str(sport).upper(),{}).get(str(league).upper())
+[
+  {
+    "source_name": "underdog",
+    "source_type": "live_props",
+    "url": "https://underdogfantasy.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 100,
+    "notes": "Current strongest no-key source.",
+    "raw": {
+      "display_name": "Underdog",
+      "access": "free_public",
+      "methods": [
+        "json",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199960+00:00"
+  },
+  {
+    "source_name": "prizepicks",
+    "source_type": "live_props",
+    "url": "https://www.prizepicks.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 96,
+    "notes": "",
+    "raw": {
+      "display_name": "PrizePicks",
+      "access": "free_public",
+      "methods": [
+        "json",
+        "cloudscraper",
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199977+00:00"
+  },
+  {
+    "source_name": "sleeper",
+    "source_type": "live_props",
+    "url": "https://sleeper.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 90,
+    "notes": "",
+    "raw": {
+      "display_name": "Sleeper Picks",
+      "access": "free_public",
+      "methods": [
+        "json",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199980+00:00"
+  },
+  {
+    "source_name": "betr",
+    "source_type": "live_props",
+    "url": "https://www.betr.app/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 65,
+    "notes": "",
+    "raw": {
+      "display_name": "Betr Picks",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199983+00:00"
+  },
+  {
+    "source_name": "dabble",
+    "source_type": "live_props",
+    "url": "https://dabble.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 62,
+    "notes": "",
+    "raw": {
+      "display_name": "Dabble",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199986+00:00"
+  },
+  {
+    "source_name": "chalkboard",
+    "source_type": "live_props",
+    "url": "https://chalkboard.io/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 58,
+    "notes": "",
+    "raw": {
+      "display_name": "Chalkboard",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199988+00:00"
+  },
+  {
+    "source_name": "parlayplay",
+    "source_type": "live_props",
+    "url": "https://parlayplay.io/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 56,
+    "notes": "",
+    "raw": {
+      "display_name": "ParlayPlay",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199991+00:00"
+  },
+  {
+    "source_name": "oddspapi",
+    "source_type": "sportsbook_aggregator",
+    "url": "https://oddspapi.io/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 99,
+    "notes": "Dynamic sports/market discovery; real bookmaker lines and prices.",
+    "raw": {
+      "display_name": "OddsPapi",
+      "access": "free_key_required",
+      "methods": [
+        "official_json",
+        "market_discovery",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199995+00:00"
+  },
+  {
+    "source_name": "draftkings",
+    "source_type": "sportsbook",
+    "url": "https://sportsbook.draftkings.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 92,
+    "notes": "",
+    "raw": {
+      "display_name": "DraftKings",
+      "access": "free_public_web",
+      "methods": [
+        "json",
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.199998+00:00"
+  },
+  {
+    "source_name": "fanduel",
+    "source_type": "sportsbook",
+    "url": "https://sportsbook.fanduel.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 91,
+    "notes": "",
+    "raw": {
+      "display_name": "FanDuel",
+      "access": "free_public_web",
+      "methods": [
+        "json",
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200001+00:00"
+  },
+  {
+    "source_name": "bovada",
+    "source_type": "sportsbook",
+    "url": "https://www.bovada.lv/sports",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 89,
+    "notes": "",
+    "raw": {
+      "display_name": "Bovada",
+      "access": "free_public_web",
+      "methods": [
+        "json",
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200004+00:00"
+  },
+  {
+    "source_name": "betmgm",
+    "source_type": "sportsbook",
+    "url": "https://sports.betmgm.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 82,
+    "notes": "",
+    "raw": {
+      "display_name": "BetMGM",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200006+00:00"
+  },
+  {
+    "source_name": "caesars",
+    "source_type": "sportsbook",
+    "url": "https://sportsbook.caesars.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 81,
+    "notes": "",
+    "raw": {
+      "display_name": "Caesars Sportsbook",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200008+00:00"
+  },
+  {
+    "source_name": "betrivers",
+    "source_type": "sportsbook",
+    "url": "https://www.betrivers.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 79,
+    "notes": "",
+    "raw": {
+      "display_name": "BetRivers",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200011+00:00"
+  },
+  {
+    "source_name": "superbook",
+    "source_type": "sportsbook",
+    "url": "https://www.superbook.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 68,
+    "notes": "",
+    "raw": {
+      "display_name": "SuperBook",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200013+00:00"
+  },
+  {
+    "source_name": "espn_bet",
+    "source_type": "sportsbook",
+    "url": "https://espnbet.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 67,
+    "notes": "",
+    "raw": {
+      "display_name": "ESPN BET",
+      "access": "free_public_web",
+      "methods": [
+        "json",
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200015+00:00"
+  },
+  {
+    "source_name": "fanatics",
+    "source_type": "sportsbook",
+    "url": "https://sportsbook.fanatics.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 64,
+    "notes": "",
+    "raw": {
+      "display_name": "Fanatics Sportsbook",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200018+00:00"
+  },
+  {
+    "source_name": "hardrock",
+    "source_type": "sportsbook",
+    "url": "https://www.hardrock.bet/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 63,
+    "notes": "",
+    "raw": {
+      "display_name": "Hard Rock Bet",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200020+00:00"
+  },
+  {
+    "source_name": "thescore",
+    "source_type": "sportsbook",
+    "url": "https://www.thescore.bet/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 60,
+    "notes": "",
+    "raw": {
+      "display_name": "theScore Bet",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200023+00:00"
+  },
+  {
+    "source_name": "bet365",
+    "source_type": "sportsbook",
+    "url": "https://www.bet365.com/",
+    "sport": "MLB,NBA,WNBA,NFL",
+    "league": "MLB,NBA,WNBA,NFL",
+    "enabled": true,
+    "priority": 88,
+    "notes": "Active browser fallback when normally accessible; no login/CAPTCHA/geo bypass.",
+    "raw": {
+      "display_name": "bet365",
+      "access": "protected_public_web",
+      "methods": [
+        "playwright_network",
+        "websocket_json",
+        "dom",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200025+00:00"
+  },
+  {
+    "source_name": "betfair",
+    "source_type": "exchange",
+    "url": "https://developer.betfair.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 40,
+    "notes": "",
+    "raw": {
+      "display_name": "Betfair Exchange",
+      "access": "account_key_required",
+      "methods": [
+        "official_api"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200028+00:00"
+  },
+  {
+    "source_name": "pinnacle",
+    "source_type": "sportsbook",
+    "url": "https://www.pinnacle.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 39,
+    "notes": "",
+    "raw": {
+      "display_name": "Pinnacle",
+      "access": "restricted_access",
+      "methods": [
+        "official_or_partner_api"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200030+00:00"
+  },
+  {
+    "source_name": "action_network",
+    "source_type": "consensus",
+    "url": "https://www.actionnetwork.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 45,
+    "notes": "",
+    "raw": {
+      "display_name": "Action Network",
+      "access": "free_public_web",
+      "methods": [
+        "json",
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200033+00:00"
+  },
+  {
+    "source_name": "oddsportal",
+    "source_type": "historical_odds",
+    "url": "https://www.oddsportal.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 44,
+    "notes": "Maintenance/backfill only.",
+    "raw": {
+      "display_name": "OddsPortal",
+      "access": "free_public_web",
+      "methods": [
+        "playwright",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200035+00:00"
+  },
+  {
+    "source_name": "mlb_statsapi",
+    "source_type": "official_stats",
+    "url": "https://statsapi.mlb.com/",
+    "sport": "MLB",
+    "league": "MLB",
+    "enabled": true,
+    "priority": 100,
+    "notes": "",
+    "raw": {
+      "display_name": "MLB StatsAPI",
+      "access": "free_public",
+      "methods": [
+        "json",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200037+00:00"
+  },
+  {
+    "source_name": "statcast",
+    "source_type": "advanced_stats",
+    "url": "https://baseballsavant.mlb.com/",
+    "sport": "MLB",
+    "league": "MLB",
+    "enabled": true,
+    "priority": 98,
+    "notes": "",
+    "raw": {
+      "display_name": "Baseball Savant / Statcast",
+      "access": "free_public",
+      "methods": [
+        "csv",
+        "pybaseball",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200039+00:00"
+  },
+  {
+    "source_name": "nba_api",
+    "source_type": "official_stats",
+    "url": "https://www.nba.com/stats/",
+    "sport": "NBA,WNBA",
+    "league": "NBA,WNBA",
+    "enabled": true,
+    "priority": 98,
+    "notes": "",
+    "raw": {
+      "display_name": "NBA.com / nba_api",
+      "access": "free_public",
+      "methods": [
+        "json",
+        "python_library",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200042+00:00"
+  },
+  {
+    "source_name": "nba_live",
+    "source_type": "live_results",
+    "url": "https://cdn.nba.com/",
+    "sport": "NBA,WNBA",
+    "league": "NBA,WNBA",
+    "enabled": true,
+    "priority": 97,
+    "notes": "",
+    "raw": {
+      "display_name": "NBA Live CDN",
+      "access": "free_public",
+      "methods": [
+        "json",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200044+00:00"
+  },
+  {
+    "source_name": "nflverse",
+    "source_type": "official_like_open_data",
+    "url": "https://github.com/nflverse",
+    "sport": "NFL",
+    "league": "NFL",
+    "enabled": true,
+    "priority": 98,
+    "notes": "",
+    "raw": {
+      "display_name": "nflverse / nflreadpy",
+      "access": "free_public",
+      "methods": [
+        "parquet",
+        "python_library",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200047+00:00"
+  },
+  {
+    "source_name": "espn",
+    "source_type": "schedule_results_context",
+    "url": "https://www.espn.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 86,
+    "notes": "",
+    "raw": {
+      "display_name": "ESPN public feeds",
+      "access": "free_public_web",
+      "methods": [
+        "json",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200049+00:00"
+  },
+  {
+    "source_name": "nws",
+    "source_type": "weather",
+    "url": "https://www.weather.gov/documentation/services-web-api",
+    "sport": "MLB,NFL",
+    "league": "MLB,NFL",
+    "enabled": true,
+    "priority": 80,
+    "notes": "",
+    "raw": {
+      "display_name": "US National Weather Service",
+      "access": "free_public",
+      "methods": [
+        "official_api",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200051+00:00"
+  },
+  {
+    "source_name": "thesportsdb",
+    "source_type": "schedule_roster_fallback",
+    "url": "https://www.thesportsdb.com/api.php",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 55,
+    "notes": "",
+    "raw": {
+      "display_name": "TheSportsDB",
+      "access": "free_public",
+      "methods": [
+        "json",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-09-06T07:59:48.200053+00:00"
+  }
+]
