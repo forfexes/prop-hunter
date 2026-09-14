@@ -17,14 +17,14 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from prop_hunter_shared_utils import hash_key, now_iso, safe_json_load, safe_json_write, to_float, upsert_rows, warn
 from prop_hunter_source_catalog import SOURCES, as_rows
 
-SPORTS = tuple(x.strip().upper() for x in os.getenv("PROP_HUNTER_SPORTS", "MLB,WNBA,NBA,NFL").split(",") if x.strip())
+SPORTS = tuple(x.strip().upper() for x in os.getenv("PROP_HUNTER_SPORTS", "MLB,WNBA,NBA,NFL,NHL,NCAAB,NCAAF").split(",") if x.strip())
 CACHE_DIR = Path(os.getenv("PH_SOURCE_CACHE_DIR", ".prop_hunter_cache"))
 OUT_FILE = Path(os.getenv("PH_SOURCE_OUTPUT", "prop_hunter_all_sources.json"))
 
 
 def _row_key(row: Dict[str, Any]) -> str:
     return str(row.get("snapshot_id") or hash_key(
-        row.get("source"), row.get("bookmaker"), row.get("sport"), row.get("source_event_id") or row.get("game_id"),
+        row.get("source"), row.get("sport"), row.get("source_event_id") or row.get("game_id"),
         row.get("player_name"), row.get("market_key") or row.get("market"),
         row.get("direction"), row.get("line"), row.get("odds_decimal"),
         row.get("period"), row.get("is_live"),
@@ -121,15 +121,6 @@ def _direct_jobs(sports: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dic
         ("underdog", ppud.fetch_underdog),
         ("sleeper", ppud.fetch_sleeper),
     ]
-    # OddsPapi is a real-odds source. It is budget-limited internally and can
-    # be disabled without affecting any other collector.
-    if os.getenv("ODDSPAPI_KEY") or os.getenv("ODDSPAPI") or os.getenv("ODDSPAPI_API_KEY"):
-        try:
-            import prop_hunter_oddspapi as oddspapi
-            for sport in sports:
-                jobs.append((f"oddspapi_{sport.lower()}", lambda s=sport: oddspapi.fetch_for_league(s)))
-        except Exception as exc:
-            warn(f"OddsPapi collector unavailable: {exc}")
     for sport in sports:
         jobs.extend([
             (f"prizepicks_{sport.lower()}", lambda s=sport: ppud.fetch_prizepicks(s)),
@@ -165,6 +156,10 @@ def _season_active_sports(sports: Iterable[str]) -> List[str]:
         elif sport == "NBA" and (month >= 10 or month <= 6):
             active.append(sport)
         elif sport == "NHL" and (month >= 9 or month <= 6):
+            active.append(sport)
+        elif sport == "NCAAB" and (month >= 11 or month <= 4):
+            active.append(sport)
+        elif sport == "NCAAF" and (month >= 8 or month <= 1):
             active.append(sport)
     return active or list(sports)
 
@@ -203,15 +198,13 @@ def _snapshot_rows_for_db(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         "higher_american", "lower_american",
         "higher_payout_multiplier", "lower_payout_multiplier",
         "game_title", "position", "source_payload_observed",
-        "market_id", "outcome_id", "player_id", "selection", "active", "changed_at",
-        "decimal_odds", "implied_probability",
     }
     return [{k: v for k, v in row.items() if k not in transient} for row in (rows or [])]
 
 
 def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict[str, Any]]:
     sports = [sport_filter.upper()] if sport_filter else list(SPORTS)
-    sports = [s for s in sports if s in {"MLB", "NBA", "WNBA", "NFL", "NHL"}]
+    sports = [s for s in sports if s in {"MLB", "NBA", "WNBA", "NFL", "NHL", "NCAAB", "NCAAF"}]
     max_cache_age = 8 if mode == "fast" else 30
     all_rows: List[Dict[str, Any]] = []
     audits: List[Dict[str, Any]] = []
@@ -283,7 +276,7 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["fast", "all", "browser"], default="fast")
-    parser.add_argument("--sport", choices=["MLB", "NBA", "WNBA", "NFL", "NHL"])
+    parser.add_argument("--sport", choices=["MLB", "NBA", "WNBA", "NFL", "NHL", "NCAAB", "NCAAF"])
     args = parser.parse_args()
     collect(args.sport, args.mode)
 
