@@ -474,6 +474,38 @@ def fetch_espn_bet(league: str) -> List[Dict[str, Any]]:
     return rows
 
 
+
+_SNAPSHOT_DB_FIELDS = {
+    "snapshot_id", "source", "bookmaker", "sport", "league",
+    "source_event_id", "event_id", "game_id", "player_name", "normalized_name",
+    "market", "market_key", "direction", "line", "odds", "odds_decimal",
+    "period", "is_live", "commence_time", "raw", "created_at", "updated_at",
+}
+
+def _snapshot_db_rows(rows):
+    """Project rich source rows onto the stable Supabase snapshot schema.
+
+    Extra source fields (game_title, position, payout sides, observed flags, etc.)
+    are retained inside raw JSON instead of being sent as unknown columns.
+    """
+    out = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        db = {k: v for k, v in row.items() if k in _SNAPSHOT_DB_FIELDS}
+        raw = dict(row.get("raw") or {}) if isinstance(row.get("raw"), dict) else {"raw": row.get("raw")}
+        extras = {k: v for k, v in row.items() if k not in _SNAPSHOT_DB_FIELDS and v is not None}
+        if extras:
+            raw["source_extras"] = extras
+        db["raw"] = raw
+        # Keep both legacy `odds` and canonical `odds_decimal` coherent.
+        if db.get("odds_decimal") is None and row.get("decimal_odds") is not None:
+            db["odds_decimal"] = row.get("decimal_odds")
+        if db.get("odds") is None and db.get("odds_decimal") is not None:
+            db["odds"] = db.get("odds_decimal")
+        out.append(db)
+    return out
+
 def main():
     all_rows = []
     sports = [s.strip().upper() for s in os.getenv("PROP_HUNTER_SPORTS", "MLB,NBA,WNBA,NFL").split(",") if s.strip()]
@@ -527,7 +559,10 @@ def main():
     safe_json_write(OUT, uniq)
     if uniq:
         try:
-            upsert_rows("prop_hunter_prop_snapshots", uniq, "snapshot_id")
+            db_rows = _snapshot_db_rows(uniq)
+            # Keep writes small enough for Supabase Free and PostgREST schema cache.
+            for i in range(0, len(db_rows), 200):
+                upsert_rows("prop_hunter_prop_snapshots", db_rows[i:i + 200], "snapshot_id")
         except Exception as e:
             warn(f"snapshot upsert: {e}")
 
