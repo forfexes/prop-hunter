@@ -66,7 +66,7 @@ jobs:
 
       - name: Local integrity gate
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.6-ODDSPLUS
+          PH_EXPECTED_RUNTIME_VERSION: 13.6.2-ODDSPLUS-FIX
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
@@ -76,7 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL
+          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF,NHL
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           PH_ODDSPAPI_MAX_EVENTS: '2'
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
@@ -99,7 +99,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL
+          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF,NHL
         run: |
           if [ -f prop_hunter_odds_pp_ud.py ]; then python prop_hunter_odds_pp_ud.py || echo "connector soft-fail"; else echo "public connector absent; skip"; fi
 
