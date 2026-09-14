@@ -27,6 +27,11 @@ from typing import Any, Dict, List
 import requests
 
 try:
+    from prop_hunter_http import get as browserlike_get
+except Exception:
+    browserlike_get = None
+
+try:
     from supabase import create_client
 except Exception:
     create_client = None
@@ -63,10 +68,16 @@ def http_json(url: str, params: dict | None = None, headers: dict | None = None)
     if headers:
         h.update(headers)
     try:
-        r = requests.get(url, params=params or {}, headers=h, timeout=TIMEOUT)
+        if browserlike_get is not None:
+            r = browserlike_get(url, params=params or {}, headers=h, timeout=TIMEOUT, allow_curl_fallback=True)
+        else:
+            r = requests.get(url, params=params or {}, headers=h, timeout=TIMEOUT)
         if r.status_code >= 400:
             log(f"  HTTP {r.status_code}: {url}")
             return None
+        transport = getattr(r, "_ph_transport", "requests")
+        if transport != "requests":
+            log(f"  HTTP fallback OK via {transport}: {url}")
         return r.json()
     except Exception as e:
         log(f"  HTTP failed {url}: {e}")
