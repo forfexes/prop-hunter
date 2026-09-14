@@ -43,6 +43,10 @@ def get(
     first_exc = None
     try:
         resp = _requests.get(url, params=params, headers=hdr, timeout=timeout)
+        try:
+            setattr(resp, "_ph_transport", "requests")
+        except Exception:
+            pass
         if resp.status_code not in {401, 403, 406} or not allow_curl_fallback:
             return resp
     except Exception as exc:  # network/TLS path; try browser-like transport
@@ -52,13 +56,18 @@ def get(
 
     try:
         from curl_cffi import requests as curl_requests
-        return curl_requests.get(
+        resp = curl_requests.get(
             url,
             params=params,
             headers=hdr,
             timeout=timeout,
             impersonate="chrome",
         )
+        try:
+            setattr(resp, "_ph_transport", "curl_cffi:chrome")
+        except Exception:
+            pass
+        return resp
     except Exception:
         if first_exc is not None:
             raise first_exc
