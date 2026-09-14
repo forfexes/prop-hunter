@@ -7,7 +7,7 @@ Supabase schema, and emits a JSON report.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from prop_hunter_shared_utils import (
     select_rows, upsert_rows, safe_json_write, log, norm_name,
     norm_market, to_float, to_int, hash_key, now_iso, pick_id,
@@ -68,14 +68,37 @@ def _pick_created(p):
     return str(p.get("created_at") or "")
 
 
+def _dt(value):
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
 def _choose_snapshots(p, candidates):
     candidates = [s for s in candidates if same_book(p, s)]
     if not candidates:
         return None, None
-    candidates.sort(key=_created_at)
-    pick_ts = _pick_created(p)
-    if pick_ts:
-        before = [s for s in candidates if _created_at(s) <= pick_ts]
+    # Closing line must be PRE-GAME. Post-start/live snapshots would create fake CLV.
+    commence = _dt(p.get("commence_time") or p.get("start_time"))
+    if commence is None:
+        for s in candidates:
+            commence = _dt(s.get("commence_time") or s.get("start_time"))
+            if commence is not None:
+                break
+    if commence is not None:
+        pregame = [s for s in candidates if (_dt(s.get("created_at")) or commence) <= commence]
+        if pregame:
+            candidates = pregame
+    candidates.sort(key=lambda r: _dt(r.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc))
+    pick_dt = _dt(_pick_created(p))
+    if pick_dt is not None:
+        before = [s for s in candidates if (_dt(s.get("created_at")) or pick_dt) <= pick_dt]
         opening = before[-1] if before else candidates[0]
     else:
         opening = candidates[0]
