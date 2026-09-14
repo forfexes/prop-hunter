@@ -62,19 +62,41 @@ def sb():
         warn(f"Supabase client failed: {e}")
         return None
 
-def upsert(table, rows, conflict=None):
+def upsert(table, rows, conflict=None, batch_size=None):
+    """Write in bounded batches so large history refreshes do not hit statement timeout."""
     if not rows:
         return
     c = sb()
     if c is None:
         warn(f"Supabase missing; skipped {table}")
         return
-    try:
-        q = c.table(table).upsert(rows, on_conflict=conflict) if conflict else c.table(table).insert(rows)
-        q.execute()
-        log(f"{table}: saved {len(rows)} rows")
-    except Exception as e:
-        warn(f"{table} save failed: {e}")
+    size = int(batch_size or os.getenv("PH_SUPABASE_HISTORY_BATCH", "200"))
+    size = max(25, min(size, 500))
+    saved = 0
+    failed = 0
+    for start in range(0, len(rows), size):
+        chunk = rows[start:start + size]
+        try:
+            q = c.table(table).upsert(chunk, on_conflict=conflict) if conflict else c.table(table).insert(chunk)
+            q.execute()
+            saved += len(chunk)
+        except Exception as e:
+            failed += len(chunk)
+            warn(f"{table} batch {start//size + 1} save failed ({len(chunk)} rows): {e}")
+            # A timeout on 200 rows can still happen on a busy free project. Retry
+            # once in smaller chunks without aborting the complete history run.
+            if len(chunk) > 50:
+                sub = 50
+                for j in range(0, len(chunk), sub):
+                    part = chunk[j:j + sub]
+                    try:
+                        q = c.table(table).upsert(part, on_conflict=conflict) if conflict else c.table(table).insert(part)
+                        q.execute()
+                        saved += len(part)
+                        failed -= len(part)
+                    except Exception as sub_e:
+                        warn(f"{table} retry failed ({len(part)} rows): {sub_e}")
+    log(f"{table}: saved {saved}/{len(rows)} rows in batches of {size}" + (f"; failed={failed}" if failed else ""))
 
 def http_json(url, params=None):
     try:
