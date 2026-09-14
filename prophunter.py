@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.6-ODDSPLUS"
+PH_RUNTIME_VERSION = "13.6.2-ODDSPLUS-FIX"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -289,6 +289,22 @@ SPORTS:Dict[str,SportCfg]={
         Market("player_threes_alternate","3PM",2,2.0),
         Market("player_double_double","Double Double",None,2.5),
     ]),
+    "basketball_ncaab":SportCfg("🏀","NCAAB",[
+        Market("player_points","Points",None,1.65),
+        Market("player_rebounds","Rebounds",None,1.65),
+        Market("player_assists","Assists",None,1.65),
+        Market("player_threes","3PM",None,1.70),
+        Market("player_points_alternate","Points Alt",None,1.80),
+        Market("player_rebounds_alternate","Rebounds Alt",None,1.80),
+    ]),
+    "americanfootball_ncaaf":SportCfg("🏈","NCAAF",[
+        Market("player_pass_tds","Pass TDs",None,1.65),
+        Market("player_pass_yds","Pass Yds",None,1.65),
+        Market("player_rush_yds","Rush Yds",None,1.65),
+        Market("player_reception_yds","Rec Yds",None,1.65),
+        Market("player_receptions","Receptions",None,1.65),
+        Market("player_anytime_td","Anytime TD",None,2.0),
+    ]),
     "basketball_euroleague":SportCfg("🏀","Euroleague",[
         Market("player_points_alternate","Points",12,3.0),
         Market("player_rebounds_alternate","Rebounds",5,2.8),
@@ -302,6 +318,15 @@ SPORTS:Dict[str,SportCfg]={
         Market("player_rush_yds_alternate","Rush Yds",None,3.0),
         Market("player_reception_yds_alternate","Rec Yds",None,3.0),
         Market("player_receptions_alternate","Receptions",None,1.8),
+    ]),
+    "icehockey_nhl":SportCfg("🏒","NHL",[
+        Market("player_shots_on_goal","Shots on Goal",None,1.8),
+        Market("player_goals","Goals",None,2.5),
+        Market("player_points","Points",None,1.8),
+        Market("player_assists","Assists",None,1.8),
+        Market("player_goalie_saves","Goalie Saves",None,1.8),
+        Market("player_blocked_shots","Blocked Shots",None,1.8),
+        Market("player_power_play_points","Power Play Points",None,2.0),
     ]),
 }
 
@@ -394,12 +419,20 @@ except: HAS_CLOUDSCRAPER=False
 # CLOUDSCRAPER HELPER
 # ─────────────────────────────────────────────
 def _cs_get(url, timeout=20):
-    """GET via cloudscraper (bypasses Cloudflare). Falls back to requests."""
+    """Public-page GET: cloudscraper -> curl_cffi Chrome -> requests fallback."""
     try:
         if HAS_CLOUDSCRAPER:
             cs = cloudscraper.create_scraper()
             r = cs.get(url, timeout=timeout)
-            return r.text if r.status_code == 200 else None
+            if r.status_code == 200:
+                return r.text
+        try:
+            from prop_hunter_http import get as _ph_get
+            r = _ph_get(url, headers=HTTP_H, timeout=timeout, allow_curl_fallback=True)
+            if getattr(r, "status_code", 0) == 200:
+                return r.text
+        except Exception:
+            pass
         r = requests.get(url, headers=HTTP_H, timeout=timeout)
         return r.text if r.status_code == 200 else None
     except Exception as e:
@@ -845,20 +878,29 @@ def fetch_snapshot_props(sport_filter=None) -> list:
     try:
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=18)).isoformat()
         res = c.table("prop_hunter_prop_snapshots").select(
-            "sport,league,player_name,market,line,odds_decimal,commence_time,home_team,away_team,bookmaker,source"
-        ).gte("created_at", cutoff).limit(3000).execute()
-        emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NFL":"🏈"}
+            "sport,league,source_event_id,player_name,market,market_key,direction,line,odds_decimal,commence_time,created_at,home_team,away_team,bookmaker,source"
+        ).gte("created_at", cutoff).limit(5000).execute()
+        snapshot_rows = list(res.data or [])
+        try:
+            from prop_hunter_market_intelligence import movement_index, market_key as _mi_key, consensus_count
+            _movement = movement_index(snapshot_rows)
+        except Exception as exc:
+            log.warning("line movement unavailable: %s", exc)
+            _movement = {}
+            _mi_key = lambda row: ()
+            consensus_count = lambda row, rows: 0
+        emoji_map = {"NBA":"🏀","WNBA":"🏀","MLB":"⚾","NFL":"🏈","NHL":"🏒","NCAAB":"🏀","NCAAF":"🏈"}
         SEASON_MARKERS = ("season", "futures", "to win", "mvp", "champion", "award",
                           "regular season", "playoff", "total wins", "make the",
                           "division", "conference", "over/under wins")
         now_month = datetime.now(timezone.utc).month
-        active_sports = {"MLB", "WNBA"}
+        active_sports = {"MLB", "WNBA", "NCAAF"}
         if now_month >= 9 or now_month <= 2:
-            active_sports |= {"NFL", "NBA"}
+            active_sports |= {"NFL", "NBA", "NHL", "NCAAB"}
         if 4 <= now_month <= 6:
-            active_sports |= {"NBA"}
+            active_sports |= {"NBA", "NHL"}
 
-        for r in (res.data or []):
+        for r in snapshot_rows:
             odds = r.get("odds_decimal"); line = r.get("line")
             player = r.get("player_name"); market = r.get("market")
             sport = (r.get("sport") or r.get("league") or "").upper()
@@ -881,8 +923,12 @@ def fetch_snapshot_props(sport_filter=None) -> list:
                     game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
                     direction="under" if "under" in market.lower() else "over",
                     enrichment=f"src:{book}",
-                    features={"odds_observed": True, "price_type": "bookmaker", "bookmaker": book,
-                              "source": r.get("source") or book},
+                    features={
+                        "odds_observed": True, "price_type": "bookmaker", "bookmaker": book,
+                        "source": r.get("source") or book,
+                        "consensus_sources": consensus_count(r, snapshot_rows),
+                        **(_movement.get(_mi_key(r), {}) or {}),
+                    },
                 ))
             except Exception:
                 continue
@@ -1147,6 +1193,22 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 rate = (1 - over_rate) if direction == "under" else over_rate
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
+            # Monte-Carlo bootstrap from the same real gamelogs. Cached per player/stat/line/side
+            # by the normal Python module import and deterministic seed, so it adds little runtime.
+            try:
+                from prop_hunter_market_intelligence import monte_carlo_probability
+                mc_prob = monte_carlo_probability(
+                    vals, float(point), direction,
+                    simulations=int(os.getenv("PH_MC_SIMS", "1500")),
+                    seed_key=f"{key}|{stat}|{point}|{direction}",
+                )
+                if mc_prob is not None:
+                    feats["monte_carlo_prob"] = mc_prob
+                    feats["monte_carlo_n"] = n
+                    # Keep historical hit-rate dominant; MC smooths noisy small samples.
+                    rate = 0.65 * rate + 0.35 * mc_prob
+            except Exception:
+                pass
             old = feats.get("fair_prob")
             # Blend: no-vig Marktwahrscheinlichkeit (old) + eigene L-Rate.
             # Gewicht der DB-Rate steigt mit Sample-Größe (6 Spiele→0.35, 10+→0.5).
@@ -1397,8 +1459,10 @@ def fetch_datastreak(sport: str) -> dict:
             async with async_playwright() as pw:
                 browser = await pw.chromium.launch(headless=True)
                 page = await browser.new_page()
-                await page.goto(url, timeout=25000, wait_until="networkidle")
-                await page.wait_for_timeout(3000)
+                await page.goto(url, timeout=25000, wait_until="domcontentloaded")
+                # networkidle is unreliable on analytics-heavy pages; give the table
+                # a short deterministic render window instead.
+                await page.wait_for_timeout(3500)
                 content = await page.inner_text("body")
                 await browser.close()
                 return content
@@ -2248,7 +2312,7 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
     def _clean_sport(p):
         # Echtes Sport-Feld bevorzugen (WNBA vs NBA sauber getrennt), Emoji nur als Fallback.
         s = (getattr(p, "source_sport", "") or getattr(p, "sport", "") or "").upper()
-        if s in ("MLB","NBA","WNBA","NFL","NHL"):
+        if s in ("MLB","NBA","WNBA","NFL","NHL","NCAAB","NCAAF"):
             return s
         return sport_map.get(p.emoji or "", "?")
     for p in singles:
@@ -2348,7 +2412,7 @@ def build_prompt(props):
     for p in props:
         by_sport[p.sport or "OTHER"].append(p)
     # Priorität: WNBA/NBA zuerst, dann MLB, dann Rest
-    sport_order = ["WNBA","NBA","MLB","NHL","NFL","OTHER"]
+    sport_order = ["WNBA","NBA","NCAAB","NFL","NCAAF","MLB","NHL","OTHER"]
     interleaved = []
     buckets = [by_sport[s] for s in sport_order if s in by_sport]
     buckets += [by_sport[s] for s in by_sport if s not in sport_order]
@@ -2634,8 +2698,12 @@ def gather(sport_filter=None):
         """OddsPapi als Fallback wenn Odds API Keys exhausted."""
         if not ODDSPAPI_KEY: return False
         log.info("OddsPapi source aktiviert — dynamische Player-Prop Discovery")
-        sports_to_try = list(SPORTS.keys()) if not sport_filter else \
-            [k for k,v in SPORTS.items() if v.name.lower()==sport_filter.lower()]
+        active_oddspapi_keys = [
+            "baseball_mlb", "basketball_nba", "basketball_wnba",
+            "americanfootball_nfl", "icehockey_nhl",
+        ]
+        sports_to_try = [k for k in active_oddspapi_keys if k in SPORTS] if not sport_filter else \
+            [k for k in active_oddspapi_keys if k in SPORTS and SPORTS[k].name.lower()==sport_filter.lower()]
         found = False
         for sk in sports_to_try:
             op_props = fetch_oddspapi_props(sk)
@@ -2644,11 +2712,16 @@ def gather(sport_filter=None):
             active.append(f"(OP){sk.split('_')[-1].upper()}({len(op_props)})")
             for raw in op_props:
                 try:
-                    sport_label = {
-                        "baseball_mlb":"MLB","basketball_nba":"NBA",
-                        "basketball_wnba":"WNBA","americanfootball_nfl":"NFL",
-                        "icehockey_nhl":"NHL"
-                    }.get(raw["sport"],"?")
+                    # OddsPapi rows already carry the canonical league label
+                    # (MLB/NBA/WNBA/NFL/NHL). Older code incorrectly tried to
+                    # map that label as if it were an internal sport key.
+                    sport_label = str(raw.get("sport") or raw.get("league") or "").upper()
+                    if sport_label not in {"MLB","NBA","WNBA","NFL","NHL"}:
+                        sport_label = {
+                            "baseball_mlb":"MLB","basketball_nba":"NBA",
+                            "basketball_wnba":"WNBA","americanfootball_nfl":"NFL",
+                            "icehockey_nhl":"NHL"
+                        }.get(sk, "?")
                     dec = raw.get("decimal_odds") or raw.get("odds_decimal") or 0
                     if not dec or dec<=1: continue
                     p = Prop(
@@ -2675,7 +2748,8 @@ def gather(sport_filter=None):
             # Wenn Odds API keine Events → ProCruncher als direkte Quelle nutzen
             sport_label = {"baseball_mlb":"MLB","basketball_nba":"NBA",
                           "basketball_wnba":"WNBA","icehockey_nhl":"NHL",
-                          "americanfootball_nfl":"NFL"}.get(sk)
+                          "americanfootball_nfl":"NFL","basketball_ncaab":"NCAAB",
+                          "americanfootball_ncaaf":"NCAAF"}.get(sk)
             if sport_label and PLAYWRIGHT:
                 pc_props = fetch_propcruncher_as_props(sport_label)
                 if pc_props:
@@ -2842,10 +2916,21 @@ def gather(sport_filter=None):
     try:
         snap = fetch_snapshot_props(sport_filter)
         if snap:
-            existing = {(p.player or "").lower() + "|" + (p.market or "").lower() for p in all_props}
+            def _prop_identity(x):
+                feats = getattr(x, "features", {}) or {}
+                book = str(feats.get("bookmaker") or "").lower().strip()
+                pt = getattr(x, "point", None)
+                return (
+                    (getattr(x, "player", "") or "").lower().strip(),
+                    market_base(getattr(x, "market", "") or ""),
+                    (getattr(x, "direction", "over") or "over").lower(),
+                    round(float(pt), 4) if pt is not None else None,
+                    book,
+                )
+            existing = {_prop_identity(p) for p in all_props}
             added = 0
             for sp in snap:
-                k = (sp.player or "").lower() + "|" + (sp.market or "").lower()
+                k = _prop_identity(sp)
                 if k not in existing:
                     all_props.append(sp); existing.add(k); added += 1
             if added:
@@ -3975,25 +4060,6 @@ def run(dry_run=False,sport_filter=None):
         persist(picks, telegram_message_id=telegram_message_id, telegram_text=body)
     log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
 
-if __name__=="__main__":
-    import argparse,sys
-    parser=argparse.ArgumentParser(description=f"PROP HUNTER {PH_RUNTIME_VERSION}")
-    parser.add_argument("--dry-run",action="store_true")
-    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","nhl","euroleague"])
-    parser.add_argument("-v","--verbose",action="store_true")
-    parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
-    args=parser.parse_args()
-    if args.train_ml:
-        if args.verbose: setup_logging(logging.DEBUG)
-        result = train_ml_model()
-        if result:
-            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
-        else:
-            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
-        raise SystemExit(0)
-    if args.verbose: setup_logging(logging.DEBUG)
-    run(dry_run=args.dry_run,sport_filter=args.sport)
-
 
 # ─────────────────────────────────────────────
 # NHL API (aktiv ab Oktober)
@@ -4333,3 +4399,22 @@ def player_ml_probability(player: str, sport: str, market: str,
 
     log.info("Player ML [%s %s %s @%.1f]: %.1f%%", sport, player, market, line, prob*100)
     return round(prob, 3)
+
+if __name__=="__main__":
+    import argparse,sys
+    parser=argparse.ArgumentParser(description=f"PROP HUNTER {PH_RUNTIME_VERSION}")
+    parser.add_argument("--dry-run",action="store_true")
+    parser.add_argument("--sport",choices=["mlb","nba","wnba","nfl","nhl","ncaab","ncaaf","euroleague"])
+    parser.add_argument("-v","--verbose",action="store_true")
+    parser.add_argument("--train-ml",action="store_true",help="train ML model from picks_history.json and exit")
+    args=parser.parse_args()
+    if args.train_ml:
+        if args.verbose: setup_logging(logging.DEBUG)
+        result = train_ml_model()
+        if result:
+            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
+        else:
+            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
+        raise SystemExit(0)
+    if args.verbose: setup_logging(logging.DEBUG)
+    run(dry_run=args.dry_run,sport_filter=args.sport)
