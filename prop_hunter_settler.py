@@ -53,7 +53,9 @@ MARKET_STAT_MAP = {
     "passing touchdowns": "passing_touchdowns", "pass tds": "passing_touchdowns",
     "receiving yards": "receiving_yards", "rushing yards": "rushing_yards",
     "passing yards": "passing_yards", "receptions": "receptions",
-    "anytime td": "anytime_td", "touchdown": "anytime_td", "2plus td": "two_plus_td", "2 td": "two_plus_td",
+    "3 plus td": "three_plus_td", "3plus td": "three_plus_td", "3 td": "three_plus_td",
+    "2 plus td": "two_plus_td", "2plus td": "two_plus_td", "2 td": "two_plus_td",
+    "anytime td": "anytime_td", "1 plus td": "anytime_td", "1plus td": "anytime_td", "1 td": "anytime_td", "touchdown": "anytime_td",
     # NHL (settles when these columns are present in gamelogs)
     "shots on goal": "shots_on_goal", "goalie saves": "goalie_saves",
     "blocked shots": "blocked_shots", "power play points": "power_play_points",
@@ -105,6 +107,9 @@ def stat_value(gl: Dict[str, Any], stat: str) -> Any:
     if stat == "two_plus_td":
         vals = [to_float(gl.get(x), 0.0) or 0.0 for x in ("receiving_touchdowns", "rushing_touchdowns")]
         return bool(sum(vals) >= 2)
+    if stat == "three_plus_td":
+        vals = [to_float(gl.get(x), 0.0) or 0.0 for x in ("receiving_touchdowns", "rushing_touchdowns")]
+        return bool(sum(vals) >= 3)
     aliases = {
         "nhl_assists": ("assists", "nhl_assists"),
         "nhl_points": ("points", "nhl_points"),
