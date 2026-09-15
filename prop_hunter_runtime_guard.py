@@ -6,7 +6,7 @@ from prop_hunter_builder_engine import build_autonomous_extras
 from prop_hunter_oddspapi import TARGETS as _OP_TARGETS, parse_odds_payload as _op_parse
 from prop_hunter_http import get as _http_get
 
-EXPECTED=os.getenv("PH_EXPECTED_RUNTIME_VERSION","13.6.2-ODDSPLUS-FIX")
+EXPECTED=os.getenv("PH_EXPECTED_RUNTIME_VERSION","13.8.0-LADDERS-SGB")
 
 def fail(msg): raise SystemExit(f"RUNTIME GUARD FAILED: {msg}")
 
