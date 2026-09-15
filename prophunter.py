@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.7.2-RUN-RESULTS-FIX"
+PH_RUNTIME_VERSION = "13.8.0-LADDERS-SGB"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -75,7 +75,7 @@ MIN_PROB_MLB_OTHER    = 0.55
 MIN_PROB_LOTTERY_LEG  = 0.58
 MIN_PROB_OTHER_SPORTS = 0.55
 MIN_EDGE_OTHER_SPORTS = 1.5
-MAX_SINGLES_TOTAL     = 12
+MAX_SINGLES_TOTAL     = int(os.getenv("PH_MAX_SINGLES", "0") or 0)  # 0 = no hard cap; +EV filter decides
 MAX_HR_SINGLES        = 3
 MAX_COMBOS_TOTAL      = 2
 MAX_LOTTERY_TOTAL     = 2
@@ -163,8 +163,10 @@ def apply_data_plus_visible(props):
         log.warning("DATA+ enrichment skipped: %s", e)
         return props
 
-def limit_singles_per_game(picks, max_per_game=3):
+def limit_singles_per_game(picks, max_per_game=0):
     try:
+        if not max_per_game or int(max_per_game) <= 0:
+            return picks
         singles = [p for p in picks if getattr(p, "type", None) == "single"]
         others = [p for p in picks if getattr(p, "type", None) != "single"]
         kept = []
@@ -219,6 +221,9 @@ class Prop(BaseModel):
 PickType=Literal["single","ladder","betbuilder","kombi2","kombi3","big","super","lottery"]
 class LadderLeg(BaseModel):
     market:str; odds:float=Field(gt=1); stake:float=Field(ge=0)
+    point:Optional[float]=None; direction:Optional[str]=None
+    probability:Optional[float]=Field(default=None,ge=0,le=1)
+    edge_pct:Optional[float]=None; bookmaker:Optional[str]=None
 class Pick(BaseModel):
     model_config = ConfigDict(extra="allow")
     type:PickType; odds:float=Field(gt=1); stake:float=Field(ge=0,le=5)
@@ -312,8 +317,9 @@ SPORTS:Dict[str,SportCfg]={
         Market("player_threes_alternate","3PM",2,2.5),
     ]),
     "americanfootball_nfl":SportCfg("🏈","NFL",[
-        Market("player_anytime_td","Anytime TD",None,2.5),
-        Market("player_pass_tds_alternate","Pass TDs",None,3.0),
+        Market("player_anytime_td","Anytime TD",None,2.0),
+        Market("player_pass_tds","Pass TDs",None,1.65),
+        Market("player_pass_tds_alternate","Pass TDs Alt",None,2.0),
         Market("player_pass_yds_alternate","Pass Yds",None,1.8),
         Market("player_rush_yds_alternate","Rush Yds",None,3.0),
         Market("player_reception_yds_alternate","Rec Yds",None,3.0),
@@ -2420,12 +2426,20 @@ MLB ANALYSE-FRAMEWORK (aus dem Dokument):
 → Gegner-Defensive Rating für NBA (Pace × Net Rating)
 → Verletzungslisten IMMER prüfen (NFL/NBA Inactive Reports)
 → Spielminuten-Trend: Back-to-Back = weniger Minuten für Stars
-TIER 1 (longshots @3.5+): HR, Triple Double, Blocks, NFL Anytime TD
+TIER 1 (longshots @3.5+): HR, Triple Double, Blocks, NFL Anytime TD / 2+ TD
+
+LADDERS / ALT-LINES:
+- Mehrere echte Linien desselben Spielers im selben Markt sind ERWUENSCHT und KEINE Duplikate.
+- Beispiele: 10+ / 15+ / 20+ Points; 1+ / 2+ TD; 2+ / 3+ / 4+ 3PM.
+- Nur echte beobachtete Bookmaker-Quoten verwenden; niemals Zwischenlinien oder Quoten erfinden.
+- Jede Ladder-Stufe separat auf +EV pruefen. Base/Mid/Longshot duerfen unterschiedliche Stakes haben.
+- Eine starke normale O/U-Linie darf parallel zur Ladder bestehen (z.B. O10.5 und 15+).
 
 STAKES: @1.65-1.95=1.0u | @2.00-2.50=0.75u | @2.50-3.50=0.5u | @3.50-6.00=0.25u | @6+= 0.10u
 
 KOMBIS:
-- BET BUILDER Same-Game (@3-8): 2-3 Props gleiches Spiel, 0.5u
+- BET BUILDER Same-Game (@3-8): 2-4 Props gleiches Spiel, nur gleiche Bookmaker-Quelle und jede Leg einzeln +EV
+- Builder-Legs duerfen aus Points/Rebounds/Assists/3PM/PRA/TD usw. gemischt werden; keine synthetischen Quoten.
 - 2-LEG @6-15: Top Picks paaren (AB+AC+BC alle abdecken!), 0.5u
 - 3-LEG LOTTERY @30-100: 0.25u | 4-LEG SUPER @100-300: 0.10u"""
 
@@ -3250,7 +3264,7 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
             if edge < MIN_EDGE_SINGLE:
                 rejected["edge"] += 1; continue
         accepted_singles.append(p)
-        if len(accepted_singles) >= MAX_SINGLES_TOTAL:
+        if MAX_SINGLES_TOTAL > 0 and len(accepted_singles) >= MAX_SINGLES_TOTAL:
             break
 
     # AI-generated combos/ladders are intentionally discarded here. The dedicated
@@ -3563,8 +3577,10 @@ def _source_prop_score_tuple(p):
     return (edge, prob)
 
 
-def limit_total_singles(picks, max_singles=12):
+def limit_total_singles(picks, max_singles=0):
     try:
+        if not max_singles or int(max_singles) <= 0:
+            return picks
         singles = [p for p in picks if getattr(p, "type", None) == "single"]
         others = [p for p in picks if getattr(p, "type", None) != "single"]
         singles.sort(key=lambda p: ((getattr(p, "edge_pct", 0) or 0), (getattr(p, "probability", 0) or 0)), reverse=True)
@@ -4066,8 +4082,10 @@ def run(dry_run=False,sport_filter=None):
             log.warning("no picks at all — nothing to post")
             return
 
-    picks = limit_singles_per_game(picks, max_per_game=3)
-    picks = limit_total_singles(picks, max_singles=12)
+    # No arbitrary pick-count cap: every verified +EV single may survive.
+    # Optional env PH_MAX_SINGLES can re-enable a hard cap if ever desired.
+    picks = limit_singles_per_game(picks, max_per_game=0)
+    picks = limit_total_singles(picks, max_singles=MAX_SINGLES_TOTAL)
     # Real-price builder only: no invented ladder lines/odds. Supports same-book
     # 2/3/4-leg combinations, including mixed sports, plus verified HR tickets.
     try:
