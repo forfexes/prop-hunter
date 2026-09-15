@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.6.2-ODDSPLUS-FIX"
+PH_RUNTIME_VERSION = "13.7.2-RUN-RESULTS-FIX"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -2154,12 +2154,36 @@ def fetch_wnba_stats(player):
 _nfl_weekly=None; _nfl_inj=None
 def _get_weekly():
     global _nfl_weekly
-    if _nfl_weekly is not None or not NFL_DATA: return _nfl_weekly
+    # False is a failure sentinel so a broken provider is logged only once per run.
+    if _nfl_weekly is False or not NFL_DATA:
+        return None
+    if _nfl_weekly is not None:
+        return _nfl_weekly
     try:
-        df=nfl.import_weekly_data([YEAR_NFL])
-        if df is None or df.empty: df=nfl.import_weekly_data([YEAR_NFL-1])
-        _nfl_weekly=df; log.info("NFL weekly: %d rows",len(df))
-    except Exception as e: log.warning("NFL weekly: %s",e)
+        loader = getattr(nfl, "load_player_stats", None)
+        if loader is None:
+            raise AttributeError("nflreadpy.load_player_stats is unavailable")
+        data = loader(seasons=[YEAR_NFL])
+        try:
+            df = data.to_pandas()
+        except Exception:
+            df = data
+        if df is None or getattr(df, "empty", True):
+            data = loader(seasons=[YEAR_NFL-1])
+            try:
+                df = data.to_pandas()
+            except Exception:
+                df = data
+        if df is None or getattr(df, "empty", True):
+            _nfl_weekly = False
+            log.warning("NFL weekly: no rows returned")
+            return None
+        _nfl_weekly=df
+        log.info("NFL weekly: %d rows",len(df))
+    except Exception as e:
+        _nfl_weekly = False
+        log.warning("NFL weekly disabled for this run: %s",e)
+        return None
     return _nfl_weekly
 def fetch_nfl_stats(player):
     df=_get_weekly()
