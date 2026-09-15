@@ -66,7 +66,7 @@ jobs:
 
       - name: Local integrity gate
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.7.2-RUN-RESULTS-FIX
+          PH_EXPECTED_RUNTIME_VERSION: 13.8.0-LADDERS-SGB
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
