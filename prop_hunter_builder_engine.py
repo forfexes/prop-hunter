@@ -58,8 +58,29 @@ def _book(obj: Any) -> str:
 
 def _point(obj: Any) -> Optional[float]:
     value = getattr(obj, "point", None)
-    if value is None: value = getattr(obj, "line", None)
-    return to_float(value)
+    if value is None:
+        value = getattr(obj, "line", None)
+    parsed = to_float(value)
+    if parsed is not None:
+        return parsed
+
+    # Some books expose TD ladders as separate yes/no markets instead of a numeric
+    # handicap (Anytime TD, 2+ TD, 3+ TD). Convert only those explicit thresholds
+    # to settlement-equivalent half-lines; no price or missing rung is invented.
+    feats = _features(obj)
+    text = " ".join(str(x or "") for x in (
+        getattr(obj, "market", None), getattr(obj, "selection", None),
+        feats.get("selection"), feats.get("market_original"),
+    )).lower()
+    if "td" in text or "touchdown" in text:
+        if "anytime" in text:
+            return 0.5
+        m = re.search(r"\b(\d+)\s*(?:\+|plus\b|or\s+more\b)", text)
+        if not m:
+            m = re.search(r"\b(\d+)\s*(?:tds?|touchdowns?)\b", text)
+        if m:
+            return max(0.5, float(m.group(1)) - 0.5)
+    return None
 
 
 def _direction(obj: Any) -> str:
@@ -70,9 +91,21 @@ def _direction(obj: Any) -> str:
 
 def _base_market(text: Any) -> str:
     s = str(text or "").lower()
+    s = s.replace("+", " plus ")
     s = re.sub(r"\b(over|under|more|less|yes|no)\b", " ", s)
     s = re.sub(r"\b\d+(?:\.\d+)?\b", " ", s)
-    return re.sub(r"[^a-z0-9]+", " ", s).strip()
+    s = re.sub(r"[^a-z0-9]+", " ", s).strip()
+    # Canonicalize touchdown ladders so Anytime TD / 1+ TD / 2+ TD / 3+ TD
+    # can be grouped for the same player, while pass/rush/receiving TDs remain separate.
+    if re.search(r"\b(pass|passing)\b", s) and re.search(r"\b(td|tds|touchdown|touchdowns)\b", s):
+        return "passing touchdowns"
+    if re.search(r"\b(receiv|receiving)\w*\b", s) and re.search(r"\b(td|tds|touchdown|touchdowns)\b", s):
+        return "receiving touchdowns"
+    if re.search(r"\b(rush|rushing)\w*\b", s) and re.search(r"\b(td|tds|touchdown|touchdowns)\b", s):
+        return "rushing touchdowns"
+    if "anytime td" in s or "anytime touchdown" in s or re.search(r"\b(td|tds|touchdown|touchdowns)\b", s):
+        return "touchdowns"
+    return s.replace(" plus ", " ").strip()
 
 
 def _player(obj: Any) -> str:
@@ -254,83 +287,139 @@ def _valid_combo(legs: Sequence[Any]) -> bool:
     return True
 
 
-def _real_ladder(anchor: Any, props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> Optional[Any]:
-    if not _real_price(anchor):
-        return None
-    player = _player(anchor).lower()
-    base = _base_market(getattr(anchor, "market", ""))
-    direction = _direction(anchor)
-    anchor_book = _book(anchor)
-    if not anchor_book:
-        return None
-
-    candidates = []
-    for p in props or []:
-        if not _real_price(p) or _book(p) != anchor_book:
-            continue
-        if _player(p).lower() != player:
-            continue
-        if _base_market(getattr(p, "market", "")) != base:
-            continue
-        if _direction(p) != direction:
-            continue
-        point, odds = _point(p), _odds(p)
-        if point is None or odds <= 1:
-            continue
-        candidates.append((point, odds, p))
-
-    unique = {}
-    for point, odds, p in candidates:
-        # Same book + same line: keep the highest actually observed price.
-        if point not in unique or odds > unique[point][0]:
-            unique[point] = (odds, p)
-    if len(unique) < 2:
-        return None
-
-    ordered = sorted((point, item[0], item[1]) for point, item in unique.items())
-    anchor_point = _point(anchor)
-    if anchor_point is None:
-        return None
-
+def _display_line(base: str, direction: str, point: float, original_market: str = "") -> str:
+    """Human-friendly ladder label without changing settlement semantics."""
+    low = str(original_market or "").lower()
     if direction == "over":
-        safe = max((x for x in ordered if x[0] <= anchor_point), default=ordered[0], key=lambda x: x[0])
-        risk = min((x for x in ordered if x[0] > safe[0]), default=None, key=lambda x: x[0])
+        # A half-point over is exactly equivalent to the next integer threshold,
+        # e.g. O9.5 == 10+. Keep integer lines as O10 unless source itself says 10+.
+        frac = abs(float(point) - int(float(point)))
+        if abs(frac - 0.5) < 1e-9:
+            return f"{int(math.floor(float(point)) + 1)}+ {base.title()}"
+        if "+" in low:
+            return f"{int(point) if float(point).is_integer() else point:g}+ {base.title()}"
+    return f"{base.title()} {direction.title()} {point:g}"
+
+
+def _ladder_leg_candidate(prop: Any) -> Optional[Dict[str, Any]]:
+    """Validate one independently observed alternate line as its own +EV leg."""
+    if not _real_price(prop):
+        return None
+    point, odds = _point(prop), _odds(prop)
+    if point is None or odds <= 1.01:
+        return None
+    probability = _candidate_probability(prop)
+    if probability is None:
+        return None
+    edge = probability * odds - 1.0
+    # Ladders are long-tail by nature, but every rung must still be positive EV.
+    # Keep the same verified-pool floor used for ordinary non-HR candidates.
+    if edge < 0.018:
+        return None
+    fraction = 0.15 if odds < 4 else 0.10 if odds < 8 else 0.06
+    cap = 0.40 if odds < 3 else 0.25 if odds < 6 else 0.12
+    stake = _kelly(probability, odds, fraction, cap)
+    # Explicit minimums make valuable longshots visible instead of rounding away.
+    if odds >= 10:
+        stake = max(0.05, stake)
+    elif odds >= 6:
+        stake = max(0.10, stake)
+    elif odds >= 3:
+        stake = max(0.15, stake)
     else:
-        safe = min((x for x in ordered if x[0] >= anchor_point), default=ordered[-1], key=lambda x: x[0])
-        risk = max((x for x in ordered if x[0] < safe[0]), default=None, key=lambda x: x[0])
+        stake = max(0.25, stake)
+    return {
+        "prop": prop, "point": point, "odds": odds, "probability": probability,
+        "edge": edge, "stake": round(min(stake, 1.0), 2),
+    }
 
-    if risk is None or risk[0] == safe[0]:
-        return None
-    # Alternate lines must have independently observed prices. Identical prices
-    # are possible, but are rejected here because they commonly indicate a
-    # synthetic/default-price source rather than a real alternate market.
-    if abs(float(risk[1]) - float(safe[1])) < 0.005:
-        return None
 
-    safe_market = f"{base.title()} {direction.title()} {safe[0]:g}"
-    risk_market = f"{base.title()} {direction.title()} {risk[0]:g}"
-    built = PickCls(
-        type="ladder", category="ladder", player=_player(anchor),
-        team=getattr(anchor, "team", "") or "", emoji=getattr(anchor, "emoji", "🎯") or "🎯",
-        market=f"{base.title()} Ladder", direction=direction,
-        odds=safe[1], stake=0.8, probability=_prob(anchor),
-        edge_pct=getattr(anchor, "edge_pct", 0) or 0, ev=getattr(anchor, "ev", 0) or 0,
-        game=_game(anchor),
-        analysis=f"Echte Alt-Linien bei {anchor_book}; keine geschätzten Quoten.",
-        picks=[
-            LadderLegCls(market=safe_market, odds=safe[1], stake=0.6),
-            LadderLegCls(market=risk_market, odds=risk[1], stake=0.2),
-        ],
-    )
-    built.sport = _sport(anchor)
-    built.point = safe[0]
-    built.features = {"odds_observed": True, "price_type": "bookmaker", "bookmaker": anchor_book}
-    built.leg_details = [
-        {"player": _player(anchor), "sport": _sport(anchor), "market": safe_market, "direction": direction, "point": safe[0], "odds": safe[1], "bookmaker": anchor_book, "game": _game(anchor)},
-        {"player": _player(anchor), "sport": _sport(anchor), "market": risk_market, "direction": direction, "point": risk[0], "odds": risk[1], "bookmaker": anchor_book, "game": _game(anchor)},
-    ]
-    return built
+def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List[Any]:
+    """Build every verified same-player/same-book ladder with >=2 +EV rungs.
 
+    Important: exact alternate lines remain distinct. We do not collapse 10+/15+/20+
+    into one pick and we do not invent missing rungs or prices.
+    """
+    grouped: Dict[Tuple[str, str, str, str, str], List[Any]] = {}
+    for p in props or []:
+        if not _real_price(p):
+            continue
+        player = _player(p).lower()
+        book = _book(p)
+        base = _base_market(getattr(p, "market", ""))
+        direction = _direction(p)
+        game = _game(p)
+        if not player or not book or not base or _point(p) is None:
+            continue
+        grouped.setdefault((player, base, direction, book, game), []).append(p)
+
+    ladders: List[Any] = []
+    for (_player_key, base, direction, book, game), rows in grouped.items():
+        # Same line at same book: retain best observed price, but never merge different lines.
+        unique: Dict[float, Any] = {}
+        for row in rows:
+            point = _point(row)
+            if point is None:
+                continue
+            prev = unique.get(float(point))
+            if prev is None or _odds(row) > _odds(prev):
+                unique[float(point)] = row
+
+        legs = []
+        for point, row in unique.items():
+            candidate = _ladder_leg_candidate(row)
+            if candidate:
+                legs.append(candidate)
+        if len(legs) < 2:
+            continue
+
+        # Natural ladder order: safer threshold first for overs, reverse for unders.
+        legs.sort(key=lambda x: x["point"], reverse=(direction == "under"))
+        # Odds should generally increase with difficulty. Do not reject a genuine book row
+        # merely because of small pricing anomalies; all rungs are independently +EV checked.
+        ladder_legs = []
+        leg_details = []
+        for item in legs:
+            row = item["prop"]
+            label = _display_line(base, direction, item["point"], getattr(row, "market", ""))
+            ladder_legs.append(LadderLegCls(
+                market=label, odds=round(item["odds"], 2), stake=item["stake"],
+                point=item["point"], direction=direction,
+                probability=item["probability"], edge_pct=round(item["edge"] * 100, 1),
+                bookmaker=book,
+            ))
+            leg_details.append({
+                "player": _player(row), "sport": _sport(row), "market": label,
+                "source_market": getattr(row, "market", ""), "direction": direction,
+                "point": item["point"], "odds": item["odds"],
+                "probability": item["probability"], "edge_pct": round(item["edge"] * 100, 1),
+                "bookmaker": book, "game": game,
+            })
+
+        first = legs[0]
+        total_stake = round(sum(x["stake"] for x in legs), 2)
+        anchor = first["prop"]
+        built = PickCls(
+            type="ladder", category="ladder", player=_player(anchor),
+            team=getattr(anchor, "team", "") or "", emoji=getattr(anchor, "emoji", "🎯") or "🎯",
+            market=f"{base.title()} Ladder", direction=direction,
+            odds=round(first["odds"], 2), stake=min(total_stake, 5.0),
+            probability=first["probability"], edge_pct=round(first["edge"] * 100, 1),
+            ev=round(first["edge"], 4), game=game,
+            analysis=f"{len(legs)} echte +EV Alt-Linien bei {book}; jede Stufe separat geprueft.",
+            picks=ladder_legs,
+        )
+        built.sport = _sport(anchor)
+        built.point = first["point"]
+        built.features = {"odds_observed": True, "price_type": "bookmaker", "bookmaker": book, "ladder_rungs": len(legs)}
+        built.leg_details = leg_details
+        ladders.append(built)
+
+    ladders.sort(key=lambda p: (
+        max((getattr(x, "edge_pct", 0) or 0) for x in (getattr(p, "picks", None) or [])),
+        len(getattr(p, "picks", None) or []),
+    ), reverse=True)
+    return ladders
 
 def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str, Any]) -> Optional[Any]:
     if not _valid_combo(legs):
@@ -440,16 +529,14 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
     )
     extras.extend(hr_candidates[:3])
 
-    # One genuine same-book alternate-line ladder.
-    for anchor in pool:
-        ladder = _real_ladder(anchor, props, PickCls, LadderLegCls)
-        if ladder:
-            extras.append(ladder)
-            break
+    # All genuine same-book ladders whose individual rungs are independently +EV.
+    # Same player + same market at 10+/15+/20+ (or TD 1+/2+/3+) must survive.
+    extras.extend(_real_ladders(props, PickCls, LadderLegCls))
 
     candidates: Dict[str, List[Any]] = {
         "SAFE": [], "VALUE": [], "RISK": [], "LOTTERY": []
     }
+    same_game_candidates: Dict[Tuple[str, str], List[Any]] = {}
 
     by_book: Dict[str, List[Any]] = {}
     for candidate in pool:
@@ -492,6 +579,21 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
                 built = _make_builder(legs, label, PickCls, pairs)
                 if built:
                     candidates[label].append(built)
+                    if getattr(built, "type", None) == "betbuilder":
+                        same_game_candidates.setdefault((_book(legs[0]), _game(legs[0])), []).append(built)
+
+    # Guarantee a dedicated same-game builder lane. The general risk buckets may
+    # otherwise select a cross-game combo with slightly higher EV and hide a valid SGB.
+    for (_book_key, _game_key), items in same_game_candidates.items():
+        items.sort(key=lambda p: (
+            getattr(p, "ev", 0) or 0,
+            getattr(p, "probability", 0) or 0,
+            len(getattr(p, "legs", None) or []),
+        ), reverse=True)
+        best = items[0]
+        sig = tuple(getattr(best, "legs", []) or [])
+        if not any(tuple(getattr(x, "legs", []) or []) == sig for x in extras):
+            extras.append(best)
 
     for label in ("SAFE", "VALUE", "RISK", "LOTTERY"):
         if candidates[label]:
