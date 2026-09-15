@@ -111,6 +111,9 @@ def _norm(value: Any) -> str:
 
 
 def _api_get(path: str, params: Optional[Dict[str, Any]] = None, timeout: int = 25):
+    global _RATE_LIMITED_FOR_RUN
+    if _RATE_LIMITED_FOR_RUN:
+        return {"_rate_limited": True, "_http_error": 429, "_skipped": True}
     if not _key():
         _LAST_HTTP[path] = {"status": "no_key"}
         return None
@@ -129,6 +132,8 @@ def _api_get(path: str, params: Optional[Dict[str, Any]] = None, timeout: int = 
         )
         _LAST_HTTP[path] = {"status": int(response.status_code), "url": response.url.split("apiKey=")[0]}
         if response.status_code == 429:
+            _RATE_LIMITED_FOR_RUN = True
+            _diag("HTTP 429: OddsPapi disabled for the remainder of this run")
             return {"_rate_limited": True, "_http_error": 429}
         if not response.ok:
             return {"_http_error": int(response.status_code), "_body": response.text[:200]}
