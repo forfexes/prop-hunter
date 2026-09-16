@@ -121,6 +121,19 @@ def _direct_jobs(sports: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dic
         ("underdog", ppud.fetch_underdog),
         ("sleeper", ppud.fetch_sleeper),
     ]
+    # Key-gated API aggregators are cheap and deterministic. Do not even import/call
+    # them when no key exists, so normal GitHub card runs stay fast.
+    try:
+        import prop_hunter_sgo as sgo
+        if sgo.configured():
+            for sport in sports:
+                jobs.append((f"sportsgameodds_{sport.lower()}", lambda s=sport: sgo.fetch_sgo_props({
+                    "MLB":"baseball_mlb", "NBA":"basketball_nba", "WNBA":"basketball_wnba",
+                    "NFL":"americanfootball_nfl", "NHL":"icehockey_nhl",
+                    "NCAAB":"basketball_ncaab", "NCAAF":"americanfootball_ncaaf",
+                }.get(s, s))))
+    except Exception:
+        pass
     for sport in sports:
         jobs.extend([
             (f"prizepicks_{sport.lower()}", lambda s=sport: ppud.fetch_prizepicks(s)),
