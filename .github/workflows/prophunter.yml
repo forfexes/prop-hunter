@@ -3,7 +3,6 @@ name: Prop Hunter Autonomous
 "on":
   workflow_dispatch: {}
   schedule:
-    - cron: '0 8 * * *'
     - cron: '30 16 * * *'
     - cron: '0 21 * * *'
 
@@ -17,7 +16,7 @@ concurrency:
 jobs:
   card:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,11 +61,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          python -m playwright install chromium
+          # Chromium is intentionally not installed on normal card runs.
+          # Browser scraping is maintenance-only; this saves setup/runtime.
 
       - name: Local integrity gate
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.8.0-LADDERS-SGB
+          PH_EXPECTED_RUNTIME_VERSION: 13.8.2-SOURCES-RUNTIME
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
@@ -78,22 +78,23 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           PH_ODDSPAPI_MAX_EVENTS: '2'
+          PH_SGO_MAX_EVENTS: '4'
+          PH_SGO_TIMEOUT: '6'
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
           PH_FAST_BROWSER_BOOKS: bet365,betmgm,caesars,betrivers,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay
-          PH_FAST_BROWSER_JOBS: '2'
+          PH_FAST_BROWSER_JOBS: '0'
         run: |
           if [ -f prop_hunter_source_orchestrator.py ]; then python prop_hunter_source_orchestrator.py --mode fast; else echo "source orchestrator absent; using in-engine collectors"; fi
 
-      - name: DATA and history
+      - name: DATA cache
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           LAST_N_GAMES: '30'
-        run: |
-          python prop_hunter_scraper.py
-          python prop_hunter_history_scraper.py
+        run: python prop_hunter_scraper.py
 
       - name: Public snapshot connectors
         env:
@@ -127,6 +128,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
+          PH_SGO_DIRECT: '0'
         run: python prophunter.py
 
       - name: Save card state
