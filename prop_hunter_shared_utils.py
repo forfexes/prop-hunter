@@ -12,6 +12,7 @@ import re
 import json
 import time
 import hashlib
+import math
 from pathlib import Path
 from datetime import datetime, timezone, date, timedelta
 from typing import Any, Dict, List, Optional
@@ -131,17 +132,44 @@ def supabase_client():
         warn(f"Supabase client failed: {e}")
         return None
 
+def _json_clean(value: Any) -> Any:
+    """Convert pandas/numpy NA + non-finite floats into JSON-safe values."""
+    if value is None:
+        return None
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    # numpy scalar -> native Python scalar (without importing numpy).
+    item = getattr(value, "item", None)
+    if callable(item) and value.__class__.__module__.startswith("numpy"):
+        try:
+            return _json_clean(item())
+        except Exception:
+            return None
+    # pandas.NA / NaT: bool()/comparison may raise, so identify conservatively.
+    mod = value.__class__.__module__
+    name = value.__class__.__name__
+    if mod.startswith("pandas") and name in {"NAType", "NaTType"}:
+        return None
+    if isinstance(value, dict):
+        return {str(k): _json_clean(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_json_clean(v) for v in value]
+    return value
+
 def upsert_rows(table: str, rows: List[Dict[str, Any]], conflict: Optional[str] = None):
     if not rows:
         return
+    clean_rows = [_json_clean(dict(r)) for r in rows if isinstance(r, dict)]
+    if not clean_rows:
+        return
     sb = supabase_client()
     if sb is None:
-        warn(f"Supabase missing; skip {table}: {len(rows)} rows")
+        warn(f"Supabase missing; skip {table}: {len(clean_rows)} rows")
         return
     try:
-        q = sb.table(table).upsert(rows, on_conflict=conflict) if conflict else sb.table(table).insert(rows)
+        q = sb.table(table).upsert(clean_rows, on_conflict=conflict) if conflict else sb.table(table).insert(clean_rows)
         q.execute()
-        log(f"{table}: saved {len(rows)} rows")
+        log(f"{table}: saved {len(clean_rows)} rows")
     except Exception as e:
         warn(f"{table} save failed: {e}")
 
