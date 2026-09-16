@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.8.0-LADDERS-SGB"
+PH_RUNTIME_VERSION = "13.8.2-SOURCES-RUNTIME"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -33,6 +33,7 @@ GROQ_KEYS      = _csv("GROQ_API_KEY")
 BALLDONTLIE_KEY= os.environ.get("BALLDONTLIE_API_KEY","")
 BDL_KEY = BALLDONTLIE_KEY
 ODDSPAPI_KEY   = (os.environ.get("ODDSPAPI_KEY","") or os.environ.get("ODDSPAPI","") or os.environ.get("ODDSPAPI_API_KEY","")).strip()
+SPORTSGAMEODDS_KEY = (os.environ.get("SPORTSGAMEODDS_KEY","") or os.environ.get("SPORTS_GAME_ODDS_KEY","")).strip()
 SUPABASE_URL   = os.environ.get("SUPABASE_URL","")
 SUPABASE_KEY   = os.environ.get("SUPABASE_KEY","")
 TG_TOKEN       = os.environ.get("TELEGRAM_BOT_TOKEN","")
@@ -1074,6 +1075,38 @@ def enrich_gamelogs_fairprob(props: list) -> list:
         if "run" in mkt: return "runs"
         return None
     boosted = 0
+
+    # FAST PATH: preload the last gamelogs for all players in a few Supabase
+    # requests instead of doing one HTTP query per player/stat combination.
+    # This cuts the enrichment phase from ~45-50s to a few seconds on Actions.
+    _prefetched_rows = {}
+    try:
+        wanted_names = sorted({norm_name(getattr(p, "player", "")) for p in props if getattr(p, "player", None)})
+        cols = ("normalized_name,game_date,points,rebounds,assists,threes_made,"
+                "double_double,triple_double,home_runs,pitcher_hits_allowed,"
+                "strikeouts_batter,pitcher_strikeouts,total_bases,rbi,walks_batter,"
+                "steals,blocks,stolen_bases,hits,runs")
+        chunk_size = max(10, min(int(os.getenv("PH_GAMELOG_PREFETCH_NAMES", "40")), 60))
+        for pos in range(0, len(wanted_names), chunk_size):
+            names_chunk = wanted_names[pos:pos + chunk_size]
+            try:
+                res = (c.table("prop_hunter_player_gamelogs").select(cols)
+                       .in_("normalized_name", names_chunk)
+                       .order("game_date", desc=True).limit(max(200, len(names_chunk) * 15)).execute())
+                for row in (res.data or []):
+                    nk = row.get("normalized_name")
+                    if nk:
+                        _prefetched_rows.setdefault(nk, []).append(row)
+            except Exception:
+                pass
+        for nk, rows0 in _prefetched_rows.items():
+            rows0.sort(key=lambda r: str(r.get("game_date") or ""), reverse=True)
+            _prefetched_rows[nk] = rows0[:10]
+        if _prefetched_rows:
+            log.info("Gamelog prefetch: %d players in batch", len(_prefetched_rows))
+    except Exception:
+        _prefetched_rows = {}
+
     # Kombi-Stats die aus Basisspalten berechnet werden müssen (keine eigene DB-Spalte)
     COMBO_STATS = {
         "pra": ["points", "rebounds", "assists"],
@@ -1091,21 +1124,39 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             key = norm_name(p.player)
             cache_k = f"{key}|{stat}"
             if cache_k not in _GAMELOG_CACHE:
-                if stat in COMBO_STATS:
-                    # Kombi: mehrere Spalten holen und summieren
-                    cols = COMBO_STATS[stat]
+                fast_rows = _prefetched_rows.get(key)
+                if fast_rows is not None:
+                    if stat in COMBO_STATS:
+                        cols2 = COMBO_STATS[stat]
+                        vals0 = []
+                        for r in fast_rows:
+                            parts = [r.get(col) for col in cols2]
+                            if all(x is not None for x in parts):
+                                vals0.append(sum(float(x) for x in parts))
+                        _GAMELOG_CACHE[cache_k] = vals0
+                    elif stat in ("double_double", "triple_double"):
+                        need = 2 if stat == "double_double" else 3
+                        vals0 = []
+                        for r in fast_rows:
+                            cats = [r.get("points"), r.get("rebounds"), r.get("assists")]
+                            if all(x is not None for x in cats):
+                                vals0.append(1.0 if sum(1 for x in cats if float(x) >= 10) >= need else 0.0)
+                        _GAMELOG_CACHE[cache_k] = vals0
+                    else:
+                        _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in fast_rows if r.get(stat) is not None]
+                elif stat in COMBO_STATS:
+                    cols2 = COMBO_STATS[stat]
                     res = c.table("prop_hunter_player_gamelogs").select(
-                        ",".join(cols) + ",game_date").eq(
+                        ",".join(cols2) + ",game_date").eq(
                         "normalized_name", key).order(
                         "game_date", desc=True).limit(10).execute()
                     combo_vals = []
                     for r in (res.data or []):
-                        parts = [r.get(col) for col in cols]
+                        parts = [r.get(col) for col in cols2]
                         if all(x is not None for x in parts):
                             combo_vals.append(sum(float(x) for x in parts))
                     _GAMELOG_CACHE[cache_k] = combo_vals
                 elif stat in ("double_double", "triple_double"):
-                    # aus points/rebounds/assists ableiten (>=10 in 2 bzw 3 Kategorien)
                     res = c.table("prop_hunter_player_gamelogs").select(
                         "points,rebounds,assists,game_date").eq(
                         "normalized_name", key).order(
@@ -1655,7 +1706,10 @@ def _req(url,params,retries=1):
         k = _key()
         if not k: return None
         params["apiKey"] = k
-        try: r=requests.get(url,params=params,headers=HTTP_H,timeout=TIMEOUT)
+        # Odds endpoints must fail fast. A single exhausted/unresponsive key must
+        # never stall the whole card for 30-60 seconds.
+        odds_timeout = max(3, min(int(os.getenv("PH_ODDS_HTTP_TIMEOUT", "8")), TIMEOUT))
+        try: r=requests.get(url,params=params,headers=HTTP_H,timeout=odds_timeout)
         except requests.RequestException as e: log.warning("HTTP: %s",e); time.sleep(1); continue
         if r.status_code==200:
             rem = r.headers.get("x-requests-remaining","?")
@@ -2724,6 +2778,57 @@ def fetch_oddspapi_props(sport_key: str) -> list:
         return []
 
 
+def fetch_sportsgameodds_props(sport_key: str) -> list:
+    """Fast optional SportsGameOdds source (one league request, key-gated)."""
+    if not SPORTSGAMEODDS_KEY:
+        return []
+    try:
+        from prop_hunter_sgo import fetch_sgo_props as _fetch
+        rows = _fetch(sport_key, max_events=min(MAX_EVENTS, 5))
+        log.info("SportsGameOdds: %d observed player-prop quotes (%s)", len(rows), sport_key)
+        return rows
+    except Exception as exc:
+        log.warning("SportsGameOdds: %s", exc)
+        return []
+
+
+def _observed_rows_to_props(rows: list, source_name: str, sport_key: str) -> list:
+    """Convert normalized observed sportsbook rows into Prop objects."""
+    out=[]
+    emoji=SPORTS.get(sport_key, SPORTS["baseball_mlb"]).emoji
+    for raw in rows or []:
+        try:
+            dec=float(raw.get("decimal_odds") or raw.get("odds_decimal") or 0)
+            if dec <= 1:
+                continue
+            player=str(raw.get("player_name") or "").strip()
+            market=str(raw.get("market") or raw.get("market_key") or "").strip()
+            line=raw.get("line")
+            if not player or not market or line is None:
+                continue
+            sport_label=str(raw.get("sport") or raw.get("league") or "").upper()
+            if not sport_label:
+                sport_label={
+                    "baseball_mlb":"MLB","basketball_nba":"NBA","basketball_wnba":"WNBA",
+                    "americanfootball_nfl":"NFL","icehockey_nhl":"NHL",
+                    "basketball_ncaab":"NCAAB","americanfootball_ncaaf":"NCAAF",
+                }.get(sport_key, "?")
+            out.append(Prop(
+                player=player, market=market, odds=round(dec,2), point=line,
+                sport=sport_label,
+                game=f"{raw.get('away_team','')} @ {raw.get('home_team','')}",
+                direction=str(raw.get("direction") or "over").lower(),
+                features={
+                    "odds_observed": True, "price_type": "sportsbook_observed",
+                    "source": source_name, "bookmaker": raw.get("bookmaker"),
+                },
+                emoji=emoji,
+            ))
+        except Exception:
+            continue
+    return out
+
+
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
     cache=load_cache(); new_cache={}
@@ -2882,6 +2987,19 @@ def gather(sport_filter=None):
     # compare its Pinnacle/Bet365/etc. player-prop prices on normal runs.
     if ODDSPAPI_KEY:
         _try_oddspapi()
+
+    # SportsGameOdds: optional, one bounded request per active league. It is additive
+    # only when the key exists and never triggers browser/proxy fallbacks.
+    if SPORTSGAMEODDS_KEY and str(os.getenv("PH_SGO_DIRECT", "0")).lower() in {"1","true","yes","on"}:
+        sgo_keys=[k for k in ("baseball_mlb","basketball_nba","basketball_wnba","americanfootball_nfl","icehockey_nhl","basketball_ncaab","americanfootball_ncaaf") if k in sports]
+        for sk in sgo_keys:
+            sgo_rows=fetch_sportsgameodds_props(sk)
+            if not sgo_rows:
+                continue
+            props=_observed_rows_to_props(sgo_rows, "sportsgameodds", sk)
+            if props:
+                all_props.extend(props)
+                active.append(f"(SGO){SPORTS[sk].name}({len(props)})")
 
     # NBA/WNBA batch enrichment
     nba=[p for p in all_props if p.sport=="NBA"]
