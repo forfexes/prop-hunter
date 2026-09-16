@@ -57,6 +57,14 @@ SOURCES: tuple[SourceSpec, ...] = (
                ("MLB", "NBA", "WNBA", "NFL", "NHL"), ("official_json", "market_discovery", "cache"),
                "https://oddspapi.io/",
                "Dynamic sports/market discovery; real bookmaker lines and prices."),
+    SourceSpec("sportsgameodds", "SportsGameOdds", "sportsbook_aggregator", "free_key_required", 98, True,
+               ("MLB", "NBA", "WNBA", "NFL", "NHL", "NCAAB", "NCAAF"), ("official_json", "single_request_props", "cache"),
+               "https://sportsgameodds.com/",
+               "Optional key-gated source. One /v2/events league request can return bookmaker-level player props."),
+    SourceSpec("propline", "PropLine", "sportsbook_aggregator", "free_key_required", 97, False,
+               ("MLB", "NBA", "WNBA", "NFL", "NHL"), ("official_sdk", "alt_lines", "cache"),
+               "https://prop-line.com/",
+               "Watcher-qualified candidate: strong player-prop/alt-line coverage; keep disabled until an API key is configured and adapter is explicitly enabled."),
 
     # Sportsbooks / bookmakers
     SourceSpec("draftkings", "DraftKings", "sportsbook", "free_public_web", 92, True,
