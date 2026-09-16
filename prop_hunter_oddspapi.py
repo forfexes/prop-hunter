@@ -73,6 +73,7 @@ _CACHE: Dict[str, Any] = {
 }
 _CALL_COUNT = {"sports": 0, "markets": 0, "fixtures": 0, "odds": 0}
 _LAST_HTTP: Dict[str, Any] = {}
+_RATE_LIMITED_FOR_RUN = False
 
 
 def _debug_enabled() -> bool:
@@ -110,10 +111,10 @@ def _norm(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
-def _api_get(path: str, params: Optional[Dict[str, Any]] = None, timeout: int = 25):
+def _api_get(path: str, params: Optional[Dict[str, Any]] = None, timeout: int = 8):
     global _RATE_LIMITED_FOR_RUN
     if _RATE_LIMITED_FOR_RUN:
-        return {"_rate_limited": True, "_http_error": 429, "_skipped": True}
+        return {"_rate_limited": True, "_http_error": 429}
     if not _key():
         _LAST_HTTP[path] = {"status": "no_key"}
         return None
@@ -133,7 +134,6 @@ def _api_get(path: str, params: Optional[Dict[str, Any]] = None, timeout: int = 
         _LAST_HTTP[path] = {"status": int(response.status_code), "url": response.url.split("apiKey=")[0]}
         if response.status_code == 429:
             _RATE_LIMITED_FOR_RUN = True
-            _diag("HTTP 429: OddsPapi disabled for the remainder of this run")
             return {"_rate_limited": True, "_http_error": 429}
         if not response.ok:
             return {"_http_error": int(response.status_code), "_body": response.text[:200]}
