@@ -50,8 +50,16 @@ def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, 
             if any(w in pn or pn in w for w in wanted):
                 selected.append(p)
 
+    # CRITICAL runtime guard: never sweep the complete historical NBA player list.
+    # stats.nba.com can time out for 25s per player on GitHub runners; an empty
+    # NBA_RESULT_PLAYERS used to mean "all players" and could burn 30+ minutes.
+    if not wanted:
+        log("NBA results: no explicit active-player list -> skip nba_api gamelog sweep")
+        return []
+
     rows = []
-    cap = int(os.getenv("NBA_RESULTS_PLAYER_CAP", "80"))
+    cap = int(os.getenv("NBA_RESULTS_PLAYER_CAP", "40"))
+    api_timeout = int(os.getenv("NBA_RESULTS_TIMEOUT", "8"))
     for p in selected[:cap]:
         full = p.get("full_name")
         try:
@@ -59,7 +67,7 @@ def nba_api_player_logs(players=None, season=None, last_n=20) -> List[Dict[str, 
                 player_id=p.get("id"),
                 season=season,
                 season_type_all_star=os.getenv("NBA_SEASON_TYPE", "Regular Season"),
-                timeout=25,
+                timeout=api_timeout,
             )
             df = gl.get_data_frames()[0]
         except Exception as e:
