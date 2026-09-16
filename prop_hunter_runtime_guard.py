@@ -5,8 +5,10 @@ import prophunter as ph
 from prop_hunter_builder_engine import build_autonomous_extras
 from prop_hunter_oddspapi import TARGETS as _OP_TARGETS, parse_odds_payload as _op_parse
 from prop_hunter_http import get as _http_get
+from prop_hunter_sgo import fetch_sgo_props as _sgo_fetch
+from prop_hunter_shared_utils import _json_clean
 
-EXPECTED=os.getenv("PH_EXPECTED_RUNTIME_VERSION","13.8.0-LADDERS-SGB")
+EXPECTED=os.getenv("PH_EXPECTED_RUNTIME_VERSION","13.8.2-SOURCES-RUNTIME")
 
 def fail(msg): raise SystemExit(f"RUNTIME GUARD FAILED: {msg}")
 
@@ -27,9 +29,16 @@ def main():
         fail("OddsPapi target registry incomplete")
     if not callable(_op_parse) or not callable(_http_get):
         fail("OddsPapi/curl_cffi helpers missing")
+    if not callable(_sgo_fetch):
+        fail("SportsGameOdds adapter missing")
+    cleaned=_json_clean({"nan": float("nan"), "inf": float("inf"), "nested": [1.0, float("-inf")]})
+    if cleaned != {"nan": None, "inf": None, "nested": [1.0, None]}:
+        fail("JSON sanitizer failed")
     print("NHL gamelog support: OK")
     print("OddsPapi dynamic discovery: OK")
     print("curl_cffi HTTP fallback: OK")
+    print("SportsGameOdds adapter: OK")
+    print("Supabase JSON sanitizer: OK")
     print(f"RUNTIME GUARD OK: {EXPECTED}")
     print("Synthetic odds rejected: OK")
     print("Observed sportsbook odds accepted: OK")
