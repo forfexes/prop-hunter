@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.8.2-SOURCES-RUNTIME"
+PH_RUNTIME_VERSION = "13.8.3-RUNTIME-LEAN"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -60,7 +60,7 @@ NBA_LAST_N     = 10
 NFL_LAST_N     = 5
 AI_TOKENS      = 3000
 AI_TEMP        = 0.6
-AI_RETRY       = 1
+AI_RETRY       = max(0, int(os.getenv("PH_AI_RETRY", "0")))
 
 # ─────────────────────────────────────────────
 # STRICT PICK FILTERS (v4)
@@ -415,8 +415,11 @@ try:
 except:
     try: import nfl_data_py as nfl; NFL_DATA=True
     except: NFL_DATA=False
-try: from playwright.async_api import async_playwright; PLAYWRIGHT=True
-except: PLAYWRIGHT=False
+try:
+    from playwright.async_api import async_playwright
+    PLAYWRIGHT = str(os.getenv("PH_BROWSER_ENABLED", "0")).lower() in {"1","true","yes","on"}
+except Exception:
+    PLAYWRIGHT = False
 try: from supabase import create_client; HAS_SUPABASE=True
 except: HAS_SUPABASE=False
 try: import cloudscraper; HAS_CLOUDSCRAPER=True
@@ -1708,9 +1711,16 @@ def _req(url,params,retries=1):
         params["apiKey"] = k
         # Odds endpoints must fail fast. A single exhausted/unresponsive key must
         # never stall the whole card for 30-60 seconds.
-        odds_timeout = max(3, min(int(os.getenv("PH_ODDS_HTTP_TIMEOUT", "8")), TIMEOUT))
-        try: r=requests.get(url,params=params,headers=HTTP_H,timeout=odds_timeout)
-        except requests.RequestException as e: log.warning("HTTP: %s",e); time.sleep(1); continue
+        odds_timeout = max(3, min(int(os.getenv("PH_ODDS_HTTP_TIMEOUT", "5")), TIMEOUT))
+        try:
+            r=requests.get(url,params=params,headers=HTTP_H,timeout=odds_timeout)
+        except requests.RequestException as e:
+            log.warning("Odds API key %d failed fast: %s", (_kid % len(ODDS_API_KEYS)) + 1, e)
+            _next_key()
+            if _all_keys_dead():
+                log.error("ALL Odds API keys unavailable/exhausted")
+                return None
+            continue
         if r.status_code==200:
             rem = r.headers.get("x-requests-remaining","?")
             log.debug("ok quota=%s", rem)
