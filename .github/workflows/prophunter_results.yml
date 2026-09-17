@@ -85,6 +85,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+          PH_RESULTS_LOOKBACK_DAYS: '4'
+          PH_RESULTS_FALLBACK_SUMMARY: '0'
+          PH_RESULTS_HTTP_TIMEOUT: '8'
         run: |
           python prop_hunter_feature_builder.py || true
           python prop_hunter_settler.py
