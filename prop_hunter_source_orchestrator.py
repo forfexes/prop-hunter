@@ -134,10 +134,17 @@ def _direct_jobs(sports: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dic
                 }.get(s, s))))
     except Exception:
         pass
+    skip_blocked = str(os.getenv("PH_SKIP_BLOCKED_FREE", "0")).lower() in {"1","true","yes","on"}
     for sport in sports:
+        # PrizePicks and DraftKings are persistently 403/429 on GitHub runners and
+        # their internal Playwright fallback is intentionally unavailable on card
+        # runs. Skip them in lean mode instead of paying the failure cost per sport.
+        if not skip_blocked:
+            jobs.extend([
+                (f"prizepicks_{sport.lower()}", lambda s=sport: ppud.fetch_prizepicks(s)),
+                (f"draftkings_{sport.lower()}", lambda s=sport: ppud.fetch_draftkings(s)),
+            ])
         jobs.extend([
-            (f"prizepicks_{sport.lower()}", lambda s=sport: ppud.fetch_prizepicks(s)),
-            (f"draftkings_{sport.lower()}", lambda s=sport: ppud.fetch_draftkings(s)),
             (f"fanduel_{sport.lower()}", lambda s=sport: ppud.fetch_fanduel(s)),
             (f"bovada_{sport.lower()}", lambda s=sport: ppud.fetch_bovada(s)),
             (f"espn_bet_{sport.lower()}", lambda s=sport: ppud.fetch_espn_bet(s)),
