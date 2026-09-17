@@ -16,7 +16,7 @@ concurrency:
 jobs:
   card:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,7 +66,7 @@ jobs:
 
       - name: Local integrity gate
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.8.2-SOURCES-RUNTIME
+          PH_EXPECTED_RUNTIME_VERSION: 13.8.3-RUNTIME-LEAN
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
@@ -85,6 +85,8 @@ jobs:
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
           PH_FAST_BROWSER_BOOKS: bet365,betmgm,caesars,betrivers,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay
           PH_FAST_BROWSER_JOBS: '0'
+          PH_SKIP_BLOCKED_FREE: '1'
+          PH_BROWSER_ENABLED: '0'
         run: |
           if [ -f prop_hunter_source_orchestrator.py ]; then python prop_hunter_source_orchestrator.py --mode fast; else echo "source orchestrator absent; using in-engine collectors"; fi
 
@@ -130,6 +132,9 @@ jobs:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           PH_SGO_DIRECT: '0'
+          PH_ODDS_HTTP_TIMEOUT: '5'
+          PH_AI_RETRY: '0'
+          PH_BROWSER_ENABLED: '0'
         run: python prophunter.py
 
       - name: Save card state
