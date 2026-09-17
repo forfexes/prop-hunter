@@ -8,7 +8,7 @@ from prop_hunter_http import get as _http_get
 from prop_hunter_sgo import fetch_sgo_props as _sgo_fetch
 from prop_hunter_shared_utils import _json_clean
 
-EXPECTED=os.getenv("PH_EXPECTED_RUNTIME_VERSION","13.8.2-SOURCES-RUNTIME")
+EXPECTED=os.getenv("PH_EXPECTED_RUNTIME_VERSION","13.8.3-RUNTIME-LEAN")
 
 def fail(msg): raise SystemExit(f"RUNTIME GUARD FAILED: {msg}")
 
