@@ -1,108 +1,122 @@
 #!/usr/bin/env python3
-"""
-PROP HUNTER — LEARNING UPDATE
-=============================
+"""PROP HUNTER — autonomous learning update.
 
-Lernt aus Settlements:
-- ROI / Trefferquote pro Sport, Liga, Markt, Rule, Player
-- schreibt prop_hunter_rule_performance
-- schreibt prop_hunter_learning_summary.json
+Turns settled results into market/source/bookmaker performance and conservative
+weights. Existing Supabase tables are used; no migration is required.
 """
-
 from __future__ import annotations
-
 from collections import defaultdict
+import math
+from typing import Any, Dict, Iterable, Tuple
+from prop_hunter_shared_utils import select_rows, upsert_rows, safe_json_write, hash_key, now_iso, log, norm_market, to_float
 
-from prop_hunter_shared_utils import (
-    select_rows, upsert_rows, safe_json_write, log, norm_name, norm_market,
-    to_float, hash_key, now_iso
-)
 
-OUT = "prop_hunter_learning_summary.json"
+def _base_market(value: Any) -> str:
+    import re
+    m = norm_market(value)
+    m = re.sub(r"\b(over|under|o|u|plus)\b", " ", m)
+    m = re.sub(r"\d+(?:\s+\d+)?", " ", m)
+    return re.sub(r"\s+", " ", m).strip() or "unknown"
 
-def profit_for_result(result: str, odds_decimal, stake=1.0) -> float:
-    odds = to_float(odds_decimal, 1.0) or 1.0
-    if result == "win":
-        return stake * (odds - 1.0)
-    if result == "loss":
-        return -stake
+
+def _profit(result: str, odds: float, stake: float) -> float:
+    if result == "win": return stake * max(0.0, odds - 1.0)
+    if result == "loss": return -stake
     return 0.0
 
-def market_base(market):
-    """Linienfreie Marktgruppe: 'Total Bases Over 1.5' -> 'total bases' (stabil ueber Tage)."""
-    import re as _re
-    m = norm_market(market)
-    m = _re.sub(r"\b(over|under|o|u|plus)\b", " ", m)
-    m = _re.sub(r"\d+", " ", m)
-    return _re.sub(r"\s+", " ", m).strip()
 
-def key_parts(r):
-    return {
-        "sport": str(r.get("sport") or "UNKNOWN").upper(),
-        "league": str(r.get("league") or "UNKNOWN").upper(),
-        "market_key": market_base(r.get("market") or "unknown"),
-        "rule_id": str(r.get("rule_id") or r.get("pick_raw", {}).get("rule_id") or "unknown"),
-        "player_key": norm_name(r.get("player_name") or "unknown"),
-    }
+def _weight(roi: float, n: int) -> float:
+    # Heavy shrinkage until enough data exists; avoids over-learning short streaks.
+    reliability = min(1.0, max(0.0, (n - 10) / 90.0))
+    signal = math.tanh(roi / 0.18)
+    return round(max(0.70, min(1.30, 1.0 + 0.30 * signal * reliability)), 3)
+
+
+def _accumulate(groups, key: Tuple[str, str], result: str, profit: float, stake: float):
+    g = groups[key]
+    g["bets"] += 1; g["stake"] += stake; g["profit"] += profit
+    if result == "win": g["wins"] += 1
+    elif result == "loss": g["losses"] += 1
+    elif result == "push": g["pushes"] += 1
+
 
 def main():
     results = select_rows("prop_hunter_results", limit=20000)
-    groups = defaultdict(lambda: {"bets": 0, "wins": 0, "losses": 0, "pushes": 0, "profit": 0.0, "stake": 0.0})
-    for r in results:
-        result = str(r.get("result") or "").lower()
-        if result not in ("win", "loss", "push"):
-            continue
-        raw = r.get("pick_raw") or {}
-        odds = raw.get("odds_decimal") or raw.get("odds") or raw.get("price")
+    audits = select_rows("prop_hunter_source_audit", limit=10000)
+    groups = defaultdict(lambda: {"bets":0,"wins":0,"losses":0,"pushes":0,"profit":0.0,"stake":0.0})
+    source_perf = defaultdict(lambda: {"bets":0,"wins":0,"losses":0,"pushes":0,"profit":0.0,"stake":0.0})
+
+    for row in results:
+        result = str(row.get("result") or "").lower()
+        if result not in {"win","loss","push"}: continue
+        raw = row.get("pick_raw") if isinstance(row.get("pick_raw"), dict) else {}
+        sport = str(row.get("sport") or raw.get("sport") or "UNKNOWN").upper()
+        league = str(row.get("league") or raw.get("league") or sport).upper()
+        market = _base_market(row.get("market") or raw.get("market") or raw.get("prop_type"))
+        source = str(raw.get("source") or raw.get("bookmaker") or raw.get("book") or "unknown").strip().lower()
+        book = str(raw.get("bookmaker") or raw.get("book") or source).strip().lower()
+        odds = to_float(raw.get("odds") or raw.get("odds_decimal"), 2.0) or 2.0
         stake = to_float(raw.get("stake"), 1.0) or 1.0
-        parts = key_parts(r)
-        keys = [
-            ("rule", parts["rule_id"]),
-            ("market", parts["sport"] + "|" + parts["league"] + "|" + parts["market_key"]),
-            ("player", parts["sport"] + "|" + parts["league"] + "|" + parts["player_key"]),
-            ("sport_league", parts["sport"] + "|" + parts["league"]),
-        ]
-        for group_type, group_key in keys:
-            g = groups[(group_type, group_key)]
-            g["bets"] += 1
-            g["stake"] += stake
-            g["profit"] += profit_for_result(result, odds, stake)
-            if result == "win":
-                g["wins"] += 1
-            elif result == "loss":
-                g["losses"] += 1
-            elif result == "push":
-                g["pushes"] += 1
+        profit = to_float(row.get("profit"), None)
+        if profit is None: profit = _profit(result, odds, stake)
+        _accumulate(groups, ("market", f"{sport}|{sport}|{market}"), result, profit, stake)
+        if league and league != sport:
+            _accumulate(groups, ("league_market", f"{sport}|{league}|{market}"), result, profit, stake)
+        _accumulate(groups, ("sport_market", f"{sport}|{market}"), result, profit, stake)
+        _accumulate(groups, ("bookmaker", f"{sport}|{book}|{market}"), result, profit, stake)
+        _accumulate(source_perf, (source, "all"), result, profit, stake)
 
-    rows = []
-    for (group_type, group_key), g in groups.items():
-        bets = g["bets"]
-        wins = g["wins"]
-        stake = g["stake"] or 1.0
-        roi = g["profit"] / stake
-        hit_rate = wins / bets if bets else 0
-        weight = 1.0
-        if bets >= 20:
-            weight = max(0.70, min(1.30, 1.0 + roi * 0.25 + (hit_rate - 0.52) * 0.20))
-        rows.append({
-            "performance_id": hash_key(group_type, group_key),
-            "group_type": group_type,
-            "group_key": group_key,
-            "bets": bets,
-            "wins": g["wins"],
-            "losses": g["losses"],
-            "pushes": g["pushes"],
-            "profit": round(g["profit"], 4),
-            "stake": round(g["stake"], 4),
-            "roi": round(roi, 6),
-            "hit_rate": round(hit_rate, 6),
-            "learning_weight": round(weight, 6),
-            "updated_at": now_iso(),
-        })
+    perf_rows=[]
+    report={}
+    for (gtype,gkey), g in groups.items():
+        n=g["bets"]; decided=g["wins"]+g["losses"]
+        hit=(g["wins"]/decided) if decided else None
+        roi=(g["profit"]/g["stake"]) if g["stake"] else 0.0
+        w=_weight(roi,n)
+        row={
+            "performance_id":hash_key(gtype,gkey), "rule_id":gkey, "group_type":gtype, "group_key":gkey,
+            "bets":n,"sample_size":n,"wins":g["wins"],"losses":g["losses"],"pushes":g["pushes"],
+            "profit":round(g["profit"],4),"stake":round(g["stake"],4),"roi":round(roi,5),
+            "hit_rate":round(hit,5) if hit is not None else None,"learning_weight":w,"learned_weight":w,"updated_at":now_iso(),
+        }
+        perf_rows.append(row); report[f"{gtype}:{gkey}"]=row
+    upsert_rows("prop_hunter_rule_performance", perf_rows, "performance_id")
+    safe_json_write("prop_hunter_autolearn_report.json", report)
 
-    safe_json_write(OUT, rows)
-    upsert_rows("prop_hunter_rule_performance", rows, "performance_id")
-    log(f"learning update done: groups={len(rows)}")
+    audit_by_source=defaultdict(lambda:{"ok":0,"bad":0,"lat":[]})
+    for a in audits:
+        if str(a.get("check_type") or a.get("section") or "").lower() != "source_health":
+            continue
+        s=str(a.get("source_name") or a.get("item_key") or "").strip().lower()
+        if not s: continue
+        st=str(a.get("status") or "").lower()
+        if st in {"ok","healthy","success","active","cached"}: audit_by_source[s]["ok"] += 1
+        elif st in {"error","failed","missing","dead","timeout","blocked","empty"}: audit_by_source[s]["bad"] += 1
+        lat=to_float(a.get("latency_ms"))
+        if lat is not None: audit_by_source[s]["lat"].append(lat)
 
-if __name__ == "__main__":
-    main()
+    trust_rows=[]; trust_json={}
+    all_sources=set(audit_by_source) | {k[0] for k in source_perf}
+    for source in sorted(all_sources):
+        p=source_perf.get((source,"all"), {"bets":0,"wins":0,"losses":0,"pushes":0,"profit":0.0,"stake":0.0})
+        a=audit_by_source[source]
+        checks=a["ok"]+a["bad"]
+        success=(a["ok"]/checks) if checks else 0.75
+        n=p["bets"]; roi=(p["profit"]/p["stake"]) if p["stake"] else 0.0
+        sample=min(1.0,n/80.0)
+        roi_score=50.0 + 45.0*math.tanh(roi/0.20)
+        health_score=100.0*success
+        trust=(1-sample)*health_score + sample*(0.45*health_score+0.55*roi_score)
+        trust=max(5.0,min(100.0,trust))
+        avg_lat=(sum(a["lat"])/len(a["lat"])) if a["lat"] else None
+        row={"source_name":source,"trust_score":round(trust,2),"success_rate":round(success,4),
+             "avg_latency_ms":round(avg_lat,1) if avg_lat is not None else None,"roi_units":round(p["profit"],4),
+             "notes":"auto-learned; conservative until sample grows",
+             "raw":{"settled_samples":n,"roi":round(roi,5),"wins":p["wins"],"losses":p["losses"],"checks":checks},
+             "updated_at":now_iso()}
+        trust_rows.append(row); trust_json[source]=row
+    upsert_rows("prop_hunter_source_trust", trust_rows, "source_name")
+    safe_json_write("prop_hunter_source_trust.json", trust_json)
+    log(f"learning update: results={len(results)} groups={len(perf_rows)} sources={len(trust_rows)}")
+
+if __name__ == "__main__": main()
