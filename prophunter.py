@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.8.3-RUNTIME-LEAN"
+PH_RUNTIME_VERSION = "13.9.0-SELF-MAINTAINING"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -3400,24 +3400,42 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     # observed prices for every leg.
     out = accepted_singles
 
-    # ─── LEARNING: Stakes nach historischer Markt-Performance anpassen ───
+    # ─── SELF-LEARNING: Markt + Quelle gemeinsam gewichten ───
+    # Missing/new sources remain neutral. A source is only blocked after a
+    # meaningful settled sample, so discovery cannot kill fresh sources.
     weights = load_learning_weights()
-    if weights:
-        learned_out = []
-        learn_blocked = 0
-        for p in out:
-            if p.type == "single":
-                w = learning_multiplier(p)
-                if w <= 0.75:
-                    # Markt performt historisch sehr schlecht → Single blocken
-                    learn_blocked += 1
-                    continue
-                # Stake mit Gewicht skalieren (0.75–1.30 → moderate Anpassung)
-                p.stake = round((p.stake or 0.33) * w, 2)
-            learned_out.append(p)
-        if learn_blocked:
-            log.info("Learning: %d Singles geblockt (Markt-ROI historisch schlecht)", learn_blocked)
-        out = learned_out
+    try:
+        from prop_hunter_source_manager import source_weight, source_is_blocked
+    except Exception:
+        source_weight = lambda source, sport=None, market=None: 1.0
+        source_is_blocked = lambda source: False
+    learned_out = []
+    learn_blocked = source_blocked = 0
+    for p in out:
+        if p.type == "single":
+            feats = getattr(p, "features", {}) or {}
+            source = feats.get("source") or feats.get("bookmaker") or getattr(p, "bookmaker", None)
+            if source_is_blocked(source):
+                source_blocked += 1
+                continue
+            market_w = learning_multiplier(p) if weights else 1.0
+            source_w = source_weight(source, getattr(p, "sport", None), getattr(p, "market", None))
+            if market_w <= 0.75:
+                learn_blocked += 1
+                continue
+            combined_w = max(0.65, min(1.35, market_w * source_w))
+            p.stake = round(max(MIN_STAKE, min(MAX_STAKE, (p.stake or 0.33) * combined_w)), 2)
+            try:
+                p.features = dict(feats)
+                p.features["learning_market_weight"] = round(market_w, 3)
+                p.features["learning_source_weight"] = round(source_w, 3)
+                p.features["learning_combined_weight"] = round(combined_w, 3)
+            except Exception:
+                pass
+        learned_out.append(p)
+    if learn_blocked or source_blocked:
+        log.info("Learning: market_blocked=%d source_blocked=%d", learn_blocked, source_blocked)
+    out = learned_out
 
     log.info("quality filter: %d → %d | rejected=%s", len(picks), len(out), dict(rejected))
     return out
