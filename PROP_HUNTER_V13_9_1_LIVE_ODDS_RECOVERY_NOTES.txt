@@ -1,0 +1,11 @@
+PROP HUNTER V13.9.1 LIVE ODDS RECOVERY
+
+Fixes from logs_95832573229 + logs_95755636945:
+- Card had 0 props because all 6 The Odds API keys were quota-exhausted, OddsPapi returned 429, free sportsbook connectors returned 0/403/426, and SPORTSGAMEODDS_KEY was empty.
+- Adds BALLDONTLIE live sportsbook player props as a bounded real-price fallback using the already configured BALLDONTLIE_API_KEY.
+- Current BDL direct coverage in this patch: MLB, NBA, NFL, NCAAF. Each prop keeps the real vendor/bookmaker and real American-price converted to decimal; no synthetic @1.85 is invented.
+- Max 4 games per sport and 5s request timeout by default to protect GitHub minutes.
+- Results workflow dependencies now include curl_cffi and nflreadpy, fixing the missing-module failures seen in the results log.
+- Inline settlement remains in prophunter_results.py. Old Telegram tips created before message_id storage cannot be edited retroactively; every new card sent by the current prophunter.py stores message_id and can be settled in-place.
+
+No Supabase SQL change required for this patch.
