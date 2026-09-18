@@ -15,7 +15,7 @@ concurrency:
 jobs:
   results:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,7 +63,8 @@ jobs:
         run: |
           python -m py_compile prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_feature_builder.py
           python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py
-          python -m py_compile prop_hunter_learning_update.py
+          python -m py_compile prop_hunter_learning_update.py prop_hunter_source_manager.py prop_hunter_model_registry.py
+          python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py
 
       - name: Fetch official results and gamelogs
         env:
@@ -98,13 +99,17 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python prop_hunter_learning_update.py || true
+          python prop_hunter_learning_update.py
+          python prop_hunter_model_registry.py
+          python prop_hunter_coverage_watchdog.py || true
+          python prop_hunter_market_discovery.py || true
 
       - name: Save results and learning
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add picks_history.json prop_hunter_model_registry.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_source_trust.json 2>/dev/null || true
+          git add picks_history.json prop_hunter_model_registry.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_source_trust.json \
+            prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_identity_cache.json ml_model.pkl 2>/dev/null || true
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter results $(date -u +%F)"
           git push
