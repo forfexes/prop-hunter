@@ -14,7 +14,7 @@ from typing import Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
-PH_RUNTIME_VERSION = "13.9.0-SELF-MAINTAINING"
+PH_RUNTIME_VERSION = "13.9.1-LIVE-ODDS-RECOVERY"
 
 def norm_name(s) -> str:
     """IDENTISCH zu prop_hunter_shared_utils.norm_name — für korrektes DB-Matching
@@ -2839,6 +2839,113 @@ def _observed_rows_to_props(rows: list, source_name: str, sport_key: str) -> lis
     return out
 
 
+
+# ─────────────────────────────────────────────
+# BALLDONTLIE LIVE SPORTSBOOK PLAYER PROPS
+# ─────────────────────────────────────────────
+def _american_to_decimal(value):
+    try:
+        a=float(value)
+        if a==0: return 0.0
+        return round(1.0 + (a/100.0 if a>0 else 100.0/abs(a)), 4)
+    except Exception:
+        return 0.0
+
+def fetch_bdl_live_props(sport_key: str) -> list:
+    """Live sportsbook player props from BALLDONTLIE.
+
+    This is a real-price fallback for periods when The Odds API quota is exhausted.
+    Calls are bounded so the normal card run remains minute-safe.
+    """
+    if not BALLDONTLIE_KEY:
+        return []
+    spec={
+        'basketball_nba': ('NBA','🏀','https://api.balldontlie.io/v1/games','https://api.balldontlie.io/v2/odds/player_props','https://api.balldontlie.io/v1/players'),
+        'baseball_mlb': ('MLB','⚾','https://api.balldontlie.io/mlb/v1/games','https://api.balldontlie.io/mlb/v1/odds/player_props','https://api.balldontlie.io/mlb/v1/players'),
+        'americanfootball_nfl': ('NFL','🏈','https://api.balldontlie.io/nfl/v1/games','https://api.balldontlie.io/nfl/v1/odds/player_props','https://api.balldontlie.io/nfl/v1/players'),
+        'americanfootball_ncaaf': ('NCAAF','🏈','https://api.balldontlie.io/ncaaf/v1/games','https://api.balldontlie.io/ncaaf/v1/odds/player_props','https://api.balldontlie.io/ncaaf/v1/players'),
+    }.get(sport_key)
+    if not spec:
+        return []
+    label,emoji,games_url,props_url,players_url=spec
+    timeout=max(3,min(8,int(os.getenv('PH_BDL_TIMEOUT','5'))))
+    max_games=max(1,min(8,int(os.getenv('PH_BDL_MAX_GAMES','4'))))
+    headers={'Authorization':BALLDONTLIE_KEY}
+    today=datetime.now(timezone.utc).date()
+    params=[('dates[]',today.isoformat()),('dates[]',(today+timedelta(days=1)).isoformat()),('per_page',25)]
+    try:
+        rg=requests.get(games_url,headers=headers,params=params,timeout=timeout)
+        if rg.status_code in (401,402,403,429):
+            log.warning('BDL %s games unavailable HTTP %s',label,rg.status_code)
+            return []
+        if rg.status_code!=200:
+            log.warning('BDL %s games HTTP %s',label,rg.status_code); return []
+        games=list((rg.json() or {}).get('data') or [])[:max_games]
+    except Exception as e:
+        log.warning('BDL %s games: %s',label,e); return []
+    if not games:
+        return []
+    raw=[]; game_map={}
+    for g in games:
+        gid=g.get('id')
+        if gid is None: continue
+        home=(g.get('home_team') or {}).get('full_name') or (g.get('home_team') or {}).get('name') or ''
+        away=(g.get('visitor_team') or g.get('away_team') or {}).get('full_name') or (g.get('visitor_team') or g.get('away_team') or {}).get('name') or ''
+        game_map[str(gid)]=(home,away,g.get('date') or g.get('datetime'))
+        try:
+            rp=requests.get(props_url,headers=headers,params={'game_id':gid},timeout=timeout)
+            if rp.status_code in (401,402,403):
+                log.warning('BDL %s player props require a plan with props access (HTTP %s)',label,rp.status_code)
+                return []
+            if rp.status_code==429:
+                log.warning('BDL %s player props rate limited',label); break
+            if rp.status_code!=200: continue
+            raw.extend((rp.json() or {}).get('data') or [])
+        except Exception as e:
+            log.warning('BDL %s props game=%s: %s',label,gid,e)
+    if not raw:
+        return []
+    ids=sorted({str(x.get('player_id')) for x in raw if x.get('player_id') is not None})
+    names={}
+    for start in range(0,len(ids),100):
+        batch=ids[start:start+100]
+        try:
+            pp=[('player_ids[]',x) for x in batch]+[('per_page',100)]
+            rr=requests.get(players_url,headers=headers,params=pp,timeout=timeout)
+            if rr.status_code!=200: continue
+            for pl in (rr.json() or {}).get('data') or []:
+                pid=str(pl.get('id'))
+                name=pl.get('full_name') or pl.get('display_name') or ('%s %s'% (pl.get('first_name',''),pl.get('last_name',''))).strip()
+                if pid and name: names[pid]=name
+        except Exception:
+            continue
+    out=[]
+    for x in raw:
+        pid=str(x.get('player_id') or '')
+        player=names.get(pid)
+        if not player: continue
+        market=str(x.get('prop_type') or '').strip()
+        try: line=float(x.get('line_value'))
+        except Exception: continue
+        vendor=str(x.get('vendor') or 'balldontlie').lower()
+        m=x.get('market') or {}
+        gid=str(x.get('game_id') or '')
+        home,away,ct=game_map.get(gid,('','',''))
+        base=dict(player=player,market=market,point=line,sport=label,emoji=emoji,game=f'{away} @ {home}'.strip(' @'),home=home or None,away=away or None,features={'odds_observed':True,'price_type':'sportsbook_observed','source':'balldontlie','bookmaker':vendor,'bdl_game_id':gid})
+        if m.get('type')=='over_under':
+            for direction,key in [('over','over_odds'),('under','under_odds')]:
+                dec=_american_to_decimal(m.get(key))
+                if dec>1.01:
+                    try: out.append(Prop(**base,odds=dec,direction=direction))
+                    except Exception: pass
+        else:
+            dec=_american_to_decimal(m.get('odds'))
+            if dec>1.01:
+                try: out.append(Prop(**base,odds=dec,direction='yes'))
+                except Exception: pass
+    log.info('BDL live props: %d (%s, %d games)',len(out),label,len(games))
+    return out
+
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
     cache=load_cache(); new_cache={}
@@ -3011,6 +3118,16 @@ def gather(sport_filter=None):
                 all_props.extend(props)
                 active.append(f"(SGO){SPORTS[sk].name}({len(props)})")
 
+    # BALLDONTLIE: bounded real-price fallback/additive source. The key is already
+    # present in the card workflow and this avoids a total blackout when Odds API
+    # quotas are exhausted.
+    if BALLDONTLIE_KEY:
+        for sk in [k for k in ('baseball_mlb','basketball_nba','americanfootball_nfl','americanfootball_ncaaf') if k in sports]:
+            bdl_props=fetch_bdl_live_props(sk)
+            if bdl_props:
+                all_props.extend(bdl_props)
+                active.append(f'(BDL){SPORTS[sk].name}({len(bdl_props)})')
+
     # NBA/WNBA batch enrichment
     nba=[p for p in all_props if p.sport=="NBA"]
     if nba:
@@ -3046,7 +3163,15 @@ def gather(sport_filter=None):
             all_props=enrich_gamelogs_fairprob(all_props)
             log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
             return all_props
-        # ProCruncher Fallback wenn OddsPapi auch leer
+        # BALLDONTLIE live sportsbook props before browser/synthetic fallbacks.
+        if BALLDONTLIE_KEY:
+            for sk in [k for k in ('baseball_mlb','basketball_nba','americanfootball_nfl','americanfootball_ncaaf') if k in sports]:
+                all_props.extend(fetch_bdl_live_props(sk))
+            if all_props:
+                all_props=enrich_gamelogs_fairprob(all_props)
+                log.info("ACTIVE (BALLDONTLIE): props: %d",len(all_props))
+                return all_props
+        # ProCruncher Fallback wenn alle echten Preisquellen leer sind
         log.info("ProCruncher Fallback aktiviert")
         all_props = gather_propcruncher_fallback(sport_filter)
         if all_props:
