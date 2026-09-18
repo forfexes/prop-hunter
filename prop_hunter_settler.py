@@ -29,6 +29,12 @@ from prop_hunter_shared_utils import (
     to_float, hash_key, now_iso, pick_id
 )
 
+try:
+    from prop_hunter_identity_hub import identity_match, learn_aliases
+except Exception:
+    identity_match = lambda a, b, threshold=94, aliases=None: norm_name(a) == norm_name(b)
+    learn_aliases = lambda rows: {}
+
 OUT = "prop_hunter_results_settled.json"
 
 MARKET_STAT_MAP = {
@@ -151,19 +157,19 @@ def result_for_value(value: Any, line: Optional[float], side: str) -> str:
         return "win" if v < line else "loss"
     return "win" if v > line else "loss"
 
-def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    pname = norm_name(pick.get("player_name") or pick.get("player") or pick.get("selection"))
-    sport = str(pick.get("sport") or "").upper()
-    league = str(pick.get("league") or "").upper()
+def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]], aliases=None) -> Optional[Dict[str, Any]]:
+    pname = pick.get("player_name") or pick.get("player") or pick.get("selection")
     game_id = str(pick.get("game_id") or pick.get("source_game_id") or "")
+    # Exact/canonical identity + game id first.
     for gl in logs:
-        if pname and norm_name(gl.get("player_name")) != pname:
+        if pname and not identity_match(pname, gl.get("player_name"), threshold=98, aliases=aliases):
             continue
         if game_id and str(gl.get("game_id") or gl.get("source_game_id")) != game_id:
             continue
         return gl
+    # Then conservative fuzzy/canonical fallback when provider game ids differ.
     for gl in logs:
-        if pname and norm_name(gl.get("player_name")) == pname:
+        if pname and identity_match(pname, gl.get("player_name"), threshold=94, aliases=aliases):
             return gl
     return None
 
@@ -174,11 +180,12 @@ def main():
     picks = load_picks()
     logs = select_rows("prop_hunter_player_gamelogs", limit=int(os.getenv("SETTLE_LOG_LIMIT", "20000")))
     settled = []
+    aliases = learn_aliases(list(picks) + list(logs))
     for p in picks:
         stat = detect_stat(p.get("market") or p.get("prop_type") or p.get("selection"))
         if not stat:
             continue
-        gl = find_gamelog(p, logs)
+        gl = find_gamelog(p, logs, aliases=aliases)
         if not gl:
             continue
         value = stat_value(gl, stat)
