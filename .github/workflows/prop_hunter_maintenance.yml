@@ -1,21 +1,21 @@
-name: Prop Hunter Source Discovery Automatic
+name: Prop Hunter Self Maintenance
 
 "on":
-  workflow_dispatch:
+  workflow_dispatch: {}
   schedule:
-    - cron: '15 3 * * 0'  # one weekly run; saves Actions minutes
+    - cron: '15 3 * * 0'
 
 permissions:
   contents: write
 
 concurrency:
   group: prop-hunter-maintenance
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   maintenance:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,72 +28,52 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
-
-      - name: Supabase preflight
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: |
-          python - <<'PY'
-          import os, urllib.error, urllib.request
-          url = os.environ.get("SUPABASE_URL", "").rstrip("/")
-          key = os.environ.get("SUPABASE_KEY", "")
-          if not url or not key:
-              raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
-          req = urllib.request.Request(
-              f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",
-              headers={"apikey": key},
-          )
-          try:
-              with urllib.request.urlopen(req, timeout=15) as response:
-                  if response.status != 200:
-                      raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
-          except urllib.error.HTTPError as exc:
-              body = exc.read().decode("utf-8", "ignore")[:300]
-              raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
-          except Exception as exc:
-              raise SystemExit(f"Supabase preflight failed: {exc}")
-          print("Supabase preflight OK")
-          PY
-
       - name: Install
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          python -m playwright install chromium || true
+          # No Chromium here: discovery must not burn Actions minutes.
 
-      - name: Audit and discover sources
+      - name: Integrity
+        env:
+          PH_EXPECTED_RUNTIME_VERSION: 13.9.0-SELF-MAINTAINING
+        run: |
+          python -m compileall -q .
+          python prop_hunter_runtime_guard.py
+
+      - name: Source health and discovery
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL
-          PH_BROWSER_BOOKS: betmgm,caesars,betrivers,superbook,fanatics,hardrock,thescore,bet365,action_network,betr,dabble,chalkboard,parlayplay
-          PH_MAX_BROWSER_JOBS: '12'
+          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL,NCAAB,NCAAF
+          PH_BROWSER_ENABLED: '0'
+          PH_FAST_BROWSER_JOBS: '0'
+          PH_SKIP_BLOCKED_FREE: '1'
         run: |
           python prop_hunter_source_audit.py || true
-          python prop_hunter_github_source_scanner.py || true
-          python prop_hunter_web_source_scanner.py || true
-          python prop_hunter_candidate_tester.py || true
-          python prop_hunter_source_orchestrator.py --mode all || true
+          python prop_hunter_github_watcher.py || true
+          python prop_hunter_source_orchestrator.py --mode fast || true
 
-      - name: Weekly official-data backfills
+      - name: Autonomous learning and coverage
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python prop_hunter_statcast_backfill.py || true
-          python prop_hunter_feature_builder.py || true
+          python prop_hunter_learning_update.py
+          python prop_hunter_model_registry.py
+          python prop_hunter_coverage_watchdog.py
+          python prop_hunter_market_discovery.py
+          python prop_hunter_retrainer.py || true
 
-      - name: Save source registry and learning
+      - name: Save learned state
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add \
-            prop_hunter_github_sources.json prop_hunter_web_sources.json \
-            prop_hunter_candidate_health.json prop_hunter_source_registry.json \
-            prop_hunter_source_trust.json prop_hunter_model_registry.json \
-            prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json \
-            2>/dev/null || true
-          git diff --staged --quiet && echo "No maintenance changes" && exit 0
-          git commit -m "prop hunter source discovery $(date -u +%F)"
+          git add prop_hunter_source_audit.json prop_hunter_source_trust.json \
+            prop_hunter_model_registry.json prop_hunter_autolearn_report.json \
+            prop_hunter_coverage_report.json prop_hunter_market_discovery.json \
+            prop_hunter_identity_cache.json ml_model.pkl 2>/dev/null || true
+          git diff --staged --quiet && exit 0
+          git commit -m "prop hunter self maintenance $(date -u +%F)"
           git push
