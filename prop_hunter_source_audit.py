@@ -8,13 +8,13 @@ from prop_hunter_shared_utils import hash_key, log, now_iso, safe_json_write, up
 
 FILES = [
     "prophunter.py", "prophunter_results.py", "prop_hunter_source_catalog.py",
-    "prop_hunter_source_orchestrator.py", "prop_hunter_source_hub.py",
-    "prop_hunter_browser_bookies.py", "prop_hunter_autolearn.py",
-    "prop_hunter_builder_learning.py", "prop_hunter_builder_engine.py",
-    "prop_hunter_odds_pp_ud.py", "prop_hunter_scraper.py",
-    "prop_hunter_history_scraper.py", "prop_hunter_feature_builder.py",
-    "prop_hunter_source_reliability.py", "prop_hunter_github_source_scanner.py",
-    "prop_hunter_web_source_scanner.py", "prop_hunter_candidate_tester.py",
+    "prop_hunter_source_orchestrator.py", "prop_hunter_source_manager.py",
+    "prop_hunter_learning_update.py", "prop_hunter_model_registry.py",
+    "prop_hunter_retrainer.py", "prop_hunter_coverage_watchdog.py",
+    "prop_hunter_market_discovery.py", "prop_hunter_identity_hub.py",
+    "prop_hunter_builder_engine.py", "prop_hunter_odds_pp_ud.py",
+    "prop_hunter_scraper.py", "prop_hunter_feature_builder.py",
+    "prop_hunter_github_watcher.py", "prop_hunter_settler.py",
     ".github/workflows/prophunter.yml", ".github/workflows/prophunter_results.yml",
     ".github/workflows/prop_hunter_maintenance.yml", "requirements.txt",
 ]
