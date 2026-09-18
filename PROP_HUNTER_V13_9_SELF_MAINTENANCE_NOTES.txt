@@ -1,0 +1,44 @@
+PROP HUNTER V13.9.0 — SELF-MAINTENANCE / LEARNING ARCHITECTURE
+
+REPLACE / ADD THESE FILES
+- prophunter.py
+- prop_hunter_settler.py
+- prop_hunter_source_audit.py
+- prop_hunter_runtime_guard.py
+- prop_hunter_identity_hub.py
+- prop_hunter_source_manager.py
+- prop_hunter_learning_update.py
+- prop_hunter_model_registry.py
+- prop_hunter_retrainer.py
+- prop_hunter_market_discovery.py
+- prop_hunter_coverage_watchdog.py
+- .github/workflows/prophunter.yml
+- .github/workflows/prophunter_results.yml
+- .github/workflows/prop_hunter_maintenance.yml
+
+WHAT IT DOES
+- Market performance learning -> prop_hunter_rule_performance
+- Source health/performance learning -> prop_hunter_source_trust
+- Learned source + market weights feed back into stake/filter logic
+- Player identity hub improves settlement matching across providers
+- Model registry tracks collecting/shadow/active/degraded market groups
+- Guarded weekly retraining of the existing ML model
+- Coverage watchdog detects silent sport/market/source gaps
+- New markets are discovered in shadow mode; never auto-posted blindly
+- Results workflow updates learning after settlement/inline Telegram edits
+- Maintenance remains weekly and browser-free by default to save GitHub minutes
+- Card workflow remains 2 runs/day and keeps an 8-minute hard limit
+
+SUPABASE
+No new SQL migration is required for this patch if the V13.4+ tables already exist:
+prop_hunter_results, prop_hunter_rule_performance, prop_hunter_source_trust,
+prop_hunter_source_audit, prop_hunter_prop_snapshots.
+
+LOCAL TESTS RUN
+- python compileall: OK
+- all workflow YAML parses: OK
+- runtime guard 13.9.0: OK
+- identity matching smoke test: OK
+- source manager neutral/weight smoke test: OK
+- learning aggregation smoke test: OK
+- settler identity integration smoke test: OK
