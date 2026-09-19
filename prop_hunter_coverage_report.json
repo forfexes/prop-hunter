@@ -1,0 +1,154 @@
+{
+  "updated_at": "2026-09-19T13:57:18.676063+00:00",
+  "window_hours": 36,
+  "sports": {
+    "MLB": {
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "home run",
+        "hits",
+        "total bases",
+        "rbi",
+        "pitcher strikeouts"
+      ]
+    },
+    "NBA": {
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
+    },
+    "WNBA": {
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
+    },
+    "NFL": {
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing",
+        "receptions"
+      ]
+    },
+    "NHL": {
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "shots",
+        "goals",
+        "points",
+        "assists",
+        "saves"
+      ]
+    }
+  },
+  "issues": [
+    {
+      "sport": "MLB",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "MLB",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "home run",
+        "hits",
+        "total bases",
+        "rbi",
+        "pitcher strikeouts"
+      ]
+    },
+    {
+      "sport": "NBA",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "NBA",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
+    },
+    {
+      "sport": "WNBA",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "WNBA",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
+    },
+    {
+      "sport": "NFL",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "NFL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing",
+        "receptions"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "NHL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "shots",
+        "goals",
+        "points",
+        "assists",
+        "saves"
+      ]
+    }
+  ]
+}

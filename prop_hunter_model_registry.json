@@ -1,16 +1,149 @@
 {
-  "version": 2,
-  "updated_at": "2026-08-09T10:37:27.857521+00:00",
-  "training_rows": 0,
-  "models": {},
-  "last_report": {
-    "rows": 0,
-    "trained_at": "2026-08-09T10:37:27.857499+00:00",
-    "groups": {
-      "global": {
-        "status": "insufficient",
-        "n": 0
-      }
+  "updated_at": "2026-09-19T13:57:15.774973+00:00",
+  "groups": {
+    "MLB|MLB|pitcher strikeouts": {
+      "group_type": "market",
+      "samples": 6,
+      "roi": 0.1547,
+      "hit_rate": 0.66667,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|pitcher strikeouts": {
+      "group_type": "sport_market",
+      "samples": 6,
+      "roi": 0.1547,
+      "hit_rate": 0.66667,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|hits runs rbis": {
+      "group_type": "market",
+      "samples": 3,
+      "roi": -0.35817,
+      "hit_rate": 0.33333,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|hits runs rbis": {
+      "group_type": "sport_market",
+      "samples": 3,
+      "roi": -0.35817,
+      "hit_rate": 0.33333,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|stolen base": {
+      "group_type": "market",
+      "samples": 9,
+      "roi": 10.45758,
+      "hit_rate": 0.88889,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|stolen base": {
+      "group_type": "sport_market",
+      "samples": 9,
+      "roi": 10.45758,
+      "hit_rate": 0.88889,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|home run": {
+      "group_type": "market",
+      "samples": 14,
+      "roi": 1.48728,
+      "hit_rate": 0.57143,
+      "weight": 1.013,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|home run": {
+      "group_type": "sport_market",
+      "samples": 14,
+      "roi": 1.48728,
+      "hit_rate": 0.57143,
+      "weight": 1.013,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|rbi": {
+      "group_type": "sport_market",
+      "samples": 11,
+      "roi": 0.7283,
+      "hit_rate": 0.45455,
+      "weight": 1.003,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|total bases": {
+      "group_type": "sport_market",
+      "samples": 12,
+      "roi": 0.31541,
+      "hit_rate": 0.66667,
+      "weight": 1.006,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|pitcher k": {
+      "group_type": "sport_market",
+      "samples": 1,
+      "roi": 1.14,
+      "hit_rate": 1,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|rbi": {
+      "group_type": "market",
+      "samples": 11,
+      "roi": 0.7283,
+      "hit_rate": 0.45455,
+      "weight": 1.003,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|total bases": {
+      "group_type": "market",
+      "samples": 12,
+      "roi": 0.31541,
+      "hit_rate": 0.66667,
+      "weight": 1.006,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|hits": {
+      "group_type": "sport_market",
+      "samples": 6,
+      "roi": -1.0,
+      "hit_rate": 0,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|pitcher k": {
+      "group_type": "market",
+      "samples": 1,
+      "roi": 1.14,
+      "hit_rate": 1,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|hits": {
+      "group_type": "market",
+      "samples": 6,
+      "roi": -1.0,
+      "hit_rate": 0,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
     }
   }
 }
