@@ -1,0 +1,60 @@
+{
+  "created_at": "2026-09-20T08:34:00.751288+00:00",
+  "files": {
+    "prophunter.py": true,
+    "prophunter_results.py": true,
+    "prop_hunter_source_catalog.py": true,
+    "prop_hunter_source_orchestrator.py": true,
+    "prop_hunter_source_manager.py": true,
+    "prop_hunter_learning_update.py": true,
+    "prop_hunter_model_registry.py": true,
+    "prop_hunter_retrainer.py": true,
+    "prop_hunter_coverage_watchdog.py": true,
+    "prop_hunter_market_discovery.py": true,
+    "prop_hunter_identity_hub.py": true,
+    "prop_hunter_builder_engine.py": true,
+    "prop_hunter_odds_pp_ud.py": true,
+    "prop_hunter_scraper.py": true,
+    "prop_hunter_feature_builder.py": true,
+    "prop_hunter_github_watcher.py": true,
+    "prop_hunter_settler.py": true,
+    ".github/workflows/prophunter.yml": true,
+    ".github/workflows/prophunter_results.yml": true,
+    ".github/workflows/prop_hunter_maintenance.yml": true,
+    "requirements.txt": true
+  },
+  "required_secrets": {
+    "TELEGRAM_BOT_TOKEN": false,
+    "TELEGRAM_CHAT_ID": false,
+    "SUPABASE_URL": true,
+    "SUPABASE_KEY": true
+  },
+  "optional_secrets": {
+    "GEMINI_API_KEY": false,
+    "GEMINI_API_KEYS": false,
+    "GROQ_API_KEY": false,
+    "GROQ_API_KEYS": false,
+    "BALLDONTLIE_API_KEY": false,
+    "ODDSPAPI_KEY": false,
+    "ODDSPAPI": false,
+    "GITHUB_TOKEN": true
+  },
+  "packages": {
+    "requests": true,
+    "pandas": true,
+    "supabase": true,
+    "nba_api": true,
+    "nflreadpy": true,
+    "pybaseball": true,
+    "bs4": true,
+    "rapidfuzz": true,
+    "pydantic": true,
+    "playwright": true,
+    "sklearn": true
+  },
+  "missing_files": [],
+  "missing_required_secrets": [
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_CHAT_ID"
+  ]
+}
