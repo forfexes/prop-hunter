@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-22T14:54:30.166246+00:00",
+  "updated_at": "2026-09-23T15:02:38.234450+00:00",
   "groups": {
     "MLB|MLB|pitcher strikeouts": {
       "group_type": "market",
@@ -100,15 +100,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "MLB|MLB|rbi": {
-      "group_type": "market",
-      "samples": 13,
-      "roi": 0.98164,
-      "hit_rate": 0.53846,
-      "weight": 1.01,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "MLB|MLB|total bases": {
       "group_type": "market",
       "samples": 12,
@@ -124,6 +115,15 @@
       "roi": -1.0,
       "hit_rate": 0,
       "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|rbi": {
+      "group_type": "market",
+      "samples": 13,
+      "roi": 0.98164,
+      "hit_rate": 0.53846,
+      "weight": 1.01,
       "status": "collecting",
       "min_active_samples": 60
     },
