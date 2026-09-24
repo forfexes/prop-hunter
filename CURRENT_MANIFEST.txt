@@ -1,57 +1,101 @@
-PROP HUNTER FULL CURRENT CONSOLIDATED
+PROP HUNTER CURRENT PRODUCTION MANIFEST
 Runtime: 13.9.2-HARDENED-SOURCES-SETTLEMENT
-Built from V13.7.1 + V13.8/13.8.4 + V13.9/13.9.1 + V13.9.2 hardening
 
-FILES:
+PRODUCTION WORKFLOWS
 .github/workflows/prop_hunter_github_watcher.yml
 .github/workflows/prop_hunter_maintenance.yml
 .github/workflows/prophunter.yml
 .github/workflows/prophunter_results.yml
-CURRENT_MANIFEST.txt
-PROP_HUNTER_V13_9_1_LIVE_ODDS_RECOVERY_NOTES.txt
-PROP_HUNTER_V13_9_2_HARDENED_HARD_TEST_NOTES.txt
-PROP_HUNTER_V13_9_SELF_MAINTENANCE_NOTES.txt
-_SUPABASE_SQL/PROP_HUNTER_NEW_SUPABASE_V13_4.sql
-_SUPABASE_SQL/PROP_HUNTER_V13_5_MULTISPORT.sql
-prop_hunter_builder_engine.py
-prop_hunter_builder_learning.py
-prop_hunter_clv_engine.py
-prop_hunter_coverage_watchdog.py
-prop_hunter_feature_builder.py
-prop_hunter_github_watcher.py
+
+ENTRYPOINT / CORE
+prophunter.py
+prophunter_core_1391.py
+prophunter_results.py
+prop_hunter_runtime_guard.py
 prop_hunter_hard_test.py
-prop_hunter_history_scraper.py
-prop_hunter_http.py
-prop_hunter_identity_hub.py
-prop_hunter_kambi.py
-prop_hunter_league_config.py
-prop_hunter_learning_update.py
-prop_hunter_line_movement.py
-prop_hunter_market_consensus.py
-prop_hunter_market_discovery.py
-prop_hunter_market_intelligence.py
-prop_hunter_model_registry.py
-prop_hunter_odds_pp_ud.py
+
+SOURCE / ODDS
+prop_hunter_source_catalog.py
+prop_hunter_source_orchestrator.py
+prop_hunter_source_manager.py
+prop_hunter_source_audit.py
+prop_hunter_sgo.py
 prop_hunter_oddsapi_io.py
 prop_hunter_oddspapi.py
+prop_hunter_kambi.py
+prop_hunter_odds_pp_ud.py
+prop_hunter_http.py
+prop_hunter_market_consensus.py
+prop_hunter_market_intelligence.py
+prop_hunter_line_movement.py
+
+MODELLING / BUILDERS
+prop_hunter_scoring.py
+prop_hunter_builder_engine.py
+prop_hunter_builder_learning.py
+prop_hunter_identity_hub.py
+prop_hunter_scraper.py
+
+RESULTS / SETTLEMENT
 prop_hunter_results_mlb.py
 prop_hunter_results_nba.py
+prop_hunter_results_wnba.py
 prop_hunter_results_nfl.py
 prop_hunter_results_nhl.py
-prop_hunter_results_wnba.py
-prop_hunter_retrainer.py
-prop_hunter_runtime_guard.py
-prop_hunter_scoring.py
-prop_hunter_scraper.py
+espn_multisport_results.py
+prop_hunter_feature_builder.py
 prop_hunter_settler.py
-prop_hunter_sgo.py
-prop_hunter_shared_utils.py
-prop_hunter_source_audit.py
-prop_hunter_source_catalog.py
-prop_hunter_source_manager.py
-prop_hunter_source_orchestrator.py
-prop_hunter_source_registry.py
-prophunter.py
-prophunter_results.py
+prop_hunter_clv_engine.py
+
+LEARNING / MAINTENANCE
+prop_hunter_learning_update.py
+prop_hunter_model_registry.py
+prop_hunter_retrainer.py
+prop_hunter_coverage_watchdog.py
+prop_hunter_market_discovery.py
+prop_hunter_github_watcher.py
+
+DEPENDENCIES
 requirements.txt
 requirements_results.txt
+requirements_browser.txt
+
+PERSISTED STATE — DO NOT DELETE
+ml_model.pkl
+odds_cache.json
+picks_history.json
+prop_hunter_autolearn_report.json
+prop_hunter_builder_correlations.json
+prop_hunter_coverage_report.json
+prop_hunter_github_watch_report.json
+prop_hunter_github_watch_state.json
+prop_hunter_identity_cache.json
+prop_hunter_market_discovery.json
+prop_hunter_model_registry.json
+prop_hunter_source_audit.json
+prop_hunter_source_registry.json
+prop_hunter_source_trust.json
+
+MANUAL / BACKFILL / OPTIONAL — NOT NORMAL CARD
+prop_hunter_browser_bookies.py
+prop_hunter_bet365.py
+prop_hunter_db_audit.py
+prop_hunter_odds_diagnostic.py
+prop_hunter_history_scraper.py
+prop_hunter_backfill_ncaaf.py
+prop_hunter_backfill_universal.py
+prop_hunter_retrosheet_import.py
+prop_hunter_statcast_backfill.py
+prop_hunter_social_signals.py
+
+SQL / DOCS
+_SUPABASE_SQL/PROP_HUNTER_NEW_SUPABASE_V13_4.sql
+_SUPABASE_SQL/PROP_HUNTER_V13_5_MULTISPORT.sql
+PROP_HUNTER_V13_9_2_HARDENED_HARD_TEST_NOTES.txt
+README.md
+CURRENT_MANIFEST.txt
+
+REMOVED LEGACY
+Old V9/V10/V11/V13.5 duplicate orchestrators, loaders, normalizers, source scanners,
+source-registry code and obsolete patch notes were removed from main. They remain
+recoverable from Git history.
