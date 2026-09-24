@@ -22,13 +22,11 @@ jobs:
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: requirements.txt
-
 
       - name: Supabase preflight
         env:
@@ -37,23 +35,14 @@ jobs:
         run: |
           python - <<'PY'
           import os, urllib.error, urllib.request
-          url = os.environ.get("SUPABASE_URL", "").rstrip("/")
-          key = os.environ.get("SUPABASE_KEY", "")
-          if not url or not key:
-              raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
-          req = urllib.request.Request(
-              f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",
-              headers={"apikey": key},
-          )
+          url=os.environ.get("SUPABASE_URL","").rstrip("/"); key=os.environ.get("SUPABASE_KEY","")
+          if not url or not key: raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
+          req=urllib.request.Request(f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",headers={"apikey":key})
           try:
-              with urllib.request.urlopen(req, timeout=15) as response:
-                  if response.status != 200:
-                      raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
+              with urllib.request.urlopen(req,timeout=15) as r:
+                  if r.status!=200: raise SystemExit(f"Supabase preflight failed: HTTP {r.status}")
           except urllib.error.HTTPError as exc:
-              body = exc.read().decode("utf-8", "ignore")[:300]
-              raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
-          except Exception as exc:
-              raise SystemExit(f"Supabase preflight failed: {exc}")
+              raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {exc.read().decode('utf-8','ignore')[:300]}")
           print("Supabase preflight OK")
           PY
 
@@ -61,17 +50,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # Chromium is intentionally not installed on normal card runs.
-          # Browser scraping is maintenance-only; this saves setup/runtime.
 
       - name: Local integrity gate
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.9.2-HARDENED-SOURCES-SETTLEMENT
+          PH_EXPECTED_RUNTIME_VERSION: 13.10.0-MULTISOURCE-CONSENSUS
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
 
-      - name: Fast source/bookmaker collection
+      - name: Fast multi-source collection
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -82,29 +69,32 @@ jobs:
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
-          PH_ODDSPAPI_MAX_EVENTS: '2'
-          PH_ODDSAPI_IO_MAX_EVENTS: '3'
-          PH_ODDSAPI_IO_TIMEOUT: '6'
-          PH_DIRECT_ROWS_PER_SPORT_TARGET: '20'
-          PH_KAMBI_ENABLED: '1'
-          PH_KAMBI_MAX_EVENTS: '2'
-          PH_KAMBI_TIMEOUT: '4'
+          PARLAY_API_KEY: ${{ secrets.PARLAY_API_KEY }}
+          PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
+          PH_DIRECT_ROWS_PER_SPORT_TARGET: '40'
+          PH_DIRECT_BOOK_TARGET: '5'
+          PH_DIRECT_PAIR_TARGET: '12'
           PH_SGO_MAX_EVENTS: '4'
           PH_SGO_TIMEOUT: '6'
+          PH_ODDSAPI_IO_MAX_EVENTS: '3'
+          PH_ODDSAPI_IO_TIMEOUT: '6'
+          PH_ODDSPAPI_MAX_EVENTS: '2'
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
-          PH_FAST_BROWSER_BOOKS: bet365,betmgm,caesars,betrivers,fanatics,hardrock,thescore,betr,dabble,chalkboard,parlayplay
-          PH_FAST_BROWSER_JOBS: '0'
+          PH_PARLAY_TIMEOUT: '6'
+          PH_PARLAY_LIMIT: '5000'
+          PH_PROPLINE_TIMEOUT: '6'
+          PH_KAMBI_ENABLED: '1'
+          PH_KAMBI_MAX_EVENTS: '3'
+          PH_KAMBI_MAX_BRANDS: '4'
+          PH_KAMBI_TIMEOUT: '4'
+          PH_1XBET_ENABLED: '1'
+          PH_1XBET_MAX_EVENTS: '2'
+          PH_1XBET_TIMEOUT: '4'
           PH_SKIP_BLOCKED_FREE: '1'
           PH_BROWSER_ENABLED: '0'
-          PH_BDL_MAX_GAMES: '4'
-          PH_BDL_TIMEOUT: '5'
+          PH_FAST_BROWSER_JOBS: '0'
           PH_BDL_PROPS_ENABLED: '0'
-        run: |
-          if [ -f prop_hunter_source_orchestrator.py ]; then
-            python prop_hunter_source_orchestrator.py --mode fast || echo "source orchestrator soft-fail; using in-engine collectors"
-          else
-            echo "source orchestrator absent; using in-engine collectors"
-          fi
+        run: python prop_hunter_source_orchestrator.py --mode fast || echo "source orchestrator soft-fail; using in-engine collectors"
 
       - name: DATA cache
         env:
@@ -127,8 +117,6 @@ jobs:
           PH_RESULTS_FALLBACK_SUMMARY: '0'
           PH_RESULTS_HTTP_TIMEOUT: '8'
         run: |
-          # Evaluation must never prevent a new card from being built. Each result
-          # provider is best-effort; the dedicated results workflow will retry later.
           for f in prop_hunter_results_mlb.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py; do
             if [ -f "$f" ]; then python "$f" || echo "$f soft-fail"; fi
           done
@@ -151,12 +139,12 @@ jobs:
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
+          PARLAY_API_KEY: ${{ secrets.PARLAY_API_KEY }}
+          PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
           PH_SGO_DIRECT: '0'
           PH_ODDS_HTTP_TIMEOUT: '5'
           PH_AI_RETRY: '0'
           PH_BROWSER_ENABLED: '0'
-          PH_BDL_MAX_GAMES: '4'
-          PH_BDL_TIMEOUT: '5'
           PH_BDL_PROPS_ENABLED: '0'
         run: python prophunter.py
 
@@ -164,8 +152,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Another workflow/manual fix may update main while the card is running.
-          # Rebase first and autostash generated state so the final push stays fast-forward.
           git pull --rebase --autostash origin main
           git add picks_history.json odds_cache.json ml_model.pkl prop_hunter_identity_cache.json 2>/dev/null || true
           git diff --staged --quiet && exit 0

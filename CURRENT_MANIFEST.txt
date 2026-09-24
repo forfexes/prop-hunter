@@ -1,5 +1,5 @@
 PROP HUNTER CURRENT PRODUCTION MANIFEST
-Runtime: 13.9.2-HARDENED-SOURCES-SETTLEMENT
+Runtime: 13.10.0-MULTISOURCE-CONSENSUS
 
 PRODUCTION WORKFLOWS
 .github/workflows/prop_hunter_github_watcher.yml
@@ -9,6 +9,7 @@ PRODUCTION WORKFLOWS
 
 ENTRYPOINT / CORE
 prophunter.py
+prophunter_core_1392.py
 prophunter_core_1391.py
 prophunter_results.py
 prop_hunter_runtime_guard.py
@@ -16,13 +17,18 @@ prop_hunter_hard_test.py
 
 SOURCE / ODDS
 prop_hunter_source_catalog.py
+prop_hunter_source_catalog_core_1392.py
 prop_hunter_source_orchestrator.py
+prop_hunter_source_orchestrator_core_1392.py
 prop_hunter_source_manager.py
 prop_hunter_source_audit.py
 prop_hunter_sgo.py
 prop_hunter_oddsapi_io.py
 prop_hunter_oddspapi.py
 prop_hunter_kambi.py
+prop_hunter_1xbet.py
+prop_hunter_propline.py
+prop_hunter_parlayapi.py
 prop_hunter_odds_pp_ud.py
 prop_hunter_http.py
 prop_hunter_market_consensus.py
@@ -88,14 +94,8 @@ prop_hunter_retrosheet_import.py
 prop_hunter_statcast_backfill.py
 prop_hunter_social_signals.py
 
-SQL / DOCS
-_SUPABASE_SQL/PROP_HUNTER_NEW_SUPABASE_V13_4.sql
-_SUPABASE_SQL/PROP_HUNTER_V13_5_MULTISPORT.sql
-PROP_HUNTER_V13_9_2_HARDENED_HARD_TEST_NOTES.txt
-README.md
-CURRENT_MANIFEST.txt
-
-REMOVED LEGACY
-Old V9/V10/V11/V13.5 duplicate orchestrators, loaders, normalizers, source scanners,
-source-registry code and obsolete patch notes were removed from main. They remain
-recoverable from Git history.
+13.10 SOURCE LOGIC
+Observed prices only. SGO -> ParlayAPI -> PropLine -> Odds-API.io -> multi-brand Kambi -> 1xBet-family -> modelling lines.
+Fallbacks stop only after row + bookmaker + two-sided pair coverage is sufficient.
+No-vig fair probability is computed from real Over/Under pairs before best-price selection.
+No SQL migration required.
