@@ -72,29 +72,6 @@ def _market(prop: Any) -> str:
     return str(_get(prop, "market", "") or "").lower()
 
 
-
-
-def _market_candidates(prop: Any) -> List[str]:
-    feats = _get_features(prop)
-    raw = feats.get("raw_source") if isinstance(feats.get("raw_source"), dict) else {}
-    values = [_get(prop, "market", ""), feats.get("market_key"), feats.get("market_original")]
-    for node in (
-        raw.get("appearance_stat"),
-        (raw.get("over_under") or {}).get("appearance_stat") if isinstance(raw.get("over_under"), dict) else None,
-    ):
-        if isinstance(node, dict):
-            values.extend([node.get("stat"), node.get("display_stat")])
-    out = []
-    for value in values:
-        value = str(value or "").lower().replace("_", " ").replace("-", " ").strip()
-        value = re.sub(r"\s+", " ", value)
-        if value and value not in out:
-            out.append(value)
-    return out
-
-
-def _market_text(prop: Any) -> str:
-    return " | ".join(_market_candidates(prop))
 def _sport(prop: Any) -> str:
     return str(_get(prop, "sport", "") or "").upper()
 
@@ -269,161 +246,6 @@ def _mlb_hit_score(prop: Any, data_plus: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-
-def _is_direct_underdog(prop: Any) -> bool:
-    feats = _get_features(prop)
-    source = str(feats.get("source") or _get(prop, "source", "") or "").lower()
-    bookmaker = str(feats.get("bookmaker") or _get(prop, "bookmaker", "") or source).lower()
-    return (
-        source == "underdog"
-        and bookmaker == "underdog"
-        and feats.get("direct_source_line") is True
-        and feats.get("source_payload_observed") is True
-        and str(feats.get("price_type") or "").lower() in {"fantasy_fixed", "pickem_priced"}
-    )
-
-
-def _poisson_cdf(k: int, mean: float) -> float:
-    """P(X <= k) without scipy; stable for the prop-size means used here."""
-    if k < 0:
-        return 0.0
-    mean = max(0.000001, float(mean))
-    term = math.exp(-mean)
-    total = term
-    for i in range(1, int(k) + 1):
-        term *= mean / i
-        total += term
-    return max(0.0, min(1.0, total))
-
-
-def _poisson_sides(mean: float, line: float) -> Dict[str, float]:
-    line = float(line)
-    over_min = math.floor(line) + 1
-    under_max = math.ceil(line) - 1
-    over = 1.0 - _poisson_cdf(over_min - 1, mean)
-    under = _poisson_cdf(under_max, mean)
-    return {"over": max(0.0, min(1.0, over)), "under": max(0.0, min(1.0, under))}
-
-
-
-def _mlb_pickem_season_score(prop: Any, data_plus: Dict[str, Any]) -> Dict[str, Any]:
-    """Conservative season-rate fallback from official MLB season totals."""
-    if not _is_direct_underdog(prop) or _sport(prop) != "MLB":
-        return {"score": 0.0, "prob": None, "reasons": []}
-    line = _to_float(_get(prop, "point", None), None)
-    if line is None:
-        return {"score": 0.0, "prob": None, "reasons": []}
-
-    maps = _extract_mlb_maps(data_plus)
-    batter = _find_player_stats(_player(prop), maps["batters"])
-    pitcher = _find_player_stats(_player(prop), maps["pitchers"])
-    market = _market_text(prop)
-    compact = re.sub(r"[^a-z0-9]", "", market)
-    if any(token in market for token in (
-        "1st inning", "first inning", "first 5", "first five",
-        "first plate appearance", "plate appearance result",
-    )):
-        return {"score": 0.0, "prob": None, "reasons": []}
-
-    mean = None; sample = 0; label = ""; pitcher_market = False
-    fantasy = "fantasy point" in market or "fantasypoints" in compact or "fantasyscore" in compact
-    pitcher_hint = bool(pitcher and (
-        "pitcher" in market or "pitching" in market or "allowed" in market or "outs recorded" in market
-        or "pitcherstrikeouts" in compact or "pitchingouts" in compact
-    ))
-
-    if fantasy and batter:
-        sample = int(_to_float(batter.get("games"), 0) or 0)
-        if sample > 0:
-            hits = _to_float(batter.get("hits") or batter.get("h"), 0) or 0
-            doubles = _to_float(batter.get("doubles"), 0) or 0
-            triples = _to_float(batter.get("triples"), 0) or 0
-            hr = _to_float(batter.get("hr") or batter.get("home_runs"), 0) or 0
-            singles = max(0.0, hits - doubles - triples - hr)
-            total = (
-                3.0 * singles + 6.0 * doubles + 8.0 * triples + 10.0 * hr
-                + 3.0 * (_to_float(batter.get("walks"), 0) or 0)
-                + 3.0 * (_to_float(batter.get("hit_by_pitch") or batter.get("hbp"), 0) or 0)
-                + 2.0 * (_to_float(batter.get("rbi"), 0) or 0)
-                + 2.0 * (_to_float(batter.get("runs"), 0) or 0)
-                + 4.0 * (_to_float(batter.get("stolen_bases"), 0) or 0)
-            )
-            mean = total / sample; label = "Hitter Fantasy Points"
-    elif fantasy and pitcher:
-        pitcher_market = True
-        sample = int(_to_float(pitcher.get("starts"), 0) or _to_float(pitcher.get("games"), 0) or 0)
-        if sample > 0:
-            innings = _to_float(pitcher.get("innings"), 0) or 0
-            total = (
-                2.0 * (_to_float(pitcher.get("wins"), 0) or 0)
-                + 3.0 * (_to_float(pitcher.get("quality_starts"), 0) or 0)
-                + (_to_float(pitcher.get("strikeouts"), 0) or 0)
-                + innings
-                - (_to_float(pitcher.get("earned_runs"), 0) or 0)
-            )
-            mean = total / sample; label = "Pitcher Fantasy Points"
-    elif pitcher_hint:
-        pitcher_market = True
-        sample = int(_to_float(pitcher.get("starts"), 0) or _to_float(pitcher.get("games"), 0) or 0)
-        denom = float(sample or 0)
-        if denom > 0:
-            if "strikeout" in market or "pitcherks" in compact:
-                mean = (_to_float(pitcher.get("strikeouts"), 0) or 0) / denom; label = "Pitcher K"
-            elif "outs" in market:
-                innings = _to_float(pitcher.get("innings"), None)
-                if innings is not None: mean = innings * 3.0 / denom; label = "Pitching Outs"
-            elif "hits allowed" in market or "pitcherhitsallowed" in compact:
-                mean = (_to_float(pitcher.get("hits_allowed"), 0) or 0) / denom; label = "Hits Allowed"
-            elif "earned run" in market or "pitcherearnedruns" in compact:
-                mean = (_to_float(pitcher.get("earned_runs"), 0) or 0) / denom; label = "Earned Runs"
-            elif "walk" in market:
-                mean = (_to_float(pitcher.get("walks"), 0) or 0) / denom; label = "Pitcher Walks"
-    elif batter:
-        sample = int(_to_float(batter.get("games"), 0) or 0)
-        denom = float(sample or 0)
-        if denom > 0:
-            hits = _to_float(batter.get("hits") or batter.get("h"), 0) or 0
-            tb = _to_float(batter.get("total_bases"), 0) or 0
-            hr = _to_float(batter.get("hr") or batter.get("home_runs"), 0) or 0
-            runs = _to_float(batter.get("runs"), 0) or 0
-            rbi = _to_float(batter.get("rbi"), 0) or 0
-            walks = _to_float(batter.get("walks"), 0) or 0
-            strikeouts = _to_float(batter.get("strikeouts"), 0) or 0
-            stolen = _to_float(batter.get("stolen_bases"), 0) or 0
-            if "hits plus runs plus rbi" in market or "hitsrunsrbi" in compact:
-                mean = (hits + runs + rbi) / denom; label = "H+R+RBI"
-            elif "total base" in market or "totalbases" in compact:
-                mean = tb / denom; label = "Total Bases"
-            elif "home run" in market or compact.endswith("homeruns"):
-                mean = hr / denom; label = "Home Runs"
-            elif "strikeout" in market:
-                mean = strikeouts / denom; label = "Batter K"
-            elif "walk" in market:
-                mean = walks / denom; label = "Batter Walks"
-            elif "stolen base" in market:
-                mean = stolen / denom; label = "Stolen Bases"
-            elif re.search(r"\brbis?\b", market) or "runs batted" in market:
-                mean = rbi / denom; label = "RBI"
-            elif "hit" in market:
-                mean = hits / denom; label = "Hits"
-            elif "run" in market:
-                mean = runs / denom; label = "Runs"
-
-    min_sample = 5 if pitcher_market else 12
-    if mean is None or mean < 0 or sample < min_sample:
-        return {"score": 0.0, "prob": None, "reasons": []}
-    sides = _poisson_sides(mean, line)
-    direction = "over" if sides["over"] >= sides["under"] else "under"
-    raw = sides[direction]
-    model_weight = min(0.68, 0.34 + sample * 0.035) if pitcher_market else min(0.72, 0.30 + sample * 0.005)
-    prob = max(0.01, min(0.68, 0.50 + (raw - 0.50) * model_weight))
-    return {
-        "score": round((prob - 0.50) * 100.0, 3), "prob": round(prob, 4),
-        "direction": direction, "sample": sample, "mean": round(mean, 4),
-        "raw_probability": round(raw, 4),
-        "reasons": [f"{label} Saison Ø {mean:.2f} über {sample} Spiele/Starts"],
-    }
-
 def _basket_context_score(prop: Any, data_plus: Dict[str, Any]) -> Dict[str, Any]:
     # Aktuell bewusst konservativ: nur Marker, keine aggressiven Änderungen.
     sport = _sport(prop)
@@ -485,20 +307,7 @@ def apply_data_plus_to_props(props: List[Any], data_plus: Optional[Dict[str, Any
             result = {"score": 0.0, "prob": None, "reasons": []}
             tag = "data_plus"
 
-            if sport == "MLB" and _is_direct_underdog(p):
-                result = _mlb_pickem_season_score(p, data_plus)
-                tag = "mlb_season_poisson"
-                if result.get("direction"):
-                    try:
-                        setattr(p, "direction", result["direction"])
-                    except Exception:
-                        pass
-                    _set_feature(p, "pickem_direction", result["direction"])
-                _set_feature(p, "model_sample", result.get("sample"))
-                _set_feature(p, "sample_size", result.get("sample"))
-                _set_feature(p, "season_mean", result.get("mean"))
-                _set_feature(p, "season_raw_probability", result.get("raw_probability"))
-            elif sport == "MLB" and ("home run" in market or re.search(r"\bhr\b", market)):
+            if sport == "MLB" and ("home run" in market or re.search(r"\bhr\b", market)):
                 result = _mlb_hr_score(p, data_plus)
                 tag = "mlb_hr_data_plus"
                 _set_feature(p, "mlb_hr_score", result.get("score"))

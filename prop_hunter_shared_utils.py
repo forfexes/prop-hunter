@@ -160,18 +160,63 @@ def upsert_rows(table: str, rows: List[Dict[str, Any]], conflict: Optional[str] 
     if not rows:
         return
     clean_rows = [_json_clean(dict(r)) for r in rows if isinstance(r, dict)]
+    if table == "prop_hunter_player_gamelogs":
+        # This table is player-granular and normalized_name is NOT NULL. Scoreboard
+        # event rows belong in raw files, not in player_gamelogs.
+        before = len(clean_rows)
+        clean_rows = [r for r in clean_rows if r.get("normalized_name") and (r.get("game_id") or r.get("source_game_id"))]
+        if before != len(clean_rows):
+            log(f"{table}: dropped {before-len(clean_rows)} non-player/event-only rows")
     if not clean_rows:
         return
+
+    # PostgreSQL rejects one UPSERT statement when the same conflict key occurs
+    # twice in that statement. Keep the last observation for each key locally.
+    if conflict:
+        keys = [x.strip() for x in conflict.split(",") if x.strip()]
+        if keys:
+            deduped = {}
+            for row in clean_rows:
+                key = tuple(row.get(k) for k in keys)
+                deduped[key] = row
+            if len(deduped) != len(clean_rows):
+                log(f"{table}: deduped {len(clean_rows)} -> {len(deduped)} rows before upsert")
+            clean_rows = list(deduped.values())
+
     sb = supabase_client()
     if sb is None:
         warn(f"Supabase missing; skip {table}: {len(clean_rows)} rows")
         return
-    try:
-        q = sb.table(table).upsert(clean_rows, on_conflict=conflict) if conflict else sb.table(table).insert(clean_rows)
-        q.execute()
-        log(f"{table}: saved {len(clean_rows)} rows")
-    except Exception as e:
-        warn(f"{table} save failed: {e}")
+
+    def _write(payload):
+        q = sb.table(table).upsert(payload, on_conflict=conflict) if conflict else sb.table(table).insert(payload)
+        return q.execute()
+
+    payload = clean_rows
+    stripped = []
+    # A deployed Supabase schema can lag code by more than one optional stat field.
+    # Retry a few times, removing only the exact PGRST204 field named by PostgREST.
+    for attempt in range(8):
+        try:
+            _write(payload)
+            suffix = f" (without {','.join(stripped)})" if stripped else ""
+            log(f"{table}: saved {len(payload)} rows{suffix}")
+            return
+        except Exception as e:
+            msg = str(e)
+            m = re.search(r"Could not find the '([^']+)' column", msg)
+            if m:
+                missing = m.group(1)
+                if missing in stripped:
+                    warn(f"{table} retry loop stopped on repeated missing column '{missing}'")
+                    return
+                stripped.append(missing)
+                payload = [{k: v for k, v in row.items() if k != missing} for row in payload]
+                warn(f"{table}: schema missing '{missing}', retrying without that field")
+                continue
+            warn(f"{table} save failed: {e}")
+            return
+    warn(f"{table}: too many schema mismatches; skipped batch")
 
 def select_rows(table: str, limit: int = 1000, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     sb = supabase_client()

@@ -1,119 +1,233 @@
 #!/usr/bin/env python3
+"""PROP HUNTER — MLB official results/gamelogs for players in pending picks.
+
+Design goals for the normal card/results paths:
+- official MLB StatsAPI only; no browser and no paid key
+- fetch ONLY players that still have pending MLB picks
+- infer hitter/pitcher group from the stored market so we do not sweep the league
+- persist schema-normalized rows into prop_hunter_player_gamelogs
 """
-PROP HUNTER — MLB RESULTS
-=========================
-
-Sources:
-- MLB StatsAPI schedule + boxscore
-- Works for batting and pitching settlement
-
-Writes:
-- prop_hunter_player_gamelogs
-"""
-
 from __future__ import annotations
 
+import hashlib
+import json
 import os
-from datetime import datetime, timedelta
-from typing import Any, Dict, List
+import re
+from datetime import datetime, timezone
+from typing import Any, Dict, Iterable, List, Set, Tuple
 
-from prop_hunter_shared_utils import http_json, upsert_rows, safe_json_write, log, warn, norm_name, to_float
+from prop_hunter_shared_utils import (
+    http_json,
+    log,
+    norm_name,
+    safe_json_write,
+    select_pick_rows,
+    to_float,
+    upsert_rows,
+    warn,
+)
 
 OUT = "prop_hunter_results_mlb_raw.json"
+SEARCH_URL = "https://statsapi.mlb.com/api/v1/people/search"
+PEOPLE_URL = "https://statsapi.mlb.com/api/v1/people/{player_id}/stats"
 
-def innings_to_float(x):
+PITCH_MARKET_TOKENS = (
+    "pitcher", "strikeouts", "pitcher k", "outs recorded", "earned runs",
+    "hits allowed", "walks allowed", "home runs allowed",
+)
+
+
+def current_season() -> str:
+    return str(int(os.getenv("MLB_SEASON", str(datetime.now(timezone.utc).year))))
+
+
+def _is_pending(row: Dict[str, Any]) -> bool:
+    return str(row.get("status") or row.get("result") or "pending").strip().lower() in {
+        "", "pending", "open", "none", "null"
+    }
+
+
+def _is_mlb(row: Dict[str, Any]) -> bool:
+    sport = str(row.get("sport") or "").upper()
+    league = str(row.get("league") or "").upper()
+    return "MLB" in {sport, league} or sport == "BASEBALL"
+
+
+def pending_player_groups(limit: int = 5000) -> List[Tuple[str, Set[str]]]:
+    """Return [(player_name, {hitting|pitching}), ...] from pending MLB picks."""
+    grouped: Dict[str, Tuple[str, Set[str]]] = {}
+    for row in select_pick_rows(limit=limit):
+        if not _is_mlb(row) or not _is_pending(row):
+            continue
+        player = str(row.get("player_name") or row.get("player") or "").strip()
+        if not player:
+            continue
+        key = norm_name(player)
+        market = str(row.get("market") or row.get("prop_type") or row.get("selection") or "").lower()
+        group = "pitching" if any(tok in market for tok in PITCH_MARKET_TOKENS) else "hitting"
+        if key not in grouped:
+            grouped[key] = (player, set())
+        grouped[key][1].add(group)
+
+    cap = max(1, int(os.getenv("PH_MLB_RESULTS_MAX_PLAYERS", "40")))
+    return list(grouped.values())[:cap]
+
+
+def find_player(name: str) -> Dict[str, Any] | None:
+    data = http_json(SEARCH_URL, params={"names": name}, retries=1) or {}
+    people = data.get("people") or []
+    if not people:
+        return None
+    wanted = norm_name(name)
+    for p in people:
+        if norm_name(p.get("fullName")) == wanted:
+            return p
+    # Avoid silently settling the wrong player when the provider search is fuzzy.
+    for p in people:
+        candidate = norm_name(p.get("fullName"))
+        if candidate and (candidate in wanted or wanted in candidate):
+            return p
+    return None
+
+
+def fetch_gamelog(player_id: int | str, group: str, season: str) -> List[Dict[str, Any]]:
+    data = http_json(
+        PEOPLE_URL.format(player_id=player_id),
+        params={"stats": "gameLog", "group": group, "season": season, "hydrate": "team"},
+        retries=1,
+    ) or {}
+    stats = data.get("stats") or []
+    return (stats[0].get("splits") or []) if stats else []
+
+
+def _game_id(split: Dict[str, Any]) -> str:
+    game = split.get("game") or {}
+    gid = game.get("gamePk") or game.get("id")
+    if gid:
+        return str(gid)
+    raw = json.dumps(split, sort_keys=True, default=str)
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()[:20]
+
+
+def innings_value(value: Any) -> float | None:
+    """Keep baseball notation (6.1/6.2) so settler can convert to outs correctly."""
+    if value in (None, ""):
+        return None
     try:
-        s = str(x)
-        if "." not in s:
-            return float(s)
-        a, b = s.split(".", 1)
-        return float(a) + float(b) / 3.0
+        return float(str(value))
     except Exception:
         return None
 
-def schedule(date_str=None):
-    date_str = date_str or datetime.utcnow().date().isoformat()
-    data = http_json("https://statsapi.mlb.com/api/v1/schedule", params={"sportId": 1, "date": date_str, "hydrate": "team"}, retries=1) or {}
-    games = []
-    for d in data.get("dates", []) or []:
-        games.extend(d.get("games", []) or [])
-    return games
 
-def boxscore(game_pk):
-    return http_json(f"https://statsapi.mlb.com/api/v1/game/{game_pk}/boxscore", retries=1) or {}
+def base_row(name: str, split: Dict[str, Any], season: str) -> Dict[str, Any]:
+    team = split.get("team") or {}
+    opp = split.get("opponent") or {}
+    gid = _game_id(split)
+    return {
+        "sport": "BASEBALL",
+        "league": "MLB",
+        "country": "USA",
+        "season": season,
+        "source": "mlb_statsapi",
+        "source_game_id": gid,
+        "game_id": gid,
+        "game_date": str(split.get("date") or "")[:10] or None,
+        "player_name": name,
+        "normalized_name": norm_name(name),
+        "team": team.get("abbreviation") or team.get("name"),
+        "opponent": opp.get("abbreviation") or opp.get("name"),
+        "home_away": "home" if split.get("isHome") is True else "away" if split.get("isHome") is False else None,
+    }
 
-def rows_from_boxscore(game) -> List[Dict[str, Any]]:
-    gid = str(game.get("gamePk"))
-    game_date = str(game.get("gameDate") or "")[:10]
-    bs = boxscore(gid)
-    rows = []
-    teams = bs.get("teams") or {}
-    for side in ("home", "away"):
-        team_block = teams.get(side) or {}
-        team_name = ((team_block.get("team") or {}).get("name"))
-        opp_name = ((teams.get("away" if side == "home" else "home") or {}).get("team") or {}).get("name")
-        for pid, p in (team_block.get("players") or {}).items():
-            person = p.get("person") or {}
-            name = person.get("fullName")
-            if not name:
+
+def parse_hitting(name: str, split: Dict[str, Any], season: str) -> Dict[str, Any]:
+    stat = split.get("stat") or {}
+    row = base_row(name, split, season)
+    row.update({
+        "hits": to_float(stat.get("hits")),
+        "total_bases": to_float(stat.get("totalBases")),
+        "home_runs": to_float(stat.get("homeRuns")),
+        "rbi": to_float(stat.get("rbi")),
+        "runs": to_float(stat.get("runs")),
+        "strikeouts_batter": to_float(stat.get("strikeOuts")),
+        "walks_batter": to_float(stat.get("baseOnBalls")),
+        "stolen_bases": to_float(stat.get("stolenBases")),
+        "raw": {"group": "hitting", "split": split},
+    })
+    return row
+
+
+def parse_pitching(name: str, split: Dict[str, Any], season: str) -> Dict[str, Any]:
+    stat = split.get("stat") or {}
+    row = base_row(name, split, season)
+    row.update({
+        "pitcher_strikeouts": to_float(stat.get("strikeOuts")),
+        "pitcher_innings": innings_value(stat.get("inningsPitched")),
+        "pitcher_hits_allowed": to_float(stat.get("hits")),
+        "pitcher_earned_runs": to_float(stat.get("earnedRuns")),
+        "pitcher_walks": to_float(stat.get("baseOnBalls")),
+        "pitcher_home_runs_allowed": to_float(stat.get("homeRuns")),
+        "raw": {"group": "pitching", "split": split},
+    })
+    return row
+
+
+def merge_rows(rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Merge hitter/pitcher observations for the same player/game instead of losing fields."""
+    merged: Dict[Tuple[str, str, str, str, str], Dict[str, Any]] = {}
+    for row in rows:
+        key = (
+            str(row.get("sport") or ""), str(row.get("league") or ""),
+            str(row.get("season") or ""), str(row.get("game_id") or ""),
+            str(row.get("normalized_name") or ""),
+        )
+        if key not in merged:
+            merged[key] = dict(row)
+            continue
+        current = merged[key]
+        for k, v in row.items():
+            if k == "raw":
+                raw = current.get("raw")
+                if not isinstance(raw, dict):
+                    raw = {"previous": raw}
+                raw[str((v or {}).get("group") if isinstance(v, dict) else "extra")] = v
+                current["raw"] = raw
+            elif v is not None:
+                current[k] = v
+    return list(merged.values())
+
+
+def main() -> None:
+    season = current_season()
+    last_n = max(1, int(os.getenv("LAST_N_GAMES", "30")))
+    requests = pending_player_groups(limit=int(os.getenv("MLB_PICK_SCAN_LIMIT", "5000")))
+    rows: List[Dict[str, Any]] = []
+
+    for player, groups in requests:
+        try:
+            person = find_player(player)
+            if not person or not person.get("id"):
+                warn(f"MLB player not resolved: {player}")
                 continue
-            batting = ((p.get("stats") or {}).get("batting") or {})
-            pitching = ((p.get("stats") or {}).get("pitching") or {})
-            if batting:
-                rows.append({
-                    "sport": "BASEBALL",
-                    "league": "MLB",
-                    "source": "mlb_statsapi_boxscore",
-                    "source_game_id": gid,
-                    "game_id": gid,
-                    "game_date": game_date,
-                    "player_name": name,
-                    "normalized_name": norm_name(name),
-                    "team": team_name,
-                    "opponent": opp_name,
-                    "hits": to_float(batting.get("hits")),
-                    "total_bases": to_float(batting.get("totalBases")),
-                    "home_runs": to_float(batting.get("homeRuns")),
-                    "rbi": to_float(batting.get("rbi")),
-                    "runs": to_float(batting.get("runs")),
-                    "strikeouts_batter": to_float(batting.get("strikeOuts")),
-                    "walks_batter": to_float(batting.get("baseOnBalls")),
-                    "stolen_bases": to_float(batting.get("stolenBases")),
-                    "raw": p,
-                })
-            if pitching:
-                rows.append({
-                    "sport": "BASEBALL",
-                    "league": "MLB",
-                    "source": "mlb_statsapi_boxscore",
-                    "source_game_id": gid,
-                    "game_id": gid,
-                    "game_date": game_date,
-                    "player_name": name,
-                    "normalized_name": norm_name(name),
-                    "team": team_name,
-                    "opponent": opp_name,
-                    "pitcher_strikeouts": to_float(pitching.get("strikeOuts")),
-                    "pitcher_innings": innings_to_float(pitching.get("inningsPitched")),
-                    "pitcher_hits_allowed": to_float(pitching.get("hits")),
-                    "pitcher_earned_runs": to_float(pitching.get("earnedRuns")),
-                    "pitcher_walks": to_float(pitching.get("baseOnBalls")),
-                    "pitcher_home_runs_allowed": to_float(pitching.get("homeRuns")),
-                    "raw": p,
-                })
-    return rows
+            canonical = person.get("fullName") or player
+            for group in sorted(groups):
+                splits = fetch_gamelog(person["id"], group, season)
+                splits = sorted(splits, key=lambda x: str(x.get("date") or ""), reverse=True)[:last_n]
+                parser = parse_pitching if group == "pitching" else parse_hitting
+                rows.extend(parser(canonical, split, season) for split in splits)
+        except Exception as exc:
+            warn(f"MLB gamelog failed {player}: {exc}")
 
-def main():
-    date_str = os.getenv("MLB_RESULT_DATE", "").strip() or (datetime.utcnow().date() - timedelta(days=1)).isoformat()
-    games = schedule(date_str)
-    rows = []
-    for g in games[:int(os.getenv("MLB_RESULT_GAME_CAP", "30"))]:
-        rows.extend(rows_from_boxscore(g))
-    for r in rows:
-        r.setdefault("season", str(datetime.utcnow().year))
+    rows = merge_rows(rows)
     safe_json_write(OUT, rows)
-    upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,season,game_id,normalized_name")
-    log(f"MLB results done: date={date_str} games={len(games)} rows={len(rows)}")
+    if rows:
+        upsert_rows(
+            "prop_hunter_player_gamelogs",
+            rows,
+            "sport,league,season,game_id,normalized_name",
+        )
+    log(f"MLB results done: pending_players={len(requests)} rows={len(rows)}")
+
 
 if __name__ == "__main__":
     main()

@@ -116,13 +116,15 @@ def _call(source: str, fn: Callable[[], List[Dict[str, Any]]], max_cache_age: fl
 
 
 def _direct_jobs(sports: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dict[str, Any]]]]]:
+    """Return fast, non-browser jobs ordered by reliability/cost.
+
+    Real sportsbook APIs go first. Public fantasy/scraper-style fallbacks come
+    afterwards and can be skipped entirely on lean card runs.
+    """
     import prop_hunter_odds_pp_ud as ppud
-    jobs: List[Tuple[str, Callable[[], List[Dict[str, Any]]]]] = [
-        ("underdog", ppud.fetch_underdog),
-        ("sleeper", ppud.fetch_sleeper),
-    ]
-    # Key-gated API aggregators are cheap and deterministic. Do not even import/call
-    # them when no key exists, so normal GitHub card runs stay fast.
+    jobs: List[Tuple[str, Callable[[], List[Dict[str, Any]]]]] = []
+
+    # SportsGameOdds v2: one bounded request per league, player props + alt lines.
     try:
         import prop_hunter_sgo as sgo
         if sgo.configured():
@@ -134,26 +136,51 @@ def _direct_jobs(sports: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dic
                 }.get(s, s))))
     except Exception:
         pass
+
+    # Odds-API.io v3: current documented event -> odds flow.
+    try:
+        import prop_hunter_oddsapi_io as oai
+        if oai.configured():
+            for sport in sports:
+                jobs.append((f"oddsapi_io_{sport.lower()}", lambda s=sport: oai.fetch_oddsapi_io_props(s)))
+    except Exception:
+        pass
+
+    # Kambi public offering API, copied conceptually from NETRATTLER. It is
+    # explicitly optional because brand/geo availability changes.
+    try:
+        import prop_hunter_kambi as kambi
+        if kambi.configured():
+            for sport in _season_active_sports(sports):
+                jobs.append((f"kambi_{sport.lower()}", lambda s=sport: kambi.fetch_kambi_props(
+                    s, max_events=max(1, int(os.getenv("PH_KAMBI_MAX_EVENTS", "2")))
+                )))
+    except Exception:
+        pass
+
+    # Cheap pick'em lines are useful for modelling even when they are not
+    # standalone sportsbook prices.
+    jobs.extend([("underdog", ppud.fetch_underdog), ("sleeper", ppud.fetch_sleeper)])
+
     skip_blocked = str(os.getenv("PH_SKIP_BLOCKED_FREE", "0")).lower() in {"1","true","yes","on"}
-    for sport in sports:
-        # PrizePicks and DraftKings are persistently 403/429 on GitHub runners and
-        # their internal Playwright fallback is intentionally unavailable on card
-        # runs. Skip them in lean mode instead of paying the failure cost per sport.
-        if not skip_blocked:
+    if not skip_blocked:
+        for sport in sports:
             jobs.extend([
                 (f"prizepicks_{sport.lower()}", lambda s=sport: ppud.fetch_prizepicks(s)),
                 (f"draftkings_{sport.lower()}", lambda s=sport: ppud.fetch_draftkings(s)),
+                (f"fanduel_{sport.lower()}", lambda s=sport: ppud.fetch_fanduel(s)),
+                (f"bovada_{sport.lower()}", lambda s=sport: ppud.fetch_bovada(s)),
+                (f"espn_bet_{sport.lower()}", lambda s=sport: ppud.fetch_espn_bet(s)),
             ])
-        jobs.extend([
-            (f"fanduel_{sport.lower()}", lambda s=sport: ppud.fetch_fanduel(s)),
-            (f"bovada_{sport.lower()}", lambda s=sport: ppud.fetch_bovada(s)),
-            (f"espn_bet_{sport.lower()}", lambda s=sport: ppud.fetch_espn_bet(s)),
-        ])
     return jobs
 
 
 def _browser_jobs(sports: Iterable[str], books: Iterable[str]) -> List[Tuple[str, Callable[[], List[Dict[str, Any]]]]]:
-    from prop_hunter_browser_bookies import fetch_browser_source
+    try:
+        from prop_hunter_browser_bookies import fetch_browser_source
+    except Exception as exc:
+        warn(f"browser source module unavailable; browser jobs skipped: {exc}")
+        return []
     jobs: List[Tuple[str, Callable[[], List[Dict[str, Any]]]]] = []
     # Interleave books across active sports, so a small fast-job budget covers
     # MLB and WNBA instead of spending every browser attempt on one league.
@@ -229,9 +256,29 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
     all_rows: List[Dict[str, Any]] = []
     audits: List[Dict[str, Any]] = []
 
+    # API fallback chain is coverage-aware: a later key/API is not burned when the
+    # earlier source already supplied enough real prices for that sport.
+    fallback_target = max(1, int(os.getenv("PH_DIRECT_ROWS_PER_SPORT_TARGET", "20")))
+    priced_by_sport: Dict[str, int] = {}
     for source, fn in _direct_jobs(sports):
+        source_sport = source.rsplit("_", 1)[-1].upper() if "_" in source else ""
+        is_fallback_api = source.startswith("oddsapi_io_") or source.startswith("kambi_")
+        if is_fallback_api and priced_by_sport.get(source_sport, 0) >= fallback_target:
+            audit = _audit(source, "skipped_covered", [], 0.0,
+                           f"earlier source already has {priced_by_sport[source_sport]} priced rows")
+            audits.append(audit)
+            print(f"source {source}: 0 | skipped_covered", flush=True)
+            continue
         rows, audit = _call(source, fn, max_cache_age)
         all_rows.extend(rows); audits.append(audit)
+        for row in rows:
+            try:
+                dec = float(row.get("odds_decimal") or 0)
+            except Exception:
+                dec = 0.0
+            if dec > 1:
+                sp = str(row.get("sport") or row.get("league") or source_sport).upper()
+                priced_by_sport[sp] = priced_by_sport.get(sp, 0) + 1
         print(f"source {source}: {len(rows)} | {audit['status']}", flush=True)
 
     direct_odds_rows = sum(1 for row in all_rows if to_float(row.get("odds_decimal")) and float(row.get("odds_decimal")) > 1)
@@ -241,7 +288,8 @@ def collect(sport_filter: Optional[str] = None, mode: str = "fast") -> List[Dict
     # Full browser sweep in data/maintenance mode. On a card run, activate a
     # small automatic browser fallback only when direct sources produced no
     # bookable prices.
-    run_browser = mode in {"all", "browser"} or (mode == "fast" and direct_odds_rows == 0)
+    browser_enabled = str(os.getenv("PH_BROWSER_ENABLED", "0")).lower() in {"1", "true", "yes", "on"}
+    run_browser = browser_enabled and (mode in {"all", "browser"} or (mode == "fast" and direct_odds_rows == 0))
     if run_browser:
         if mode == "fast":
             books = [x.strip() for x in os.getenv(

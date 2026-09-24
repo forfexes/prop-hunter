@@ -36,7 +36,7 @@ jobs:
 
       - name: Integrity
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.9.0-SELF-MAINTAINING
+          PH_EXPECTED_RUNTIME_VERSION: 13.9.2-HARDENED-SOURCES-SETTLEMENT
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
@@ -50,6 +50,15 @@ jobs:
           PH_BROWSER_ENABLED: '0'
           PH_FAST_BROWSER_JOBS: '0'
           PH_SKIP_BLOCKED_FREE: '1'
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
+          PH_ODDSAPI_IO_MAX_EVENTS: '2'
+          PH_DIRECT_ROWS_PER_SPORT_TARGET: '12'
+          PH_KAMBI_ENABLED: '1'
+          PH_KAMBI_MAX_EVENTS: '1'
+          PH_KAMBI_TIMEOUT: '4'
         run: |
           python prop_hunter_source_audit.py || true
           python prop_hunter_github_watcher.py || true

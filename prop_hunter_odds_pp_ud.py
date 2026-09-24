@@ -43,21 +43,24 @@ def _pp_json(url: str):
         warn(f"PP curl_cffi/http {r.status_code}")
     except Exception as e:
         warn(f"PP curl_cffi/http: {e}")
-    # 3) Playwright Fallback
-    try:
-        import asyncio
-        from playwright.async_api import async_playwright
-        async def _go():
-            async with async_playwright() as pw:
-                b = await pw.chromium.launch(headless=True)
-                pg = await (await b.new_context()).new_page()
-                await pg.goto(url, timeout=30000)
-                txt = await pg.inner_text("body")
-                await b.close()
-                return json.loads(txt)
-        return asyncio.run(_go())
-    except Exception as e:
-        warn(f"PP playwright: {e}")
+    # 3) Playwright fallback is maintenance-only. Normal card runs explicitly
+    # disable browsers; do not even import/launch Playwright in that mode.
+    browser_enabled = str(os.getenv("PH_BROWSER_ENABLED", "0")).lower() in {"1", "true", "yes", "on"}
+    if browser_enabled:
+        try:
+            import asyncio
+            from playwright.async_api import async_playwright
+            async def _go():
+                async with async_playwright() as pw:
+                    b = await pw.chromium.launch(headless=True)
+                    pg = await (await b.new_context()).new_page()
+                    await pg.goto(url, timeout=30000)
+                    txt = await pg.inner_text("body")
+                    await b.close()
+                    return json.loads(txt)
+            return asyncio.run(_go())
+        except Exception as e:
+            warn(f"PP playwright: {e}")
     return None
 
 def fetch_prizepicks(league: str) -> List[Dict[str, Any]]:
@@ -512,8 +515,9 @@ def main():
 
     # Quellen-Kette pro Sport: jede in try, keine blockiert die andere.
     # Odds-Quellen (echte Quoten): Bovada, FanDuel, DraftKings
-    # Linien-Quellen (synthetische Odds via DB): PrizePicks, Underdog, Sleeper
-    per_sport_sources = [
+    # Linien-Quellen (unpriced pick’em lines for modelling): PrizePicks, Underdog, Sleeper
+    skip_blocked = str(os.getenv("PH_SKIP_BLOCKED_FREE", "0")).lower() in {"1", "true", "yes", "on"}
+    per_sport_sources = [] if skip_blocked else [
         ("Bovada", fetch_bovada),
         ("DraftKings", fetch_draftkings),
         ("FanDuel", fetch_fanduel),

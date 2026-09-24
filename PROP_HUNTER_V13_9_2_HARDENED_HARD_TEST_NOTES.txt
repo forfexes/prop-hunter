@@ -1,0 +1,78 @@
+PROP HUNTER V13.9.2 — HARDENED SOURCES + SETTLEMENT
+Runtime: 13.9.2-HARDENED-SOURCES-SETTLEMENT
+
+WHAT WAS FIXED
+- Live sportsbook source chain hardened:
+  SportsGameOdds -> Odds-API.io -> optional Kambi -> existing fallbacks.
+- SportsGameOdds v2 parser fixed for:
+  * v2 player IDs such as LEBRON_JAMES_1_NBA
+  * Event.startTime
+  * bookmaker altLines (real observed ladder rungs only)
+  * canonical Event.players display names when present
+  * American -> decimal price conversion
+- Odds-API.io uses the current v3 event -> event odds flow and parses player-prop O/U prices.
+- Kambi added only as a best-effort, keyless fallback. It never launches a browser and never blocks a card run.
+- Coverage-aware source fallback: later paid/keyed fallbacks are skipped if an earlier source already produced enough real prices.
+- Known blocked public scrapers are skipped on normal card runs; Playwright is disabled.
+- BALLDONTLIE player-prop endpoint is disabled by default because the current account returned plan-gated 401/402-style access errors. BALLDONTLIE remains usable for stats/results where supported.
+- Legacy ODDSPAPI secret name is exported alongside ODDSPAPI_KEY.
+- Optional source/data/results/CLV failures can no longer prevent a new card from being built.
+
+TIP QUALITY / MARKET SAFETY
+- Only observed sportsbook prices qualify as bookable prices.
+- Legacy synthetic ladder creation is disabled.
+- Alternate ladder rungs are accepted only when the source actually returned that line/price.
+- Snapshot direction, line, event id, commence time, source and bookmaker are preserved through persistence.
+- Market-consensus enrichment added without changing the observed quote.
+- DATA+ scoring module restored for MLB HR/hits/total-bases and conservative NBA/WNBA context.
+- Builder-learning market/pair key module restored.
+
+RESULTS / SETTLEMENT
+- Missing MLB results collector added using official MLB StatsAPI HTTP endpoints.
+- NFL result field names corrected (rushing_attempts / passing_touchdowns) while settler keeps legacy aliases.
+- Gamelog upserts drop event-only rows, dedupe conflicts and strip unknown Supabase columns iteratively.
+- Settlement no longer grades against an arbitrary old player gamelog. It requires exact game id or a safe narrow date match; ambiguous doubleheaders stay pending.
+- Inline Telegram reporter is wired after settlement in both the normal card and dedicated results path.
+- Result collection/reporting on the card path is best-effort so a temporary results-source failure cannot suppress new tips.
+
+GITHUB RUNTIME
+- Normal card: 2 scheduled runs/day, timeout remains 8 minutes.
+- No Chromium install on card runs.
+- No duplicate public connector sweep.
+- Browser mode disabled on normal card and maintenance workflows.
+
+SUPABASE
+- No new SQL migration is required for this patch.
+- Schema drift is handled defensively in code for optional result fields.
+
+SECRETS
+Recommended for live player-prop sportsbook prices:
+- SPORTSGAMEODDS_KEY (SPORTSGAMEODDS_API_KEY alias also supported)
+- ODDSAPI_IO_KEY
+Existing optional:
+- ODDSPAPI_KEY or legacy ODDSPAPI
+- ODDS_API_KEY (existing comma-separated rotation still supported)
+
+LOCAL HARD TEST (NO USER API KEYS / NO TELEGRAM / NO SUPABASE WRITES)
+- compileall: PASS
+- all GitHub workflow YAML: PASS
+- runtime guard: PASS
+- source parser fixtures: PASS
+- SportsGameOdds alt-line / v2 player-id / startTime parsing: PASS
+- Odds-API.io player-prop parsing: PASS
+- Kambi offer parsing: PASS
+- coverage-aware API fallback: PASS
+- no Playwright when disabled: PASS
+- no synthetic ladder: PASS
+- snapshot/pick metadata persistence: PASS
+- iterative Supabase schema drift recovery: PASS
+- MLB hitting/pitching result normalization: PASS
+- NFL/NHL settlement aliases: PASS
+- date-safe settlement / doubleheader ambiguity protection: PASS
+- inline same-post Telegram result rendering: PASS
+- DATA+ scoring + builder learning import/behavior: PASS
+- workflow wiring / The Odds API eventwise props endpoint: PASS
+- Overall hard-test runner: 10/10 suites PASS
+
+IMPORTANT LIVE LIMITATION
+Keyed external providers cannot be authenticated from the offline build environment because user GitHub secrets are not available here. The parser/request paths were fixture-tested and checked against the current provider API flows. The next regular scheduled card run is the first live authentication/coverage check; no extra GitHub test run is needed.

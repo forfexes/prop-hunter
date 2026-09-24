@@ -117,13 +117,25 @@ def stat_value(gl: Dict[str, Any], stat: str) -> Any:
         vals = [to_float(gl.get(x), 0.0) or 0.0 for x in ("receiving_touchdowns", "rushing_touchdowns")]
         return bool(sum(vals) >= 3)
     aliases = {
-        "nhl_assists": ("assists", "nhl_assists"),
-        "nhl_points": ("points", "nhl_points"),
+        "passing_touchdowns": ("passing_touchdowns", "passing_tds"),
+        "nhl_assists": ("assists", "nhl_assists", "assists_hockey"),
+        "nhl_points": ("points", "nhl_points", "hockey_points"),
         "shots_on_goal": ("shots_on_goal", "shots"),
         "goalie_saves": ("goalie_saves", "saves"),
         "blocked_shots": ("blocked_shots", "blocks"),
         "power_play_points": ("power_play_points", "ppp"),
     }
+    # Generic Points/Assists market names are shared by basketball and hockey.
+    # Use NHL-specific columns when the gamelog tells us this is hockey.
+    league = str(gl.get("league") or gl.get("sport") or "").upper()
+    if league == "NHL" and stat == "points":
+        for key in ("hockey_points", "nhl_points", "points"):
+            if gl.get(key) is not None:
+                return gl.get(key)
+    if league == "NHL" and stat == "assists":
+        for key in ("assists_hockey", "nhl_assists", "assists"):
+            if gl.get(key) is not None:
+                return gl.get(key)
     for key in aliases.get(stat, ()):
         if gl.get(key) is not None:
             return gl.get(key)
@@ -137,11 +149,16 @@ def side_of_pick(pick: Dict[str, Any]) -> str:
     return "over"
 
 def line_of_pick(pick: Dict[str, Any]) -> Optional[float]:
-    for k in ("line", "prop_line", "points", "threshold"):
+    for k in ("line", "point", "prop_line", "points", "threshold"):
         v = to_float(pick.get(k))
         if v is not None:
             return v
-    return None
+    # Newer and legacy pick rows sometimes embed the threshold only in market text.
+    # Use the last numeric token: "Points Over 20.5" -> 20.5, "2+ TD" -> 2.
+    import re
+    text = str(pick.get("market") or pick.get("selection") or pick.get("pick") or "")
+    nums = re.findall(r"(?<![A-Za-z])(\d+(?:\.\d+)?)", text)
+    return float(nums[-1]) if nums else None
 
 def result_for_value(value: Any, line: Optional[float], side: str) -> str:
     if value is None:
@@ -157,21 +174,80 @@ def result_for_value(value: Any, line: Optional[float], side: str) -> str:
         return "win" if v < line else "loss"
     return "win" if v > line else "loss"
 
+def _date_only(value: Any):
+    from datetime import date, datetime
+    if not value:
+        return None
+    text = str(value).strip()
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+    except Exception:
+        try:
+            return date.fromisoformat(text[:10])
+        except Exception:
+            return None
+
+
+def _pick_target_date(pick: Dict[str, Any]):
+    raw = pick.get("raw") if isinstance(pick.get("raw"), dict) else {}
+    for value in (
+        pick.get("commence_time"), raw.get("commence_time"),
+        pick.get("game_date"), pick.get("sent_date"), pick.get("date"), pick.get("created_at"),
+    ):
+        d = _date_only(value)
+        if d is not None:
+            return d
+    return None
+
+
 def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]], aliases=None) -> Optional[Dict[str, Any]]:
+    """Find the intended game without ever settling against an arbitrary old log.
+
+    Provider event ids usually differ (sportsbook id vs official league id), so after
+    exact id matching we use player identity + a narrow date window. If two logs are
+    equally plausible (e.g. an MLB doubleheader), we leave the pick pending instead
+    of grading the wrong game.
+    """
     pname = pick.get("player_name") or pick.get("player") or pick.get("selection")
     game_id = str(pick.get("game_id") or pick.get("source_game_id") or "")
-    # Exact/canonical identity + game id first.
-    for gl in logs:
-        if pname and not identity_match(pname, gl.get("player_name"), threshold=98, aliases=aliases):
+    player_logs = [
+        gl for gl in logs
+        if (not pname or identity_match(pname, gl.get("player_name"), threshold=94, aliases=aliases))
+    ]
+    if not player_logs:
+        return None
+
+    if game_id:
+        exact = [
+            gl for gl in player_logs
+            if str(gl.get("game_id") or gl.get("source_game_id") or "") == game_id
+        ]
+        if len(exact) == 1:
+            return exact[0]
+        if len(exact) > 1:
+            return None
+
+    target = _pick_target_date(pick)
+    if target is None:
+        # No date context: refusing to guess is safer than grading from a random
+        # historical game for that player.
+        return None
+
+    dated = []
+    for gl in player_logs:
+        gd = _date_only(gl.get("game_date") or gl.get("date"))
+        if gd is None:
             continue
-        if game_id and str(gl.get("game_id") or gl.get("source_game_id")) != game_id:
-            continue
-        return gl
-    # Then conservative fuzzy/canonical fallback when provider game ids differ.
-    for gl in logs:
-        if pname and identity_match(pname, gl.get("player_name"), threshold=94, aliases=aliases):
-            return gl
-    return None
+        delta = (gd - target).days
+        # UTC sportsbook timestamps can be one calendar day ahead of US local dates.
+        if -1 <= delta <= 2:
+            dated.append((abs(delta), 0 if delta == 0 else 1 if delta == -1 else 2 + delta, gl))
+    if not dated:
+        return None
+    dated.sort(key=lambda x: (x[0], x[1]))
+    best_rank = dated[0][:2]
+    best = [gl for dist, pref, gl in dated if (dist, pref) == best_rank]
+    return best[0] if len(best) == 1 else None
 
 def load_picks():
     return select_pick_rows(limit=int(os.getenv("SETTLE_PICK_LIMIT", "5000")))

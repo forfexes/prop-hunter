@@ -71,13 +71,15 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+          PH_MLB_RESULTS_MAX_PLAYERS: '80'
+          HTTP_TIMEOUT: '8'
         run: |
           python prop_hunter_results_mlb.py || true
           python prop_hunter_results_nba.py || true
           python prop_hunter_results_wnba.py || true
           python prop_hunter_results_nfl.py || true
           python prop_hunter_results_nhl.py || true
-          python espn_multisport_results.py || true
+          if [ -f espn_multisport_results.py ]; then python espn_multisport_results.py || true; fi
 
       - name: Settle and publish evaluation
         env:

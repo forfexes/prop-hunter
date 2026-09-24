@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import requests
 
 API_BASE = os.getenv("SPORTSGAMEODDS_API_BASE", "https://api.sportsgameodds.com/v2").rstrip("/")
-API_KEY = (os.getenv("SPORTSGAMEODDS_KEY") or os.getenv("SPORTS_GAME_ODDS_KEY") or "").strip()
+API_KEY = (os.getenv("SPORTSGAMEODDS_KEY") or os.getenv("SPORTSGAMEODDS_API_KEY") or os.getenv("SPORTS_GAME_ODDS_KEY") or "").strip()
 TIMEOUT = max(3, min(12, int(os.getenv("PH_SGO_TIMEOUT", "7"))))
 MAX_EVENTS = max(1, min(10, int(os.getenv("PH_SGO_MAX_EVENTS", "5"))))
 
@@ -50,10 +50,18 @@ def _american_to_decimal(x: Any) -> Optional[float]:
 
 
 def _player_name(stat_entity_id: Any) -> str:
+    """Best-effort player label from v2 IDs such as LEBRON_JAMES_1_NBA.
+
+    SportsGameOdds v2 player IDs may include a numeric disambiguator before the
+    league suffix.  Neither the league token nor that numeric ID belongs in the
+    display name.
+    """
     raw = str(stat_entity_id or "").strip()
-    parts = raw.split("_")
-    if len(parts) > 2:
-        parts = parts[:-2]
+    parts = [p for p in raw.split("_") if p]
+    if parts and parts[-1].upper() in {"NBA","WNBA","MLB","NFL","NHL","NCAAB","NCAAF"}:
+        parts = parts[:-1]
+    if parts and parts[-1].isdigit():
+        parts = parts[:-1]
     return " ".join(p.capitalize() for p in parts if p)
 
 
@@ -68,7 +76,13 @@ def _teams(event: Dict[str, Any]) -> tuple[str, str]:
 
 def _event_start(event: Dict[str, Any]) -> str:
     status = event.get("status") or {}
-    return str(status.get("startsAt") or event.get("startsAt") or event.get("commenceTime") or "")
+    return str(
+        status.get("startsAt")
+        or event.get("startTime")
+        or event.get("startsAt")
+        or event.get("commenceTime")
+        or ""
+    )
 
 
 def _market_name(odd: Dict[str, Any]) -> str:
@@ -95,7 +109,7 @@ def _request_events(params: Dict[str, Any]) -> List[Dict[str, Any]]:
         r = requests.get(
             f"{API_BASE}/events",
             params=params,
-            headers={"x-api-key": API_KEY, "Accept": "application/json", "User-Agent": "PROP-HUNTER/13.8"},
+            headers={"x-api-key": API_KEY, "Accept": "application/json", "User-Agent": "PROP-HUNTER/13.9.2"},
             timeout=TIMEOUT,
         )
         if r.status_code in {401, 403, 429}:
@@ -105,6 +119,105 @@ def _request_events(params: Dict[str, Any]) -> List[Dict[str, Any]]:
         return list(payload.get("data") or []) if isinstance(payload, dict) else []
     except Exception:
         return []
+
+
+def parse_events(events: Iterable[Dict[str, Any]], league: str) -> List[Dict[str, Any]]:
+    """Normalize SportsGameOdds event payloads without network access.
+
+    Kept separate from the HTTP function so the production parser can be fixture-
+    tested in the runtime guard before every GitHub card run.
+    """
+    rows: List[Dict[str, Any]] = []
+    for event in events or []:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("eventID") or event.get("id") or "")
+        home, away = _teams(event)
+        start = _event_start(event)
+        odds = event.get("odds") or {}
+        if not isinstance(odds, dict):
+            continue
+        for odd_id, odd in odds.items():
+            if not isinstance(odd, dict):
+                continue
+            entity = str(odd.get("statEntityID") or "").strip()
+            if entity.lower() in TEAM_ENTITIES:
+                continue
+            # Prefer the canonical Event.players display name when present.
+            players = event.get("players") or {}
+            pobj = players.get(entity) if isinstance(players, dict) else None
+            pnames = (pobj or {}).get("names") if isinstance(pobj, dict) else {}
+            player = str(
+                odd.get("statEntityName")
+                or odd.get("playerName")
+                or ((pnames or {}).get("display") if isinstance(pnames, dict) else "")
+                or ((pobj or {}).get("name") if isinstance(pobj, dict) else "")
+                or _player_name(entity)
+            ).strip()
+            if not player:
+                continue
+            market = _market_name(odd)
+            direction = _direction(odd)
+            seen_quotes = set()
+            for book, bm in (odd.get("byBookmaker") or {}).items():
+                if not isinstance(bm, dict):
+                    continue
+                # V2 puts alternate lines inside each bookmaker entry.  Process the
+                # main quote and every observed alt line; never synthesize a rung.
+                quotes = [(False, bm)]
+                for alt in bm.get("altLines") or []:
+                    if isinstance(alt, dict):
+                        quotes.append((True, alt))
+                for is_alt, quote in quotes:
+                    if quote.get("available", bm.get("available", True)) is False:
+                        continue
+                    line = _f(
+                        quote.get("overUnder")
+                        if quote.get("overUnder") is not None
+                        else bm.get("overUnder")
+                        if bm.get("overUnder") is not None
+                        else odd.get("overUnder")
+                    )
+                    if line is None and direction in {"yes", "no"}:
+                        line = 0.5
+                    if line is None:
+                        continue
+                    raw_price = quote.get("odds")
+                    dec = _american_to_decimal(raw_price)
+                    if dec is None or dec <= 1.0:
+                        dec_direct = _f(quote.get("decimalOdds") or quote.get("oddsDecimal"))
+                        dec = dec_direct if dec_direct and dec_direct > 1 else None
+                    if not dec:
+                        continue
+                    quote_key = (str(book).lower(), direction, float(line), round(float(dec), 4))
+                    if quote_key in seen_quotes:
+                        continue
+                    seen_quotes.add(quote_key)
+                    rows.append({
+                        "source": "sportsgameodds",
+                        "bookmaker": str(book).lower(),
+                        "sport": league,
+                        "league": league,
+                        "source_event_id": event_id,
+                        "event_id": event_id,
+                        "commence_time": start,
+                        "home_team": home,
+                        "away_team": away,
+                        "player_name": player,
+                        "market": market,
+                        "market_key": market,
+                        "direction": direction,
+                        "line": line,
+                        "odds_decimal": round(float(dec), 4),
+                        "odds_american": raw_price,
+                        "selection": direction.title(),
+                        "raw": {
+                            "odd_id": odd_id, "stat_entity_id": entity,
+                            "last_updated": quote.get("lastUpdatedAt") or bm.get("lastUpdatedAt"),
+                            "alt_line": bool(is_alt),
+                        },
+                    })
+    return rows
 
 
 def fetch_sgo_props(sport_key: str, max_events: int = MAX_EVENTS) -> List[Dict[str, Any]]:
@@ -118,60 +231,8 @@ def fetch_sgo_props(sport_key: str, max_events: int = MAX_EVENTS) -> List[Dict[s
         return []
     events = _request_events({
         "leagueID": league,
-        "finalized": "false",
         "oddsAvailable": "true",
+        "includeAltLines": "true",
         "limit": max(1, min(int(max_events or MAX_EVENTS), MAX_EVENTS)),
     })
-    rows: List[Dict[str, Any]] = []
-    for event in events:
-        event_id = str(event.get("eventID") or event.get("id") or "")
-        home, away = _teams(event)
-        start = _event_start(event)
-        odds = event.get("odds") or {}
-        if not isinstance(odds, dict):
-            continue
-        for odd_id, odd in odds.items():
-            if not isinstance(odd, dict):
-                continue
-            entity = str(odd.get("statEntityID") or "").strip()
-            if entity.lower() in TEAM_ENTITIES:
-                continue
-            player = str(odd.get("statEntityName") or odd.get("playerName") or _player_name(entity)).strip()
-            if not player:
-                continue
-            market = _market_name(odd)
-            direction = _direction(odd)
-            for book, bm in (odd.get("byBookmaker") or {}).items():
-                if not isinstance(bm, dict) or bm.get("available") is False:
-                    continue
-                line = _f(bm.get("overUnder") if bm.get("overUnder") is not None else odd.get("overUnder"))
-                if line is None:
-                    continue
-                raw_price = bm.get("odds")
-                dec = _american_to_decimal(raw_price)
-                if dec is None or dec <= 1.0:
-                    dec_direct = _f(bm.get("decimalOdds") or bm.get("oddsDecimal"))
-                    dec = dec_direct if dec_direct and dec_direct > 1 else None
-                if not dec:
-                    continue
-                rows.append({
-                    "source": "sportsgameodds",
-                    "bookmaker": str(book).lower(),
-                    "sport": league,
-                    "league": league,
-                    "source_event_id": event_id,
-                    "event_id": event_id,
-                    "commence_time": start,
-                    "home_team": home,
-                    "away_team": away,
-                    "player_name": player,
-                    "market": market,
-                    "market_key": market,
-                    "direction": direction,
-                    "line": line,
-                    "odds_decimal": round(float(dec), 4),
-                    "odds_american": raw_price,
-                    "selection": direction.title(),
-                    "raw": {"odd_id": odd_id, "stat_entity_id": entity, "last_updated": bm.get("lastUpdatedAt")},
-                })
-    return rows
+    return parse_events(events, league)

@@ -66,7 +66,7 @@ jobs:
 
       - name: Local integrity gate
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.9.1-LIVE-ODDS-RECOVERY
+          PH_EXPECTED_RUNTIME_VERSION: 13.9.2-HARDENED-SOURCES-SETTLEMENT
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
@@ -78,8 +78,17 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          ODDSPAPI: ${{ secrets.ODDSPAPI }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           PH_ODDSPAPI_MAX_EVENTS: '2'
+          PH_ODDSAPI_IO_MAX_EVENTS: '3'
+          PH_ODDSAPI_IO_TIMEOUT: '6'
+          PH_DIRECT_ROWS_PER_SPORT_TARGET: '20'
+          PH_KAMBI_ENABLED: '1'
+          PH_KAMBI_MAX_EVENTS: '2'
+          PH_KAMBI_TIMEOUT: '4'
           PH_SGO_MAX_EVENTS: '4'
           PH_SGO_TIMEOUT: '6'
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
@@ -89,8 +98,13 @@ jobs:
           PH_BROWSER_ENABLED: '0'
           PH_BDL_MAX_GAMES: '4'
           PH_BDL_TIMEOUT: '5'
+          PH_BDL_PROPS_ENABLED: '0'
         run: |
-          if [ -f prop_hunter_source_orchestrator.py ]; then python prop_hunter_source_orchestrator.py --mode fast; else echo "source orchestrator absent; using in-engine collectors"; fi
+          if [ -f prop_hunter_source_orchestrator.py ]; then
+            python prop_hunter_source_orchestrator.py --mode fast || echo "source orchestrator soft-fail; using in-engine collectors"
+          else
+            echo "source orchestrator absent; using in-engine collectors"
+          fi
 
       - name: DATA cache
         env:
@@ -98,28 +112,29 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           LAST_N_GAMES: '30'
-        run: python prop_hunter_scraper.py
-
-      - name: Public snapshot connectors
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF
-        run: |
-          if [ -f prop_hunter_odds_pp_ud.py ]; then python prop_hunter_odds_pp_ud.py || echo "connector soft-fail"; else echo "public connector absent; skip"; fi
+        run: python prop_hunter_scraper.py || echo "DATA cache soft-fail; card continues"
 
       - name: Results, settlement and CLV
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           LAST_N_GAMES: '30'
+          PH_MLB_RESULTS_MAX_PLAYERS: '20'
+          HTTP_TIMEOUT: '8'
+          PH_RESULTS_LOOKBACK_DAYS: '4'
+          PH_RESULTS_FALLBACK_SUMMARY: '0'
+          PH_RESULTS_HTTP_TIMEOUT: '8'
         run: |
-          set -e
+          # Evaluation must never prevent a new card from being built.  Each result
+          # provider is best-effort; the dedicated results workflow will retry later.
           for f in prop_hunter_results_mlb.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py; do
-            if [ -f "$f" ]; then python "$f"; fi
+            if [ -f "$f" ]; then python "$f" || echo "$f soft-fail"; fi
           done
-          python prop_hunter_settler.py
-          python prop_hunter_clv_engine.py
+          python prop_hunter_settler.py || echo "settler soft-fail; card continues"
+          python prophunter_results.py || echo "inline reporter soft-fail; card continues"
+          python prop_hunter_clv_engine.py || echo "CLV soft-fail; card continues"
 
       - name: Build and post card
         env:
@@ -132,13 +147,17 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          ODDSPAPI: ${{ secrets.ODDSPAPI }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           PH_SGO_DIRECT: '0'
           PH_ODDS_HTTP_TIMEOUT: '5'
           PH_AI_RETRY: '0'
           PH_BROWSER_ENABLED: '0'
           PH_BDL_MAX_GAMES: '4'
           PH_BDL_TIMEOUT: '5'
+          PH_BDL_PROPS_ENABLED: '0'
         run: python prophunter.py
 
       - name: Save card state

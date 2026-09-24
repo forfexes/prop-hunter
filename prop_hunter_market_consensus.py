@@ -1,56 +1,64 @@
 #!/usr/bin/env python3
-"""Adds cross-source consensus, best price and line dispersion to prop snapshots."""
+"""Lightweight cross-source market consensus for PROP HUNTER snapshots.
+
+The module intentionally stores enrichment inside ``raw.consensus`` so it works with
+all existing Supabase schemas without requiring a migration. It never changes the
+observed line/price used for a pick.
+"""
 from __future__ import annotations
 
-import math
 import statistics
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Tuple
 
-from prop_hunter_shared_utils import norm_market, norm_name, safe_json_load, to_float
+
+def _f(value: Any):
+    try:
+        return float(value)
+    except Exception:
+        return None
 
 
-def _key(row: Dict[str, Any]) -> Tuple[str, str, str, str]:
+def _key(row: Dict[str, Any]) -> Tuple[str, str, str, str, str, str]:
     return (
         str(row.get("sport") or row.get("league") or "").upper(),
-        norm_name(row.get("player_name") or row.get("player")),
-        norm_market(row.get("market_key") or row.get("market")),
-        str(row.get("direction") or "over").lower(),
+        str(row.get("source_event_id") or row.get("event_id") or row.get("game_id") or ""),
+        str(row.get("player_name") or "").strip().lower(),
+        str(row.get("market_key") or row.get("market") or "").strip().lower(),
+        str(row.get("direction") or "").strip().lower(),
+        str(row.get("line") if row.get("line") is not None else ""),
     )
 
 
 def enrich(rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    rows = [dict(r) for r in rows if isinstance(r, dict)]
-    groups: Dict[Tuple[str, str, str, str], List[Dict[str, Any]]] = defaultdict(list)
-    for row in rows: groups[_key(row)].append(row)
-    trust_rows = safe_json_load("prop_hunter_source_trust.json", []) or []
-    trust = {}
-    for x in trust_rows:
-        if not isinstance(x, dict): continue
-        key = str(x.get("source_key") or x.get("source_name") or x.get("source") or "").lower()
-        value = x.get("trust_multiplier") or ((x.get("raw") or {}).get("trust_multiplier") if isinstance(x.get("raw"), dict) else None)
-        if value is None:
-            value = float(x.get("trust_score") or 100) / 100.0
-        trust[key] = max(0.65, min(1.20, float(value)))
+    out = [dict(r) for r in (rows or []) if isinstance(r, dict)]
+    groups = defaultdict(list)
+    for row in out:
+        dec = _f(row.get("odds_decimal") or row.get("odds"))
+        if dec and dec > 1:
+            groups[_key(row)].append((row, dec))
 
-    for members in groups.values():
-        lines = [to_float(x.get("line")) for x in members]
-        lines = [x for x in lines if x is not None]
-        odds = [to_float(x.get("odds_decimal")) for x in members]
-        odds = [x for x in odds if x and x > 1]
-        median_line = statistics.median(lines) if lines else None
-        dispersion = statistics.pstdev(lines) if len(lines) >= 2 else 0.0
-        best_odds = max(odds) if odds else None
-        # Average de-vig proxy only when multiple independent books quote the same side.
-        implied = [1.0 / x for x in odds]
-        consensus_prob = statistics.mean(implied) if implied else None
-        sources = {str(x.get("source") or x.get("bookmaker") or "").lower() for x in members}
-        for row in members:
-            source = str(row.get("source") or row.get("bookmaker") or "unknown").lower()
-            row["source_trust"] = trust.get(source, 1.0)
-            row["consensus_line"] = median_line
-            row["line_dispersion"] = round(dispersion, 4)
-            row["best_odds"] = best_odds
-            row["book_consensus"] = consensus_prob
-            row["consensus_sources"] = len(sources)
-    return rows
+    summaries = {}
+    for key, items in groups.items():
+        prices = [p for _, p in items]
+        books = sorted({str(r.get("bookmaker") or r.get("source") or "").lower() for r, _ in items if r.get("bookmaker") or r.get("source")})
+        sources = sorted({str(r.get("source") or "").lower() for r, _ in items if r.get("source")})
+        summaries[key] = {
+            "quote_count": len(prices),
+            "book_count": len(books),
+            "source_count": len(sources),
+            "books": books,
+            "sources": sources,
+            "best_decimal": round(max(prices), 4),
+            "median_decimal": round(float(statistics.median(prices)), 4),
+        }
+
+    for row in out:
+        summary = summaries.get(_key(row))
+        if not summary:
+            continue
+        raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+        raw = dict(raw)
+        raw["consensus"] = summary
+        row["raw"] = raw
+    return out
