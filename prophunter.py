@@ -407,5 +407,29 @@ def build_jk_extras(picks):
     return [x for x in (_build_jk_extras_1391(picks) or []) if getattr(x, "type", "") != "ladder"]
 
 
+def main():
+    """CLI compatible with the verified core's original entrypoint."""
+    import argparse
+    parser = argparse.ArgumentParser(description=f"PROP HUNTER {PH_RUNTIME_VERSION}")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--sport", choices=["mlb","nba","wnba","nfl","nhl","ncaab","ncaaf","euroleague"])
+    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("--train-ml", action="store_true", help="train ML model from picks_history.json and exit")
+    args = parser.parse_args()
+    if args.train_ml:
+        if args.verbose:
+            setup_logging(logging.DEBUG)
+        result = train_ml_model()
+        if result:
+            log.info("✅ ML Training fertig: n=%d AUC=%.3f", result["n_samples"], result["auc"])
+        else:
+            log.info("❌ ML Training nicht möglich (zu wenig Daten oder sklearn fehlt)")
+        return 0
+    if args.verbose:
+        setup_logging(logging.DEBUG)
+    run(dry_run=args.dry_run, sport_filter=args.sport)
+    return 0
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
