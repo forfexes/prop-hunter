@@ -55,6 +55,7 @@ def nflreadpy_weekly(seasons=None) -> List[Dict[str, Any]]:
         rush_td = to_float(r.get("rushing_tds"), 0) or 0
         rec_td = to_float(r.get("receiving_tds"), 0) or 0
         pass_td = to_float(r.get("passing_tds"), 0) or 0
+        total_td = rush_td + rec_td
         rows.append({
             "sport": "AMERICAN_FOOTBALL",
             "league": "NFL",
@@ -76,9 +77,11 @@ def nflreadpy_weekly(seasons=None) -> List[Dict[str, Any]]:
             "interceptions": to_float(r.get("interceptions")),
             "receiving_touchdowns": rec_td,
             "rushing_touchdowns": rush_td,
-            "touchdowns": rush_td + rec_td,
-            "anytime_td": (rush_td + rec_td) >= 1,
-            "two_plus_td": (rush_td + rec_td) >= 2,
+            "touchdowns": total_td,
+            # Supabase columns are numeric in the current project.  Keep these
+            # settlement aliases numeric so Postgres never receives true/false.
+            "anytime_td": 1.0 if total_td >= 1 else 0.0,
+            "two_plus_td": 1.0 if total_td >= 2 else 0.0,
             "targets": to_float(r.get("targets")),
             "raw": dict(r),
         })
