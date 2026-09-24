@@ -127,7 +127,7 @@ jobs:
           PH_RESULTS_FALLBACK_SUMMARY: '0'
           PH_RESULTS_HTTP_TIMEOUT: '8'
         run: |
-          # Evaluation must never prevent a new card from being built.  Each result
+          # Evaluation must never prevent a new card from being built. Each result
           # provider is best-effort; the dedicated results workflow will retry later.
           for f in prop_hunter_results_mlb.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py; do
             if [ -f "$f" ]; then python "$f" || echo "$f soft-fail"; fi
@@ -164,7 +164,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Another workflow/manual fix may update main while the card is running.
+          # Rebase first and autostash generated state so the final push stays fast-forward.
+          git pull --rebase --autostash origin main
           git add picks_history.json odds_cache.json ml_model.pkl prop_hunter_identity_cache.json 2>/dev/null || true
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter card $(date -u +%F-%H%M)"
-          git push
+          git push origin main
