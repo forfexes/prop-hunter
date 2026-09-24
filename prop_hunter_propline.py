@@ -30,7 +30,7 @@ def _f(v):
 def _decimal(v):
     x=_f(v)
     if x is None or x==0: return None
-    if x>100: return round(1+x/100,4)
+    if x>=100: return round(1+x/100,4)
     if x<=-100: return round(1+100/abs(x),4)
     if 1.01<x<=50: return round(x,4)
     return None
