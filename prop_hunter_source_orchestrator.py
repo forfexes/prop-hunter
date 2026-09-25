@@ -19,6 +19,11 @@ def _direct_jobs(sports):
             for sport in active:jobs.append((f"sportsgameodds_{sport.lower()}",lambda s=sport:sgo.fetch_sgo_props(keys[s])))
     except Exception as exc:warn(f"SGO adapter unavailable: {exc}")
     try:
+        import prop_hunter_opticodds as oo
+        if oo.configured():
+            for sport in active:jobs.append((f"opticodds_{sport.lower()}",lambda s=sport:oo.fetch_opticodds_props(s,max_fixtures=max(1,int(os.getenv("PH_OPTICODDS_MAX_FIXTURES","5"))))))
+    except Exception as exc:warn(f"OpticOdds adapter unavailable: {exc}")
+    try:
         import prop_hunter_parlayapi as pa
         if pa.configured():
             for sport in active:jobs.append((f"parlayapi_{sport.lower()}",lambda s=sport:pa.fetch_parlayapi_props(s)))
@@ -60,7 +65,7 @@ def _coverage(rows,sport):
 
 def collect(sport_filter=None,mode="fast"):
     sports=[sport_filter.upper()] if sport_filter else list(SPORTS);sports=[s for s in sports if s in {"MLB","NBA","WNBA","NFL","NHL","NCAAB","NCAAF"}];max_cache_age=8 if mode=="fast" else 30;all_rows=[];audits=[]
-    row_target=max(1,int(os.getenv("PH_DIRECT_ROWS_PER_SPORT_TARGET","40")));book_target=max(1,int(os.getenv("PH_DIRECT_BOOK_TARGET","5")));pair_target=max(1,int(os.getenv("PH_DIRECT_PAIR_TARGET","12")));fallback_prefixes=("parlayapi_","propline_","oddsapi_io_","kambi_","1xbet_")
+    row_target=max(1,int(os.getenv("PH_DIRECT_ROWS_PER_SPORT_TARGET","40")));book_target=max(1,int(os.getenv("PH_DIRECT_BOOK_TARGET","5")));pair_target=max(1,int(os.getenv("PH_DIRECT_PAIR_TARGET","12")));fallback_prefixes=("opticodds_","parlayapi_","propline_","oddsapi_io_","kambi_","1xbet_")
     for source,fn in _direct_jobs(sports):
         source_sport=source.rsplit("_",1)[-1].upper() if "_" in source else ""
         if source.startswith(fallback_prefixes) and source_sport in sports:
