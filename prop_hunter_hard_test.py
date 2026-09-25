@@ -34,7 +34,9 @@ def test_orchestrator_coverage():
 def test_workflow():
     card=Path(".github/workflows/prophunter.yml").read_text();maint=Path(".github/workflows/prop_hunter_maintenance.yml").read_text()
     for text in (card,maint):check("13.10.0-MULTISOURCE-CONSENSUS" in text,"workflow runtime stale")
+    check("OPTICODDS_API_KEY" in card and "PH_OPTICODDS_MAX_FIXTURES: '5'" in card,"OpticOdds trial source missing")
     check("PARLAY_API_KEY" in card and "PROPLINE_API_KEY" in card,"new keyed sources missing");check("PH_1XBET_ENABLED: '1'" in card,"1xBet not enabled");check("PH_KAMBI_MAX_BRANDS: '4'" in card,"Kambi multi-brand not enabled");check("PH_BROWSER_ENABLED: '0'" in card,"browser gate regressed")
+    check(Path("prop_hunter_opticodds.py").exists(),"OpticOdds adapter missing")
 def main():
     tests=[test_guard,test_snapshot_consensus,test_orchestrator_coverage,test_workflow]
     for t in tests:t();print(f"HARD TEST OK: {t.__name__}")
