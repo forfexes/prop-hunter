@@ -68,6 +68,8 @@ jobs:
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          OPTICODDS_API_KEY: ${{ secrets.OPTICODDS_API_KEY }}
+          OPTICODDS_KEY: ${{ secrets.OPTICODDS_KEY }}
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           PARLAY_API_KEY: ${{ secrets.PARLAY_API_KEY }}
           PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
@@ -76,6 +78,9 @@ jobs:
           PH_DIRECT_PAIR_TARGET: '12'
           PH_SGO_MAX_EVENTS: '4'
           PH_SGO_TIMEOUT: '6'
+          PH_OPTICODDS_MAX_FIXTURES: '5'
+          PH_OPTICODDS_TIMEOUT: '6'
+          PH_OPTICODDS_BOOKS: DraftKings,FanDuel,BetMGM,Caesars,bet365
           PH_ODDSAPI_IO_MAX_EVENTS: '3'
           PH_ODDSAPI_IO_TIMEOUT: '6'
           PH_ODDSPAPI_MAX_EVENTS: '2'
@@ -138,6 +143,8 @@ jobs:
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          OPTICODDS_API_KEY: ${{ secrets.OPTICODDS_API_KEY }}
+          OPTICODDS_KEY: ${{ secrets.OPTICODDS_KEY }}
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           PARLAY_API_KEY: ${{ secrets.PARLAY_API_KEY }}
           PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
