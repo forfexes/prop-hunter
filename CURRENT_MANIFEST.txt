@@ -1,5 +1,5 @@
 PROP HUNTER CURRENT PRODUCTION MANIFEST
-Runtime: 13.10.0-MULTISOURCE-CONSENSUS
+Runtime: 13.10.1-KEYLESS-HARDENED
 
 PRODUCTION WORKFLOWS
 .github/workflows/prop_hunter_github_watcher.yml
@@ -16,6 +16,8 @@ prop_hunter_runtime_guard.py
 prop_hunter_hard_test.py
 
 SOURCE / ODDS
+prop_hunter_quote_guard.py
+prop_hunter_keyless_books.py
 prop_hunter_source_catalog.py
 prop_hunter_source_catalog_core_1392.py
 prop_hunter_source_orchestrator.py
@@ -23,6 +25,7 @@ prop_hunter_source_orchestrator_core_1392.py
 prop_hunter_source_manager.py
 prop_hunter_source_audit.py
 prop_hunter_sgo.py
+prop_hunter_opticodds.py
 prop_hunter_oddsapi_io.py
 prop_hunter_oddspapi.py
 prop_hunter_kambi.py
@@ -94,8 +97,10 @@ prop_hunter_retrosheet_import.py
 prop_hunter_statcast_backfill.py
 prop_hunter_social_signals.py
 
-13.10 SOURCE LOGIC
-Observed prices only. SGO -> ParlayAPI -> PropLine -> Odds-API.io -> multi-brand Kambi -> 1xBet-family -> modelling lines.
-Fallbacks stop only after row + bookmaker + two-sided pair coverage is sufficient.
+13.10.1 SOURCE LOGIC
+Keyless-first: DraftKings Direct -> FanDuel Direct -> Bovada Direct -> BetRivers Direct -> multi-brand Kambi.
+If row/book/two-sided-pair coverage is still insufficient: 1xBet -> SportsGameOdds -> OpticOdds -> OddsPapi -> ParlayAPI -> PropLine -> Odds-API.io.
+All rows pass a central player/quote sanity guard. Free public payloads are cached per process.
 No-vig fair probability is computed from real Over/Under pairs before best-price selection.
+No synthetic ladders. Browser disabled in normal card/maintenance source collection.
 No SQL migration required.
