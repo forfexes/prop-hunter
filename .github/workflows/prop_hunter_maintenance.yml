@@ -4,11 +4,14 @@ name: Prop Hunter Self Maintenance
   workflow_dispatch: {}
   schedule:
     - cron: '15 3 * * 0'
+
 permissions:
   contents: write
+
 concurrency:
   group: prop-hunter-maintenance
   cancel-in-progress: true
+
 jobs:
   maintenance:
     runs-on: ubuntu-latest
@@ -18,28 +21,47 @@ jobs:
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: requirements.txt
+
       - name: Install
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # No Chromium here: discovery must not burn Actions minutes.
+
       - name: Integrity
         env:
-          PH_EXPECTED_RUNTIME_VERSION: 13.10.0-MULTISOURCE-CONSENSUS
+          PH_EXPECTED_RUNTIME_VERSION: 13.10.1-KEYLESS-HARDENED
         run: |
           python -m compileall -q .
           python prop_hunter_runtime_guard.py
           python prop_hunter_hard_test.py
+
       - name: Source health and discovery
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL,NCAAB,NCAAF
+          PH_KEYLESS_BOOKS_ENABLED: '1'
+          PH_KEYLESS_BOOKS: draftkings,fanduel,bovada,betrivers
+          PH_KEYLESS_TIMEOUT: '5'
+          PH_KEYLESS_MAX_EVENTS: '2'
+          PH_KEYLESS_MAX_PROP_CATEGORIES: '4'
+          PH_KEYLESS_CACHE_TTL: '900'
+          PH_KEYLESS_SOURCE_BUDGET_SEC: '18'
+          PH_DIRECT_ROWS_PER_SPORT_TARGET: '50'
+          PH_DIRECT_BOOK_TARGET: '5'
+          PH_DIRECT_PAIR_TARGET: '15'
+          PH_SOURCE_BUDGET_SEC: '165'
+          PH_BROWSER_ENABLED: '0'
+          PH_FAST_BROWSER_JOBS: '0'
+          PH_SKIP_BLOCKED_FREE: '1'
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
@@ -48,26 +70,24 @@ jobs:
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           PARLAY_API_KEY: ${{ secrets.PARLAY_API_KEY }}
           PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
-          PH_DIRECT_ROWS_PER_SPORT_TARGET: '40'
-          PH_DIRECT_BOOK_TARGET: '5'
-          PH_DIRECT_PAIR_TARGET: '12'
-          PH_OPTICODDS_MAX_FIXTURES: '5'
-          PH_OPTICODDS_TIMEOUT: '6'
-          PH_OPTICODDS_BOOKS: DraftKings,FanDuel,BetMGM,Caesars,bet365
+          PH_ODDSAPI_IO_MAX_EVENTS: '2'
           PH_KAMBI_ENABLED: '1'
           PH_KAMBI_MAX_EVENTS: '2'
           PH_KAMBI_MAX_BRANDS: '4'
+          PH_KAMBI_CACHE_TTL: '900'
+          PH_KAMBI_BUDGET_SEC: '25'
           PH_KAMBI_TIMEOUT: '4'
           PH_1XBET_ENABLED: '1'
           PH_1XBET_MAX_EVENTS: '2'
           PH_1XBET_TIMEOUT: '4'
-          PH_BROWSER_ENABLED: '0'
-          PH_FAST_BROWSER_JOBS: '0'
-          PH_SKIP_BLOCKED_FREE: '1'
+          PH_OPTICODDS_MAX_FIXTURES: '5'
+          PH_OPTICODDS_TIMEOUT: '6'
+          PH_OPTICODDS_BOOKS: DraftKings,FanDuel,BetMGM,Caesars,bet365
         run: |
           python prop_hunter_source_audit.py || true
           python prop_hunter_github_watcher.py || true
           python prop_hunter_source_orchestrator.py --mode fast || true
+
       - name: Autonomous learning and coverage
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -78,12 +98,16 @@ jobs:
           python prop_hunter_coverage_watchdog.py
           python prop_hunter_market_discovery.py
           python prop_hunter_retrainer.py || true
+
       - name: Save learned state
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase --autostash origin main
-          git add prop_hunter_source_audit.json prop_hunter_source_trust.json prop_hunter_model_registry.json prop_hunter_autolearn_report.json prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_identity_cache.json ml_model.pkl 2>/dev/null || true
+          git add prop_hunter_source_audit.json prop_hunter_source_trust.json \
+            prop_hunter_model_registry.json prop_hunter_autolearn_report.json \
+            prop_hunter_coverage_report.json prop_hunter_market_discovery.json \
+            prop_hunter_identity_cache.json ml_model.pkl 2>/dev/null || true
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter self maintenance $(date -u +%F)"
           git push origin main
