@@ -7,6 +7,7 @@ from prop_hunter_builder_engine import build_autonomous_extras
 from prop_hunter_identity_hub import identity_match
 from prop_hunter_kambi import parse_offer as kambi_parse
 from prop_hunter_market_consensus import enrich as consensus_enrich, fair_prob_for
+from prop_hunter_opticodds import parse_odds_payload as optic_parse
 from prop_hunter_parlayapi import parse_rows as parlay_parse
 from prop_hunter_propline import parse_payload as propline_parse
 from prop_hunter_settler import find_gamelog,line_of_pick,stat_value
@@ -18,6 +19,8 @@ def fail(msg):raise SystemExit(f"RUNTIME GUARD FAILED: {msg}")
 def source_checks():
     sgo=sgo_parse([{"eventID":"sgo-1","startTime":"2026-09-25T23:00:00Z","teams":{"home":{"names":{"long":"Lakers"}},"away":{"names":{"long":"Celtics"}}},"odds":{"x":{"statID":"assists","betTypeID":"ou","statEntityID":"LEBRON_JAMES_1_NBA","sideID":"over","overUnder":7.5,"byBookmaker":{"draftkings":{"available":True,"overUnder":7.5,"odds":-110,"altLines":[{"available":True,"overUnder":8.5,"odds":120}]}}}}}],"NBA")
     if len(sgo)!=2 or {float(x["line"]) for x in sgo}!={7.5,8.5}:fail("SGO alt lines")
+    oo=optic_parse({"data":[{"id":"oo1","start_date":"2026-09-25T23:00:00Z","home_team_display":"Lakers","away_team_display":"Celtics","league":{"name":"NBA"},"odds":[{"id":"a","sportsbook":"DraftKings","market":"Player Points","market_id":"player_points","name":"LeBron James Over 27.5","selection":"LeBron James","selection_line":"over","points":27.5,"player_id":"P1","price":1.91,"grouping_key":"g"},{"id":"b","sportsbook":"DraftKings","market":"Player Points","market_id":"player_points","name":"LeBron James Under 27.5","selection":"LeBron James","selection_line":"under","points":27.5,"player_id":"P1","price":1.91,"grouping_key":"g"}]}]},"NBA")
+    if len(oo)!=2 or {x["direction"] for x in oo}!={"over","under"} or any(x["player_name"]!="LeBron James" for x in oo):fail(f"OpticOdds parse: {oo}")
     k=kambi_parse({"betOffers":[{"criterion":{"label":"Player Points"},"outcomes":[{"participant":"LeBron James","label":"Over 27.5","line":27500,"odds":1910},{"participant":"LeBron James","label":"Under 27.5","line":27500,"odds":1910}]}]},"NBA","k1","Lakers","Celtics","2026-09-25T23:00:00Z","ub")
     if len(k)!=2 or any(float(x["line"])!=27.5 for x in k):fail(f"Kambi milli-line parse: {k}")
     xb=xbet_parse({"Value":{"GE":[{"GS":"Player Points","E":[[{"PN":"LeBron James","PL":"Over 27.5","P":27.5,"C":1.91,"T":9},{"PN":"LeBron James","PL":"Under 27.5","P":27.5,"C":1.91,"T":10}]]}]}},"NBA",{"I":123,"O1":"Lakers","O2":"Celtics"},"fixture")
@@ -44,5 +47,5 @@ def safety_checks():
     if _json_clean({"x":float("nan")})!={"x":None}:fail("json sanitizer")
 def main():
     if getattr(ph,"PH_RUNTIME_VERSION",None)!=EXPECTED:fail(f"runtime={getattr(ph,'PH_RUNTIME_VERSION',None)} expected={EXPECTED}")
-    source_checks();safety_checks();print("RUNTIME GUARD: SGO/Kambi/1xBet/PropLine/ParlayAPI parsers OK");print("RUNTIME GUARD: no-vig consensus + observed-price safety OK");print("RUNTIME GUARD: settlement/identity/source-weight safety OK");print(f"RUNTIME GUARD OK: {EXPECTED}")
+    source_checks();safety_checks();print("RUNTIME GUARD: SGO/OpticOdds/Kambi/1xBet/PropLine/ParlayAPI parsers OK");print("RUNTIME GUARD: no-vig consensus + observed-price safety OK");print("RUNTIME GUARD: settlement/identity/source-weight safety OK");print(f"RUNTIME GUARD OK: {EXPECTED}")
 if __name__=="__main__":main()
