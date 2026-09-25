@@ -43,12 +43,17 @@ jobs:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          OPTICODDS_API_KEY: ${{ secrets.OPTICODDS_API_KEY }}
+          OPTICODDS_KEY: ${{ secrets.OPTICODDS_KEY }}
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           PARLAY_API_KEY: ${{ secrets.PARLAY_API_KEY }}
           PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
           PH_DIRECT_ROWS_PER_SPORT_TARGET: '40'
           PH_DIRECT_BOOK_TARGET: '5'
           PH_DIRECT_PAIR_TARGET: '12'
+          PH_OPTICODDS_MAX_FIXTURES: '5'
+          PH_OPTICODDS_TIMEOUT: '6'
+          PH_OPTICODDS_BOOKS: DraftKings,FanDuel,BetMGM,Caesars,bet365
           PH_KAMBI_ENABLED: '1'
           PH_KAMBI_MAX_EVENTS: '2'
           PH_KAMBI_MAX_BRANDS: '4'
