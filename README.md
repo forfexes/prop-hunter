@@ -1,6 +1,6 @@
 # PROP HUNTER
 
-Current production runtime: **13.10.0-MULTISOURCE-CONSENSUS**.
+Current production runtime: **13.10.1-KEYLESS-HARDENED**.
 
 PROP HUNTER collects observed player-prop prices, enriches them with sports data, creates +EV singles/ladders/builders, settles picks from official/result feeds and updates the original Telegram card in place. Browser work stays out of normal card runs.
 
@@ -10,15 +10,16 @@ PROP HUNTER collects observed player-prop prices, enriches them with sports data
 - Self-maintenance: Sunday 03:15 UTC.
 
 ## Live prop sources
-The collector is coverage-aware. It can use The Odds API/in-engine event props plus SportsGameOdds, ParlayAPI, PropLine, Odds-API.io, OddsPapi, four Kambi brands and a bounded 1xBet-family LineFeed fallback. Underdog/Sleeper remain modelling/context sources where appropriate.
+The collector is now **keyless-first and coverage-aware**. Direct no-key sportsbook adapters run first for DraftKings, FanDuel, Bovada and BetRivers, followed by multi-brand Kambi (Unibet/Betsson/888/NordicBet). A bounded 1xBet-family LineFeed is used only when free coverage is still insufficient. Optional keyed/trial fallbacks include SportsGameOdds, OpticOdds, OddsPapi, ParlayAPI, PropLine and Odds-API.io. Underdog/Sleeper remain modelling/context sources where appropriate.
 
-It does **not** create synthetic sportsbook prices. Observed alternate lines remain separate ladder rungs. Kambi brands are retained as separate books. 1xBet is best-effort public JSON only: no login, proxy, browser, CAPTCHA or geo bypass.
+It does **not** create synthetic sportsbook prices. Observed alternate lines remain separate ladder rungs. Generic outcome labels, team names masquerading as players, malformed prices/lines and implausible model-vs-market gaps are rejected before the pick engine.
 
 ## No-vig consensus
-13.10 pairs real Over/Under prices at the same player/market/line, calculates per-book no-vig probability and falls back to cross-book median implied probabilities when necessary. Only after consensus is calculated does the card layer collapse identical sides to the best observed bookmaker price. This gives the pick engine a real market-based `fair_prob` instead of treating every observed price as its own probability estimate.
+The collector pairs real Over/Under prices at the same player/market/line, calculates per-book no-vig probability and falls back to cross-book median implied probabilities when necessary. Only after consensus is calculated does the card layer collapse identical sides to the best observed bookmaker price. This gives the pick engine a real market-based `fair_prob` instead of treating every observed price as its own probability estimate.
 
-## Optional free-key sources
+## Optional key sources
 - `SPORTSGAMEODDS_KEY` / `SPORTSGAMEODDS_API_KEY`
+- `OPTICODDS_API_KEY` / `OPTICODDS_KEY`
 - `PARLAY_API_KEY`
 - `PROPLINE_API_KEY`
 - `ODDSAPI_IO_KEY`
