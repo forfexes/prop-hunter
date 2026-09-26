@@ -16,6 +16,7 @@ prophunter_results.py
 prop_hunter_runtime_guard.py
 prop_hunter_hard_test.py
 prop_hunter_market_regression_test.py
+prop_hunter_expansion_test.py
 prop_hunter_daily_control.py
 
 SOURCE / ODDS
@@ -50,13 +51,16 @@ prop_hunter_scraper.py
 
 RESULTS / SETTLEMENT
 prop_hunter_results_mlb.py
+prop_hunter_results_mlb_extras.py
 prop_hunter_results_nba.py
 prop_hunter_results_wnba.py
 prop_hunter_results_nfl.py
 prop_hunter_results_nhl.py
+prop_hunter_results_ncaa.py
 espn_multisport_results.py
 prop_hunter_feature_builder.py
 prop_hunter_settler.py
+prop_hunter_settler_extras.py
 prop_hunter_clv_engine.py
 
 LEARNING / MAINTENANCE
@@ -106,5 +110,12 @@ If row/book/two-sided-pair coverage is still insufficient: 1xBet -> SportsGameOd
 All rows pass a central player/quote sanity guard. Explicit threshold labels repair placeholder zero lines (4+ Hits -> 3.5, 2+ HR -> 1.5), and Double/Triple markets are kept separate from generic Hits.
 No-vig fair probability is computed from real Over/Under pairs before best-price selection.
 No synthetic ladders. Browser disabled in normal card/maintenance source collection.
-Daily control scans every workflow, runs compile/runtime/hard/regression tests, auto-fixes safe runtime/git-push drift, and fails closed on unknown workflow errors.
+
+13.10.1 ALL-SPORTS RESULT / LEARNING LOGIC
+MLB/NBA/WNBA/NFL/NHL keep their existing result collectors.
+NCAAB + NCAAF use a bounded pending-pick ESPN scoreboard/summary collector and write the same player-gamelog schema used by the generic settler.
+MLB Double/Triple props use an official MLB StatsAPI supplement; raw stat fallback works even when Supabase does not yet expose doubles/triples columns.
+Supplemental settlement covers canonical doubles, triples, threes and generic/rushing/receiving touchdown thresholds without duplicating legacy-settled markets.
+Feature builder now includes doubles/triples. All settled rows flow into the existing sport/market/book/source learning update.
+Daily control scans every workflow and runs compile/runtime/hard/market/all-sports regression tests.
 No SQL migration required.
