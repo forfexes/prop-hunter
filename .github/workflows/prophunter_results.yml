@@ -39,19 +39,13 @@ jobs:
           key = os.environ.get("SUPABASE_KEY", "")
           if not url or not key:
               raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
-          req = urllib.request.Request(
-              f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",
-              headers={"apikey": key},
-          )
+          req = urllib.request.Request(f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1", headers={"apikey": key})
           try:
               with urllib.request.urlopen(req, timeout=15) as response:
-                  if response.status != 200:
-                      raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
+                  if response.status != 200: raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
           except urllib.error.HTTPError as exc:
-              body = exc.read().decode("utf-8", "ignore")[:300]
-              raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
-          except Exception as exc:
-              raise SystemExit(f"Supabase preflight failed: {exc}")
+              body = exc.read().decode("utf-8", "ignore")[:300]; raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
+          except Exception as exc: raise SystemExit(f"Supabase preflight failed: {exc}")
           print("Supabase preflight OK")
           PY
 
@@ -61,10 +55,11 @@ jobs:
       - name: Compile and offline settlement regression
         run: |
           python -m py_compile prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_settler_extras.py prop_hunter_feature_builder.py
-          python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py
+          python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py prop_hunter_results_euroleague.py
           python -m py_compile prop_hunter_learning_update.py prop_hunter_source_manager.py prop_hunter_model_registry.py
-          python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py prop_hunter_expansion_test.py
+          python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py prop_hunter_expansion_test.py prop_hunter_euroleague_test.py
           python prop_hunter_expansion_test.py
+          python prop_hunter_euroleague_test.py
 
       - name: Fetch official results and gamelogs
         env:
@@ -84,6 +79,8 @@ jobs:
           PH_NCAA_RESULTS_MAX_DATES: '5'
           PH_NCAA_RESULTS_MAX_EVENTS: '24'
           PH_NCAA_RESULT_LEAGUES: NCAAB,NCAAF
+          PH_EUROLEAGUE_RESULTS_MAX_DATES: '5'
+          PH_EUROLEAGUE_RESULTS_MAX_EVENTS: '20'
           HTTP_TIMEOUT: '8'
         run: |
           python prop_hunter_results_mlb.py || true
@@ -93,6 +90,7 @@ jobs:
           python prop_hunter_results_nfl.py || true
           python prop_hunter_results_nhl.py || true
           python prop_hunter_results_ncaa.py || true
+          python prop_hunter_results_euroleague.py || true
           if [ -f espn_multisport_results.py ]; then python espn_multisport_results.py || true; fi
 
       - name: Settle and publish evaluation
