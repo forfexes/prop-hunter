@@ -4,6 +4,9 @@ from pathlib import Path
 
 from prop_hunter_results_ncaa import parse_ncaab_summary, parse_ncaaf_summary
 from prop_hunter_results_mlb_extras import parse_extra_hitting
+from prop_hunter_results_nba import _made as nba_made
+from prop_hunter_results_wnba import _made as wnba_made
+from prop_hunter_results_nhl import _candidate_name as nhl_candidate_name
 from prop_hunter_settler_extras import detect_extra_stat, extra_stat_value, extra_line_of_pick
 from prop_hunter_settler import result_for_value
 
@@ -56,9 +59,7 @@ def test_ncaaf():
 
 def test_mlb_extra():
     split = {
-        "date": "2026-09-25",
-        "game": {"gamePk": 123},
-        "team": {"name": "Team"},
+        "date": "2026-09-25", "game": {"gamePk": 123}, "team": {"name": "Team"},
         "opponent": {"name": "Opp"},
         "stat": {"hits": 2, "doubles": 1, "triples": 1, "totalBases": 5, "homeRuns": 0}
     }
@@ -70,6 +71,18 @@ def test_mlb_extra():
     check(extra_stat_value({"raw": row["raw"]}, "triples") == 1.0, "raw triple fallback")
     check(result_for_value(1.0, .5, "over") == "win", "triple settlement")
 
+def test_nba_wnba_nfl_nhl_guards():
+    check(nba_made("3-5") == 3.0, "NBA made-attempt parser")
+    check(wnba_made("4-9") == 4.0, "WNBA made-attempt parser")
+    check(nhl_candidate_name({"name":"Connor McDavid"}) == "Connor McDavid", "NHL identity name")
+    check(nhl_candidate_name({"firstName":{"default":"Connor"},"lastName":{"default":"McDavid"}}) == "Connor McDavid", "NHL structured identity name")
+    nfl = Path("prop_hunter_results_nfl.py").read_text(encoding="utf-8")
+    check("load_schedules" in nfl and '"game_date": game_date' in nfl, "NFL schedule/date mapping missing")
+    nba = Path("prop_hunter_results_nba.py").read_text(encoding="utf-8")
+    wnba = Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
+    check("pending_picks" in nba and "espn_pending_logs" in nba, "NBA pending-pick fallback missing")
+    check("pending_picks" in wnba and "event_players" in wnba, "WNBA pending-pick path missing")
+
 def test_all_sports_sources():
     text = Path("prop_hunter_source_orchestrator.py").read_text(encoding="utf-8")
     for sport in ("MLB","NBA","WNBA","NFL","NHL","NCAAB","NCAAF"):
@@ -77,12 +90,13 @@ def test_all_sports_sources():
     workflow = Path(".github/workflows/prophunter_results.yml").read_text(encoding="utf-8")
     for cmd in ("prop_hunter_results_ncaa.py","prop_hunter_results_mlb_extras.py","prop_hunter_settler_extras.py","prop_hunter_learning_update.py"):
         check(cmd in workflow, f"results workflow missing {cmd}")
+    for key in ("NBA_RESULTS_PLAYER_CAP", "WNBA_RESULT_GAME_CAP", "NFL_RESULTS_PLAYER_CAP", "NHL_RESULTS_PLAYER_CAP"):
+        check(key in workflow, f"results runtime bound missing {key}")
 
 def main():
-    tests=[test_ncaab,test_ncaaf,test_mlb_extra,test_all_sports_sources]
+    tests=[test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,test_all_sports_sources]
     for t in tests:
-        t()
-        print(f"EXPANSION TEST OK: {t.__name__}")
+        t(); print(f"EXPANSION TEST OK: {t.__name__}")
     print(f"EXPANSION TEST PASSED: {len(tests)}/{len(tests)} suites")
 
 if __name__ == "__main__":
