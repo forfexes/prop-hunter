@@ -3,12 +3,20 @@
 
 Turns settled results into market/source/bookmaker performance and conservative
 weights. Existing Supabase tables are used; no migration is required.
+
+It also learns conservative same-game pair factors from already-settled builder
+legs in picks_history.json. Those factors are consumed by prop_hunter_builder_engine
+on later cards, closing the builder settlement -> learning -> next-card loop.
 """
 from __future__ import annotations
 from collections import defaultdict
+import itertools
+import json
 import math
+from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple
 from prop_hunter_shared_utils import select_rows, upsert_rows, safe_json_write, hash_key, now_iso, log, norm_market, to_float
+from prop_hunter_builder_learning import market_group, pair_key
 
 
 def _base_market(value: Any) -> str:
@@ -26,7 +34,6 @@ def _profit(result: str, odds: float, stake: float) -> float:
 
 
 def _weight(roi: float, n: int) -> float:
-    # Heavy shrinkage until enough data exists; avoids over-learning short streaks.
     reliability = min(1.0, max(0.0, (n - 10) / 90.0))
     signal = math.tanh(roi / 0.18)
     return round(max(0.70, min(1.30, 1.0 + 0.30 * signal * reliability)), 3)
@@ -38,6 +45,110 @@ def _accumulate(groups, key: Tuple[str, str], result: str, profit: float, stake:
     if result == "win": g["wins"] += 1
     elif result == "loss": g["losses"] += 1
     elif result == "push": g["pushes"] += 1
+
+
+def _builder_leg_direction(leg: Dict[str, Any]) -> str:
+    raw = str(leg.get("direction") or leg.get("side") or "").lower()
+    return "under" if "under" in raw else "over"
+
+
+def _builder_leg_key(leg: Dict[str, Any], combo: Dict[str, Any]) -> str:
+    sport = str(leg.get("sport") or combo.get("sport") or "UNKNOWN").upper()
+    market = market_group(leg.get("market") or leg.get("market_family") or "")
+    return f"{sport}:{market}:{_builder_leg_direction(leg)}"
+
+
+def _builder_leg_probability(leg: Dict[str, Any]):
+    p = to_float(leg.get("probability"))
+    if p is None:
+        return None
+    if p > 1:
+        p /= 100.0
+    return max(0.01, min(0.99, p)) if 0 < p < 1 else None
+
+
+def learn_builder_correlations(history: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
+    """Learn bounded pair factors plus profile performance from settled SGPs."""
+    closed = {"win", "won", "loss", "lost", "push"}
+    pair_stats = defaultdict(lambda: {"n": 0, "both_wins": 0, "expected_sum": 0.0})
+    profiles = defaultdict(lambda: {"n": 0, "wins": 0, "losses": 0, "pushes": 0, "stake": 0.0, "profit": 0.0})
+
+    for entry in history or []:
+        for combo in entry.get("kombis") or []:
+            if not isinstance(combo, dict):
+                continue
+            status = str(combo.get("result") or "").lower()
+            features = combo.get("features") if isinstance(combo.get("features"), dict) else {}
+            profile = str(combo.get("builder_profile") or features.get("builder_profile") or "").lower()
+            if profile and status in closed:
+                p = profiles[profile]
+                p["n"] += 1
+                if status in {"win", "won"}: p["wins"] += 1
+                elif status in {"loss", "lost"}: p["losses"] += 1
+                else: p["pushes"] += 1
+                p["stake"] += to_float(combo.get("stake"), 0.0) or 0.0
+                p["profit"] += to_float(combo.get("profit"), 0.0) or 0.0
+
+            legs = combo.get("settlement_legs") or combo.get("leg_details") or []
+            legs = [x for x in legs if isinstance(x, dict)]
+            for a, b in itertools.combinations(legs, 2):
+                sa = str(a.get("result") or "").lower()
+                sb = str(b.get("result") or "").lower()
+                if sa not in closed or sb not in closed or "push" in {sa, sb}:
+                    continue
+                pa, pb = _builder_leg_probability(a), _builder_leg_probability(b)
+                if pa is None or pb is None:
+                    continue
+                key = pair_key(_builder_leg_key(a, combo), _builder_leg_key(b, combo))
+                rec = pair_stats[key]
+                rec["n"] += 1
+                rec["both_wins"] += int(sa in {"win", "won"} and sb in {"win", "won"})
+                rec["expected_sum"] += pa * pb
+
+    pairs = {}
+    for key, rec in pair_stats.items():
+        n = rec["n"]
+        if not n:
+            continue
+        expected = max(0.01, min(0.99, rec["expected_sum"] / n))
+        observed = rec["both_wins"] / n
+        raw_ratio = max(0.60, min(1.35, observed / expected if expected else 1.0))
+        reliability = max(0.0, min(1.0, (n - 8) / 72.0))
+        factor = 1.0 + (raw_ratio - 1.0) * reliability
+        factor = max(0.85, min(1.12, factor))
+        pairs[key] = {
+            "factor": round(factor, 4),
+            "n": n,
+            "both_wins": rec["both_wins"],
+            "observed_joint": round(observed, 5),
+            "expected_joint": round(expected, 5),
+            "raw_ratio": round(raw_ratio, 4),
+        }
+
+    profile_out = {}
+    for name, p in profiles.items():
+        decided = p["wins"] + p["losses"]
+        profile_out[name] = {
+            **p,
+            "stake": round(p["stake"], 4),
+            "profit": round(p["profit"], 4),
+            "hit_rate": round(p["wins"] / decided, 5) if decided else None,
+            "roi": round(p["profit"] / p["stake"], 5) if p["stake"] else 0.0,
+        }
+    return {"version": 2, "pairs": pairs, "profiles": profile_out, "updated_at": now_iso()}
+
+
+def _update_builder_learning() -> Dict[str, Any]:
+    path = Path("picks_history.json")
+    try:
+        history = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+    except Exception:
+        history = []
+    if not isinstance(history, list):
+        history = []
+    learned = learn_builder_correlations(history)
+    safe_json_write("prop_hunter_builder_correlations.json", learned)
+    return learned
 
 
 def main():
@@ -117,6 +228,11 @@ def main():
         trust_rows.append(row); trust_json[source]=row
     upsert_rows("prop_hunter_source_trust", trust_rows, "source_name")
     safe_json_write("prop_hunter_source_trust.json", trust_json)
-    log(f"learning update: results={len(results)} groups={len(perf_rows)} sources={len(trust_rows)}")
+
+    builder_learning = _update_builder_learning()
+    log(
+        f"learning update: results={len(results)} groups={len(perf_rows)} "
+        f"sources={len(trust_rows)} builder_pairs={len(builder_learning.get('pairs',{}))}"
+    )
 
 if __name__ == "__main__": main()
