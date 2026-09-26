@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Supplemental settlement for canonical markets not covered by the legacy map.
+"""Supplemental exact settlement for markets that need threshold repair.
 
-Covers MLB doubles/triples, canonical `threes`, and explicit rushing/receiving/
-generic touchdown thresholds. Existing legacy-settled markets are intentionally
-left to prop_hunter_settler.py to avoid duplicate grading paths.
+Runs after the unified legacy settler and deliberately reuses the legacy result id
+when both paths see the same pick.  That means an exact double/triple/TD grading
+REPLACES a coarse legacy grading instead of creating a second learning sample.
 """
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ import re
 from typing import Any, Dict, Optional
 
 from prop_hunter_settler import (
-    find_gamelog, learn_aliases, line_of_pick, result_for_value, side_of_pick
+    detect_stat as legacy_detect_stat, find_gamelog, learn_aliases, line_of_pick,
+    result_for_value, side_of_pick
 )
 from prop_hunter_shared_utils import (
     hash_key, log, norm_name, now_iso, pick_id, safe_json_write,
@@ -33,7 +34,7 @@ def detect_extra_stat(market: Any) -> Optional[str]:
     if "rushing touchdown" in m:
         return "rushing_touchdowns"
     if "passing touchdown" in m:
-        return None  # legacy settler already handles this correctly
+        return None
     if "touchdown" in m or m.strip() in {"td", "tds"}:
         return "touchdowns"
     return None
@@ -62,15 +63,13 @@ def extra_stat_value(gl: Dict[str, Any], stat: str):
     return None
 
 def extra_line_of_pick(pick: Dict[str, Any], stat: str) -> Optional[float]:
-    """Preserve explicit N+ semantics even for legacy rows missing a normalized line."""
     line = line_of_pick(pick)
     text = str(pick.get("market") or pick.get("prop_type") or pick.get("selection") or "")
     m = re.search(r"\b(\d+)\s*\+", text)
     if m:
-        threshold = max(0.5, float(int(m.group(1))) - 0.5)
-        # Old rows sometimes stored the visible threshold (2) instead of the
-        # settlement line (1.5). Repair only when the label explicitly says N+.
-        if line is None or abs(float(line) - float(int(m.group(1)))) < 1e-9:
+        visible = float(int(m.group(1)))
+        threshold = max(0.5, visible - 0.5)
+        if line is None or abs(float(line) - visible) < 1e-9:
             line = threshold
     if line is None and stat in {"doubles", "triples"}:
         line = 0.5
@@ -92,7 +91,8 @@ def main() -> None:
     aliases = learn_aliases(list(picks) + list(logs))
     settled = []
     for p in picks:
-        stat = detect_extra_stat(p.get("market") or p.get("prop_type") or p.get("selection"))
+        market = p.get("market") or p.get("prop_type") or p.get("selection")
+        stat = detect_extra_stat(market)
         if not stat:
             continue
         sport = str(p.get("league") or p.get("sport") or "").upper()
@@ -111,14 +111,16 @@ def main() -> None:
         if status == "no_result":
             continue
         pid = pick_id(p)
+        # Replace a legacy grade for the same pick/game instead of double-counting it.
+        result_key_stat = legacy_detect_stat(market) or stat
         settled.append({
-            "result_id": hash_key(pid, stat, gl.get("game_id")),
+            "result_id": hash_key(pid, result_key_stat, gl.get("game_id")),
             "pick_id": pid,
             "sport": p.get("sport") or gl.get("sport"),
             "league": p.get("league") or gl.get("league"),
             "player_name": p.get("player_name") or p.get("player") or gl.get("player_name"),
             "normalized_name": norm_name(p.get("player_name") or p.get("player") or gl.get("player_name")),
-            "market": p.get("market") or p.get("prop_type") or p.get("selection"),
+            "market": market,
             "stat_key": stat,
             "line": line,
             "side": side,
