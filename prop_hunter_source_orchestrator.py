@@ -18,6 +18,19 @@ def _normalise(row,source):
 def _row_key(row):
     return str(row.get('snapshot_id') or hash_key(row.get('source'),row.get('bookmaker'),row.get('sport'),row.get('source_event_id') or row.get('game_id'),row.get('player_name'),row.get('market_key') or row.get('market'),row.get('direction'),row.get('line'),row.get('odds_decimal'),row.get('period'),row.get('is_live')))
 
+def _season_active_sports(sports):
+    month=datetime.now(timezone.utc).month;active=[]
+    for sport in sports:
+        if sport=='MLB' and 3<=month<=11:active.append(sport)
+        elif sport=='WNBA' and 5<=month<=10:active.append(sport)
+        elif sport=='NFL' and (month>=8 or month<=2):active.append(sport)
+        elif sport=='NBA' and (month>=9 or month<=6):active.append(sport)
+        elif sport=='NHL' and (month>=9 or month<=6):active.append(sport)
+        elif sport=='NCAAB' and (month>=10 or month<=4):active.append(sport)
+        elif sport=='NCAAF' and (month>=8 or month<=1):active.append(sport)
+        elif sport=='EUROLEAGUE' and (month>=9 or month<=6):active.append(sport)
+    return active or list(sports)
+
 def _direct_jobs(sports):
     import prop_hunter_odds_pp_ud as ppud
     active=_season_active_sports(sports);jobs=[]
@@ -39,30 +52,45 @@ def _direct_jobs(sports):
     except Exception as exc:warn(f'keyless direct books unavailable: {exc}')
     try:
         import prop_hunter_kambi as kambi
+        kambi.SPORT_PATHS.setdefault('EUROLEAGUE',('basketball/euroleague','basketball'))
         if kambi.configured():
             for sport in active:jobs.append((f'kambi_{sport.lower()}',lambda s=sport:kambi.fetch_kambi_props(s,max_events=max(1,int(os.getenv('PH_KAMBI_MAX_EVENTS','3'))))))
     except Exception as exc:warn(f'Kambi adapter unavailable: {exc}')
     try:
         import prop_hunter_1xbet as xb
+        xb.SPORT_IDS.setdefault('EUROLEAGUE',3)
+        _xb_league_ok=xb._league_ok
+        def _xb_league_ok_ext(sport,row):
+            if sport=='EUROLEAGUE':
+                text=' '.join(str(row.get(k) or '') for k in ('LE','L','League','O1','O2','HomeTeam','AwayTeam')).lower()
+                return 'euroleague' in text or 'euro league' in text
+            return _xb_league_ok(sport,row)
+        xb._league_ok=_xb_league_ok_ext
         if xb.configured():
             for sport in active:jobs.append((f'1xbet_{sport.lower()}',lambda s=sport:xb.fetch_1xbet_props(s,max_events=max(1,int(os.getenv('PH_1XBET_MAX_EVENTS','2'))))))
     except Exception as exc:warn(f'1xBet adapter unavailable: {exc}')
     try:
         import prop_hunter_sgo as sgo
         if sgo.configured():
-            keys={'MLB':'baseball_mlb','NBA':'basketball_nba','WNBA':'basketball_wnba','NFL':'americanfootball_nfl','NHL':'icehockey_nhl','NCAAB':'basketball_ncaab','NCAAF':'americanfootball_ncaaf'}
-            for sport in active:jobs.append((f'sportsgameodds_{sport.lower()}',lambda s=sport:sgo.fetch_sgo_props(keys[s])))
+            keys={'MLB':'baseball_mlb','NBA':'basketball_nba','WNBA':'basketball_wnba','NFL':'americanfootball_nfl','NHL':'icehockey_nhl','NCAAB':'basketball_ncaab','NCAAF':'americanfootball_ncaaf','EUROLEAGUE':'basketball_euroleague'}
+            for sport in active:
+                key=keys.get(sport)
+                if key:jobs.append((f'sportsgameodds_{sport.lower()}',lambda s=sport:sgo.fetch_sgo_props(keys[s])))
     except Exception as exc:warn(f'SGO adapter unavailable: {exc}')
     try:
         import prop_hunter_opticodds as oo
+        try:oo.SUPPORTED.add('EUROLEAGUE')
+        except Exception:pass
         if oo.configured():
             for sport in active:jobs.append((f'opticodds_{sport.lower()}',lambda s=sport:oo.fetch_opticodds_props(s,max_fixtures=max(1,int(os.getenv('PH_OPTICODDS_MAX_FIXTURES','5'))))))
     except Exception as exc:warn(f'OpticOdds adapter unavailable: {exc}')
     try:
         import prop_hunter_oddspapi as op
         if op.configured():
-            keys={'MLB':'baseball_mlb','NBA':'basketball_nba','WNBA':'basketball_wnba','NFL':'americanfootball_nfl','NHL':'icehockey_nhl','NCAAB':'basketball_ncaab','NCAAF':'americanfootball_ncaaf'}
-            for sport in active:jobs.append((f'oddspapi_{sport.lower()}',lambda s=sport:op.fetch_oddspapi_props(keys[s],max_events=max(1,int(os.getenv('PH_ODDSPAPI_MAX_EVENTS','2'))))))
+            keys={'MLB':'baseball_mlb','NBA':'basketball_nba','WNBA':'basketball_wnba','NFL':'americanfootball_nfl','NHL':'icehockey_nhl','NCAAB':'basketball_ncaab','NCAAF':'americanfootball_ncaaf','EUROLEAGUE':'basketball_euroleague'}
+            for sport in active:
+                key=keys.get(sport)
+                if key:jobs.append((f'oddspapi_{sport.lower()}',lambda s=sport:op.fetch_oddspapi_props(keys[s],max_events=max(1,int(os.getenv('PH_ODDSPAPI_MAX_EVENTS','2'))))))
     except Exception as exc:warn(f'OddsPapi adapter unavailable: {exc}')
     try:
         import prop_hunter_parlayapi as pa
@@ -93,7 +121,7 @@ def _coverage(rows,sport):
     return len(priced),len(books),sum(1 for sides in pairs.values() if {'over','under'}<=sides)
 
 def collect(sport_filter=None,mode='fast'):
-    sports=[sport_filter.upper()] if sport_filter else list(SPORTS);sports=[s for s in sports if s in {'MLB','NBA','WNBA','NFL','NHL','NCAAB','NCAAF'}];max_cache_age=8 if mode=='fast' else 30;all_rows=[];audits=[]
+    sports=[sport_filter.upper()] if sport_filter else list(SPORTS);sports=[s for s in sports if s in {'MLB','NBA','WNBA','NFL','NHL','NCAAB','NCAAF','EUROLEAGUE'}];max_cache_age=8 if mode=='fast' else 30;all_rows=[];audits=[]
     row_target=max(1,int(os.getenv('PH_DIRECT_ROWS_PER_SPORT_TARGET','50')));book_target=max(1,int(os.getenv('PH_DIRECT_BOOK_TARGET','5')));pair_target=max(1,int(os.getenv('PH_DIRECT_PAIR_TARGET','15')));source_budget=max(30,int(os.getenv('PH_SOURCE_BUDGET_SEC','165')));started=time.monotonic()
     fallback_prefixes=('1xbet_','sportsgameodds_','opticodds_','oddspapi_','parlayapi_','propline_','oddsapi_io_')
     for source,fn in _direct_jobs(sports):
