@@ -45,6 +45,7 @@ prop_hunter_line_movement.py
 MODELLING / BUILDERS
 prop_hunter_scoring.py
 prop_hunter_builder_engine.py
+prop_hunter_builder_profiles.py
 prop_hunter_builder_learning.py
 prop_hunter_identity_hub.py
 prop_hunter_scraper.py
@@ -108,8 +109,19 @@ prop_hunter_social_signals.py
 Keyless-first: DraftKings Direct -> FanDuel Direct -> Bovada Direct -> BetRivers Direct -> multi-brand Kambi.
 If row/book/two-sided-pair coverage is still insufficient: 1xBet -> SportsGameOdds -> OpticOdds -> OddsPapi -> ParlayAPI -> PropLine -> Odds-API.io.
 All rows pass a central player/quote sanity guard. Explicit threshold labels repair placeholder zero lines (4+ Hits -> 3.5, 2+ HR -> 1.5), and Double/Triple markets are kept separate from generic Hits.
+Canonical market guard now also keeps Double-Double/Triple-Double, PR/PA/RA, rushing attempts, passing attempts/completions and receiving targets distinct when those bookmaker markets are present.
 No-vig fair probability is computed from real Over/Under pairs before best-price selection.
 No synthetic ladders. Browser disabled in normal card/maintenance source collection.
+
+13.10.1 BUILDER PROFILE LOGIC
+Existing verified singles, ladders, HR tickets and 2-4 leg builders remain active.
+Additional same-game builder pass searches 2-10 real +EV legs with a bounded beam search, so runtime does not explode combinatorially.
+Profiles are selected by combined price: SAFE 1.65-2.35, VALUE 2.35-5.50, AGGRESSIVE 5.50-20.0, LONGSHOT 20-250.
+Same-player multi-stat builders are allowed (for example Points + Rebounds or Points + Assists) while two alternate lines of the same player/stat stay a Ladder and cannot be stacked into the builder.
+Each individual leg must already pass the existing real-price and positive-EV guard. Same-player combinations receive a conservative correlation haircut; positive learned pair correlation is only used after meaningful settlement history.
+Stake caps/floors fall as builder risk rises. Longshots stay tiny-stake.
+When a book does not expose an actual quoted SGP price, builder_odds_estimated_from_legs=true is persisted and the analysis explicitly says the final bookmaker SGP quote must be checked. Single-leg prices are never fabricated.
+Double-Double and Triple-Double are normalized as binary 0.5 settlement lines when a bookmaker exposes Yes/No without a numeric line.
 
 13.10.1 ALL-SPORTS RESULT / LEARNING LOGIC
 MLB/NBA/WNBA/NFL/NHL keep their existing result collectors.
@@ -117,5 +129,5 @@ NCAAB + NCAAF use a bounded pending-pick ESPN scoreboard/summary collector and w
 MLB Double/Triple props use an official MLB StatsAPI supplement; raw stat fallback works even when Supabase does not yet expose doubles/triples columns.
 Supplemental settlement covers canonical doubles, triples, threes and generic/rushing/receiving touchdown thresholds without duplicating legacy-settled markets.
 Feature builder now includes doubles/triples. All settled rows flow into the existing sport/market/book/source learning update.
-Daily control scans every workflow and runs compile/runtime/hard/market/all-sports regression tests.
+Daily control scans every workflow and runs compile/runtime/hard/market/all-sports regression tests; the all-sports expansion test now also checks builder profiles and new market normalization.
 No SQL migration required.
