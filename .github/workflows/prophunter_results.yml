@@ -28,7 +28,6 @@ jobs:
           cache: pip
           cache-dependency-path: requirements_results.txt
 
-
       - name: Supabase preflight
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -110,8 +109,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin main
           git add picks_history.json prop_hunter_model_registry.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_source_trust.json \
             prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_identity_cache.json ml_model.pkl 2>/dev/null || true
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter results $(date -u +%F)"
-          git push
+          git push origin main

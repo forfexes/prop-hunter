@@ -1,0 +1,61 @@
+name: Prop Hunter Daily Control
+
+"on":
+  workflow_dispatch: {}
+  schedule:
+    - cron: '45 4 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prop-hunter-daily-control
+  cancel-in-progress: true
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Safe workflow auto-fix
+        env:
+          PH_EXPECTED_RUNTIME_VERSION: 13.10.1-KEYLESS-HARDENED
+        run: python prop_hunter_daily_control.py --fix
+
+      - name: Full offline integrity gate
+        env:
+          PH_EXPECTED_RUNTIME_VERSION: 13.10.1-KEYLESS-HARDENED
+        run: |
+          python -m compileall -q .
+          python prop_hunter_runtime_guard.py
+          python prop_hunter_hard_test.py
+          python prop_hunter_market_regression_test.py
+          python prop_hunter_daily_control.py --check
+
+      - name: Save safe repairs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin main
+          python prop_hunter_daily_control.py --fix
+          python prop_hunter_daily_control.py --check
+          git add .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true
+          git diff --staged --quiet && exit 0
+          git commit -m "prop hunter daily workflow repair $(date -u +%F)"
+          git push origin main

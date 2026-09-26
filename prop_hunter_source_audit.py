@@ -8,7 +8,8 @@ from prop_hunter_shared_utils import hash_key, log, now_iso, safe_json_write, up
 RUNTIME="13.10.1-KEYLESS-HARDENED"
 CRITICAL_FILES=[
     "prophunter.py","prophunter_core_1392.py","prophunter_core_1391.py","prophunter_results.py",
-    "prop_hunter_runtime_guard.py","prop_hunter_hard_test.py","prop_hunter_shared_utils.py",
+    "prop_hunter_runtime_guard.py","prop_hunter_hard_test.py","prop_hunter_market_regression_test.py",
+    "prop_hunter_daily_control.py","prop_hunter_shared_utils.py",
     "prop_hunter_quote_guard.py","prop_hunter_keyless_books.py",
     "prop_hunter_source_catalog.py","prop_hunter_source_catalog_core_1392.py",
     "prop_hunter_source_orchestrator.py","prop_hunter_source_orchestrator_core_1392.py",
@@ -23,6 +24,7 @@ CRITICAL_FILES=[
     "prop_hunter_model_registry.py","prop_hunter_retrainer.py","prop_hunter_coverage_watchdog.py",
     "prop_hunter_market_discovery.py",".github/workflows/prophunter.yml",
     ".github/workflows/prophunter_results.yml",".github/workflows/prop_hunter_maintenance.yml",
+    ".github/workflows/prop_hunter_daily_control.yml",
     "requirements.txt","requirements_results.txt",
 ]
 REQUIRED_SECRETS=["TELEGRAM_BOT_TOKEN","TELEGRAM_CHAT_ID","SUPABASE_URL","SUPABASE_KEY"]

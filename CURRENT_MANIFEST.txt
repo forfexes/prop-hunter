@@ -2,6 +2,7 @@ PROP HUNTER CURRENT PRODUCTION MANIFEST
 Runtime: 13.10.1-KEYLESS-HARDENED
 
 PRODUCTION WORKFLOWS
+.github/workflows/prop_hunter_daily_control.yml
 .github/workflows/prop_hunter_github_watcher.yml
 .github/workflows/prop_hunter_maintenance.yml
 .github/workflows/prophunter.yml
@@ -14,6 +15,8 @@ prophunter_core_1391.py
 prophunter_results.py
 prop_hunter_runtime_guard.py
 prop_hunter_hard_test.py
+prop_hunter_market_regression_test.py
+prop_hunter_daily_control.py
 
 SOURCE / ODDS
 prop_hunter_quote_guard.py
@@ -100,7 +103,8 @@ prop_hunter_social_signals.py
 13.10.1 SOURCE LOGIC
 Keyless-first: DraftKings Direct -> FanDuel Direct -> Bovada Direct -> BetRivers Direct -> multi-brand Kambi.
 If row/book/two-sided-pair coverage is still insufficient: 1xBet -> SportsGameOdds -> OpticOdds -> OddsPapi -> ParlayAPI -> PropLine -> Odds-API.io.
-All rows pass a central player/quote sanity guard. Free public payloads are cached per process.
+All rows pass a central player/quote sanity guard. Explicit threshold labels repair placeholder zero lines (4+ Hits -> 3.5, 2+ HR -> 1.5), and Double/Triple markets are kept separate from generic Hits.
 No-vig fair probability is computed from real Over/Under pairs before best-price selection.
 No synthetic ladders. Browser disabled in normal card/maintenance source collection.
+Daily control scans every workflow, runs compile/runtime/hard/regression tests, auto-fixes safe runtime/git-push drift, and fails closed on unknown workflow errors.
 No SQL migration required.

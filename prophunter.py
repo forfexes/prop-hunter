@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PROP HUNTER 13.10.1 — keyless books + hardened multisource consensus."""
+"""PROP HUNTER 13.10.2 — daily-control + keyless market/line hardening."""
 from pathlib import Path as _Path
 _core=_Path(__file__).with_name('prophunter_core_1392.py');_src=_core.read_text(encoding='utf-8')
 for marker in ('if __name__ == "__main__":',"if __name__=='__main__':",'if __name__=="__main__":'):
@@ -22,6 +22,36 @@ try:
         if raw_prob is not None and odds>1.001 and not _probability_sane(raw_prob,odds):return None
         return _candidate_probability_base(obj)
     _ph_builder._candidate_probability=_candidate_probability_guarded
+except Exception:pass
+
+try:
+    from prop_hunter_quote_guard import canonical_market as _canonical_market, probability_sane as _prob_sane
+    _enrich_gamelogs_fairprob_base=enrich_gamelogs_fairprob
+    def enrich_gamelogs_fairprob(props):
+        before={}
+        for p in props or []:
+            feats=dict(getattr(p,'features',{}) or {})
+            before[id(p)]=(feats.get('fair_prob'),feats.get('fair_prob_source'),getattr(p,'enrichment',None))
+            try:p.market=_canonical_market(getattr(p,'market',''))
+            except Exception:pass
+        out=_enrich_gamelogs_fairprob_base(props)
+        for p in out or []:
+            feats=dict(getattr(p,'features',{}) or {})
+            fp=feats.get('fair_prob');odds=getattr(p,'odds',None)
+            if fp is None or _prob_sane(fp,odds):continue
+            old_prob,old_src,old_enrichment=before.get(id(p),(None,None,None))
+            if old_prob is not None and _prob_sane(old_prob,odds):
+                feats['fair_prob']=old_prob
+                if old_src is not None:feats['fair_prob_source']=old_src
+            else:
+                feats.pop('fair_prob',None)
+                feats.pop('fair_prob_source',None)
+            for key in ('gamelog_l10_rate','gamelog_n','gamelog_dd_rate'):
+                feats.pop(key,None)
+            feats['gamelog_prob_rejected']='market_gap_guard'
+            p.features=feats
+            if old_enrichment is not None:p.enrichment=old_enrichment
+        return out
 except Exception:pass
 
 def _snapshot_market_key(row):

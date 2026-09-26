@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Central sanity guard for observed PROP HUNTER sportsbook rows.
 
-Adapted from the defensive checks that proved useful in NETRATTLER, but kept
-sport-agnostic. It never invents a price or line; it only rejects malformed
-bookmaker rows and marks explicit binary markets as settlement-equivalent 0.5
-lines.
+NETRATTLER-style defensive checks, plus explicit threshold normalization for
+keyless books. It never invents a sportsbook price. A line may only be repaired
+when the market label itself explicitly states the threshold (for example
+"4+ Hits" -> settlement line 3.5, or "A Triple" -> settlement line 0.5).
 """
 from __future__ import annotations
 
@@ -23,10 +23,8 @@ _BINARY_MARKET_TERMS = (
     "to hit a home run", "to score", "goal scorer", "goalscorer",
 )
 
-
 def _norm(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
-
 
 def _f(value: Any) -> Optional[float]:
     try:
@@ -34,7 +32,6 @@ def _f(value: Any) -> Optional[float]:
         return x if math.isfinite(x) else None
     except Exception:
         return None
-
 
 def _looks_team_or_generic(player: str, home: str = "", away: str = "") -> bool:
     p = _norm(player)
@@ -57,13 +54,82 @@ def _looks_team_or_generic(player: str, home: str = "", away: str = "") -> bool:
             return True
     return False
 
-
 def _binary_market(market: str, selection: str = "") -> bool:
     text = f"{_norm(market)} {_norm(selection)}"
     if any(term in text for term in _BINARY_MARKET_TERMS):
         return True
     return _norm(selection) in {"yes", "no"}
 
+def _explicit_threshold_line(label: str) -> Optional[float]:
+    """Convert an explicit sportsbook threshold label to its settlement line."""
+    text = _norm(label)
+    m = re.search(r"\b(\d+)\s*(?:plus|\+)", str(label or "").lower())
+    if not m:
+        m = re.search(r"\b(\d+)\s+plus\b", text)
+    if m:
+        return max(0.5, float(int(m.group(1))) - 0.5)
+    if re.search(
+        r"\b(?:a|an)\s+(?:hit|home run|double|triple|rbi|run|stolen base|touchdown|goal)\b",
+        text,
+    ):
+        return 0.5
+    if any(x in text for x in ("anytime td", "anytime touchdown", "to score a touchdown")):
+        return 0.5
+    return None
+
+def canonical_market(market: Any, original_market: Any = "") -> str:
+    """Canonical market key used before any gamelog/stat matching."""
+    raw = _norm(original_market) or _norm(market)
+    cur = _norm(market)
+    text = raw or cur
+
+    if "triple double" in text:
+        return "triple_double"
+    if "double double" in text:
+        return "double_double"
+    if any(x in text for x in ("points rebounds assists", "points rebounds and assists")) or text == "pra":
+        return "pra"
+
+    if re.search(r"\btriples?\b", text):
+        return "triples"
+    if re.search(r"\bdoubles?\b", text):
+        return "doubles"
+    if "home run" in text or re.search(r"\bhrs?\b", text):
+        return "home_runs"
+    if "total bases" in text:
+        return "total_bases"
+    if "pitcher strikeout" in text:
+        return "pitcher_strikeouts"
+    if "stolen base" in text:
+        return "stolen_bases"
+    if re.search(r"\brbis?\b", text) or "runs batted in" in text:
+        return "rbi"
+    if re.search(r"\bhits?\b", text) and "hits allowed" not in text and "hit by pitch" not in text:
+        return "hits"
+    if re.search(r"\bruns?\b", text) and "home run" not in text and "runs batted" not in text:
+        return "runs"
+
+    aliases = (
+        (("passing touchdowns", "pass tds", "pass td"), "passing_touchdowns"),
+        (("passing yards", "pass yds"), "passing_yards"),
+        (("rushing yards", "rush yds"), "rushing_yards"),
+        (("receiving yards", "receiving yds", "reception yards"), "receiving_yards"),
+        (("anytime td", "anytime touchdown", "touchdown scorer"), "anytime_td"),
+        (("shots on goal",), "shots_on_goal"),
+        (("goalie saves",), "goalie_saves"),
+        (("three pointers", "3 pointers", "3pm", "threes"), "threes"),
+        (("rebounds",), "rebounds"),
+        (("assists",), "assists"),
+        (("points",), "points"),
+        (("receptions",), "receptions"),
+        (("goals",), "goals"),
+        (("blocks",), "blocks"),
+        (("steals",), "steals"),
+    )
+    for needles, key in aliases:
+        if any(n in text for n in needles):
+            return key
+    return re.sub(r"[^a-z0-9]+", "_", cur or text).strip("_") or "player_prop"
 
 def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Return a safe normalized copy or None when the row is not trustworthy."""
@@ -76,9 +142,11 @@ def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     away = str(out.get("away_team") or "")
     if not player or not market or _looks_team_or_generic(player, home, away):
         return None
+
     price = _f(out.get("odds_decimal") if out.get("odds_decimal") is not None else out.get("odds"))
     if price is None or not (1.001 < price <= float(os.getenv("PH_MAX_DECIMAL_ODDS", "75"))):
         return None
+
     direction = str(out.get("direction") or "").strip().lower()
     selection = str(out.get("selection") or "").strip()
     if direction in {"yes", "higher"}:
@@ -93,21 +161,31 @@ def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             direction = "under"
         else:
             return None
+
+    raw = out.get("raw") if isinstance(out.get("raw"), dict) else {}
+    original_market = (
+        raw.get("market_name") or raw.get("market_original") or raw.get("criterion")
+        or out.get("market_original") or out.get("selection") or market
+    )
+    explicit_line = _explicit_threshold_line(str(original_market or ""))
     line = _f(out.get("line") if out.get("line") is not None else out.get("point"))
+    if explicit_line is not None:
+        line = explicit_line
     if line is None and _binary_market(market, selection):
         line = 0.5
     if line is None or line < 0:
         return None
     if line > float(os.getenv("PH_MAX_PROP_LINE", "1000")):
         return None
+
+    canon = canonical_market(market, original_market)
     out["player_name"] = player
-    out["market"] = str(out.get("market") or market)
-    out["market_key"] = str(out.get("market_key") or market)
+    out["market"] = canon
+    out["market_key"] = canon
     out["direction"] = direction
     out["line"] = float(line)
     out["odds_decimal"] = round(float(price), 4)
     return out
-
 
 def probability_sane(probability: Any, odds_decimal: Any) -> bool:
     """Reject implausible model/market gaps that usually indicate bad matching."""

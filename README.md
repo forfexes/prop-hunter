@@ -7,12 +7,18 @@ PROP HUNTER collects observed player-prop prices, enriches them with sports data
 ## Production schedule
 - Card: 16:30 UTC and 21:00 UTC, 8-minute timeout.
 - Results: 10:15 UTC.
+- Daily workflow control: 04:45 UTC.
 - Self-maintenance: Sunday 03:15 UTC.
 
 ## Live prop sources
-The collector is now **keyless-first and coverage-aware**. Direct no-key sportsbook adapters run first for DraftKings, FanDuel, Bovada and BetRivers, followed by multi-brand Kambi (Unibet/Betsson/888/NordicBet). A bounded 1xBet-family LineFeed is used only when free coverage is still insufficient. Optional keyed/trial fallbacks include SportsGameOdds, OpticOdds, OddsPapi, ParlayAPI, PropLine and Odds-API.io. Underdog/Sleeper remain modelling/context sources where appropriate.
+The collector is **keyless-first and coverage-aware**. Direct no-key sportsbook adapters run first for DraftKings, FanDuel, Bovada and BetRivers, followed by multi-brand Kambi (Unibet/Betsson/888/NordicBet). A bounded 1xBet-family LineFeed is used only when free coverage is still insufficient. Optional keyed/trial fallbacks include SportsGameOdds, OpticOdds, OddsPapi, ParlayAPI, PropLine and Odds-API.io. Underdog/Sleeper remain modelling/context sources where appropriate.
 
 It does **not** create synthetic sportsbook prices. Observed alternate lines remain separate ladder rungs. Generic outcome labels, team names masquerading as players, malformed prices/lines and implausible model-vs-market gaps are rejected before the pick engine.
+
+Explicit threshold labels are normalized before gamelog matching: for example `4+ Hits` settles against 3.5 and `2+ Home Runs` against 1.5. `To Hit A Double` and `To Hit A Triple` are canonicalized as `doubles` / `triples`, so the legacy substring matcher can no longer treat them as generic Hits.
+
+## Daily control
+`.github/workflows/prop_hunter_daily_control.yml` checks every workflow each day. It compiles Python, runs the runtime guard, the full hard test and the market-regression test, verifies referenced scripts/requirements, checks workflow structure and protects state-writing workflows against git-push races. Only deterministic safe drift is auto-repaired (runtime pins and missing rebase protection); unknown failures stop the control run instead of rewriting betting logic.
 
 ## No-vig consensus
 The collector pairs real Over/Under prices at the same player/market/line, calculates per-book no-vig probability and falls back to cross-book median implied probabilities when necessary. Only after consensus is calculated does the card layer collapse identical sides to the best observed bookmaker price. This gives the pick engine a real market-based `fair_prob` instead of treating every observed price as its own probability estimate.
