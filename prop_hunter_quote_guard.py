@@ -217,15 +217,25 @@ def probability_sane(probability: Any, odds_decimal: Any) -> bool:
         return False
     return True
 
-# Install the expanded 2-10 leg builder wrapper when the main card process has
-# already imported the base builder engine. This keeps the entrypoint small and
-# makes the upgrade available to normal card, maintenance and offline tests.
+# Install the expanded 2-10 leg SGP builder wrapper first.
 try:
     import prop_hunter_builder_engine as _builder_engine
     if not getattr(_builder_engine, "_ph_profiles_installed", False):
         from prop_hunter_builder_profiles import install as _install_builder_profiles
         _builder_engine.build_autonomous_extras = _install_builder_profiles(_builder_engine.build_autonomous_extras)
         _builder_engine._ph_profiles_installed = True
+except Exception:
+    pass
+
+# Add cross-game ACCAs after the SGP wrapper so all existing ladder/SGP behavior
+# remains untouched. This produces NFL TD, MLB HR/RBI/K and basketball prop ACCAs
+# only from real positive-EV bookmaker legs at one book.
+try:
+    import prop_hunter_builder_engine as _builder_engine
+    if not getattr(_builder_engine, "_ph_acca_installed", False):
+        from prop_hunter_acca_engine import install as _install_acca_engine
+        _builder_engine.build_autonomous_extras = _install_acca_engine(_builder_engine.build_autonomous_extras)
+        _builder_engine._ph_acca_installed = True
 except Exception:
     pass
 
