@@ -46,6 +46,7 @@ jobs:
           python prop_hunter_runtime_guard.py
           python prop_hunter_hard_test.py
           python prop_hunter_market_regression_test.py
+          python prop_hunter_expansion_test.py
           python prop_hunter_daily_control.py --check
 
       - name: Save safe repairs
