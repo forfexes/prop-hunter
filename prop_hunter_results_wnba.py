@@ -1,113 +1,186 @@
 #!/usr/bin/env python3
+"""PROP HUNTER — WNBA RESULTS
+
+Pending-pick-driven ESPN scoreboard/summary collector. It fetches only games
+linked to unresolved WNBA picks and writes player-level gamelogs.
 """
-PROP HUNTER — WNBA RESULTS
-==========================
-
-Sources:
-- ESPN public scoreboard/summary fallback
-- wehoop/sportsdataverse-style data vorbereitet, wenn später installiert/verfügbar
-
-Writes:
-- prop_hunter_player_gamelogs
-"""
-
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
-from prop_hunter_shared_utils import http_json, upsert_rows, safe_json_write, log, warn, norm_name, to_float, hash_key
+from prop_hunter_shared_utils import (
+    http_json, log, norm_name, safe_json_write, select_pick_rows, to_float,
+    upsert_rows, warn
+)
 
 OUT = "prop_hunter_results_wnba_raw.json"
 
 def _wnba_season(date_value: str | None = None) -> str:
-    """WNBA seasons are calendar-year seasons (e.g. 2026), not NBA-style 2025-26."""
     env = str(os.getenv("WNBA_SEASON") or "").strip()
     if env:
         return env
     raw = str(date_value or "")
-    m = __import__("re").search(r"(20\d{2})", raw)
+    m = re.search(r"(20\d{2})", raw)
     if m:
         return m.group(1)
     return str(datetime.now(timezone.utc).year)
 
+def _pending(row):
+    return str(row.get("status") or row.get("result") or "pending").strip().lower() in {
+        "", "pending", "open", "none", "null", "unsettled"
+    }
 
-def espn_scoreboard(date_yyyymmdd: str | None = None) -> List[Dict[str, Any]]:
-    date_yyyymmdd = date_yyyymmdd or datetime.utcnow().strftime("%Y%m%d")
+def _is_wnba(row):
+    return str(row.get("league") or row.get("sport") or "").upper() == "WNBA"
+
+def _date_only(value):
+    if not value:
+        return None
+    text = str(value).strip()
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+    except Exception:
+        try:
+            return datetime.fromisoformat(text[:10]).date()
+        except Exception:
+            return None
+
+def _pick_date(row):
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    for v in (
+        row.get("commence_time"), raw.get("commence_time"), row.get("game_date"),
+        row.get("sent_date"), row.get("date"), row.get("created_at")
+    ):
+        d = _date_only(v)
+        if d:
+            return d
+    return datetime.now(timezone.utc).date()
+
+def _game_text(row):
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    return " ".join(str(x or "") for x in (
+        row.get("game"), row.get("team"), row.get("home_team"), row.get("away_team"),
+        raw.get("game"), raw.get("home_team"), raw.get("away_team")
+    )).lower()
+
+def pending_picks(limit=5000):
+    return [r for r in select_pick_rows(limit=limit) if _pending(r) and _is_wnba(r)]
+
+def espn_scoreboard(ymd):
     url = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
-    data = http_json(url, params={"dates": date_yyyymmdd}, retries=1) or {}
-    games = []
-    for ev in data.get("events", []) or []:
-        game_date = str(ev.get("date") or "")[:10]
-        games.append({
-            "sport": "BASKETBALL",
-            "league": "WNBA",
-            "season": _wnba_season(game_date),
-            "source": "espn_scoreboard",
-            "game_id": str(ev.get("id")),
-            "source_game_id": str(ev.get("id")),
-            "game_date": game_date,
-            "raw": ev,
-        })
-    return games
+    return (http_json(url, params={"dates": ymd}, retries=1) or {}).get("events", []) or []
 
-def espn_summary_players(game_id: str) -> List[Dict[str, Any]]:
-    url = "https://site.web.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
+def _event_team_names(ev):
+    comp = (ev.get("competitions") or [{}])[0]
+    out = []
+    for c in comp.get("competitors") or []:
+        t = c.get("team") or {}
+        for k in ("displayName", "shortDisplayName", "name", "abbreviation"):
+            if t.get(k):
+                out.append(str(t[k]).lower())
+    return out
+
+def _event_matches(ev, pick):
+    game = _game_text(pick)
+    if not game:
+        return True
+    for name in _event_team_names(ev):
+        if name in game:
+            return True
+        toks = [t for t in re.split(r"[^a-z0-9]+", name) if len(t) >= 4]
+        if any(t in game for t in toks):
+            return True
+    return False
+
+def _made(v):
+    if v in (None, "", "--"):
+        return None
+    s = str(v).strip()
+    if re.fullmatch(r"\d+(?:\.\d+)?[-/]\d+(?:\.\d+)?", s):
+        s = re.split(r"[-/]", s, 1)[0]
+    return to_float(s)
+
+def espn_summary_players(game_id, wanted):
+    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
     data = http_json(url, params={"event": game_id}, retries=1) or {}
+    wanted_n = {norm_name(x) for x in wanted if x}
     rows = []
-    box = data.get("boxscore") or {}
-    for team_block in box.get("players", []) or []:
-        team = ((team_block.get("team") or {}).get("displayName") or (team_block.get("team") or {}).get("shortDisplayName"))
-        stats_groups = team_block.get("statistics", []) or []
-        for group in stats_groups:
-            labels = group.get("labels") or []
-            for ath in group.get("athletes", []) or []:
-                athlete = ath.get("athlete") or {}
-                name = athlete.get("displayName")
-                if not name:
+    game_date = str(((data.get("header") or {}).get("competitions") or [{}])[0].get("date") or "")[:10]
+    for tb in ((data.get("boxscore") or {}).get("players") or []):
+        team = ((tb.get("team") or {}).get("displayName") or (tb.get("team") or {}).get("abbreviation"))
+        for group in tb.get("statistics") or []:
+            labels = group.get("labels") or group.get("keys") or []
+            for ath in group.get("athletes") or []:
+                info = ath.get("athlete") or {}
+                name = info.get("displayName") or info.get("shortName")
+                if not name or (wanted_n and norm_name(name) not in wanted_n):
                     continue
                 vals = ath.get("stats") or []
-                stat_map = {labels[i]: vals[i] for i in range(min(len(labels), len(vals)))}
-                pts = to_float(stat_map.get("PTS"), 0) or 0
-                reb = to_float(stat_map.get("REB"), 0) or 0
-                ast = to_float(stat_map.get("AST"), 0) or 0
-                game_date = str((data.get("header") or {}).get("competitions", [{}])[0].get("date") or "")[:10]
+                sm = {str(labels[i]).upper(): vals[i] for i in range(min(len(labels), len(vals)))}
+                pts = to_float(sm.get("PTS"), 0) or 0
+                reb = to_float(sm.get("REB"), 0) or 0
+                ast = to_float(sm.get("AST"), 0) or 0
                 rows.append({
-                    "sport": "BASKETBALL",
-                    "league": "WNBA",
-                    "season": _wnba_season(game_date),
-                    "source": "espn_summary",
-                    "source_game_id": str(game_id),
-                    "game_id": str(game_id),
-                    "game_date": game_date,
-                    "player_name": name,
-                    "normalized_name": norm_name(name),
-                    "team": team,
-                    "minutes": to_float(stat_map.get("MIN")),
-                    "points": pts,
-                    "rebounds": reb,
-                    "assists": ast,
-                    "pra": pts + reb + ast,
-                    "ra": reb + ast,
-                    "threes_made": to_float(stat_map.get("3PM") or stat_map.get("3PT")),
-                    "steals": to_float(stat_map.get("STL")),
-                    "blocks": to_float(stat_map.get("BLK")),
-                    "turnovers": to_float(stat_map.get("TO") or stat_map.get("TOV")),
+                    "sport": "BASKETBALL", "league": "WNBA", "season": _wnba_season(game_date), "source": "espn_summary",
+                    "source_game_id": str(game_id), "game_id": str(game_id), "game_date": game_date,
+                    "player_name": name, "normalized_name": norm_name(name), "team": team,
+                    "minutes": to_float(sm.get("MIN")), "points": pts, "rebounds": reb, "assists": ast,
+                    "pra": pts + reb + ast, "ra": reb + ast, "threes_made": _made(sm.get("3PM") or sm.get("3PT")),
+                    "steals": to_float(sm.get("STL")), "blocks": to_float(sm.get("BLK")),
+                    "turnovers": to_float(sm.get("TO") or sm.get("TOV")),
                     "double_double": sum(1 for v in (pts, reb, ast) if v >= 10) >= 2,
                     "triple_double": sum(1 for v in (pts, reb, ast) if v >= 10) >= 3,
-                    "raw": {"stat_map": stat_map, "athlete": athlete},
+                    "raw": {"stat_map": sm, "athlete": info},
                 })
     return rows
 
 def main():
-    games = espn_scoreboard(os.getenv("WNBA_RESULT_DATE"))
-    rows = list(games)
-    for g in games[:int(os.getenv("WNBA_RESULT_GAME_CAP", "20"))]:
-        rows.extend(espn_summary_players(g["game_id"]))
+    picks = pending_picks(limit=int(os.getenv("WNBA_PICK_SCAN_LIMIT", "5000")))
+    if not picks:
+        safe_json_write(OUT, [])
+        log("WNBA results: no pending picks")
+        return
+    by_date = {}
+    for p in picks:
+        d = _pick_date(p)
+        for dd in (d - timedelta(days=1), d, d + timedelta(days=1)):
+            by_date.setdefault(dd.strftime("%Y%m%d"), []).append(p)
+    event_players = {}
+    max_dates = max(1, int(os.getenv("WNBA_RESULTS_MAX_DATES", "5")))
+    max_events = max(1, int(os.getenv("WNBA_RESULT_GAME_CAP", "20")))
+    for ymd, ps in list(by_date.items())[:max_dates]:
+        for ev in espn_scoreboard(ymd):
+            eid = str(ev.get("id") or "")
+            if not eid:
+                continue
+            matched = [p for p in ps if _event_matches(ev, p)]
+            if not matched:
+                continue
+            event_players.setdefault(eid, set()).update(
+                str(p.get("player_name") or p.get("player") or "").strip() for p in matched
+            )
+            if len(event_players) >= max_events:
+                break
+        if len(event_players) >= max_events:
+            break
+    rows = []
+    for eid, names in event_players.items():
+        try:
+            rows.extend(espn_summary_players(eid, names))
+        except Exception as e:
+            warn(f"WNBA summary failed {eid}: {e}")
+    dedup = {}
+    for r in rows:
+        if r.get("normalized_name") and r.get("game_date"):
+            dedup[(r["normalized_name"], r["game_date"])] = r
+    rows = list(dedup.values())
     safe_json_write(OUT, rows)
-    upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,season,game_id,normalized_name")
-    log(f"WNBA results done: {len(rows)} rows")
+    if rows:
+        upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,season,game_id,normalized_name")
+    log(f"WNBA results done: pending={len(picks)} events={len(event_players)} rows={len(rows)}")
 
 if __name__ == "__main__":
     main()
