@@ -228,3 +228,19 @@ try:
         _builder_engine._ph_profiles_installed = True
 except Exception:
     pass
+
+# When quote_guard is imported from the card entrypoint, the core build_post
+# function already exists. Replace only its Bet Builder presentation layer so
+# settlement/persistence semantics stay unchanged while Telegram shows the new
+# SAFE/VALUE/AGGRESSIVE/LONGSHOT structure.
+try:
+    import sys as _sys
+    from prop_hunter_card_formatter import install as _install_card_formatter
+    for _mod_name in ("prophunter", "__main__"):
+        _mod = _sys.modules.get(_mod_name)
+        if _mod is None or not hasattr(_mod, "build_post") or getattr(_mod, "_ph_card_formatter_installed", False):
+            continue
+        _mod.build_post = _install_card_formatter(_mod.build_post)
+        _mod._ph_card_formatter_installed = True
+except Exception:
+    pass
