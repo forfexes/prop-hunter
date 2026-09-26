@@ -10,6 +10,9 @@ PROP HUNTER collects observed player-prop prices, enriches them with sports data
 - Daily workflow control: 04:45 UTC.
 - Self-maintenance: Sunday 03:15 UTC.
 
+## Active sports
+The source/card path supports **MLB, NBA, WNBA, NFL, NHL, NCAAB and NCAAF**. A sport only produces a tip when an observed line survives quote sanity, market mapping, probability/edge and quality filters; there is no forced pick quota per sport.
+
 ## Live prop sources
 The collector is **keyless-first and coverage-aware**. Direct no-key sportsbook adapters run first for DraftKings, FanDuel, Bovada and BetRivers, followed by multi-brand Kambi (Unibet/Betsson/888/NordicBet). A bounded 1xBet-family LineFeed is used only when free coverage is still insufficient. Optional keyed/trial fallbacks include SportsGameOdds, OpticOdds, OddsPapi, ParlayAPI, PropLine and Odds-API.io. Underdog/Sleeper remain modelling/context sources where appropriate.
 
@@ -18,7 +21,7 @@ It does **not** create synthetic sportsbook prices. Observed alternate lines rem
 Explicit threshold labels are normalized before gamelog matching: for example `4+ Hits` settles against 3.5 and `2+ Home Runs` against 1.5. `To Hit A Double` and `To Hit A Triple` are canonicalized as `doubles` / `triples`, so the legacy substring matcher can no longer treat them as generic Hits.
 
 ## Daily control
-`.github/workflows/prop_hunter_daily_control.yml` checks every workflow each day. It compiles Python, runs the runtime guard, the full hard test and the market-regression test, verifies referenced scripts/requirements, checks workflow structure and protects state-writing workflows against git-push races. Only deterministic safe drift is auto-repaired (runtime pins and missing rebase protection); unknown failures stop the control run instead of rewriting betting logic.
+`.github/workflows/prop_hunter_daily_control.yml` checks every workflow each day. It compiles Python, runs the runtime guard, the full hard test, market-regression test and all-sports expansion regression, verifies referenced scripts/requirements, checks workflow structure and protects state-writing workflows against git-push races. Only deterministic safe drift is auto-repaired (runtime pins and missing rebase protection); unknown failures stop the control run instead of rewriting betting logic.
 
 ## No-vig consensus
 The collector pairs real Over/Under prices at the same player/market/line, calculates per-book no-vig probability and falls back to cross-book median implied probabilities when necessary. Only after consensus is calculated does the card layer collapse identical sides to the best observed bookmaker price. This gives the pick engine a real market-based `fair_prob` instead of treating every observed price as its own probability estimate.
@@ -35,6 +38,8 @@ The collector pairs real Over/Under prices at the same player/market/line, calcu
 Required infrastructure secrets remain `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SUPABASE_URL`, and `SUPABASE_KEY`.
 
 ## Settlement / learning
-`prop_hunter_settler.py` writes settled rows and `prophunter_results.py` edits the original Telegram card when its message id is stored. Settled picks feed source/market learning, model registry, CLV, coverage watchdog and retraining.
+MLB, NBA, WNBA, NFL and NHL keep their existing result collectors. `prop_hunter_results_ncaa.py` adds bounded pending-pick ESPN scoreboard/summary collection for NCAAB and NCAAF. `prop_hunter_results_mlb_extras.py` adds official MLB doubles/triples gamelogs. `prop_hunter_settler_extras.py` closes canonical doubles/triples/threes and touchdown-threshold gaps without duplicating markets already handled by the legacy settler.
+
+The Results workflow runs the collectors, feature builder, both settlement paths, inline Telegram result editor and then autonomous learning. Every settled sport/market/book/source flows into `prop_hunter_learning_update.py`, model registry, coverage watchdog and market discovery.
 
 See `CURRENT_MANIFEST.txt` for the authoritative production file list. Persisted model/history/state files must not be deleted.
