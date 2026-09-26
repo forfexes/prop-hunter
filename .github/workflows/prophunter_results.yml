@@ -58,12 +58,13 @@ jobs:
       - name: Install
         run: pip install -r requirements_results.txt
 
-      - name: Compile results path
+      - name: Compile and offline settlement regression
         run: |
-          python -m py_compile prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_feature_builder.py
-          python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py
+          python -m py_compile prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_settler_extras.py prop_hunter_feature_builder.py
+          python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py
           python -m py_compile prop_hunter_learning_update.py prop_hunter_source_manager.py prop_hunter_model_registry.py
-          python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py
+          python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py prop_hunter_expansion_test.py
+          python prop_hunter_expansion_test.py
 
       - name: Fetch official results and gamelogs
         env:
@@ -71,13 +72,19 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           PH_MLB_RESULTS_MAX_PLAYERS: '80'
+          PH_MLB_EXTRA_RESULTS_MAX_PLAYERS: '40'
+          PH_NCAA_RESULTS_MAX_DATES: '5'
+          PH_NCAA_RESULTS_MAX_EVENTS: '24'
+          PH_NCAA_RESULT_LEAGUES: NCAAB,NCAAF
           HTTP_TIMEOUT: '8'
         run: |
           python prop_hunter_results_mlb.py || true
+          python prop_hunter_results_mlb_extras.py || true
           python prop_hunter_results_nba.py || true
           python prop_hunter_results_wnba.py || true
           python prop_hunter_results_nfl.py || true
           python prop_hunter_results_nhl.py || true
+          python prop_hunter_results_ncaa.py || true
           if [ -f espn_multisport_results.py ]; then python espn_multisport_results.py || true; fi
 
       - name: Settle and publish evaluation
@@ -93,6 +100,7 @@ jobs:
         run: |
           python prop_hunter_feature_builder.py || true
           python prop_hunter_settler.py
+          python prop_hunter_settler_extras.py
           python prophunter_results.py
 
       - name: Learn from settled picks
