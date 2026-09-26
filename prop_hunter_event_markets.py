@@ -41,17 +41,27 @@ def _side_line(kb,label,runner,key):
     line=kb._f(runner.get("points") if runner.get("points") is not None else runner.get("handicap"))
     if key=="both_teams_100_points":
         side=side or "over";line=.5 if line is None else line
+    if key in {"point_spread","alternate_spread"}:
+        side=side or "over"
     if line is None:
         m=re.search(r"([+-]?\d+(?:\.\d+)?)",str(label or ""));line=float(m.group(1)) if m else None
     return side,line
 
 
-def _row(kb,source,book,sport,eid,start,home,away,key,side,line,price,selection,market_name):
+def _entity(key,label,home,away):
+    if key not in {"point_spread","alternate_spread"}:return "GAME"
+    n=_norm(label)
+    for team in (home,away):
+        if team and _norm(team) in n:return f"TEAM {team}"
+    return "GAME"
+
+
+def _row(kb,source,book,sport,eid,start,home,away,key,side,line,price,selection,market_name,player="GAME"):
     if not side or line is None or price is None:return None
     row={"source":source,"bookmaker":book,"sport":sport,"league":sport,"source_event_id":eid,"event_id":eid,
-         "commence_time":start,"home_team":home,"away_team":away,"player_name":"GAME","market":key,"market_key":key,
+         "commence_time":start,"home_team":home,"away_team":away,"player_name":player,"market":key,"market_key":key,
          "direction":side,"line":line,"odds_decimal":price,"selection":selection,
-         "raw":{"market_name":market_name,"event_market":True}}
+         "raw":{"market_name":market_name,"event_market":True,"selection":selection}}
     try:return kb._safe(row)
     except Exception:return None
 
@@ -68,8 +78,8 @@ def parse_draftkings_event_markets(kb,payload,sport)->List[Dict[str,Any]]:
         if not key:continue
         eid=str(m.get("eventId") or "");ev=evs.get(eid,{});away,home=kb._game(ev.get("name"));start=str(ev.get("startEventDate") or ev.get("startDate") or "")
         for x in sels.get(str(m.get("id") or ""),[]):
-            label=str(x.get("label") or "");side,line=_side_line(kb,label,x,key)
-            r=_row(kb,"draftkings_direct","draftkings",sport,eid,start,home,away,key,side,line,_dec(kb,x),label,name)
+            label=str(x.get("label") or "");side,line=_side_line(kb,label,x,key);player=_entity(key,label,home,away)
+            r=_row(kb,"draftkings_direct","draftkings",sport,eid,start,home,away,key,side,line,_dec(kb,x),label,name,player)
             if r:out.append(r)
     return out
 
@@ -85,8 +95,8 @@ def parse_fanduel_event_markets(kb,page,sport,event=None)->List[Dict[str,Any]]:
         if not key:continue
         for x in m.get("runners") or []:
             if not isinstance(x,dict):continue
-            label=str(x.get("runnerName") or x.get("selectionName") or "");side,line=_side_line(kb,label,x,key)
-            r=_row(kb,"fanduel_direct","fanduel",sport,eid,start,home,away,key,side,line,_dec(kb,x),label,name)
+            label=str(x.get("runnerName") or x.get("selectionName") or "");side,line=_side_line(kb,label,x,key);player=_entity(key,label,home,away)
+            r=_row(kb,"fanduel_direct","fanduel",sport,eid,start,home,away,key,side,line,_dec(kb,x),label,name,player)
             if r:out.append(r)
     return out
 
