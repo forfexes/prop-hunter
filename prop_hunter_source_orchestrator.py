@@ -23,6 +23,11 @@ def _direct_jobs(sports):
     active=_season_active_sports(sports);jobs=[]
     try:
         import prop_hunter_keyless_books as kb
+        try:
+            from prop_hunter_keyless_extensions import install as _install_keyless_extensions
+            _install_keyless_extensions(kb)
+        except Exception as exc:
+            warn(f'keyless market extensions unavailable: {exc}')
         if kb.configured():
             for sport in active:
                 jobs.extend([
