@@ -21,6 +21,7 @@ _MULTI_PLAYER_TERMS = ("||", " either player", "both players", "any of ", " or "
 _BINARY_MARKET_TERMS = (
     "anytime td", "anytime touchdown", "to score a touchdown", "home run",
     "to hit a home run", "to score", "goal scorer", "goalscorer",
+    "double double", "double-double", "triple double", "triple-double",
 )
 
 def _norm(value: Any) -> str:
@@ -89,6 +90,12 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
         return "double_double"
     if any(x in text for x in ("points rebounds assists", "points rebounds and assists")) or text == "pra":
         return "pra"
+    if any(x in text for x in ("points rebounds", "points and rebounds")) and "assists" not in text:
+        return "pr"
+    if any(x in text for x in ("points assists", "points and assists")) and "rebounds" not in text:
+        return "pa"
+    if any(x in text for x in ("rebounds assists", "rebounds and assists")) and "points" not in text:
+        return "ra"
 
     if re.search(r"\btriples?\b", text):
         return "triples"
@@ -112,8 +119,12 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
     aliases = (
         (("passing touchdowns", "pass tds", "pass td"), "passing_touchdowns"),
         (("passing yards", "pass yds"), "passing_yards"),
+        (("passing attempts", "pass attempts"), "passing_attempts"),
+        (("passing completions", "pass completions", "completions"), "passing_completions"),
+        (("rushing attempts", "rush attempts", "carries"), "rushing_attempts"),
         (("rushing yards", "rush yds"), "rushing_yards"),
         (("receiving yards", "receiving yds", "reception yards"), "receiving_yards"),
+        (("receiving targets", "targets"), "receiving_targets"),
         (("anytime td", "anytime touchdown", "touchdown scorer"), "anytime_td"),
         (("shots on goal",), "shots_on_goal"),
         (("goalie saves",), "goalie_saves"),
@@ -205,3 +216,15 @@ def probability_sane(probability: Any, odds_decimal: Any) -> bool:
     if implied > 0 and p / implied > max_ratio:
         return False
     return True
+
+# Install the expanded 2-10 leg builder wrapper when the main card process has
+# already imported the base builder engine. This keeps the entrypoint small and
+# makes the upgrade available to normal card, maintenance and offline tests.
+try:
+    import prop_hunter_builder_engine as _builder_engine
+    if not getattr(_builder_engine, "_ph_profiles_installed", False):
+        from prop_hunter_builder_profiles import install as _install_builder_profiles
+        _builder_engine.build_autonomous_extras = _install_builder_profiles(_builder_engine.build_autonomous_extras)
+        _builder_engine._ph_profiles_installed = True
+except Exception:
+    pass
