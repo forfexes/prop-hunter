@@ -21,19 +21,16 @@ jobs:
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: requirements.txt
-
       - name: Install
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           # No Chromium here: discovery must not burn Actions minutes.
-
       - name: Integrity
         env:
           PH_EXPECTED_RUNTIME_VERSION: 13.10.1-KEYLESS-HARDENED
@@ -43,13 +40,13 @@ jobs:
           python prop_hunter_hard_test.py
           python prop_hunter_market_regression_test.py
           python prop_hunter_expansion_test.py
-
+          python prop_hunter_euroleague_test.py
       - name: Source health and discovery
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL,NCAAB,NCAAF
+          PROP_HUNTER_SPORTS: MLB,WNBA,NBA,NFL,NHL,NCAAB,NCAAF,EUROLEAGUE
           PH_KEYLESS_BOOKS_ENABLED: '1'
           PH_KEYLESS_BOOKS: draftkings,fanduel,bovada,betrivers
           PH_KEYLESS_TIMEOUT: '5'
@@ -89,7 +86,6 @@ jobs:
           python prop_hunter_source_audit.py || true
           python prop_hunter_github_watcher.py || true
           python prop_hunter_source_orchestrator.py --mode fast || true
-
       - name: Autonomous learning and coverage
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -100,7 +96,6 @@ jobs:
           python prop_hunter_coverage_watchdog.py
           python prop_hunter_market_discovery.py
           python prop_hunter_retrainer.py || true
-
       - name: Save learned state
         run: |
           git config user.name "github-actions[bot]"
