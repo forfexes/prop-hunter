@@ -44,12 +44,9 @@ try:
                 feats['fair_prob']=old_prob
                 if old_src is not None:feats['fair_prob_source']=old_src
             else:
-                feats.pop('fair_prob',None)
-                feats.pop('fair_prob_source',None)
-            for key in ('gamelog_l10_rate','gamelog_n','gamelog_dd_rate'):
-                feats.pop(key,None)
-            feats['gamelog_prob_rejected']='market_gap_guard'
-            p.features=feats
+                feats.pop('fair_prob',None);feats.pop('fair_prob_source',None)
+            for key in ('gamelog_l10_rate','gamelog_n','gamelog_dd_rate'):feats.pop(key,None)
+            feats['gamelog_prob_rejected']='market_gap_guard';p.features=feats
             if old_enrichment is not None:p.enrichment=old_enrichment
         return out
 except Exception:pass
@@ -84,6 +81,7 @@ def fetch_snapshot_props(sport_filter=None):
         now_month=datetime.now(timezone.utc).month;active={'MLB','WNBA','NCAAF'}
         if now_month>=9 or now_month<=2:active|={'NFL','NBA','NHL','NCAAB'}
         if 4<=now_month<=6:active|={'NBA','NHL'}
+        if now_month>=9 or now_month<=6:active|={'EUROLEAGUE'}
         season_markers=('season','futures','to win','mvp','champion','award','regular season','playoff','total wins','make the','division','conference','over/under wins');best={}
         for r in rows:
             sport=str(r.get('sport') or r.get('league') or '').upper();player=str(r.get('player_name') or '').strip();market=str(r.get('market') or r.get('market_key') or '').strip();direction=str(r.get('direction') or '').lower().strip();line=r.get('line')
@@ -102,10 +100,10 @@ def fetch_snapshot_props(sport_filter=None):
             from prop_hunter_market_intelligence import movement_index,market_key as _mi_key,consensus_count
             _movement=movement_index(rows)
         except Exception:_movement={};_mi_key=lambda row:();consensus_count=lambda row,rows:0
-        emoji_map={'NBA':'🏀','WNBA':'🏀','MLB':'⚾','NFL':'🏈','NHL':'🏒','NCAAB':'🏀','NCAAF':'🏈'};out=[];fair_rejected=0
+        emoji_map={'NBA':'🏀','WNBA':'🏀','MLB':'⚾','NFL':'🏈','NHL':'🏒','NCAAB':'🏀','NCAAF':'🏈','EUROLEAGUE':'🏀'};out=[];fair_rejected=0
         for r in best.values():
             sport=str(r.get('sport') or r.get('league') or '').upper();book=str(r.get('bookmaker') or r.get('source') or '').lower();raw=r.get('raw') if isinstance(r.get('raw'),dict) else {};cons=raw.get('consensus') if isinstance(raw.get('consensus'),dict) else {};fair=_fair(r);odds=float(r.get('odds_decimal'))
-            feats={'odds_observed':True,'price_type':'bookmaker','bookmaker':book,'source':r.get('source') or book,'source_event_id':r.get('source_event_id'),'commence_time':r.get('commence_time'),'home_team':r.get('home_team'),'away_team':r.get('away_team'),'consensus_sources':cons.get('source_count') or consensus_count(r,rows),'consensus_books':cons.get('book_count') or 1,'paired_book_count':cons.get('paired_book_count') or 0,'consensus_fair_method':cons.get('fair_method'),**(_movement.get(_mi_key(r),{}) or {})}
+            feats={'odds_observed':True,'price_type':'bookmaker','bookmaker':book,'source':r.get('source') or book,'sport':sport,'league':sport,'source_event_id':r.get('source_event_id'),'commence_time':r.get('commence_time'),'home_team':r.get('home_team'),'away_team':r.get('away_team'),'consensus_sources':cons.get('source_count') or consensus_count(r,rows),'consensus_books':cons.get('book_count') or 1,'paired_book_count':cons.get('paired_book_count') or 0,'consensus_fair_method':cons.get('fair_method'),**(_movement.get(_mi_key(r),{}) or {})}
             if fair is not None and probability_sane(fair,odds):feats['fair_prob']=round(float(fair),6);feats['fair_prob_source']='market_no_vig_consensus'
             elif fair is not None:fair_rejected+=1;feats['fair_prob_rejected']=round(float(fair),6);feats['fair_prob_reject_reason']='market_gap_guard'
             ct=None
