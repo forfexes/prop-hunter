@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Supplemental settlement for MLB doubles/triples markets."""
+"""Supplemental settlement for canonical markets not covered by the legacy map.
+
+Covers MLB doubles/triples, canonical `threes`, and explicit rushing/receiving/
+generic touchdown thresholds. Existing legacy-settled markets are intentionally
+left to prop_hunter_settler.py to avoid duplicate grading paths.
+"""
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
@@ -12,7 +17,7 @@ from prop_hunter_shared_utils import (
     select_pick_rows, select_rows, to_float, upsert_rows
 )
 
-OUT = "prop_hunter_results_mlb_extras_settled.json"
+OUT = "prop_hunter_results_extras_settled.json"
 
 def detect_extra_stat(market: Any) -> Optional[str]:
     m = str(market or "").lower().replace("_", " ")
@@ -20,12 +25,26 @@ def detect_extra_stat(market: Any) -> Optional[str]:
         return "triples"
     if "double" in m and "double double" not in m:
         return "doubles"
+    if "threes" in m or m.strip() == "3pt":
+        return "threes_made"
+    if "receiving touchdown" in m:
+        return "receiving_touchdowns"
+    if "rushing touchdown" in m:
+        return "rushing_touchdowns"
+    if "passing touchdown" in m:
+        return None  # legacy settler already handles this correctly
+    if "touchdown" in m or m.strip() in {"td", "tds"}:
+        return "touchdowns"
     return None
 
 def extra_stat_value(gl: Dict[str, Any], stat: str):
     direct = to_float(gl.get(stat))
     if direct is not None:
         return direct
+    if stat == "touchdowns":
+        rec = to_float(gl.get("receiving_touchdowns"), 0.0) or 0.0
+        rush = to_float(gl.get("rushing_touchdowns"), 0.0) or 0.0
+        return rec + rush
     raw = gl.get("raw") if isinstance(gl.get("raw"), dict) else {}
     split = raw.get("split") if isinstance(raw.get("split"), dict) else {}
     stats = split.get("stat") if isinstance(split.get("stat"), dict) else {}
@@ -41,6 +60,16 @@ def extra_stat_value(gl: Dict[str, Any], stat: str):
                 return v
     return None
 
+def _allowed(stat: str, league_or_sport: str) -> bool:
+    s = league_or_sport.upper()
+    if stat in {"doubles", "triples"}:
+        return "MLB" in s or s == "BASEBALL"
+    if stat == "threes_made":
+        return any(x in s for x in ("NBA", "WNBA", "NCAAB", "BASKETBALL"))
+    if stat in {"touchdowns", "receiving_touchdowns", "rushing_touchdowns"}:
+        return any(x in s for x in ("NFL", "NCAAF", "AMERICAN_FOOTBALL", "FOOTBALL"))
+    return False
+
 def main() -> None:
     picks = select_pick_rows(limit=5000)
     logs = select_rows("prop_hunter_player_gamelogs", limit=20000)
@@ -51,7 +80,7 @@ def main() -> None:
         if not stat:
             continue
         sport = str(p.get("league") or p.get("sport") or "").upper()
-        if "MLB" not in sport and sport != "BASEBALL":
+        if not _allowed(stat, sport):
             continue
         status_now = str(p.get("status") or p.get("result") or "pending").lower()
         if status_now not in {"", "pending", "open", "none", "null", "unsettled"}:
@@ -86,7 +115,7 @@ def main() -> None:
         })
     safe_json_write(OUT, settled)
     upsert_rows("prop_hunter_results", settled, "result_id")
-    log(f"MLB extras settler done: picks={len(picks)} logs={len(logs)} settled={len(settled)}")
+    log(f"extras settler done: picks={len(picks)} logs={len(logs)} settled={len(settled)}")
 
 if __name__ == "__main__":
     main()
