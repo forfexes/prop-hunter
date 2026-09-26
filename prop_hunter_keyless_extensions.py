@@ -59,8 +59,13 @@ def install(kb):
 
     kb._mk=market_key;kb._player_market=player_market
     kb.SUFFIXES=tuple(dict.fromkeys(tuple(getattr(kb,"SUFFIXES",()))+EXTRA_SUFFIXES))
-    kb.DK_HINTS=tuple(dict.fromkeys(tuple(getattr(kb,"DK_HINTS",()))+("double double","triple double","attempts","completions","carries","targets","tackles","sacks","interceptions")))
+    kb.DK_HINTS=tuple(dict.fromkeys(tuple(getattr(kb,"DK_HINTS",()))+("double double","triple double","attempts","completions","carries","targets","tackles","sacks","interceptions","alternate total","alternate spread","point spread","both teams")))
     if hasattr(kb,"BOV_PATH"):kb.BOV_PATH.setdefault("EUROLEAGUE","basketball/euroleague")
     if hasattr(kb,"BR_PATH"):kb.BR_PATH.setdefault("EUROLEAGUE","basketball/euroleague")
+    try:
+        from prop_hunter_event_markets import install as install_event_markets
+        install_event_markets(kb)
+    except Exception:
+        pass
     kb._ph_keyless_extensions_installed=True
     return kb
