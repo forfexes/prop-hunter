@@ -21,6 +21,18 @@ _PY_REF_RE = re.compile(r"(?:^|[\s;|&])python(?:3)?\s+(?!-)([A-Za-z0-9_./-]+\.py
 _REQ_REF_RE = re.compile(r"pip\s+install[^\n]*?-r\s+([A-Za-z0-9_./-]+)")
 _MERGE_MARKERS = ("<<<<<<<", "=======", ">>>>>>>")
 
+ALL_SPORT_RESULT_CMDS = (
+    "prop_hunter_results_mlb.py",
+    "prop_hunter_results_mlb_extras.py",
+    "prop_hunter_results_nba.py",
+    "prop_hunter_results_wnba.py",
+    "prop_hunter_results_nfl.py",
+    "prop_hunter_results_nhl.py",
+    "prop_hunter_results_ncaa.py",
+    "prop_hunter_settler.py",
+    "prop_hunter_settler_extras.py",
+)
+
 def runtime_version() -> str:
     text = RUNTIME_FILE.read_text(encoding="utf-8")
     m = _RUNTIME_RE.search(text)
@@ -59,6 +71,11 @@ def safe_fix(path: Path, runtime: str) -> list[str]:
         path.write_text(text, encoding="utf-8")
     return changed
 
+def _require_commands(errors: list[str], text: str, commands, label: str):
+    for cmd in commands:
+        if cmd not in text:
+            errors.append(f"{label} missing: {cmd}")
+
 def inspect_workflow(path: Path, runtime: str) -> list[str]:
     text = path.read_text(encoding="utf-8")
     errors: list[str] = []
@@ -73,14 +90,27 @@ def inspect_workflow(path: Path, runtime: str) -> list[str]:
         errors.append("git push without rebase protection")
     if "PH_EXPECTED_RUNTIME_VERSION:" in text and runtime not in text:
         errors.append("stale runtime pin")
+
     if path.name == "prophunter.yml":
         if "PH_BROWSER_ENABLED: '0'" not in text:
             errors.append("normal card browser gate missing")
         if "python prop_hunter_runtime_guard.py" not in text:
             errors.append("normal card runtime guard missing")
+        _require_commands(errors, text, ALL_SPORT_RESULT_CMDS, "normal card all-sports settlement")
+        for sport in ("MLB", "NBA", "WNBA", "NFL", "NHL", "NCAAB", "NCAAF"):
+            if sport not in text:
+                errors.append(f"normal card sport missing: {sport}")
+
+    if path.name == "prophunter_results.yml":
+        _require_commands(errors, text, ALL_SPORT_RESULT_CMDS, "results all-sports settlement")
+        for cmd in ("prop_hunter_learning_update.py", "prop_hunter_feature_builder.py", "prop_hunter_expansion_test.py"):
+            if cmd not in text:
+                errors.append(f"results learning/regression missing: {cmd}")
+
     if path.name == "prop_hunter_maintenance.yml":
         if "python prop_hunter_hard_test.py" not in text:
             errors.append("maintenance hard test missing")
+
     if path.name == "prop_hunter_daily_control.yml":
         for cmd in (
             "python prop_hunter_daily_control.py --fix",
@@ -91,6 +121,7 @@ def inspect_workflow(path: Path, runtime: str) -> list[str]:
         ):
             if cmd not in text:
                 errors.append(f"daily control missing: {cmd}")
+
     for ref in _PY_REF_RE.findall(text):
         target = ROOT / ref
         if not target.exists():
