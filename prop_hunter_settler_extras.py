@@ -2,8 +2,11 @@
 """Supplemental exact settlement for markets that need threshold repair.
 
 Runs after the unified legacy settler and deliberately reuses the legacy result id
-when both paths see the same pick.  That means an exact double/triple/TD grading
+when both paths see the same pick. That means an exact double/triple/TD grading
 REPLACES a coarse legacy grading instead of creating a second learning sample.
+
+Also covers NFL/NCAAF prop families exposed by the keyless adapters that the
+legacy settler did not originally map (carries/rushing attempts and targets).
 """
 from __future__ import annotations
 
@@ -29,6 +32,14 @@ def detect_extra_stat(market: Any) -> Optional[str]:
         return "doubles"
     if "threes" in m or m.strip() == "3pt":
         return "threes_made"
+    if any(x in m for x in ("rushing attempts", "rush attempts", "carries")):
+        return "rushing_attempts"
+    if any(x in m for x in ("receiving targets", "receiver targets")) or m.strip() == "targets":
+        return "receiving_targets"
+    if "passing completions" in m or "pass completions" in m:
+        return "passing_completions"
+    if "passing attempts" in m or "pass attempts" in m:
+        return "passing_attempts"
     if "receiving touchdown" in m:
         return "receiving_touchdowns"
     if "rushing touchdown" in m:
@@ -43,16 +54,46 @@ def extra_stat_value(gl: Dict[str, Any], stat: str):
     direct = to_float(gl.get(stat))
     if direct is not None:
         return direct
+    aliases = {
+        "receiving_targets": ("targets", "receiving_targets"),
+        "rushing_attempts": ("carries", "rushing_attempts"),
+        "passing_completions": ("completions", "passing_completions"),
+        "passing_attempts": ("attempts", "passing_attempts"),
+    }
+    for key in aliases.get(stat, ()):
+        value = to_float(gl.get(key))
+        if value is not None:
+            return value
     if stat == "touchdowns":
         rec = to_float(gl.get("receiving_touchdowns"), 0.0) or 0.0
         rush = to_float(gl.get("rushing_touchdowns"), 0.0) or 0.0
         return rec + rush
     raw = gl.get("raw") if isinstance(gl.get("raw"), dict) else {}
+    v = to_float(raw.get(stat))
+    if v is not None:
+        return v
+    for key in aliases.get(stat, ()):
+        v = to_float(raw.get(key))
+        if v is not None:
+            return v
+    if stat in {"passing_completions", "passing_attempts"}:
+        cats = raw.get("categories") if isinstance(raw.get("categories"), dict) else {}
+        for cat, values in cats.items():
+            if "pass" not in str(cat).lower() or not isinstance(values, dict):
+                continue
+            catt = str(values.get("c_att") or values.get("c_att_") or "")
+            m = re.fullmatch(r"\s*(\d+)\s*[/\-]\s*(\d+)\s*", catt)
+            if m:
+                return float(m.group(1 if stat == "passing_completions" else 2))
     split = raw.get("split") if isinstance(raw.get("split"), dict) else {}
     stats = split.get("stat") if isinstance(split.get("stat"), dict) else {}
     v = to_float(stats.get(stat))
     if v is not None:
         return v
+    for key in aliases.get(stat, ()):
+        v = to_float(stats.get(key))
+        if v is not None:
+            return v
     for value in raw.values():
         if isinstance(value, dict):
             split2 = value.get("split") if isinstance(value.get("split"), dict) else {}
@@ -60,6 +101,17 @@ def extra_stat_value(gl: Dict[str, Any], stat: str):
             v = to_float(stats2.get(stat))
             if v is not None:
                 return v
+            for key in aliases.get(stat, ()):
+                v = to_float(stats2.get(key))
+                if v is not None:
+                    return v
+            v = to_float(value.get(stat))
+            if v is not None:
+                return v
+            for key in aliases.get(stat, ()):
+                v = to_float(value.get(key))
+                if v is not None:
+                    return v
     return None
 
 def extra_line_of_pick(pick: Dict[str, Any], stat: str) -> Optional[float]:
@@ -81,7 +133,10 @@ def _allowed(stat: str, league_or_sport: str) -> bool:
         return "MLB" in s or s == "BASEBALL"
     if stat == "threes_made":
         return any(x in s for x in ("NBA", "WNBA", "NCAAB", "BASKETBALL"))
-    if stat in {"touchdowns", "receiving_touchdowns", "rushing_touchdowns"}:
+    if stat in {
+        "touchdowns", "receiving_touchdowns", "rushing_touchdowns",
+        "rushing_attempts", "receiving_targets", "passing_completions", "passing_attempts",
+    }:
         return any(x in s for x in ("NFL", "NCAAF", "AMERICAN_FOOTBALL", "FOOTBALL"))
     return False
 
@@ -111,7 +166,6 @@ def main() -> None:
         if status == "no_result":
             continue
         pid = pick_id(p)
-        # Replace a legacy grade for the same pick/game instead of double-counting it.
         result_key_stat = legacy_detect_stat(market) or stat
         settled.append({
             "result_id": hash_key(pid, result_key_stat, gl.get("game_id")),
