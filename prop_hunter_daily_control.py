@@ -82,7 +82,13 @@ def inspect_workflow(path: Path, runtime: str) -> list[str]:
         if "python prop_hunter_hard_test.py" not in text:
             errors.append("maintenance hard test missing")
     if path.name == "prop_hunter_daily_control.yml":
-        for cmd in ("python prop_hunter_daily_control.py --fix", "python prop_hunter_runtime_guard.py", "python prop_hunter_hard_test.py", "python prop_hunter_market_regression_test.py"):
+        for cmd in (
+            "python prop_hunter_daily_control.py --fix",
+            "python prop_hunter_runtime_guard.py",
+            "python prop_hunter_hard_test.py",
+            "python prop_hunter_market_regression_test.py",
+            "python prop_hunter_expansion_test.py",
+        ):
             if cmd not in text:
                 errors.append(f"daily control missing: {cmd}")
     for ref in _PY_REF_RE.findall(text):
