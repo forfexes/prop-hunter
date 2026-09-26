@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""PROP HUNTER — NHL official results/gamelogs for players in stored picks."""
+"""PROP HUNTER — NHL official pending-pick result/gamelog collector."""
 from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from prop_hunter_shared_utils import select_pick_rows, upsert_rows, safe_json_write, log, warn, norm_name, http_json
+from prop_hunter_identity_hub import identity_match
 
 OUT='prop_hunter_results_nhl_raw.json'
 SEARCH='https://search.d3.nhle.com/api/v1/search'
@@ -18,15 +19,46 @@ def pending_players():
     out=[]; seen=set()
     for r in rows:
         if str(r.get('sport') or r.get('league') or '').upper()!='NHL': continue
-        if str(r.get('status') or r.get('result') or 'pending').lower() not in ('','pending','open','none'): continue
+        if str(r.get('status') or r.get('result') or 'pending').lower() not in ('','pending','open','none','null','unsettled'): continue
         n=str(r.get('player_name') or r.get('player') or '').strip(); k=norm_name(n)
         if n and k not in seen: seen.add(k); out.append(n)
-    return out
+    return out[:max(1,int(os.getenv('NHL_RESULTS_PLAYER_CAP','80')))]
+
+def _candidate_name(row):
+    if not isinstance(row,dict): return ''
+    for key in ('name','fullName','playerName','displayName'):
+        value=row.get(key)
+        if isinstance(value,str) and value.strip(): return value.strip()
+        if isinstance(value,dict):
+            for k2 in ('default','en','value'):
+                if isinstance(value.get(k2),str) and value.get(k2).strip(): return value.get(k2).strip()
+    first=row.get('firstName'); last=row.get('lastName')
+    def _txt(v):
+        if isinstance(v,str): return v.strip()
+        if isinstance(v,dict):
+            for k in ('default','en','value'):
+                if isinstance(v.get(k),str) and v.get(k).strip(): return v.get(k).strip()
+        return ''
+    full=f'{_txt(first)} {_txt(last)}'.strip()
+    return full
 
 def player_id(name):
-    data=http_json(SEARCH,params={'q':name,'type':'player','culture':'en-us','limit':5},retries=1) or []
-    if isinstance(data,dict): data=data.get('searchResults') or data.get('playerSearchResults') or []
-    return (data[0].get('playerId') if data else None)
+    data=http_json(SEARCH,params={'q':name,'type':'player','culture':'en-us','limit':8},retries=1) or []
+    if isinstance(data,dict): data=data.get('searchResults') or data.get('playerSearchResults') or data.get('data') or []
+    if not isinstance(data,list): return None
+    exact=[]; fuzzy=[]
+    for row in data:
+        if not isinstance(row,dict) or not row.get('playerId'): continue
+        cname=_candidate_name(row)
+        if not cname: continue
+        if norm_name(cname)==norm_name(name): exact.append(row)
+        elif identity_match(name,cname,threshold=96): fuzzy.append(row)
+    matches=exact or fuzzy
+    if len(matches)!=1:
+        if len(matches)>1: warn(f'NHL player search ambiguous: {name} matches={len(matches)}')
+        elif data: warn(f'NHL player search no safe identity match: {name}')
+        return None
+    return matches[0].get('playerId')
 
 def logs_for(name,last_n=30):
     pid=player_id(name)
@@ -44,14 +76,14 @@ def logs_for(name,last_n=30):
           'blocked_shots':float(g.get('blockedShots') or 0) if g.get('blockedShots') is not None else None,
           'power_play_points':float(g.get('powerPlayPoints') or 0),
           'toi':g.get('toi'),'raw':g})
-    return [r for r in rows if r['game_id']]
+    return [r for r in rows if r['game_id'] and r['game_date']]
 
 def main():
-    rows=[]
-    for name in pending_players():
+    players=pending_players(); rows=[]
+    for name in players:
         try: rows.extend(logs_for(name,int(os.getenv('LAST_N_GAMES','30'))))
         except Exception as e: warn(f'NHL gamelog failed {name}: {e}')
     safe_json_write(OUT,rows)
     if rows: upsert_rows('prop_hunter_player_gamelogs',rows,'sport,league,season,game_id,normalized_name')
-    log(f'NHL results done: players={len(set(r["normalized_name"] for r in rows))} rows={len(rows)}')
+    log(f'NHL results done: pending_players={len(players)} players={len(set(r["normalized_name"] for r in rows))} rows={len(rows)}')
 if __name__=='__main__': main()
