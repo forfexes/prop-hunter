@@ -21,7 +21,9 @@ OUT = "prop_hunter_results_nba_raw.json"
 
 def current_nba_season(now=None):
     now = now or datetime.now(timezone.utc)
-    start = now.year if now.month >= 10 else now.year - 1
+    # Treat September as the upcoming season so preseason picks in late September
+    # are not queried against the previous year's player logs.
+    start = now.year if now.month >= 9 else now.year - 1
     return f"{start}-{(start+1)%100:02d}"
 
 def _pending(row):
