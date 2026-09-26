@@ -28,6 +28,8 @@ def test_ncaab():
     check(len(rows) == 1, f"NCAAB rows={rows}")
     r = rows[0]
     check((r["points"], r["rebounds"], r["assists"], r["threes_made"]) == (19.0,6.0,4.0,3.0), f"NCAAB stats={r}")
+    check(detect_extra_stat("threes") == "threes_made", "canonical threes settlement")
+    check(result_for_value(extra_stat_value(r,"threes_made"), 2.5, "over") == "win", "NCAAB threes grading")
 
 def test_ncaaf():
     payload = {
@@ -48,6 +50,8 @@ def test_ncaaf():
     check(r["passing_yards"] == 250.0 and r["passing_touchdowns"] == 3.0, f"NCAAF passing={r}")
     check(r["rushing_yards"] == 45.0 and r["rushing_touchdowns"] == 1.0, f"NCAAF rushing={r}")
     check(r["anytime_td"] == 1.0, f"NCAAF TD alias={r}")
+    check(detect_extra_stat("2+ touchdowns") == "touchdowns", "generic TD threshold detection")
+    check(result_for_value(extra_stat_value(r,"touchdowns"), .5, "over") == "win", "NCAAF TD grading")
 
 def test_mlb_extra():
     split = {
