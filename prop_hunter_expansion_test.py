@@ -93,6 +93,7 @@ def test_all_sports_sources():
     text = Path("prop_hunter_source_orchestrator.py").read_text(encoding="utf-8")
     for sport in ("MLB","NBA","WNBA","NFL","NHL","NCAAB","NCAAF"):
         check(sport in text, f"{sport} missing source orchestrator")
+    check("prop_hunter_keyless_extensions" in text, "keyless market extension installer missing")
     workflow = Path(".github/workflows/prophunter_results.yml").read_text(encoding="utf-8")
     for cmd in ("prop_hunter_results_ncaa.py","prop_hunter_results_mlb_extras.py","prop_hunter_settler_extras.py","prop_hunter_learning_update.py"):
         check(cmd in workflow, f"results workflow missing {cmd}")
@@ -121,11 +122,32 @@ def test_builder_profiles_and_market_guard():
     source = Path("prop_hunter_builder_profiles.py").read_text(encoding="utf-8")
     check("same_player_multistat" in source and "max_legs=10" in source, "same-player/10-leg builder logic missing")
     guard = Path("prop_hunter_quote_guard.py").read_text(encoding="utf-8")
-    check("_ph_profiles_installed" in guard, "builder profile installer missing")
+    check("_ph_profiles_installed" in guard and "_ph_card_formatter_installed" in guard, "builder/card installer missing")
+
+
+def test_keyless_extension_and_card_formatter():
+    import prop_hunter_keyless_books as kb
+    from prop_hunter_keyless_extensions import install as install_keyless
+    from prop_hunter_card_formatter import install as install_formatter
+    install_keyless(kb)
+    check(kb._mk("Rushing Attempts") == "rushing_attempts", "keyless rushing attempts mapping")
+    check(kb._mk("Double Double") == "double_double", "keyless double-double mapping")
+    check(kb._player_market("Bucky Irving Rushing Attempts") == "Bucky Irving", "DK rushing attempts player parse")
+    check(kb._player_market("Tyrese Haliburton Double Double") == "Tyrese Haliburton", "DK double-double player parse")
+
+    class P:
+        def __init__(self, **kw): self.__dict__.update(kw)
+    p=P(type="betbuilder", market="4-Leg SAFE SGP", odds=2.05, stake=.25, probability=.52, edge_pct=6.6,
+        legs=["A 15+ Points @1.20","A 7+ Rebounds @1.20","B 5+ Assists @1.18","C 20+ Points @1.25"],
+        features={"builder_profile":"safe","same_player_multistat":True,"builder_odds_estimated_from_legs":True})
+    base=lambda picks:"🎯 PROP HUNTER\n\n🎯 BET BUILDER:\n• old @2.05 → 0.25u\n\n📊 Mehr Value Picks\n@prophunter"
+    text=install_formatter(base)([p])
+    check("🛡️ SAFE SGP:" in text and "Same-Player" in text, "profile card formatter missing")
+    check("finale Book-Quote bestätigen" in text, "derived SGP quote disclosure missing")
 
 
 def main():
-    tests=[test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,test_all_sports_sources,test_builder_profiles_and_market_guard]
+    tests=[test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,test_all_sports_sources,test_builder_profiles_and_market_guard,test_keyless_extension_and_card_formatter]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
     print(f"EXPANSION TEST PASSED: {len(tests)}/{len(tests)} suites")
