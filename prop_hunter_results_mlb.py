@@ -6,13 +6,13 @@ Design goals for the normal card/results paths:
 - fetch ONLY players that still have pending MLB picks
 - infer hitter/pitcher group from the stored market so we do not sweep the league
 - persist schema-normalized rows into prop_hunter_player_gamelogs
+- include doubles/triples so threshold markets settle against the exact stat
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
-import re
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Set, Tuple
 
@@ -54,7 +54,6 @@ def _is_mlb(row: Dict[str, Any]) -> bool:
 
 
 def pending_player_groups(limit: int = 5000) -> List[Tuple[str, Set[str]]]:
-    """Return [(player_name, {hitting|pitching}), ...] from pending MLB picks."""
     grouped: Dict[str, Tuple[str, Set[str]]] = {}
     for row in select_pick_rows(limit=limit):
         if not _is_mlb(row) or not _is_pending(row):
@@ -82,7 +81,6 @@ def find_player(name: str) -> Dict[str, Any] | None:
     for p in people:
         if norm_name(p.get("fullName")) == wanted:
             return p
-    # Avoid silently settling the wrong player when the provider search is fuzzy.
     for p in people:
         candidate = norm_name(p.get("fullName"))
         if candidate and (candidate in wanted or wanted in candidate):
@@ -110,7 +108,6 @@ def _game_id(split: Dict[str, Any]) -> str:
 
 
 def innings_value(value: Any) -> float | None:
-    """Keep baseball notation (6.1/6.2) so settler can convert to outs correctly."""
     if value in (None, ""):
         return None
     try:
@@ -145,6 +142,8 @@ def parse_hitting(name: str, split: Dict[str, Any], season: str) -> Dict[str, An
     row = base_row(name, split, season)
     row.update({
         "hits": to_float(stat.get("hits")),
+        "doubles": to_float(stat.get("doubles")),
+        "triples": to_float(stat.get("triples")),
         "total_bases": to_float(stat.get("totalBases")),
         "home_runs": to_float(stat.get("homeRuns")),
         "rbi": to_float(stat.get("rbi")),
@@ -173,7 +172,6 @@ def parse_pitching(name: str, split: Dict[str, Any], season: str) -> Dict[str, A
 
 
 def merge_rows(rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Merge hitter/pitcher observations for the same player/game instead of losing fields."""
     merged: Dict[Tuple[str, str, str, str, str], Dict[str, Any]] = {}
     for row in rows:
         key = (
