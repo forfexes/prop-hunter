@@ -17,7 +17,7 @@ CRITICAL_FILES=[
     "prop_hunter_oddsapi_io.py","prop_hunter_oddspapi.py","prop_hunter_kambi.py","prop_hunter_1xbet.py",
     "prop_hunter_propline.py","prop_hunter_parlayapi.py","prop_hunter_market_consensus.py",
     "prop_hunter_odds_pp_ud.py","prop_hunter_scraper.py","prop_hunter_scoring.py",
-    "prop_hunter_builder_engine.py","prop_hunter_builder_learning.py","prop_hunter_identity_hub.py",
+    "prop_hunter_builder_engine.py","prop_hunter_builder_profiles.py","prop_hunter_builder_learning.py","prop_hunter_identity_hub.py",
     "prop_hunter_results_mlb.py","prop_hunter_results_mlb_extras.py","prop_hunter_results_nba.py",
     "prop_hunter_results_wnba.py","prop_hunter_results_nfl.py","prop_hunter_results_nhl.py",
     "prop_hunter_results_ncaa.py","prop_hunter_feature_builder.py",
