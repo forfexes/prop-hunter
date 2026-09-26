@@ -14,9 +14,10 @@ Output:
 - prop_hunter_results_settled.json
 
 Unterstützte Märkte:
-NBA/WNBA: points, rebounds, assists, pra, ra/rba, double_double, triple_double
-MLB: hits, total_bases, home_runs, rbi, runs, pitcher_strikeouts
-NFL: receiving_yards, rushing_yards, passing_yards, anytime_td, 2plus_td, receptions
+NBA/WNBA/NCAAB: points, rebounds, assists, pra, ra/rba, threes, double_double, triple_double
+MLB: hits, doubles, triples, total_bases, home_runs, rbi, runs, stolen_bases, pitcher props
+NFL/NCAAF: receiving_yards, rushing_yards, passing_yards, passing_touchdowns, anytime/2+/3+ TD, receptions
+NHL: goals, assists, points, shots_on_goal, goalie_saves, blocked_shots, power_play_points
 """
 
 from __future__ import annotations
@@ -38,31 +39,32 @@ except Exception:
 OUT = "prop_hunter_results_settled.json"
 
 MARKET_STAT_MAP = {
-    # NBA / WNBA
+    # NBA / WNBA / NCAAB
     "points rebounds assists": "pra", "pra": "pra",
     "points rebounds": "pr", "points assists": "pa",
     "rebounds assists": "ra", "rba": "ra", "ra": "ra",
     "double double": "double_double", "triple double": "triple_double",
-    "three pointers": "threes_made", "3 pointers": "threes_made", "3pm": "threes_made",
+    "three pointers": "threes_made", "3 pointers": "threes_made", "3pm": "threes_made", "threes": "threes_made",
     "rebounds": "rebounds", "reb": "rebounds",
     "assists": "assists", "ast": "assists",
     "blocks": "blocks", "steals": "steals", "points": "points", "pts": "points",
-    # MLB
+    # MLB — order-specific keys are sorted longest-first in detect_stat
     "pitcher hits allowed": "pitcher_hits_allowed", "hits allowed": "pitcher_hits_allowed",
     "pitcher earned runs": "pitcher_earned_runs", "earned runs": "pitcher_earned_runs",
     "pitcher outs": "pitcher_outs", "outs recorded": "pitcher_outs",
     "pitcher strikeouts": "pitcher_strikeouts", "pitcher k": "pitcher_strikeouts",
     "stolen bases": "stolen_bases", "stolen base": "stolen_bases",
-    "total bases": "total_bases", "home run": "home_runs", "hr": "home_runs",
+    "total bases": "total_bases", "home runs": "home_runs", "home run": "home_runs", "hr": "home_runs",
+    "triples": "triples", "triple": "triples", "doubles": "doubles", "double": "doubles",
     "rbi": "rbi", "hits": "hits", "hit": "hits", "runs": "runs",
-    # NFL
-    "passing touchdowns": "passing_touchdowns", "pass tds": "passing_touchdowns",
+    # NFL / NCAAF
+    "passing touchdowns": "passing_touchdowns", "pass tds": "passing_touchdowns", "pass td": "passing_touchdowns",
     "receiving yards": "receiving_yards", "rushing yards": "rushing_yards",
     "passing yards": "passing_yards", "receptions": "receptions",
     "3 plus td": "three_plus_td", "3plus td": "three_plus_td", "3 td": "three_plus_td",
     "2 plus td": "two_plus_td", "2plus td": "two_plus_td", "2 td": "two_plus_td",
     "anytime td": "anytime_td", "1 plus td": "anytime_td", "1plus td": "anytime_td", "1 td": "anytime_td", "touchdown": "anytime_td",
-    # NHL (settles when these columns are present in gamelogs)
+    # NHL
     "shots on goal": "shots_on_goal", "goalie saves": "goalie_saves",
     "blocked shots": "blocked_shots", "power play points": "power_play_points",
     "goals": "goals", "nhl assists": "nhl_assists", "nhl points": "nhl_points",
@@ -78,7 +80,6 @@ def detect_stat(market: Any) -> Optional[str]:
 
 
 def stat_value(gl: Dict[str, Any], stat: str) -> Any:
-    # Direct DB columns first.
     if stat in gl and gl.get(stat) is not None:
         return gl.get(stat)
     if stat == "pra":
@@ -104,7 +105,6 @@ def stat_value(gl: Dict[str, Any], stat: str) -> Any:
             return None
         whole = int(inn)
         frac = round(inn - whole, 2)
-        # Baseball notation 6.1 / 6.2 means one / two outs, not decimal innings.
         extra = 1 if 0.09 <= frac < 0.19 else 2 if 0.19 <= frac < 0.29 else 0
         return whole * 3 + extra
     if stat == "anytime_td":
@@ -125,8 +125,6 @@ def stat_value(gl: Dict[str, Any], stat: str) -> Any:
         "blocked_shots": ("blocked_shots", "blocks"),
         "power_play_points": ("power_play_points", "ppp"),
     }
-    # Generic Points/Assists market names are shared by basketball and hockey.
-    # Use NHL-specific columns when the gamelog tells us this is hockey.
     league = str(gl.get("league") or gl.get("sport") or "").upper()
     if league == "NHL" and stat == "points":
         for key in ("hockey_points", "nhl_points", "points"):
@@ -153,8 +151,6 @@ def line_of_pick(pick: Dict[str, Any]) -> Optional[float]:
         v = to_float(pick.get(k))
         if v is not None:
             return v
-    # Newer and legacy pick rows sometimes embed the threshold only in market text.
-    # Use the last numeric token: "Points Over 20.5" -> 20.5, "2+ TD" -> 2.
     import re
     text = str(pick.get("market") or pick.get("selection") or pick.get("pick") or "")
     nums = re.findall(r"(?<![A-Za-z])(\d+(?:\.\d+)?)", text)
@@ -201,13 +197,6 @@ def _pick_target_date(pick: Dict[str, Any]):
 
 
 def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]], aliases=None) -> Optional[Dict[str, Any]]:
-    """Find the intended game without ever settling against an arbitrary old log.
-
-    Provider event ids usually differ (sportsbook id vs official league id), so after
-    exact id matching we use player identity + a narrow date window. If two logs are
-    equally plausible (e.g. an MLB doubleheader), we leave the pick pending instead
-    of grading the wrong game.
-    """
     pname = pick.get("player_name") or pick.get("player") or pick.get("selection")
     game_id = str(pick.get("game_id") or pick.get("source_game_id") or "")
     player_logs = [
@@ -229,8 +218,6 @@ def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]], aliases=None)
 
     target = _pick_target_date(pick)
     if target is None:
-        # No date context: refusing to guess is safer than grading from a random
-        # historical game for that player.
         return None
 
     dated = []
@@ -239,7 +226,6 @@ def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]], aliases=None)
         if gd is None:
             continue
         delta = (gd - target).days
-        # UTC sportsbook timestamps can be one calendar day ahead of US local dates.
         if -1 <= delta <= 2:
             dated.append((abs(delta), 0 if delta == 0 else 1 if delta == -1 else 2 + delta, gl))
     if not dated:
