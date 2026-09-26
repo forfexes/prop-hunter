@@ -13,6 +13,10 @@ PROFILE_HEADINGS = (
     ("value", "🎯 VALUE SGP:"),
     ("aggressive", "🔥 AGGRESSIVE SGP:"),
     ("longshot", "💣 LONGSHOT SGP:"),
+    ("acca_safe", "🧩 SAFE ACCA:"),
+    ("acca_value", "🧩 VALUE ACCA:"),
+    ("acca_aggressive", "🔥 AGGRESSIVE ACCA:"),
+    ("acca_lottery", "💣 LOTTERY ACCA:"),
     ("generic", "🎯 BET BUILDER:"),
 )
 
@@ -30,8 +34,13 @@ def _fmt_stake(v):
 
 def _profile(p: Any) -> str:
     feats=getattr(p,"features",{}) or {};value=str(feats.get("builder_profile") or "").lower()
+    if feats.get("combo_scope")=="cross_game":
+        return f"acca_{value}" if value in {"safe","value","aggressive","lottery"} else "generic"
     if value in {"safe","value","aggressive","longshot"}:return value
     cat=str(getattr(p,"category","") or "").lower()
+    if cat.startswith("acca_"):
+        suffix=cat.split("acca_",1)[1]
+        if suffix in {"safe","value","aggressive","lottery"}:return f"acca_{suffix}"
     for key in ("safe","value","aggressive","longshot"):
         if key in cat:return key
     return "generic"
@@ -58,7 +67,9 @@ def _builder_block(builders: Iterable[Any]) -> str:
                 try:meta.append(f"Edge {float(edge):+.1f}%")
                 except Exception:pass
             if meta:out.append("  📈 "+" · ".join(meta))
-            if feats.get("builder_odds_estimated_from_legs"):out.append("  ⚠️ SGP-Kombiquote aus Leg-Quoten — finale Book-Quote bestätigen")
+            if feats.get("combo_scope")=="cross_game":out.append("  🌐 Cross-Game · gleiche Sportsbook-Quelle")
+            if feats.get("acca_odds_estimated_from_legs"):out.append("  ⚠️ ACCA-Quote aus Einzelquoten — finale Book-Quote bestätigen")
+            elif feats.get("builder_odds_estimated_from_legs"):out.append("  ⚠️ SGP-Kombiquote aus Leg-Quoten — finale Book-Quote bestätigen")
         out.append("")
     return "\n".join(out).rstrip()
 
@@ -114,7 +125,7 @@ def install_persistence(module: Any) -> bool:
             if combos and len(rows)>=len(combos):
                 target=rows[-len(combos):]
                 for row,pick in zip(target,combos):
-                    feats=dict(getattr(pick,"features",{}) or {});row["features"]=feats;row["edge_pct"]=getattr(pick,"edge_pct",None);row["ev"]=getattr(pick,"ev",None);row["game"]=getattr(pick,"game",None);row["analysis"]=getattr(pick,"analysis",None);row["bookmaker"]=feats.get("bookmaker");row["source"]=feats.get("source");row["builder_profile"]=feats.get("builder_profile");row["builder_odds_estimated_from_legs"]=bool(feats.get("builder_odds_estimated_from_legs"));row["same_player_multistat"]=bool(feats.get("same_player_multistat"))
+                    feats=dict(getattr(pick,"features",{}) or {});row["features"]=feats;row["edge_pct"]=getattr(pick,"edge_pct",None);row["ev"]=getattr(pick,"ev",None);row["game"]=getattr(pick,"game",None);row["analysis"]=getattr(pick,"analysis",None);row["bookmaker"]=feats.get("bookmaker");row["source"]=feats.get("source");row["builder_profile"]=feats.get("builder_profile");row["builder_odds_estimated_from_legs"]=bool(feats.get("builder_odds_estimated_from_legs"));row["acca_odds_estimated_from_legs"]=bool(feats.get("acca_odds_estimated_from_legs"));row["combo_scope"]=feats.get("combo_scope");row["same_player_multistat"]=bool(feats.get("same_player_multistat"))
                     if _is_euroleague_pick(pick):row["sport"]="EUROLEAGUE"
                 entry["kombis"]=rows
             euro_keys=[]
