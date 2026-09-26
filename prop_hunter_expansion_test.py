@@ -4,7 +4,7 @@ from pathlib import Path
 
 from prop_hunter_results_ncaa import parse_ncaab_summary, parse_ncaaf_summary
 from prop_hunter_results_mlb_extras import parse_extra_hitting
-from prop_hunter_settler_extras import detect_extra_stat, extra_stat_value
+from prop_hunter_settler_extras import detect_extra_stat, extra_stat_value, extra_line_of_pick
 from prop_hunter_settler import result_for_value
 
 def check(v, msg):
@@ -51,7 +51,8 @@ def test_ncaaf():
     check(r["rushing_yards"] == 45.0 and r["rushing_touchdowns"] == 1.0, f"NCAAF rushing={r}")
     check(r["anytime_td"] == 1.0, f"NCAAF TD alias={r}")
     check(detect_extra_stat("2+ touchdowns") == "touchdowns", "generic TD threshold detection")
-    check(result_for_value(extra_stat_value(r,"touchdowns"), .5, "over") == "win", "NCAAF TD grading")
+    check(extra_line_of_pick({"market":"2+ touchdowns"}, "touchdowns") == 1.5, "2+ TD line normalization")
+    check(result_for_value(extra_stat_value(r,"touchdowns"), 0.5, "over") == "win", "NCAAF TD grading")
 
 def test_mlb_extra():
     split = {
@@ -65,6 +66,7 @@ def test_mlb_extra():
     check(row["doubles"] == 1.0 and row["triples"] == 1.0, f"MLB extra parse={row}")
     check(detect_extra_stat("to_hit_a_triple") == "triples", "triple detection")
     check(detect_extra_stat("to_hit_a_double") == "doubles", "double detection")
+    check(extra_line_of_pick({"market":"to_hit_a_triple"}, "triples") == 0.5, "triple line fallback")
     check(extra_stat_value({"raw": row["raw"]}, "triples") == 1.0, "raw triple fallback")
     check(result_for_value(1.0, .5, "over") == "win", "triple settlement")
 
