@@ -146,8 +146,62 @@ def test_keyless_extension_and_card_formatter():
     check("finale Book-Quote bestätigen" in text, "derived SGP quote disclosure missing")
 
 
+def test_builder_persistence_and_learning_loop():
+    import types
+    from prop_hunter_card_formatter import install_persistence
+    from prop_hunter_learning_update import learn_builder_correlations
+
+    module=types.SimpleNamespace()
+    module.history=[]
+    module.log=types.SimpleNamespace(warning=lambda *a, **k: None)
+
+    def base_persist(picks, telegram_message_id=None, telegram_text=None):
+        from datetime import datetime, timezone
+        today=datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        entry=next((e for e in module.history if e["date"]==today),None)
+        if entry is None:
+            entry={"date":today,"kombis":[]}; module.history.append(entry)
+        for pick in picks:
+            if getattr(pick,"type",None)=="betbuilder":
+                entry["kombis"].append({
+                    "type":"betbuilder","market":pick.market,"sport":"NBA","stake":pick.stake,
+                    "probability":pick.probability,"result":"pending","leg_details":pick.leg_details,
+                })
+
+    module.persist=base_persist
+    module.load_history=lambda: module.history
+    module.save_history=lambda value: setattr(module,"history",value)
+    check(install_persistence(module), "combo persistence overlay did not install")
+
+    class P:
+        def __init__(self, **kw): self.__dict__.update(kw)
+    legs=[
+        {"player":"A","sport":"NBA","market":"Points","direction":"over","probability":.70,"result":"win"},
+        {"player":"B","sport":"NBA","market":"Rebounds","direction":"over","probability":.60,"result":"win"},
+    ]
+    pick=P(type="betbuilder",market="2-Leg SAFE SGP",sport="NBA",stake=.25,probability=.42,
+           edge_pct=5.0,ev=.05,game="A @ B",analysis="fixture",leg_details=legs,
+           features={"builder_profile":"safe","bookmaker":"fanduel","same_player_multistat":False,
+                     "builder_odds_estimated_from_legs":True})
+    module.persist([pick])
+    row=module.history[0]["kombis"][0]
+    check(row["builder_profile"]=="safe" and row["edge_pct"]==5.0, "builder metadata not persisted")
+    row["result"]="win"; row["profit"]=.25; row["settlement_legs"]=legs
+
+    module.history[0]["kombis"]=[dict(row) for _ in range(24)]
+    learned=learn_builder_correlations(module.history)
+    check(learned["profiles"]["safe"]["n"]==24, "builder profile performance missing")
+    check(len(learned["pairs"])==1, "builder pair learning missing")
+    pair=next(iter(learned["pairs"].values()))
+    check(pair["n"]==24 and .85 <= pair["factor"] <= 1.12, "builder pair factor not bounded")
+
+
 def main():
-    tests=[test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,test_all_sports_sources,test_builder_profiles_and_market_guard,test_keyless_extension_and_card_formatter]
+    tests=[
+        test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,
+        test_all_sports_sources,test_builder_profiles_and_market_guard,
+        test_keyless_extension_and_card_formatter,test_builder_persistence_and_learning_loop,
+    ]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
     print(f"EXPANSION TEST PASSED: {len(tests)}/{len(tests)} suites")
