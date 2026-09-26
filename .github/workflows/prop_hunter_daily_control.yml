@@ -44,6 +44,7 @@ jobs:
           python prop_hunter_market_regression_test.py
           python prop_hunter_expansion_test.py
           python prop_hunter_euroleague_test.py
+          python prop_hunter_event_market_test.py
           python prop_hunter_daily_control.py --check
       - name: Save safe repairs
         run: |
