@@ -7,6 +7,7 @@ left to prop_hunter_settler.py to avoid duplicate grading paths.
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, Optional
 
 from prop_hunter_settler import (
@@ -60,6 +61,21 @@ def extra_stat_value(gl: Dict[str, Any], stat: str):
                 return v
     return None
 
+def extra_line_of_pick(pick: Dict[str, Any], stat: str) -> Optional[float]:
+    """Preserve explicit N+ semantics even for legacy rows missing a normalized line."""
+    line = line_of_pick(pick)
+    text = str(pick.get("market") or pick.get("prop_type") or pick.get("selection") or "")
+    m = re.search(r"\b(\d+)\s*\+", text)
+    if m:
+        threshold = max(0.5, float(int(m.group(1))) - 0.5)
+        # Old rows sometimes stored the visible threshold (2) instead of the
+        # settlement line (1.5). Repair only when the label explicitly says N+.
+        if line is None or abs(float(line) - float(int(m.group(1)))) < 1e-9:
+            line = threshold
+    if line is None and stat in {"doubles", "triples"}:
+        line = 0.5
+    return line
+
 def _allowed(stat: str, league_or_sport: str) -> bool:
     s = league_or_sport.upper()
     if stat in {"doubles", "triples"}:
@@ -89,7 +105,7 @@ def main() -> None:
         if not gl:
             continue
         value = extra_stat_value(gl, stat)
-        line = line_of_pick(p)
+        line = extra_line_of_pick(p, stat)
         side = side_of_pick(p)
         status = result_for_value(value, line, side)
         if status == "no_result":
