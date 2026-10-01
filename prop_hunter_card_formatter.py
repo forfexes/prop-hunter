@@ -20,6 +20,36 @@ PROFILE_HEADINGS = (
     ("generic", "🎯 BET BUILDER:"),
 )
 
+TELEGRAM_SAFE_LIMIT = 3950
+
+
+def _builder_signature(p: Any):
+    legs=[str(x or "").strip().lower() for x in (getattr(p,"legs",None) or []) if str(x or "").strip()]
+    if legs:return tuple(sorted(legs))
+    return (
+        str(getattr(p,"market","") or "").strip().lower(),
+        _fmt_odds(getattr(p,"odds",None)),
+        str(getattr(p,"player","") or "").strip().lower(),
+    )
+
+
+def _dedupe_builders(builders: Iterable[Any]):
+    out=[];seen=set()
+    for p in builders or []:
+        sig=_builder_signature(p)
+        if sig in seen:continue
+        seen.add(sig);out.append(p)
+    return out
+
+
+def _builder_sort_key(p: Any):
+    order={"safe":8,"value":7,"acca_safe":6,"acca_value":5,"aggressive":4,"acca_aggressive":3,"longshot":2,"acca_lottery":1,"generic":0}
+    try:edge=float(getattr(p,"edge_pct",0) or 0)
+    except Exception:edge=0.0
+    try:prob=float(getattr(p,"probability",0) or 0)
+    except Exception:prob=0.0
+    return (order.get(_profile(p),0),edge,prob)
+
 
 def _fmt_odds(v):
     try:return f"{float(v):.2f}"
@@ -76,13 +106,44 @@ def _builder_block(builders: Iterable[Any]) -> str:
 
 def install(base_build_post):
     def wrapped(picks):
-        text=base_build_post(picks);builders=[p for p in (picks or []) if getattr(p,"type",None)=="betbuilder"]
+        text=base_build_post(picks);builders=_dedupe_builders([p for p in (picks or []) if getattr(p,"type",None)=="betbuilder"])
         if not builders or "🎯 BET BUILDER:" not in text:return text
         start=text.find("🎯 BET BUILDER:")
         if start<0:return text
         tail=text[start:];markers=("\n🔥 2-LEG KOMBIS:","\n🔥 3-LEG TRIPLES:","\n💣 LOTTERY BIGS:","\n📊 Mehr Value Picks")
         ends=[tail.find(m) for m in markers if tail.find(m)>=0];end=start+(min(ends) if ends else len(tail))
-        return text[:start].rstrip()+"\n"+_builder_block(builders)+"\n\n"+text[end:].lstrip("\n")
+        prefix=text[:start].rstrip();suffix=text[end:].lstrip("\n")
+
+        def compose(items, omitted=0, compact_prefix=False):
+            pre=prefix
+            if compact_prefix:
+                pre="\n".join(line for line in pre.splitlines() if not line.lstrip().startswith("💡 "))
+            block=_builder_block(items)
+            note=f"\n\nℹ️ {omitted} weitere verifizierte Builder im History-Log" if omitted else ""
+            return pre+"\n"+block+note+"\n\n"+suffix
+
+        result=compose(builders)
+        if len(result)<=TELEGRAM_SAFE_LIMIT:return result
+
+        ranked=sorted(builders,key=_builder_sort_key,reverse=True)
+        selected=[]
+        for p in ranked:
+            candidate=compose(selected+[p],len(ranked)-len(selected)-1,True)
+            if len(candidate)<=TELEGRAM_SAFE_LIMIT:selected.append(p)
+        result=compose(selected,len(ranked)-len(selected),True)
+        if len(result)<=TELEGRAM_SAFE_LIMIT:return result
+
+        # Last-resort safety: old LOTTERY BIGS duplicate information already represented
+        # by structured longshot/ACCA profiles. Remove that legacy section before clipping.
+        if "\n💣 LOTTERY BIGS:" in result:
+            a=result.find("\n💣 LOTTERY BIGS:")
+            b=result.find("\n📊 Mehr Value Picks",a)
+            if b>a:result=result[:a]+result[b:]
+        if len(result)>TELEGRAM_SAFE_LIMIT:
+            footer="\n\n📊 Mehr Value Picks · Keine negative Edge · Lines Pflicht 🎯\n@prophunter"
+            room=max(200,TELEGRAM_SAFE_LIMIT-len(footer)-2)
+            result=result[:room].rsplit("\n",1)[0]+"\n… Karte gekürzt"+footer
+        return result
     return wrapped
 
 
@@ -136,6 +197,19 @@ def install_persistence(module: Any) -> bool:
                     for hist_row in reversed(entry.get("picks") or []):
                         if hist_row.get("dedup_key")==dk:
                             hist_row["sport"]="EUROLEAGUE";raw=hist_row.get("raw") if isinstance(hist_row.get("raw"),dict) else {};raw["league"]="EUROLEAGUE";hist_row["raw"]=raw;break
+            if telegram_message_id and telegram_text and combos and entry.get("cards"):
+                card=next((c for c in reversed(entry.get("cards") or []) if str(c.get("message_id"))==str(telegram_message_id)),None)
+                if card:
+                    visible=[];seen_sig=set()
+                    for row in target:
+                        legs=[str(x or "").strip() for x in (row.get("legs") or []) if str(x or "").strip()]
+                        sig=tuple(sorted(x.lower() for x in legs)) if legs else (str(row.get("market") or "").lower(),)
+                        if sig in seen_sig:continue
+                        is_visible=(all(leg in telegram_text for leg in legs) if legs else str(row.get("market") or "") in telegram_text)
+                        if is_visible and row.get("combo_id"):
+                            seen_sig.add(sig);visible.append(row["combo_id"])
+                    card["combo_ids"]=visible
+                    card["text"]=telegram_text
             module.save_history(history);_fix_euroleague_db(module,euro_keys)
         except Exception as exc:
             try:module.log.warning("combo/euroleague metadata persistence: %s",exc)
