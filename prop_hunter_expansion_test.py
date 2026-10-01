@@ -145,6 +145,18 @@ def test_keyless_extension_and_card_formatter():
     check("🛡️ SAFE SGP:" in text and "Same-Player" in text, "profile card formatter missing")
     check("finale Book-Quote bestätigen" in text, "derived SGP quote disclosure missing")
 
+    dup=P(type="betbuilder", market="4-Leg SAFE SGP", odds=2.05, stake=.25, probability=.52, edge_pct=6.6,
+        legs=list(p.legs), features=dict(p.features))
+    many=[]
+    for i in range(18):
+        many.append(P(type="betbuilder", market=f"Long Builder {i}", odds=2.2+i*.1, stake=.1,
+            probability=.5, edge_pct=5+i, legs=[f"Player {i} very long observed prop line {j} @1.90" for j in range(1,7)],
+            features={"builder_profile":"value","builder_odds_estimated_from_legs":True}))
+    long_base=lambda picks:"🎯 PROP HUNTER\n\n"+"\n".join([f"🏀 Player {i}\n   └ Points Over 10.5 @1.90 → 0.2u\n   📈 Edge +5.0% · Prob 60%\n   💡 verbose analysis line {i}" for i in range(12)])+"\n\n🎯 BET BUILDER:\nold\n\n📊 Mehr Value Picks\n@prophunter"
+    compact=install_formatter(long_base)([p,dup,*many])
+    check(len(compact)<=3950, f"telegram card too long: {len(compact)}")
+    check(compact.count("A 15+ Points @1.20")==1, "duplicate builder displayed twice")
+
 
 def test_builder_persistence_and_learning_loop():
     import types
