@@ -158,6 +158,16 @@ def test_keyless_extension_and_card_formatter():
     check(compact.count("A 15+ Points @1.20")==1, "duplicate builder displayed twice")
 
 
+def test_delivery_failure_and_team_identity_guards():
+    core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+    check('raise RuntimeError("PROP HUNTER Telegram delivery failed")' in core, "Telegram delivery failure does not fail the card run")
+    check('picks NOT persisted' in core, "Telegram failure persistence guard missing")
+    start = core.find("def _source_prop_team")
+    end = core.find("def _source_prop_game", start)
+    block = core[start:end]
+    check('getattr(p, "home"' not in block, "player team still falls back to event home team")
+
+
 def test_builder_persistence_and_learning_loop():
     import types
     from prop_hunter_card_formatter import install_persistence
@@ -212,7 +222,8 @@ def main():
     tests=[
         test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,
         test_all_sports_sources,test_builder_profiles_and_market_guard,
-        test_keyless_extension_and_card_formatter,test_builder_persistence_and_learning_loop,
+        test_keyless_extension_and_card_formatter,test_delivery_failure_and_team_identity_guards,
+        test_builder_persistence_and_learning_loop,
     ]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
