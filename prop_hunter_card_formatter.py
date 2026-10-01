@@ -183,6 +183,7 @@ def install_persistence(module: Any) -> bool:
             history=module.load_history();today=datetime.now(timezone.utc).strftime("%Y-%m-%d");entry=next((e for e in reversed(history or []) if e.get("date")==today),None)
             if not entry:return result
             rows=list(entry.get("kombis") or [])
+            target=[]
             if combos and len(rows)>=len(combos):
                 target=rows[-len(combos):]
                 for row,pick in zip(target,combos):
