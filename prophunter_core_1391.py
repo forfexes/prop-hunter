@@ -3889,6 +3889,19 @@ def rescue_picks_from_props(props, max_picks=12):
     per_game = defaultdict(int)
 
     for sp in props or []:
+        feats = getattr(sp, "features", {}) or {}
+        player_label = str(getattr(sp, "player", "") or "").strip()
+        player_norm = re.sub(r"[^a-z0-9]+", " ", player_label.lower()).strip()
+        home_norm = re.sub(r"[^a-z0-9]+", " ", str((feats or {}).get("home_team") or "").lower()).strip()
+        away_norm = re.sub(r"[^a-z0-9]+", " ", str((feats or {}).get("away_team") or "").lower()).strip()
+        eventish = bool((feats or {}).get("event_market"))
+        eventish = eventish or player_norm in {"game", "home", "away"} or player_norm.startswith("team ")
+        eventish = eventish or player_norm.startswith(("total goals", "team total", "game total", "point spread", "alternate spread"))
+        if not eventish and ("total" in player_norm or "spread" in player_norm):
+            eventish = bool((home_norm and home_norm in player_norm) or (away_norm and away_norm in player_norm))
+        if eventish:
+            rejected["event_market_single"] += 1
+            continue
         prob = _source_prop_probability(sp)
         # PropsMadness Blocker auch im Rescue
         _pm = (getattr(sp, "features", {}) or {}).get("pm_hit_rate")
