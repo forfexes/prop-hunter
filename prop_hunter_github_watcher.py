@@ -6,6 +6,7 @@ Designed for a cheap twice-monthly GitHub Actions run.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -30,7 +31,12 @@ TELEGRAM_TOKEN = (os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
 # Broad enough to discover new projects, narrow enough to keep GitHub Search calls cheap.
+KNOWN_INTEGRATED = {
+    "proplineapi/propline-python",
+}
+
 SEARCHES: Tuple[str, ...] = (
+    'sports betting player props API SDK language:Python',
     'sports betting odds player props language:Python',
     'sportsbook odds scraper player props language:Python',
     'NBA player props betting odds language:Python',
@@ -55,6 +61,18 @@ POSITIVE = {
 NEGATIVE = {
     "casino": -10, "slot": -12, "poker": -8, "crypto": -5,
     "tutorial": -4, "course": -5, "frontend only": -5,
+    "endpoints have been removed": -30, "api urls and endpoints have been removed": -30,
+    "pay per row": -20, "apify actor": -15, "streamlit": -3,
+    "educational and research purposes only": -4,
+}
+README_POSITIVE = {
+    "official python client": 18,
+    "player props api": 10,
+    "real-time betting odds": 8,
+    "1000 requests/day": 8,
+    "1,000 requests/day": 8,
+    "no credit card": 4,
+    "no third party api key": 6,
 }
 
 @dataclass
@@ -115,12 +133,28 @@ def github_search(query: str) -> List[Dict[str, Any]]:
     return []
 
 
-def score_repo(repo: Dict[str, Any]) -> Tuple[int, List[str]]:
+def github_readme_text(full_name: str) -> str:
+    if not full_name or "/" not in full_name:
+        return ""
+    headers = {}
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
+    try:
+        data = _request_json(f"https://api.github.com/repos/{full_name}/readme", headers=headers, timeout=12)
+        content = str(data.get("content") or "")
+        if str(data.get("encoding") or "").lower() == "base64" and content:
+            return base64.b64decode(content).decode("utf-8", "ignore")[:30000]
+    except Exception:
+        pass
+    return ""
+
+def score_repo(repo: Dict[str, Any], readme_text: str = "") -> Tuple[int, List[str]]:
     text = " ".join([
         str(repo.get("name") or ""),
         str(repo.get("full_name") or ""),
         str(repo.get("description") or ""),
         " ".join(repo.get("topics") or []),
+        readme_text,
     ]).lower()
     score = 0
     reasons: List[str] = []
@@ -132,6 +166,12 @@ def score_repo(repo: Dict[str, Any]) -> Tuple[int, List[str]]:
         if key in text:
             score += weight
             reasons.append(f"{key}{weight}")
+    for key, weight in README_POSITIVE.items():
+        if key in text:
+            score += weight
+            reasons.append(f"{key}+{weight}")
+    if str(repo.get("full_name") or "") in KNOWN_INTEGRATED:
+        reasons.append("already_integrated")
 
     stars = int(repo.get("stargazers_count") or 0)
     forks = int(repo.get("forks_count") or 0)
@@ -216,7 +256,9 @@ def main() -> int:
     candidates: List[Candidate] = []
     new_candidates: List[Candidate] = []
     for full_name, repo in found.items():
-        score, reasons = score_repo(repo)
+        prelim_score, _ = score_repo(repo)
+        readme = github_readme_text(full_name) if prelim_score >= (MIN_SCORE - 15) else ""
+        score, reasons = score_repo(repo, readme)
         if score < MIN_SCORE:
             continue
         first_seen = str((seen.get(full_name) or {}).get("first_seen") or now)
@@ -239,7 +281,7 @@ def main() -> int:
             seen_via=found_queries.get(full_name, []),
         )
         candidates.append(cand)
-        if full_name not in seen:
+        if full_name not in seen and full_name not in KNOWN_INTEGRATED:
             new_candidates.append(cand)
         seen[full_name] = {
             "first_seen": first_seen,
