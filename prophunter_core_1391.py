@@ -3828,7 +3828,17 @@ def _source_prop_probability(p):
         return None
 
 def _source_prop_team(p):
-    return getattr(p, "team", None) or getattr(p, "home", None) or ""
+    """Return only a verified player-team value; event home/away is not player identity."""
+    team = getattr(p, "team", None)
+    if team:
+        return team
+    feats = getattr(p, "features", {}) or {}
+    if isinstance(feats, dict):
+        for key in ("roster_team", "actual_team", "player_team", "team"):
+            value = str(feats.get(key) or "").strip()
+            if value and value.lower() not in ("none", "null"):
+                return value
+    return ""
 
 def _source_prop_game(p):
     return getattr(p, "game", None) or ""
@@ -4383,6 +4393,12 @@ def run(dry_run=False,sport_filter=None):
     print("\n"+body+"\n")
     telegram_message_id = send_telegram(body,dry_run=dry_run)
     if not dry_run:
+        if not telegram_message_id:
+            # Never let GitHub report a green card run when Telegram delivery failed.
+            # Also do not persist phantom "posted" picks, otherwise dedup would hide
+            # them from the next successful run.
+            log.error("card delivery failed — Telegram returned no message_id; picks NOT persisted")
+            raise RuntimeError("PROP HUNTER Telegram delivery failed")
         persist(picks, telegram_message_id=telegram_message_id, telegram_text=body)
     log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
 
