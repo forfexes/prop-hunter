@@ -56,6 +56,7 @@ MARKET_STAT_MAP = {
     "stolen bases": "stolen_bases", "stolen base": "stolen_bases",
     "total bases": "total_bases", "home runs": "home_runs", "home run": "home_runs", "hr": "home_runs",
     "triples": "triples", "triple": "triples", "doubles": "doubles", "double": "doubles",
+    "singles": "singles", "single": "singles",
     "rbi": "rbi", "hits": "hits", "hit": "hits", "runs": "runs",
     # NFL / NCAAF
     "passing touchdowns": "passing_touchdowns", "pass tds": "passing_touchdowns", "pass td": "passing_touchdowns",
@@ -82,6 +83,11 @@ def detect_stat(market: Any) -> Optional[str]:
 def stat_value(gl: Dict[str, Any], stat: str) -> Any:
     if stat in gl and gl.get(stat) is not None:
         return gl.get(stat)
+    if stat == "singles":
+        parts = [to_float(gl.get(x)) for x in ("hits", "doubles", "triples", "home_runs")]
+        if any(v is None for v in parts):
+            return None
+        return max(0.0, parts[0] - parts[1] - parts[2] - parts[3])
     if stat == "pra":
         vals = [to_float(gl.get(x)) for x in ("points", "rebounds", "assists")]
         return sum(vals) if all(v is not None for v in vals) else None
