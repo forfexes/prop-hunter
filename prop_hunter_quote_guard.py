@@ -23,6 +23,18 @@ _BINARY_MARKET_TERMS = (
     "to hit a home run", "to score", "goal scorer", "goalscorer",
     "double double", "double-double", "triple double", "triple-double",
 )
+_FUTURES_TERMS = (
+    "standings", "regular season", "season total", "season points", "season wins",
+    "futures", "to win championship", "to win conference", "to win division",
+    "make playoffs", "make the playoffs", "mvp", "award winner",
+    "january standings", "february standings", "march standings", "april standings",
+    "may standings", "june standings", "july standings", "august standings",
+    "september standings", "october standings", "november standings", "december standings",
+)
+
+def _looks_futures(player: str, market: str, original_market: str = "", selection: str = "") -> bool:
+    text = " ".join(_norm(x) for x in (player, market, original_market, selection) if x)
+    return any(_norm(term) in text for term in _FUTURES_TERMS)
 
 def _norm(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
@@ -178,6 +190,9 @@ def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         raw.get("market_name") or raw.get("market_original") or raw.get("criterion")
         or out.get("market_original") or out.get("selection") or market
     )
+    if _looks_futures(player, market, str(original_market or ""), selection):
+        return None
+
     explicit_line = _explicit_threshold_line(str(original_market or ""))
     line = _f(out.get("line") if out.get("line") is not None else out.get("point"))
     if explicit_line is not None:
