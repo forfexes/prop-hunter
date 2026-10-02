@@ -82,7 +82,7 @@ def _explicit_threshold_line(label: str) -> Optional[float]:
     if m:
         return max(0.5, float(int(m.group(1))) - 0.5)
     if re.search(
-        r"\b(?:a|an)\s+(?:hit|home run|double|triple|rbi|run|stolen base|touchdown|goal)\b",
+        r"\b(?:a|an)\s+(?:hit|single|home run|double|triple|rbi|run|stolen base|touchdown|goal)\b",
         text,
     ):
         return 0.5
@@ -109,6 +109,8 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
     if any(x in text for x in ("rebounds assists", "rebounds and assists")) and "points" not in text:
         return "ra"
 
+    if re.search(r"\bsingles?\b", text):
+        return "singles"
     if re.search(r"\btriples?\b", text):
         return "triples"
     if re.search(r"\bdoubles?\b", text):
