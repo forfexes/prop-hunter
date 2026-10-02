@@ -168,6 +168,11 @@ def test_delivery_failure_and_team_identity_guards():
     check('getattr(p, "home"' not in block, "player team still falls back to event home team")
     check("_invert_odds" not in core and "p.odds = new_odds" not in core,
           "gamelog enrichment can still synthesize a counter-side price")
+    hardened = Path("prophunter_core_1392.py").read_text(encoding="utf-8")
+    check('sb.table("prop_hunter_picks").insert(canonical)' in hardened,
+          "canonical prop_hunter_picks persistence missing")
+    check('sb.table("prop_picks").insert(safe)' in hardened,
+          "legacy persistence fallback missing")
 
 
 def test_builder_persistence_and_learning_loop():
