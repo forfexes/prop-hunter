@@ -1221,37 +1221,19 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             is_hr_market = "home run" in mkt_l or re.search(r"\bhr\b", mkt_l) is not None
             is_sb_market = "stolen base" in mkt_l or "stolen_base" in mkt_l
 
-            flipped = False
             if is_hr_market:
-                # HR bleibt immer Over mit Originalquote. Rate = echte Over-Trefferrate.
+                # HR bleibt immer Over mit der beobachteten Originalquote.
                 p.direction = "over"; direction = "over"
                 rate = over_rate
             elif is_sb_market:
-                # Stolen Base Under wäre @~1.05 (fast immer keine SB) → kein Value, überspringen.
-                # SB nur als Over behalten wenn Spieler wirklich klaut (over_rate hoch).
-                if over_rate < 0.20:
-                    continue  # unspielbar niedrige Under-Quote, kein Value
-                p.direction = "over"; direction = "over"
+                # Stolen Base nur als beobachtete Over-Seite bewerten; keine Gegenquote erfinden.
+                if direction != "over" or over_rate < 0.20:
+                    continue
                 rate = over_rate
             else:
-                # Richtungs-Flip mit KORREKTER Quoten-Inversion (kein Fake-Edge mehr).
-                def _invert_odds(over_odds):
-                    try:
-                        op = 1.0 / float(over_odds); up = 1.0 - op
-                        if up <= 0.02: return None
-                        return round(max(1.02, (1.0 / up) * 0.96), 2)
-                    except Exception:
-                        return None
-                if direction == "over" and over_rate <= 0.35:
-                    new_odds = _invert_odds(getattr(p, "odds", None))
-                    if new_odds is None:
-                        continue
-                    p.direction = "under"; direction = "under"; p.odds = new_odds; flipped = True
-                elif direction == "under" and over_rate >= 0.65:
-                    new_odds = _invert_odds(getattr(p, "odds", None))
-                    if new_odds is None:
-                        continue
-                    p.direction = "over"; direction = "over"; p.odds = new_odds; flipped = True
+                # Feste Sicherheitsregel: niemals die Book-Seite drehen oder eine Gegenquote
+                # aus der beobachteten Quote ableiten. Gamelogs bewerten ausschließlich
+                # die tatsächlich angebotene Richtung zum tatsächlich beobachteten Preis.
                 rate = (1 - over_rate) if direction == "under" else over_rate
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
