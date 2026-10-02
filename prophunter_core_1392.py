@@ -241,26 +241,82 @@ def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,awa
 
 
 def sb_insert(row):
+    """Persist a posted single to the canonical pick table, with legacy fallback."""
     sb=_get_sb()
     if not sb:
         return
-    safe = {k:v for k,v in row.items() if k not in ("closing_odds","clv_pct","features")}
+    src=dict(row or {})
+    line=src.get("line") if src.get("line") is not None else src.get("point")
+    player=src.get("player") or src.get("player_name")
+    market=src.get("market")
+    direction=src.get("direction")
+    probability=src.get("probability")
+    odds=src.get("odds")
+    canonical={
+        "pick_key": src.get("dedup_key"),
+        "dedup_key": src.get("dedup_key"),
+        "date": src.get("date"),
+        "sent_date": src.get("date"),
+        "created_at": src.get("created_at"),
+        "sport": src.get("sport"),
+        "league": src.get("league") or src.get("sport"),
+        "game_id": src.get("game_id") or src.get("event_id"),
+        "source_game_id": src.get("game_id") or src.get("event_id"),
+        "event_id": src.get("event_id") or src.get("game_id"),
+        "player": player,
+        "player_name": player,
+        "team": src.get("team"),
+        "market": market,
+        "prop_type": market,
+        "market_key": market,
+        "selection": market,
+        "side": direction,
+        "direction": direction,
+        "line": line,
+        "prop_line": line,
+        "odds": odds,
+        "odds_decimal": odds,
+        "bookmaker": src.get("bookmaker"),
+        "book": src.get("bookmaker"),
+        "source": src.get("source"),
+        "probability": probability,
+        "prob": probability,
+        "stake": src.get("stake"),
+        "pick_type": "single",
+        "result": src.get("result") or "pending",
+        "status": src.get("result") or "pending",
+        "features": src.get("features") or {},
+        "legs": [],
+        "leg_details": [],
+        "raw": src.get("raw") or {},
+    }
+    canonical={k:v for k,v in canonical.items() if v is not None}
+    try:
+        sb.table("prop_hunter_picks").insert(canonical).execute()
+        return
+    except Exception as e:
+        low=str(e).lower()
+        if "duplicate key" in low or "23505" in low or "already exists" in low:
+            return
+        log.warning("canonical prop_hunter_picks insert failed; using legacy fallback: %s", e)
+
+    # Legacy fallback keeps settlement alive if the canonical table is temporarily unavailable.
+    safe={k:v for k,v in src.items() if k not in ("closing_odds","clv_pct","features")}
     for _ in range(8):
         try:
             sb.table("prop_picks").insert(safe).execute()
             return
         except Exception as e:
-            msg = str(e)
-            low = msg.lower()
+            msg=str(e); low=msg.lower()
             if "duplicate key" in low or "23505" in low or "already exists" in low:
                 return
-            m = re.search(r"Could not find the '([^']+)' column", msg)
+            m=re.search(r"Could not find the '([^']+)' column", msg)
             if m and m.group(1) in safe:
-                missing = m.group(1)
+                missing=m.group(1)
                 log.warning("prop_picks schema missing %s; retry without it", missing)
-                safe = {k:v for k,v in safe.items() if k != missing}
+                safe={k:v for k,v in safe.items() if k != missing}
                 continue
-            log.warning("sb insert: %s", e)
+            log.warning("legacy prop_picks fallback failed: %s", e)
             return
 
 
