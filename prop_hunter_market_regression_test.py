@@ -32,6 +32,7 @@ def main():
         (_row("Javier Sanoja", "To Record 4+ Hits", 0, 71.0), "hits", 3.5),
         (_row("Miguel Vargas", "To Hit A Triple", 0, 36.0), "triples", 0.5),
         (_row("Otto Lopez", "To Hit A Double", 0, 4.2), "doubles", 0.5),
+        (_row("Jo Adell", "To Hit A Single", 0, 2.05), "singles", 0.5),
         (_row("Mike Trout", "To Hit 2+ Home Runs", 0, 51.0), "home_runs", 1.5),
     ]
     for raw, expected_market, expected_line in cases:
@@ -42,6 +43,7 @@ def main():
 
     check(canonical_market("to_hit_a_triple") == "triples", "triple mapped to generic hits")
     check(canonical_market("to_hit_a_double") == "doubles", "double mapped to generic hits")
+    check(canonical_market("to_hit_a_single") == "singles", "single mapped to generic hits")
     check(not probability_sane(.91, 71.0), "91% @71 absurd probability accepted")
     future = sanitize_row({
         "source":"draftkings_direct","bookmaker":"draftkings","sport":"NHL",
@@ -53,7 +55,7 @@ def main():
     check(not probability_sane(.92, 36.0), "92% @36 absurd probability accepted")
     check(probability_sane(.60, 1.90), "reasonable probability rejected")
 
-    print("MARKET REGRESSION OK: threshold lines + double/triple mapping + probability guard")
+    print("MARKET REGRESSION OK: threshold lines + single/double/triple mapping + probability guard")
 
 if __name__ == "__main__":
     main()
