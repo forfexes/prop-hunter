@@ -1,114 +1,102 @@
 {
-  "updated_at": "2026-10-01T17:03:40.694532+00:00",
+  "updated_at": "2026-10-02T16:17:54.119175+00:00",
   "markets": [
     {
       "market_base": "points",
       "sample": "points",
-      "observations": 242,
+      "observations": 308,
       "sports": {
-        "NCAAF": 1,
-        "WNBA": 169,
-        "EUROLEAGUE": 5,
-        "NHL": 2,
-        "NFL": 65
+        "WNBA": 220,
+        "NHL": 88
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "rbi",
-      "sample": "rbi",
-      "observations": 85,
+      "market_base": "goals",
+      "sample": "goals",
+      "observations": 227,
       "sports": {
-        "MLB": 85
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "hits",
-      "sample": "hits",
-      "observations": 83,
-      "sports": {
-        "MLB": 83
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "receiving yards",
-      "sample": "receiving_yards",
-      "observations": 61,
-      "sports": {
-        "NCAAF": 8,
-        "NFL": 53
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "pa",
-      "sample": "pa",
-      "observations": 50,
-      "sports": {
-        "WNBA": 50
+        "WNBA": 40,
+        "NHL": 187
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "home runs",
-      "sample": "home_runs",
-      "observations": 45,
+      "market_base": "shots on goal",
+      "sample": "shots_on_goal",
+      "observations": 111,
       "sports": {
-        "MLB": 45
+        "NHL": 111
+      },
+      "status": "shadow",
+      "auto_enable": false
+    },
+    {
+      "market_base": "assists",
+      "sample": "assists",
+      "observations": 75,
+      "sports": {
+        "WNBA": 47,
+        "NHL": 28
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "bases recorded by the player including extra innings listed player must be in starting lineup for bets to stand",
-      "sample": "3_bases_recorded_by_the_player_including_extra_innings_listed_player_must_be_in_starting_lineup_for_bets_to_stand",
-      "observations": 43,
+      "market_base": "rebounds",
+      "sample": "rebounds",
+      "observations": 59,
       "sports": {
-        "MLB": 43
+        "WNBA": 59
       },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "pr",
-      "sample": "pr",
-      "observations": 40,
-      "sports": {
-        "WNBA": 40
-      },
-      "status": "shadow",
-      "auto_enable": false
+      "status": "known",
+      "auto_enable": true
     },
     {
       "market_base": "pra",
       "sample": "pra",
-      "observations": 39,
+      "observations": 47,
       "sports": {
-        "WNBA": 39
+        "WNBA": 47
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "player to score a touchdown quarter",
-      "sample": "player_to_score_a_touchdown_quarter_1",
-      "observations": 34,
+      "market_base": "pr",
+      "sample": "pr",
+      "observations": 41,
       "sports": {
-        "NFL": 34
+        "WNBA": 41
       },
-      "status": "known",
-      "auto_enable": true
+      "status": "shadow",
+      "auto_enable": false
     },
     {
       "market_base": "ra",
       "sample": "ra",
+      "observations": 37,
+      "sports": {
+        "WNBA": 37
+      },
+      "status": "shadow",
+      "auto_enable": false
+    },
+    {
+      "market_base": "to score including overtime",
+      "sample": "to_score_including_overtime",
+      "observations": 36,
+      "sports": {
+        "NHL": 36
+      },
+      "status": "shadow",
+      "auto_enable": false
+    },
+    {
+      "market_base": "pa",
+      "sample": "pa",
       "observations": 31,
       "sports": {
         "WNBA": 31
@@ -117,143 +105,11 @@
       "auto_enable": false
     },
     {
-      "market_base": "receptions",
-      "sample": "receptions",
-      "observations": 30,
-      "sports": {
-        "NFL": 30
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "rushing yards",
-      "sample": "rushing_yards",
-      "observations": 26,
-      "sports": {
-        "NFL": 26
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "assists",
-      "sample": "assists",
-      "observations": 23,
-      "sports": {
-        "WNBA": 23
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "goals",
-      "sample": "goals",
-      "observations": 19,
-      "sports": {
-        "WNBA": 13,
-        "NHL": 2,
-        "NFL": 4
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "doubles",
-      "sample": "doubles",
-      "observations": 17,
-      "sports": {
-        "MLB": 17
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "rebounds",
-      "sample": "rebounds",
-      "observations": 16,
-      "sports": {
-        "WNBA": 16
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "passing touchdowns",
-      "sample": "passing_touchdowns",
-      "observations": 15,
-      "sports": {
-        "NCAAF": 15
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "anytime td",
-      "sample": "anytime_td",
-      "observations": 12,
-      "sports": {
-        "NFL": 12
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "player to score a touchdown first half",
-      "sample": "player_to_score_a_touchdown_first_half",
-      "observations": 11,
-      "sports": {
-        "NFL": 11
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "longest reception",
-      "sample": "longest_reception",
-      "observations": 8,
-      "sports": {
-        "NFL": 8
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "passing yards",
-      "sample": "passing_yards",
+      "market_base": "steals",
+      "sample": "steals",
       "observations": 6,
       "sports": {
-        "NFL": 6
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "player to score a touchdown nd half including overtime",
-      "sample": "player_to_score_a_touchdown_2nd_half_including_overtime",
-      "observations": 6,
-      "sports": {
-        "NFL": 6
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "passing attempts",
-      "sample": "passing_attempts",
-      "observations": 5,
-      "sports": {
-        "NFL": 5
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "passing completions",
-      "sample": "passing_completions",
-      "observations": 5,
-      "sports": {
-        "NFL": 5
+        "WNBA": 6
       },
       "status": "known",
       "auto_enable": true
@@ -269,188 +125,78 @@
       "auto_enable": false
     },
     {
-      "market_base": "touchdown to be scored by the player including overtime",
-      "sample": "3_touchdown_to_be_scored_by_the_player_including_overtime",
+      "market_base": "hits",
+      "sample": "hits",
       "observations": 5,
       "sports": {
-        "NFL": 5
+        "MLB": 5
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "longest rushing attempt",
-      "sample": "longest_rushing_attempt",
-      "observations": 4,
+      "market_base": "doubles",
+      "sample": "doubles",
+      "observations": 2,
       "sports": {
-        "NFL": 4
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "rushing attempts",
-      "sample": "rushing_attempts",
-      "observations": 4,
-      "sports": {
-        "NFL": 4
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "total touchdown passes thrown by the player including overtime",
-      "sample": "total_touchdown_passes_thrown_by_the_player_including_overtime",
-      "observations": 4,
-      "sports": {
-        "NFL": 4
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "to score including overtime",
-      "sample": "to_score_including_overtime",
-      "observations": 3,
-      "sports": {
-        "NHL": 3
+        "MLB": 2
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "touchdown passes by the player including overtime",
-      "sample": "2_touchdown_passes_by_the_player_including_overtime",
-      "observations": 3,
+      "market_base": "both teams points",
+      "sample": "both_teams_100_points",
+      "observations": 2,
       "sports": {
-        "NFL": 3
+        "NHL": 2
       },
       "status": "known",
       "auto_enable": true
-    },
-    {
-      "market_base": "total touchdowns by new york jets including overtime",
-      "sample": "total_touchdowns_by_new_york_jets_including_overtime",
-      "observations": 2,
-      "sports": {
-        "NFL": 2
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "total touchdowns by detroit lions st half",
-      "sample": "total_touchdowns_by_detroit_lions_1st_half",
-      "observations": 2,
-      "sports": {
-        "NFL": 2
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "total yards of shortest successful field goal void if successful field goal including overtime",
-      "sample": "total_yards_of_shortest_successful_field_goal_void_if_successful_field_goal_including_overtime",
-      "observations": 2,
-      "sports": {
-        "NFL": 2
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "total yards of shortest touchdown void if touchdown including overtime",
-      "sample": "total_yards_of_shortest_touchdown_void_if_touchdown_including_overtime",
-      "observations": 2,
-      "sports": {
-        "NFL": 2
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "touchdown passes by the player first half",
-      "sample": "2_touchdown_passes_by_the_player_first_half",
-      "observations": 2,
-      "sports": {
-        "NFL": 2
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "interceptions thrown by the player including overtime",
-      "sample": "2_interceptions_thrown_by_the_player_including_overtime",
-      "observations": 2,
-      "sports": {
-        "NFL": 2
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "total interceptions thrown by the player including overtime",
-      "sample": "total_interceptions_thrown_by_the_player_including_overtime",
-      "observations": 2,
-      "sports": {
-        "NFL": 2
-      },
-      "status": "shadow",
-      "auto_enable": false
     },
     {
       "market_base": "threes",
       "sample": "threes",
-      "observations": 1,
+      "observations": 2,
       "sports": {
-        "WNBA": 1
+        "WNBA": 2
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "total touchdowns by cle browns st half",
-      "sample": "total_touchdowns_by_cle_browns_1st_half",
-      "observations": 1,
+      "market_base": "player to score a touchdown first half",
+      "sample": "player_to_score_a_touchdown_first_half",
+      "observations": 2,
       "sports": {
-        "NFL": 1
+        "NFL": 2
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "total touchdowns including overtime",
-      "sample": "total_touchdowns_including_overtime",
-      "observations": 1,
+      "market_base": "passing yards",
+      "sample": "passing_yards",
+      "observations": 2,
       "sports": {
-        "NFL": 1
+        "NFL": 2
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "total yards of longest successful field goal void if successful field goal including overtime",
-      "sample": "total_yards_of_longest_successful_field_goal_void_if_successful_field_goal_including_overtime",
+      "market_base": "total saves",
+      "sample": "total_saves",
       "observations": 1,
       "sports": {
-        "NFL": 1
+        "NHL": 1
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "total touchdowns by new york jets st half",
-      "sample": "total_touchdowns_by_new_york_jets_1st_half",
-      "observations": 1,
-      "sports": {
-        "NFL": 1
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "total yards of longest reception by the player including overtime",
-      "sample": "total_yards_of_longest_reception_by_the_player_including_overtime",
+      "market_base": "anytime td",
+      "sample": "anytime_td",
       "observations": 1,
       "sports": {
         "NFL": 1
@@ -459,5 +205,5 @@
       "auto_enable": true
     }
   ],
-  "shadow_count": 12
+  "shadow_count": 9
 }

@@ -1,22 +1,35 @@
 {
-  "updated_at": "2026-10-01T17:03:39.375090+00:00",
+  "updated_at": "2026-10-02T16:17:53.076078+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 37,
+      "rows": 6,
       "sources": [
-        "draftkings_direct",
-        "fanduel_direct"
+        "draftkings_direct"
       ],
-      "market_count": 3,
-      "latest": "2026-10-01T12:45:37.403763+00:00",
+      "market_count": 1,
+      "latest": "2026-10-01T12:45:36.588300+00:00",
       "missing_core": [
         "home run",
         "total bases",
+        "rbi",
         "pitcher strikeouts"
       ]
     },
     "NBA": {
+      "rows": 1,
+      "sources": [
+        "fanduel_direct"
+      ],
+      "market_count": 1,
+      "latest": "2026-10-02T00:35:36.659680+00:00",
+      "missing_core": [
+        "points",
+        "rebounds",
+        "assists"
+      ]
+    },
+    "WNBA": {
       "rows": 0,
       "sources": [],
       "market_count": 0,
@@ -28,40 +41,30 @@
         "threes"
       ]
     },
-    "WNBA": {
-      "rows": 9,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct"
-      ],
-      "market_count": 4,
-      "latest": "2026-10-01T12:45:45.746408+00:00",
-      "missing_core": [
-        "threes"
-      ]
-    },
     "NFL": {
-      "rows": 109,
+      "rows": 1,
       "sources": [
-        "bovada_direct",
-        "fanduel_direct"
+        "kambi"
       ],
-      "market_count": 12,
-      "latest": "2026-10-01T12:45:49.980614+00:00",
+      "market_count": 1,
+      "latest": "2026-10-01T12:46:24.009829+00:00",
       "missing_core": [
-        "touchdown"
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing",
+        "receptions"
       ]
     },
     "NHL": {
-      "rows": 5,
+      "rows": 130,
       "sources": [
-        "betrivers_direct"
+        "fanduel_direct"
       ],
-      "market_count": 2,
-      "latest": "2026-10-01T12:45:55.566645+00:00",
+      "market_count": 3,
+      "latest": "2026-10-01T21:15:38.810673+00:00",
       "missing_core": [
-        "shots",
-        "assists",
+        "points",
         "saves"
       ]
     }
@@ -69,21 +72,48 @@
   "issues": [
     {
       "sport": "MLB",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "draftkings_direct"
+      ]
+    },
+    {
+      "sport": "MLB",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
         "home run",
         "total bases",
+        "rbi",
         "pitcher strikeouts"
       ]
     },
     {
       "sport": "NBA",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "fanduel_direct"
+      ]
+    },
+    {
+      "sport": "NBA",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "points",
+        "rebounds",
+        "assists"
+      ]
+    },
+    {
+      "sport": "WNBA",
       "severity": "high",
       "issue": "no_recent_rows"
     },
     {
-      "sport": "NBA",
+      "sport": "WNBA",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
@@ -94,11 +124,11 @@
       ]
     },
     {
-      "sport": "WNBA",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "threes"
+      "sport": "NFL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "kambi"
       ]
     },
     {
@@ -106,7 +136,11 @@
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "touchdown"
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing",
+        "receptions"
       ]
     },
     {
@@ -114,7 +148,7 @@
       "severity": "medium",
       "issue": "single_source",
       "sources": [
-        "betrivers_direct"
+        "fanduel_direct"
       ]
     },
     {
@@ -122,8 +156,7 @@
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "shots",
-        "assists",
+        "points",
         "saves"
       ]
     }
