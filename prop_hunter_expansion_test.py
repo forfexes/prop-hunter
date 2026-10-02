@@ -166,6 +166,8 @@ def test_delivery_failure_and_team_identity_guards():
     end = core.find("def _source_prop_game", start)
     block = core[start:end]
     check('getattr(p, "home"' not in block, "player team still falls back to event home team")
+    check("_invert_odds" not in core and "p.odds = new_odds" not in core,
+          "gamelog enrichment can still synthesize a counter-side price")
 
 
 def test_builder_persistence_and_learning_loop():
