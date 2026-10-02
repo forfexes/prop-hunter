@@ -43,6 +43,13 @@ def main():
     check(canonical_market("to_hit_a_triple") == "triples", "triple mapped to generic hits")
     check(canonical_market("to_hit_a_double") == "doubles", "double mapped to generic hits")
     check(not probability_sane(.91, 71.0), "91% @71 absurd probability accepted")
+    future = sanitize_row({
+        "source":"draftkings_direct","bookmaker":"draftkings","sport":"NHL",
+        "player_name":"ANA Ducks October Standings","market":"points","direction":"under",
+        "line":15.5,"odds_decimal":1.83,"home_team":"Anaheim Ducks","away_team":"LA Kings",
+        "selection":"Under 15.5","raw":{"market_name":"October Standings Points"}
+    })
+    check(future is None, "standings/futures row reached card-eligible pool")
     check(not probability_sane(.92, 36.0), "92% @36 absurd probability accepted")
     check(probability_sane(.60, 1.90), "reasonable probability rejected")
 
