@@ -77,6 +77,8 @@ MIN_PROB_LOTTERY_LEG  = 0.58
 MIN_PROB_OTHER_SPORTS = 0.55
 MIN_EDGE_OTHER_SPORTS = 1.5
 MAX_SINGLES_TOTAL     = int(os.getenv("PH_MAX_SINGLES", "0") or 0)  # 0 = no hard cap; +EV filter decides
+RESCUE_MAX_PICKS      = max(12, min(20, int(os.getenv("PH_RESCUE_MAX_PICKS", "18") or 18)))
+RESCUE_FILL_TARGET    = max(8, min(RESCUE_MAX_PICKS, int(os.getenv("PH_RESCUE_FILL_TARGET", "12") or 12)))
 MAX_HR_SINGLES        = 3
 MAX_COMBOS_TOTAL      = 2
 MAX_LOTTERY_TOTAL     = 2
@@ -3873,7 +3875,7 @@ def limit_total_singles(picks, max_singles=0):
         log.warning("total singles cap skipped: %s", e)
         return picks
 
-def rescue_picks_from_props(props, max_picks=12):
+def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
     """
     Baut konservative Singles direkt aus Source-Props, wenn LLM/Filter 0 Picks liefern.
     Regeln:
@@ -4349,7 +4351,7 @@ def run(dry_run=False,sport_filter=None):
 
     if not picks:
         log.warning("no picks from LLM — trying source-prop rescue")
-        picks = rescue_picks_from_props(props, max_picks=12)
+        picks = rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS)
         picks = filter_picks(picks)
     else:
         picks=filter_picks(picks)
@@ -4357,10 +4359,10 @@ def run(dry_run=False,sport_filter=None):
 
         # Fill-Up: Wenn die KI zu wenig übrig lässt, füllen wir aus den besten Source-Props auf.
         singles_now = sum(1 for p in picks if getattr(p, "type", None) == "single")
-        if singles_now < 5:
-            rescue = rescue_picks_from_props(props, max_picks=12)
+        if singles_now < RESCUE_FILL_TARGET:
+            rescue = rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS)
             before = len(picks)
-            picks = merge_unique_picks(picks, rescue, max_singles=8, max_total=12)
+            picks = merge_unique_picks(picks, rescue, max_singles=RESCUE_MAX_PICKS, max_total=RESCUE_MAX_PICKS)
             log.info("fill-up rescue: picks %d → %d (singles %d → %d)",
                      before, len(picks), singles_now,
                      sum(1 for p in picks if getattr(p, "type", None) == "single"))
