@@ -88,6 +88,7 @@ def safety_checks():
     if any(x.type=="ladder" for x in build_autonomous_extras([pick],[real],ph.Pick,ph.LadderLeg)): fail("invented ladder")
     if line_of_pick({"market":"Points Over 20.5"})!=20.5: fail("line fallback")
     if stat_value({"league":"NFL","passing_tds":3},"passing_touchdowns")!=3: fail("NFL alias")
+    if stat_value({"league":"MLB","hits":3,"doubles":1,"triples":0,"home_runs":1},"singles")!=1: fail("MLB singles derivation")
     logs=[{"player_name":"Shohei Ohtani","game_date":"2026-09-18","game_id":"a"},{"player_name":"Shohei Ohtani","game_date":"2026-09-18","game_id":"b"}]
     if find_gamelog({"player":"Shohei Ohtani","commence_time":"2026-09-19T01:00:00Z","market":"Hits Over .5"},logs) is not None: fail("doubleheader ambiguity")
     if not identity_match("Patrick Mahomes II","Patrick Mahomes",threshold=94): fail("identity")
