@@ -486,7 +486,11 @@ def main() -> int:
 
     print(f"Settlement reporter done: merged={merged} cards_ready={cards_ready} cards_edited={cards_edited}")
     if cards_ready == 0:
-        print("No editable Telegram cards found. New tips need message_id metadata from current prophunter.py.")
+        has_cards = any((entry.get("cards") or []) for entry in history if str(entry.get("date") or "")[:10] >= cutoff)
+        if has_cards:
+            print("No Telegram card has newly settled selections ready for an in-place edit.")
+        else:
+            print("No recent Telegram card metadata found; future tips need message_id metadata from current prophunter.py.")
     return 0
 
 
