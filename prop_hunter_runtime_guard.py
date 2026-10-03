@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 import prophunter as ph
 from prop_hunter_1xbet import parse_game as xbet_parse
-from prop_hunter_builder_engine import build_autonomous_extras, _candidate_probability, _sport
+from prop_hunter_builder_engine import build_autonomous_extras, _candidate_probability, _plausible_ladder_line, _sport
 from prop_hunter_identity_hub import identity_match
 from prop_hunter_kambi import parse_offer as kambi_parse
 from prop_hunter_keyless_books import parse_draftkings_payload, parse_fanduel_event_page, parse_bovada_events
@@ -73,6 +73,7 @@ def source_checks():
 def safety_checks():
     if sanitize_row({"player_name":"Over 0.5","market":"hits","direction":"over","line":.5,"odds_decimal":1.9}): fail("generic player label accepted")
     if sanitize_row({"player_name":"Lakers","home_team":"Lakers","away_team":"Celtics","market":"points","direction":"over","line":100.5,"odds_decimal":1.9}): fail("team label accepted as player")
+    if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")
     binary=sanitize_row({"player_name":"Josh Allen","market":"anytime_td","direction":"yes","line":None,"odds_decimal":2.2,"selection":"Yes"})
     if not binary or binary["line"]!=.5 or binary["direction"]!="over": fail("binary market normalization")
     if not probability_sane(.60,1.90): fail("reasonable model/market gap rejected")
@@ -96,6 +97,12 @@ def safety_checks():
     ladder_easy=ph.Prop(player="Ladder Check",market="Hits",odds=4.0,point=.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.50})
     ladder_hard=ph.Prop(player="Ladder Check",market="Hits",odds=2.0,point=1.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.70})
     if any(x.type=="ladder" for x in build_autonomous_extras([], [ladder_easy,ladder_hard],ph.Pick,ph.LadderLeg)): fail("inverted ladder prices accepted")
+    nfl_easy=ph.Prop(player="Josh Downs",market="Receptions",odds=1.70,point=2.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.75,"gamelog_n":10})
+    nfl_hard=ph.Prop(player="Josh Downs",market="Receptions",odds=2.10,point=3.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.55,"gamelog_n":10})
+    nfl_ladders=[x for x in build_autonomous_extras([], [nfl_easy,nfl_hard],ph.Pick,ph.LadderLeg) if x.type=="ladder"]
+    if not nfl_ladders or len(nfl_ladders[0].picks)<2: fail("verified NFL alternate ladder missing")
+    bad_line=ph.Prop(player="QB",market="Rushing Yards",odds=5.0,point=299.5,sport="NFL",emoji="🏈",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.25})
+    if _plausible_ladder_line(bad_line): fail("implausible NFL ladder line accepted")
     if line_of_pick({"market":"Points Over 20.5"})!=20.5: fail("line fallback")
     if line_of_pick({"market":"Home Run"})!=0.5: fail("binary HR line fallback")
     if line_of_pick({"market":"Anytime TD"})!=0.5: fail("binary TD line fallback")
