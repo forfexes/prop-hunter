@@ -6,6 +6,7 @@ parser family plus the NETRATTLER-derived quote/model safety rules.
 """
 from __future__ import annotations
 import os
+from pathlib import Path
 import prophunter as ph
 from prop_hunter_1xbet import parse_game as xbet_parse
 from prop_hunter_builder_engine import build_autonomous_extras, _candidate_probability, _plausible_ladder_line, _sport
@@ -74,6 +75,8 @@ def safety_checks():
     if sanitize_row({"player_name":"Over 0.5","market":"hits","direction":"over","line":.5,"odds_decimal":1.9}): fail("generic player label accepted")
     if sanitize_row({"player_name":"Lakers","home_team":"Lakers","away_team":"Celtics","market":"points","direction":"over","line":100.5,"odds_decimal":1.9}): fail("team label accepted as player")
     if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")
+    if sanitize_row({"player_name":"Total Points","home_team":"A","away_team":"B","market":"points","direction":"over","line":47.5,"odds_decimal":1.9}): fail("aggregate total accepted as player")
+    if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")
     binary=sanitize_row({"player_name":"Josh Allen","market":"anytime_td","direction":"yes","line":None,"odds_decimal":2.2,"selection":"Yes"})
     if not binary or binary["line"]!=.5 or binary["direction"]!="over": fail("binary market normalization")
     if not probability_sane(.60,1.90): fail("reasonable model/market gap rejected")
@@ -97,6 +100,14 @@ def safety_checks():
     ladder_easy=ph.Prop(player="Ladder Check",market="Hits",odds=4.0,point=.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.50})
     ladder_hard=ph.Prop(player="Ladder Check",market="Hits",odds=2.0,point=1.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.70})
     if any(x.type=="ladder" for x in build_autonomous_extras([], [ladder_easy,ladder_hard],ph.Pick,ph.LadderLeg)): fail("inverted ladder prices accepted")
+    ladder_a=ph.Prop(player="Garrett Wilson",market="Receptions",odds=1.55,point=3.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.76,"gamelog_n":8})
+    ladder_b=ph.Prop(player="Garrett Wilson",market="Receptions",odds=2.05,point=4.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.64,"gamelog_n":8})
+    ladder_c=ph.Prop(player="Garrett Wilson",market="Receptions",odds=3.10,point=5.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.50,"gamelog_n":8})
+    good_ladders=[x for x in build_autonomous_extras([], [ladder_a,ladder_b,ladder_c],ph.Pick,ph.LadderLeg) if x.type=="ladder"]
+    if not good_ladders or len(good_ladders[0].picks)<2: fail("verified NFL ladder not built")
+    core_text=Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+    for token in ('return "receptions"','return "receiving_yards"','return "rushing_yards"','return "passing_yards"','return "shots_on_goal"','return "goalie_saves"'):
+        if token not in core_text: fail(f"gamelog ladder stat mapping missing: {token}")
     nfl_easy=ph.Prop(player="Josh Downs",market="Receptions",odds=1.70,point=2.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.75,"gamelog_n":10})
     nfl_hard=ph.Prop(player="Josh Downs",market="Receptions",odds=2.10,point=3.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.55,"gamelog_n":10})
     nfl_ladders=[x for x in build_autonomous_extras([], [nfl_easy,nfl_hard],ph.Pick,ph.LadderLeg) if x.type=="ladder"]
