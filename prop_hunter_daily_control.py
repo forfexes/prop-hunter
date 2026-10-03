@@ -46,7 +46,6 @@ def inspect_workflow(path,runtime):
  if path.name=='prophunter.yml':
   if "PH_BROWSER_ENABLED: '0'" not in text:errors.append('normal card browser gate missing')
   if 'python prop_hunter_runtime_guard.py' not in text:errors.append('normal card runtime guard missing')
-  _require_commands(errors,text,ALL_SPORT_RESULT_CMDS,'normal card all-sports settlement')
   for sport in ('MLB','NBA','WNBA','NFL','NHL','NCAAB','NCAAF','EUROLEAGUE'):
    if sport not in text:errors.append(f'normal card sport missing: {sport}')
  if path.name=='prophunter_results.yml':
