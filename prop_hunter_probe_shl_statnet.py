@@ -37,6 +37,16 @@ def main():
         print("SHL_PLAYERREPORT_TEXT_BEGIN",flush=True)
         print("\n".join(text.splitlines()[:180]),flush=True)
         print("SHL_PLAYERREPORT_TEXT_END",flush=True)
+        import pdfplumber
+        with pdfplumber.open(BytesIO(pr.content)) as pdf:
+            for page_no,page in enumerate(pdf.pages[:2],1):
+                tables=page.extract_tables()
+                print(f"SHL_TABLE_PAGE {page_no} TABLES {len(tables)}",flush=True)
+                for table_no,table in enumerate(tables[:4],1):
+                    print(f"SHL_TABLE_BEGIN page={page_no} table={table_no}",flush=True)
+                    for row in table[:40]:
+                        print("SHL_TABLE_ROW",repr(row),flush=True)
+                    print("SHL_TABLE_END",flush=True)
 
 
 if __name__=="__main__":
