@@ -175,6 +175,19 @@ def test_delivery_failure_and_team_identity_guards():
           "legacy persistence fallback missing")
 
 
+def test_telegram_ladder_split_contract():
+    core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+    hardened = Path("prophunter_core_1392.py").read_text(encoding="utf-8")
+    check("def _telegram_payloads" in core and "def _render_ladder_card" in core,
+          "ladder Telegram splitter missing")
+    check('send_telegram(body,dry_run=dry_run,picks=picks)' in core,
+          "card run does not pass picks to Telegram splitter")
+    check('"kind":"ladder"' in core and '"combo_indices":[idx]' in core,
+          "ladder cards are not scoped to one combo")
+    check('_LAST_TELEGRAM_CARDS' in hardened and '"card_kind": sent.get("kind") or "main"' in hardened,
+          "split Telegram cards are not persisted for settlement")
+
+
 def test_builder_persistence_and_learning_loop():
     import types
     from prop_hunter_card_formatter import install_persistence
@@ -230,7 +243,7 @@ def main():
         test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,
         test_all_sports_sources,test_builder_profiles_and_market_guard,
         test_keyless_extension_and_card_formatter,test_delivery_failure_and_team_identity_guards,
-        test_builder_persistence_and_learning_loop,
+        test_telegram_ladder_split_contract,test_builder_persistence_and_learning_loop,
     ]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
