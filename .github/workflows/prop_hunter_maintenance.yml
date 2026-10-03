@@ -94,6 +94,8 @@ jobs:
           PH_FEATURE_WRITE_BATCH: '400'
         run: |
           python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_snapshot_retention_test.py
+          python prop_hunter_snapshot_retention.py --apply
           python prop_hunter_feature_builder.py
       - name: Autonomous learning and coverage
         env:
