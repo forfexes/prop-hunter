@@ -15,7 +15,7 @@ OUT = "prop_hunter_line_movement_report.json"
 
 
 def main() -> None:
-    rows = select_rows("prop_hunter_prop_snapshots", limit=50000)
+    rows = select_rows("prop_hunter_prop_snapshots", limit=None, order_by="snapshot_id")
     idx = movement_index(rows)
     report = []
     for key, info in idx.items():
