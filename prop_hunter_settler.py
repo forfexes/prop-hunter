@@ -23,6 +23,7 @@ NHL: goals, assists, points, shots_on_goal, goalie_saves, blocked_shots, power_p
 from __future__ import annotations
 
 import os
+import re
 from typing import Any, Dict, Optional, Tuple, List
 
 from prop_hunter_shared_utils import (
