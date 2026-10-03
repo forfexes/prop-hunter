@@ -10,6 +10,8 @@ name: Prop Hunter Shadow Data
       - 'prop_hunter_shadow_leagues_test.py'
       - 'prop_hunter_sgo.py'
       - 'prop_hunter_oddspapi.py'
+      - 'prop_hunter_backfill_gleague.py'
+      - 'prop_hunter_backfill_gleague_test.py'
       - '.github/shadow-data-trigger'
 
 permissions:
@@ -34,9 +36,10 @@ jobs:
         run: pip install -r requirements_results.txt
       - name: Regression
         run: |
-          python -m py_compile prop_hunter_shadow_leagues.py prop_hunter_sgo.py prop_hunter_oddspapi.py prop_hunter_snapshot_retention.py
+          python -m py_compile prop_hunter_shadow_leagues.py prop_hunter_sgo.py prop_hunter_oddspapi.py prop_hunter_snapshot_retention.py prop_hunter_backfill_gleague.py prop_hunter_gamelog_retention.py prop_hunter_feature_builder.py
           python prop_hunter_shadow_leagues_test.py
           python prop_hunter_snapshot_retention_test.py
+          python prop_hunter_backfill_gleague_test.py
       - name: Collect shadow league data
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -47,6 +50,12 @@ jobs:
           PH_SHADOW_MAX_EVENTS: '3'
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
           PH_SNAPSHOT_RETENTION_DAYS: '7'
+          PH_GLEAGUE_LAST_N: '40'
+          PH_GAMELOG_KEEP_PER_PLAYER: '40'
+          PH_FEATURE_WRITE_BATCH: '400'
         run: |
           python prop_hunter_snapshot_retention.py --apply
           python prop_hunter_shadow_leagues.py
+          python prop_hunter_backfill_gleague.py
+          python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_feature_builder.py
