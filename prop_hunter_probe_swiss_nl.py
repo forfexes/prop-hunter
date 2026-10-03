@@ -5,7 +5,7 @@ import re
 from urllib.parse import urljoin
 import requests
 
-GAME_ID="20271105000054"
+GAME_ID="20271105000049"
 URL=f"https://www.sihf.ch/de/game-center/game/spielerstatistik/{GAME_ID}"
 HEADERS={"User-Agent":"PROP-HUNTER/swiss-nl-probe","Accept":"text/html,*/*"}
 
@@ -41,6 +41,13 @@ def main():
         print("SIHF_GAME_LINK",x,flush=True)
     for m in re.finditer(r'.{0,200}(?:season|saison).{0,300}',sr.text,re.I|re.S):
         print("SIHF_SEASON_CONTEXT",re.sub(r'\s+',' ',m.group(0))[:520],flush=True)
+
+    endpoint="https://www.sihf.ch/umbraco/GameCenter/League/GetGameDays"
+    for season_id in ("2027","2026"):
+        gr=requests.get(endpoint,params={"leagueId":"1","regionId":"1","seasonId":season_id},headers={**HEADERS,"HX-Request":"true"},timeout=20)
+        ids=sorted(set(re.findall(r'/game/(\\d{14})',gr.text)))
+        print("SIHF_GAMEDAYS",season_id,gr.status_code,len(gr.text),len(ids),ids[:8],ids[-8:],flush=True)
+
 
 if __name__=="__main__":
     main()
