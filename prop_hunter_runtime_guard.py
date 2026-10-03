@@ -15,6 +15,7 @@ from prop_hunter_kambi import parse_offer as kambi_parse
 from prop_hunter_keyless_books import parse_draftkings_payload, parse_fanduel_event_page, parse_bovada_events
 from prop_hunter_market_consensus import enrich as consensus_enrich, fair_prob_for
 from prop_hunter_opticodds import parse_odds_payload as optic_parse
+from prop_hunter_oddspapi import _keys as oddspapi_keys
 from prop_hunter_parlayapi import parse_rows as parlay_parse
 from prop_hunter_propline import parse_payload as propline_parse
 from prop_hunter_quote_guard import sanitize_row, probability_sane
@@ -27,6 +28,16 @@ EXPECTED=os.getenv("PH_EXPECTED_RUNTIME_VERSION","13.10.1-KEYLESS-HARDENED")
 def fail(msg): raise SystemExit(f"RUNTIME GUARD FAILED: {msg}")
 
 def source_checks():
+    _saved_keys={k:os.environ.get(k) for k in ("ODDSPAPI_KEYS","ODDSPAPI_KEY","ODDSPAPI","ODDSPAPI_API_KEY")}
+    try:
+        os.environ["ODDSPAPI_KEYS"]="key-a; key-b"
+        os.environ["ODDSPAPI_KEY"]="key-b,key-c"
+        os.environ.pop("ODDSPAPI",None);os.environ.pop("ODDSPAPI_API_KEY",None)
+        if oddspapi_keys()!=["key-a","key-b","key-c"]: fail(f"OddsPapi key rotation parse: {oddspapi_keys()}")
+    finally:
+        for k,v in _saved_keys.items():
+            if v is None: os.environ.pop(k,None)
+            else: os.environ[k]=v
     sgo=sgo_parse([{"eventID":"sgo-1","startTime":"2026-09-25T23:00:00Z","teams":{"home":{"names":{"long":"Lakers"}},"away":{"names":{"long":"Celtics"}}},"odds":{"x":{"statID":"assists","betTypeID":"ou","statEntityID":"LEBRON_JAMES_1_NBA","sideID":"over","overUnder":7.5,"byBookmaker":{"draftkings":{"available":True,"overUnder":7.5,"odds":-110,"altLines":[{"available":True,"overUnder":8.5,"odds":120}]}}}}}],"NBA")
     if len(sgo)!=2 or {float(x["line"]) for x in sgo}!={7.5,8.5}: fail("SGO alt lines")
 
