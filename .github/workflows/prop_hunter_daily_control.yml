@@ -54,6 +54,15 @@ jobs:
           python prop_hunter_event_market_test.py
           python prop_hunter_acca_test.py
           python prop_hunter_daily_control.py --check
+      - name: Daily snapshot retention
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PH_SNAPSHOT_RETENTION_DAYS: '7'
+        run: |
+          python prop_hunter_snapshot_retention_test.py
+          python prop_hunter_snapshot_retention.py --apply
       - name: Save safe repairs
         run: |
           git config user.name "github-actions[bot]"
