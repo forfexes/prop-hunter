@@ -3,13 +3,18 @@
 from __future__ import annotations
 import re
 import requests
+import urllib3
 
 URL = "https://reports.statnet.se/shl/"
 HEADERS = {"User-Agent": "PROP-HUNTER/shl-probe", "Accept": "text/html,*/*"}
 
 
 def main():
-    r=requests.get(URL,timeout=15,headers=HEADERS)
+    # This public read-only Statnet host currently serves an incomplete TLS
+    # certificate chain on GitHub runners. Scope verification bypass to this
+    # single hard-coded host only; never generalize it to other requests.
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    r=requests.get(URL,timeout=15,headers=HEADERS,verify=False)
     print("SHL_STATNET_INDEX",r.status_code,len(r.text),r.url,flush=True)
     r.raise_for_status()
     hrefs=re.findall(r'href=["\']([^"\']+)["\']',r.text,re.I)
