@@ -153,14 +153,29 @@ def side_of_pick(pick: Dict[str, Any]) -> str:
     return "over"
 
 def line_of_pick(pick: Dict[str, Any]) -> Optional[float]:
+    market = str(pick.get("market") or pick.get("prop_type") or pick.get("selection") or pick.get("pick") or "")
+    market_norm = re.sub(r"[^a-z0-9]+", " ", market.lower()).strip()
+    binary = (
+        "home run" in market_norm or re.search(r"\bhr\b", market_norm) or
+        "anytime td" in market_norm or "anytime touchdown" in market_norm or
+        "double double" in market_norm or "triple double" in market_norm
+    )
     for k in ("line", "point", "prop_line", "points", "threshold"):
         v = to_float(pick.get(k))
         if v is not None:
+            # Guard legacy parser corruption such as Home Run Over 0.5 -> 5000.
+            if binary and (v < 0 or v > 10):
+                continue
             return v
-    import re
-    text = str(pick.get("market") or pick.get("selection") or pick.get("pick") or "")
-    nums = re.findall(r"(?<![A-Za-z])(\d+(?:\.\d+)?)", text)
-    return float(nums[-1]) if nums else None
+    nums = re.findall(r"(?<![A-Za-z])(\d+(?:\.\d+)?)", market)
+    if nums:
+        v = float(nums[-1])
+        if not binary or v <= 10:
+            return v
+    # Yes/no and scorer-style props are 0.5 thresholds when no explicit line exists.
+    if binary:
+        return 0.5
+    return None
 
 def result_for_value(value: Any, line: Optional[float], side: str) -> str:
     if value is None:
