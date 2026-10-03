@@ -299,7 +299,7 @@ def _sport_fixtures(sport_id: int, lookahead_hours: int) -> List[Dict[str, Any]]
     return rows
 
 
-def get_fixtures(sport_key: str, lookahead_hours: int = 36) -> List[Dict[str, Any]]:
+def get_fixtures(sport_key: str, lookahead_hours: int = 36, pregame_only: bool = False) -> List[Dict[str, Any]]:
     sid = resolve_sport_id(sport_key)
     if sid is None:
         return []
@@ -316,6 +316,8 @@ def get_fixtures(sport_key: str, lookahead_hours: int = 36) -> List[Dict[str, An
             start_dt = datetime.fromisoformat(start_raw)
             if start_dt.tzinfo is None:
                 start_dt = start_dt.replace(tzinfo=timezone.utc)
+            if pregame_only and start_dt < now:
+                continue
             if start_dt < now - timedelta(hours=4) or start_dt > cutoff:
                 continue
         except Exception:
@@ -458,6 +460,7 @@ def fetch_oddspapi_props(
     *,
     lookahead_hours: int = 36,
     max_events: Optional[int] = None,
+    pregame_only: bool = False,
 ) -> List[Dict[str, Any]]:
     if not configured():
         _diag("KEIN KEY gefunden (ODDSPAPI_KEY Secret?)")
@@ -469,7 +472,7 @@ def fetch_oddspapi_props(
     prop_catalog = {mid: m for mid, m in catalog.items() if m.get("playerProp") is True}
     _diag(f"{sport_key}: markets={len(catalog)}, playerProp={len(prop_catalog)}")
 
-    fixtures = sorted(get_fixtures(sport_key, lookahead_hours), key=lambda x: str(x.get("startTime") or ""))
+    fixtures = sorted(get_fixtures(sport_key, lookahead_hours, pregame_only=pregame_only), key=lambda x: str(x.get("startTime") or ""))
     limit = max_events if max_events is not None else int(os.getenv("PH_ODDSPAPI_MAX_EVENTS", "2"))
     # This is deliberately global for the process to protect the free tier.
     odds_cap = int(os.getenv("PH_ODDSPAPI_MAX_ODDS_CALLS", "6"))
