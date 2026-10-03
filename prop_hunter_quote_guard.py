@@ -46,9 +46,17 @@ def _f(value: Any) -> Optional[float]:
     except Exception:
         return None
 
+def _team_norm(value: Any) -> str:
+    # Sports feeds often append rankings, e.g. "BYU (#10)". Team labels must
+    # still match the plain selection "BYU" and never masquerade as a player.
+    text = re.sub(r"\(\s*#?\d{1,3}\s*\)|#\s*\d{1,3}\b", " ", str(value or ""))
+    return _norm(text)
+
 def _looks_team_or_generic(player: str, home: str = "", away: str = "") -> bool:
     p = _norm(player)
-    if not p or p in {"over", "under", "higher", "lower", "yes", "no", "home", "away", "draw", "player", "total"}:
+    if not p or p in {"over", "under", "higher", "lower", "yes", "no", "home", "away", "draw", "player", "total", "game"}:
+        return True
+    if p.startswith(("total points", "total goals", "total rebounds", "total assists", "team total")):
         return True
     if _GENERIC_PLAYER_RE.match(str(player or "").strip()):
         return True
@@ -57,7 +65,7 @@ def _looks_team_or_generic(player: str, home: str = "", away: str = "") -> bool:
     padded = f" {p} "
     if any(term in padded for term in _MULTI_PLAYER_TERMS):
         return True
-    h, a = _norm(home), _norm(away)
+    h, a = _team_norm(home), _team_norm(away)
     # Strip ranking/seed numbers from team labels, e.g. "BYU (#10)" -> "byu".
     # This must work for short acronyms too, so do not gate it behind len(p) >= 5.
     h_team = re.sub(r"\b\d+\b", " ", h)
