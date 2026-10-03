@@ -48,7 +48,11 @@ def main():
     for season_id in ("2027","2026"):
         gr=session.get(endpoint,params={"leagueId":"1","regionId":"1","seasonId":season_id},headers={"HX-Request":"true","HX-Current-URL":schedule,"Referer":schedule},timeout=20)
         ids=sorted(set(re.findall(r'/game/(\\d{14})',gr.text)))
+        all14=sorted(set(re.findall(r'(?<!\\d)(\\d{14})(?!\\d)',gr.text)))
+        attrs=re.findall(r'(?:game|season)[-_]?(?:id)?=["\']?([^"\' >]+)',gr.text,re.I)
         print("SIHF_GAMEDAYS",season_id,gr.status_code,len(gr.text),len(ids),ids[:8],ids[-8:],flush=True)
+        print("SIHF_GAMEDAYS_ALL14",season_id,len(all14),all14[:12],all14[-12:],flush=True)
+        print("SIHF_GAMEDAYS_ATTRS",season_id,attrs[:30],flush=True)
 
 
 if __name__=="__main__":
