@@ -53,6 +53,8 @@ def source_checks():
 
     bov=parse_bovada_events([{"id":"b1","startTime":1790380800000,"competitors":[{"name":"Away","home":False},{"name":"Home","home":True}],"displayGroups":[{"description":"Player Props","markets":[{"description":"Total Hits - Mookie Betts (LAD)","status":"O","outcomes":[{"description":"Over","status":"O","price":{"american":"-110","handicap":"1.5"}},{"description":"Under","status":"O","price":{"american":"-110","handicap":"1.5"}}]}]}]}],"MLB")
     if len(bov)!=2 or {x["direction"] for x in bov}!={"over","under"}: fail(f"Bovada direct parse: {bov}")
+    bov_combo=parse_bovada_events([{"id":"b2","startTime":1790380800000,"competitors":[{"name":"Away","home":False},{"name":"Home","home":True}],"displayGroups":[{"description":"Player Props","markets":[{"description":"Total Passing & Rushing Yards O/U - Cam Ward (TEN)","status":"O","outcomes":[{"description":"Over","status":"O","price":{"american":"-110","handicap":"198.5"}},{"description":"Under","status":"O","price":{"american":"-110","handicap":"198.5"}}]}]}]}],"NFL")
+    if bov_combo: fail(f"Bovada combined passing+rushing market reached card pipeline: {bov_combo}")
 
     k=kambi_parse({"betOffers":[{"criterion":{"label":"Player Points"},"outcomes":[{"participant":"LeBron James","label":"Over 27.5","line":27500,"odds":1910},{"participant":"LeBron James","label":"Under 27.5","line":27500,"odds":1910}]}]},"NBA","k1","Lakers","Celtics","2026-09-25T23:00:00Z","ub")
     if len(k)!=2 or any(float(x["line"])!=27.5 for x in k): fail(f"Kambi milli-line parse: {k}")
@@ -77,6 +79,8 @@ def safety_checks():
     if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")
     if sanitize_row({"player_name":"Total Points","home_team":"A","away_team":"B","market":"points","direction":"over","line":47.5,"odds_decimal":1.9}): fail("aggregate total accepted as player")
     if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")
+    combo=sanitize_row({"player_name":"Cam Ward","market":"rushing_yards","market_original":"Total Passing & Rushing Yards O/U - Cam Ward (TEN)","direction":"under","line":198.5,"odds_decimal":1.87})
+    if combo: fail(f"combined passing+rushing market accepted as pure rushing: {combo}")
     binary=sanitize_row({"player_name":"Josh Allen","market":"anytime_td","direction":"yes","line":None,"odds_decimal":2.2,"selection":"Yes"})
     if not binary or binary["line"]!=.5 or binary["direction"]!="over": fail("binary market normalization")
     if not probability_sane(.60,1.90): fail("reasonable model/market gap rejected")
