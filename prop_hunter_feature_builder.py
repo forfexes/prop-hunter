@@ -50,7 +50,9 @@ def hit(rs,k,line):
     return round(sum(v>line for v in vs)/len(vs),4) if vs else None
 
 def main():
-    logs=select_rows("prop_hunter_player_gamelogs",limit=int(__import__("os").getenv("PH_FEATURE_LOG_LIMIT","250000")))
+    # Read the full retained history with deterministic paging. The retention job
+    # caps each sport/league/player at 40 games, so L5/L10/L20/L30 stay complete.
+    logs=select_rows("prop_hunter_player_gamelogs",limit=None,order_by="id")
     g=defaultdict(list)
     for r in logs:
         nk=norm_name(r.get("player_name"))
