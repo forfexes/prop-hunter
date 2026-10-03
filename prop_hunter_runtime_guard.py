@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 import prophunter as ph
 from prop_hunter_1xbet import parse_game as xbet_parse
-from prop_hunter_builder_engine import build_autonomous_extras, _candidate_probability
+from prop_hunter_builder_engine import build_autonomous_extras, _candidate_probability, _sport
 from prop_hunter_identity_hub import identity_match
 from prop_hunter_kambi import parse_offer as kambi_parse
 from prop_hunter_keyless_books import parse_draftkings_payload, parse_fanduel_event_page, parse_bovada_events
@@ -47,6 +47,8 @@ def source_checks():
     if len(fd)!=2 or sorted(x["line"] for x in fd)!=[0.5,1.5]: fail(f"FanDuel direct parse: {fd}")
     fd_ou=parse_fanduel_event_page({"attachments":{"markets":{"m3":{"marketName":"Player Points","runners":[{"runnerName":"LeBron James Over 27.5","isPlayerSelection":True,"handicap":27.5,"winRunnerOdds":{"americanDisplayOdds":{"americanOdds":-110}}},{"runnerName":"LeBron James Under 27.5","isPlayerSelection":True,"handicap":27.5,"winRunnerOdds":{"americanDisplayOdds":{"americanOdds":-110}}}]}}}},"NBA",{"eventId":"fd2","name":"Celtics @ Lakers","openDate":"2026-09-26T01:00:00Z"})
     if len(fd_ou)!=2 or {x["direction"] for x in fd_ou}!={"over","under"} or any(x["player_name"]!="LeBron James" for x in fd_ou): fail(f"FanDuel O/U player normalization: {fd_ou}")
+    fd_wrong_event=parse_fanduel_event_page({"attachments":{"markets":{"m4":{"eventId":"fd-other","marketName":"Player Hits","runners":[{"runnerName":"Jo Adell Over 0.5","isPlayerSelection":True,"handicap":0.5,"winRunnerOdds":{"americanDisplayOdds":{"americanOdds":-110}}}]}}}},"MLB",{"eventId":"fd-target","name":"White Sox @ Guardians","openDate":"2026-10-03T17:00:00Z"})
+    if fd_wrong_event: fail(f"FanDuel cross-event attachment accepted: {fd_wrong_event}")
 
     bov=parse_bovada_events([{"id":"b1","startTime":1790380800000,"competitors":[{"name":"Away","home":False},{"name":"Home","home":True}],"displayGroups":[{"description":"Player Props","markets":[{"description":"Total Hits - Mookie Betts (LAD)","status":"O","outcomes":[{"description":"Over","status":"O","price":{"american":"-110","handicap":"1.5"}},{"description":"Under","status":"O","price":{"american":"-110","handicap":"1.5"}}]}]}]}],"MLB")
     if len(bov)!=2 or {x["direction"] for x in bov}!={"over","under"}: fail(f"Bovada direct parse: {bov}")
@@ -83,9 +85,17 @@ def safety_checks():
     if _candidate_probability(real) is None: fail("reasonable observed candidate rejected")
     absurd=ph.Prop(player="Wrong Match",market="Points",odds=5.0,point=20.5,sport="NBA",emoji="🏀",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.90})
     if _candidate_probability(absurd) is not None: fail("builder model-market gap guard failed")
+    basket_no_model=ph.Prop(player="No Model",market="Points",odds=1.83,point=20.5,sport="WNBA",emoji="🏀",game="A @ B",direction="over",enrichment="DATA+: Basket Line vorhanden",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book"})
+    if ph._source_prop_probability(basket_no_model) is not None: fail("basket rescue invented probability from line/odds")
+    sport_pick=ph.Pick(type="single",player="Sport Check",market="Hits Over 0.5",direction="over",odds=1.9,stake=.1,probability=.6,edge_pct=7,ev=.14,game="A @ B",emoji="⚾")
+    sport_pick.source_sport="MLB"
+    if _sport(sport_pick)!="MLB": fail("builder lost source_sport identity")
 
     pick=ph.Pick(type="single",player="Real",market="Points Over 20.5",direction="over",odds=1.95,stake=.2,probability=.60,edge_pct=17,ev=.17,game="A @ B",emoji="🏀");pick.point=20.5;pick.sport="WNBA";pick.features=real.features
     if any(x.type=="ladder" for x in build_autonomous_extras([pick],[real],ph.Pick,ph.LadderLeg)): fail("invented ladder")
+    ladder_easy=ph.Prop(player="Ladder Check",market="Hits",odds=4.0,point=.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.50})
+    ladder_hard=ph.Prop(player="Ladder Check",market="Hits",odds=2.0,point=1.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.70})
+    if any(x.type=="ladder" for x in build_autonomous_extras([], [ladder_easy,ladder_hard],ph.Pick,ph.LadderLeg)): fail("inverted ladder prices accepted")
     if line_of_pick({"market":"Points Over 20.5"})!=20.5: fail("line fallback")
     if stat_value({"league":"NFL","passing_tds":3},"passing_touchdowns")!=3: fail("NFL alias")
     if stat_value({"league":"MLB","hits":3,"doubles":1,"triples":0,"home_runs":1},"singles")!=1: fail("MLB singles derivation")
