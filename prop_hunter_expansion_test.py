@@ -181,6 +181,12 @@ def test_delivery_failure_and_team_identity_guards():
           "legacy persistence fallback missing")
 
 
+def test_supabase_select_rows_paginates():
+    shared = Path("prop_hunter_shared_utils.py").read_text(encoding="utf-8")
+    check('.range(start, end)' in shared, "Supabase reads are not paginated")
+    check('while len(rows) < wanted' in shared, "Supabase pagination loop missing")
+    check('return rows[:wanted]' in shared, "Supabase pagination does not honor requested limit")
+
 def test_telegram_ladder_split_contract():
     core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
     hardened = Path("prophunter_core_1392.py").read_text(encoding="utf-8")
@@ -257,7 +263,7 @@ def main():
         test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,
         test_all_sports_sources,test_builder_profiles_and_market_guard,
         test_keyless_extension_and_card_formatter,test_delivery_failure_and_team_identity_guards,
-        test_telegram_ladder_split_contract,test_builder_persistence_and_learning_loop,
+        test_supabase_select_rows_paginates,test_telegram_ladder_split_contract,test_builder_persistence_and_learning_loop,
     ]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
