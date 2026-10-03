@@ -85,6 +85,17 @@ def fetch_snapshot_props(sport_filter=None):
         season_markers=('season','futures','to win','mvp','champion','award','regular season','playoff','total wins','make the','division','conference','over/under wins');best={}
         for r in rows:
             sport=str(r.get('sport') or r.get('league') or '').upper();player=str(r.get('player_name') or '').strip();market=str(r.get('market') or r.get('market_key') or '').strip();direction=str(r.get('direction') or '').lower().strip();line=r.get('line')
+            # Snapshot freshness alone is not enough: a recently re-ingested stale
+            # row must never become a new pick after its actual event already started.
+            ct_raw=r.get('commence_time')
+            if not ct_raw:continue
+            try:
+                ct_check=datetime.fromisoformat(str(ct_raw).replace('Z','+00:00'))
+                if ct_check.tzinfo is None:ct_check=ct_check.replace(tzinfo=timezone.utc)
+                now_utc=datetime.now(timezone.utc)
+                if ct_check < now_utc-timedelta(minutes=5):continue
+                if ct_check > now_utc+timedelta(hours=float(os.getenv('PH_SNAPSHOT_EVENT_HORIZON_HOURS','72'))):continue
+            except Exception:continue
             try:odds=float(r.get('odds_decimal'))
             except Exception:continue
             if not(player and market and line is not None and 1.01<odds<75):continue
