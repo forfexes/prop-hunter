@@ -44,6 +44,12 @@ def main():
     for m in re.finditer(r'.{0,200}(?:season|saison).{0,300}',sr.text,re.I|re.S):
         print("SIHF_SEASON_CONTEXT",re.sub(r'\s+',' ',m.group(0))[:520],flush=True)
 
+    for needle in ("20271105000049","20271105000130"):
+        pos=sr.text.find(needle)
+        if pos>=0:
+            snippet=re.sub(r'\s+',' ',sr.text[max(0,pos-1200):pos+1200])
+            print("SIHF_GAME_CONTEXT_"+("49" if needle.endswith("49") else "130"),snippet[:2400],flush=True)
+
     endpoint="https://www.sihf.ch/umbraco/GameCenter/League/GetGameDays"
     for season_id in ("2027","2026"):
         gr=session.get(endpoint,params={"leagueId":"1","regionId":"1","seasonId":season_id},headers={"HX-Request":"true","HX-Current-URL":schedule,"Referer":schedule},timeout=20)
