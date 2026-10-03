@@ -16,12 +16,12 @@ from prop_hunter_source_orchestrator import _normalise, _snapshot_rows_for_db
 
 MAX_EVENTS = max(1, min(5, int(os.getenv("PH_SHADOW_MAX_EVENTS", "3"))))
 SHADOW_LEAGUES = {
-    "SWISS_NL": {"oddspapi": "icehockey_swiss_nl"},
-    "EUROCUP": {"oddspapi": "basketball_eurocup"},
-    "AHL": {"sgo": "icehockey_ahl", "oddspapi": "icehockey_ahl"},
-    "SHL": {"sgo": "icehockey_shl", "oddspapi": "icehockey_shl"},
-    "NBA_G_LEAGUE": {"sgo": "basketball_g_league", "oddspapi": "basketball_g_league"},
-    "CFL": {"sgo": "americanfootball_cfl", "oddspapi": "americanfootball_cfl"},
+    "SWISS_NL": {"oddspapi": "icehockey_swiss_nl", "oddspapi_events": 2},
+    "AHL": {"sgo": "icehockey_ahl", "oddspapi": "icehockey_ahl", "oddspapi_events": 2},
+    "CFL": {"sgo": "americanfootball_cfl", "oddspapi": "americanfootball_cfl", "oddspapi_events": 2},
+    "EUROCUP": {"oddspapi": "basketball_eurocup", "oddspapi_events": 2},
+    "NBA_G_LEAGUE": {"sgo": "basketball_g_league", "oddspapi": "basketball_g_league", "oddspapi_events": 2},
+    "SHL": {"sgo": "icehockey_shl", "oddspapi": "icehockey_shl", "oddspapi_events": 2},
 }
 
 
@@ -61,12 +61,12 @@ def _fetch_sgo(key: str) -> List[Dict[str, Any]]:
         return []
 
 
-def _fetch_oddspapi(key: str) -> List[Dict[str, Any]]:
+def _fetch_oddspapi(key: str, max_events: int = 1) -> List[Dict[str, Any]]:
     try:
         import prop_hunter_oddspapi as op
         if not op.configured():
             return []
-        return op.fetch_oddspapi_props(key, max_events=1)
+        return op.fetch_oddspapi_props(key, max_events=max(1, max_events), pregame_only=True)
     except Exception as exc:
         log(f"shadow OddsPapi {key} failed: {exc}")
         return []
@@ -84,7 +84,7 @@ def main() -> None:
             if raw_rows:
                 used = "sportsgameodds"
         if not raw_rows and providers.get("oddspapi"):
-            raw_rows = _fetch_oddspapi(providers["oddspapi"])
+            raw_rows = _fetch_oddspapi(providers["oddspapi"], int(providers.get("oddspapi_events") or 1))
             if raw_rows:
                 used = "oddspapi"
 
