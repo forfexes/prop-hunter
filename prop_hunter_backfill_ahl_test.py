@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from pathlib import Path
 from prop_hunter_backfill_ahl import _clean_jsonp, profile_to_rows, KEEP
 
 assert _clean_jsonp('cb({"SiteKit":{"current_season_id":92}});')["SiteKit"]["current_season_id"] == 92
@@ -44,4 +45,7 @@ assert r["hockey_points"] == 3
 assert r["shots_on_goal"] == 5
 assert r["raw"]["player_id"] == "1234"
 assert 30 <= KEEP <= 40
+src = Path("prop_hunter_backfill_ahl.py").read_text(encoding="utf-8")
+assert 'existing.get(str(p.get("_player_id")), 0) == 0' in src
+assert 'existing.get(str(p.get("_player_id")), 0) < 30' not in src
 print("AHL BACKFILL TEST PASSED")
