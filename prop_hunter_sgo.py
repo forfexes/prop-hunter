@@ -215,6 +215,7 @@ def parse_events(events: Iterable[Dict[str, Any]], league: str) -> List[Dict[str
                         "odds_decimal": round(float(dec), 4),
                         "odds_american": raw_price,
                         "selection": direction.title(),
+                        "created_at": quote.get("lastUpdatedAt") or bm.get("lastUpdatedAt"),
                         "raw": {
                             "odd_id": odd_id, "stat_entity_id": entity,
                             "last_updated": quote.get("lastUpdatedAt") or bm.get("lastUpdatedAt"),
