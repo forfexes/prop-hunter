@@ -105,30 +105,55 @@ def _season(game_id: str, game_date: str | None) -> str:
 
 
 def schedule_game_ids(session: requests.Session) -> List[str]:
-    """Return newest Swiss NL game ids from current + previous season pages.
-
-    SIHF game cards always expose canonical /game/<14-digit-id> links. Reading
-    those is more robust than depending on changing card data-* attributes.
-    Completed-vs-live/future is validated later from the game page / CSV export.
-    """
+    """Return newest completed Swiss NL game ids from current + previous season."""
     now=datetime.now(timezone.utc)
+    today=now.date()
     current_season=now.year+1 if now.month>=7 else now.year
     season_ids=(current_season,current_season-1)
-    found=set()
+    pairs=[]
+
+    # Rendered SIHF cards contain a game date and, shortly after it, the game id.
+    # Match the whole card fragment instead of relying on attribute order.
+    card_pattern=re.compile(
+        r'class=["\'][^"\']*\bjs-game-item\b[^"\']*["\'][\s\S]{0,2600}?'
+        r'data-date=["\'](20\d{2}-\d{2}-\d{2})["\'][\s\S]{0,2600}?'
+        r'data-game-id=["\'](\d{14})["\']',
+        re.I,
+    )
+    reverse_pattern=re.compile(
+        r'class=["\'][^"\']*\bjs-game-item\b[^"\']*["\'][\s\S]{0,2600}?'
+        r'data-game-id=["\'](\d{14})["\'][\s\S]{0,2600}?'
+        r'data-date=["\'](20\d{2}-\d{2}-\d{2})["\']',
+        re.I,
+    )
 
     for season_id in season_ids:
         url=f"{SCHEDULE}?season={season_id}"
         r=session.get(url,timeout=TIMEOUT)
         r.raise_for_status()
-        # Canonical game links used throughout the rendered schedule.
-        found.update(re.findall(r'/de/game-center/game/(\d{14})(?:["\'/?#]|$)',r.text,re.I))
-        # Fallback for HTMX/compact cards where the id only appears in attrs.
-        found.update(re.findall(r'(?<!\d)(20\d{12})(?!\d)',r.text))
+        for date_text,gid in card_pattern.findall(r.text):
+            try:
+                d=datetime.fromisoformat(date_text).date()
+            except Exception:
+                continue
+            if d < today:
+                pairs.append((d,gid))
+        for gid,date_text in reverse_pattern.findall(r.text):
+            try:
+                d=datetime.fromisoformat(date_text).date()
+            except Exception:
+                continue
+            if d < today:
+                pairs.append((d,gid))
 
-    # Swiss game ids start with the season end year and monotonically increase
-    # within a competition, so descending lexical order is newest-first.
-    out=sorted(found,reverse=True)
-    log(f"Swiss NL schedule discovery seasons={season_ids} found={len(out)}")
+    seen=set()
+    out=[]
+    for _date,gid in sorted(pairs,reverse=True):
+        if gid in seen:
+            continue
+        seen.add(gid)
+        out.append(gid)
+    log(f"Swiss NL schedule discovery seasons={season_ids} completed={len(out)}")
     return out[:MAX_GAMES]
 
 
