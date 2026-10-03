@@ -24,6 +24,19 @@ def main():
     print("SHL_STATNET_PLAYER_LINKS",player_links[:20],flush=True)
     print("SHL_STATNET_TEXTS",texts[:20],flush=True)
     print("SHL_STATNET_HREF_SAMPLE",hrefs[:80],flush=True)
+    if player_links:
+        from urllib.parse import urljoin
+        from io import BytesIO
+        from pypdf import PdfReader
+        pdf_url=urljoin(URL,player_links[0])
+        pr=requests.get(pdf_url,timeout=20,headers=HEADERS,verify=False)
+        print("SHL_PLAYERREPORT_PDF",pr.status_code,len(pr.content),pdf_url,flush=True)
+        pr.raise_for_status()
+        reader=PdfReader(BytesIO(pr.content))
+        text="\n".join((page.extract_text() or "") for page in reader.pages)
+        print("SHL_PLAYERREPORT_TEXT_BEGIN",flush=True)
+        print("\n".join(text.splitlines()[:180]),flush=True)
+        print("SHL_PLAYERREPORT_TEXT_END",flush=True)
 
 
 if __name__=="__main__":
