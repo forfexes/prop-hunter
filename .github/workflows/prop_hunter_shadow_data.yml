@@ -1,0 +1,52 @@
+name: Prop Hunter Shadow Data
+
+"on":
+  workflow_dispatch: {}
+  schedule:
+    - cron: '25 5 * * *'
+  push:
+    paths:
+      - 'prop_hunter_shadow_leagues.py'
+      - 'prop_hunter_shadow_leagues_test.py'
+      - 'prop_hunter_sgo.py'
+      - 'prop_hunter_oddspapi.py'
+      - '.github/shadow-data-trigger'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prop-hunter-shadow-data
+  cancel-in-progress: true
+
+jobs:
+  shadow-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements_results.txt
+      - name: Install
+        run: pip install -r requirements_results.txt
+      - name: Regression
+        run: |
+          python -m py_compile prop_hunter_shadow_leagues.py prop_hunter_sgo.py prop_hunter_oddspapi.py prop_hunter_snapshot_retention.py
+          python prop_hunter_shadow_leagues_test.py
+          python prop_hunter_snapshot_retention_test.py
+      - name: Collect shadow league data
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          PH_SHADOW_MAX_EVENTS: '3'
+          PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
+          PH_SNAPSHOT_RETENTION_DAYS: '7'
+        run: |
+          python prop_hunter_snapshot_retention.py --apply
+          python prop_hunter_shadow_leagues.py
