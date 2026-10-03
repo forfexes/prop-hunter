@@ -86,6 +86,15 @@ jobs:
           python prop_hunter_source_audit.py || true
           python prop_hunter_github_watcher.py || true
           python prop_hunter_source_orchestrator.py --mode fast || true
+      - name: Gamelog retention and feature rebuild
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PH_GAMELOG_KEEP_PER_PLAYER: '40'
+          PH_FEATURE_WRITE_BATCH: '400'
+        run: |
+          python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_feature_builder.py
       - name: Autonomous learning and coverage
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
