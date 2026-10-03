@@ -79,7 +79,7 @@ MIN_EDGE_OTHER_SPORTS = 1.5
 MAX_SINGLES_TOTAL     = int(os.getenv("PH_MAX_SINGLES", "0") or 0)  # 0 = no hard cap; +EV filter decides
 RESCUE_MAX_PICKS      = max(12, min(20, int(os.getenv("PH_RESCUE_MAX_PICKS", "18") or 18)))
 RESCUE_FILL_TARGET    = max(8, min(RESCUE_MAX_PICKS, int(os.getenv("PH_RESCUE_FILL_TARGET", "12") or 12)))
-MAX_HR_SINGLES        = 3
+MAX_HR_SINGLES        = int(os.getenv("PH_MAX_HR_SINGLES", "0") or 0)  # 0 = no global HR cap
 MAX_COMBOS_TOTAL      = 2
 MAX_LOTTERY_TOTAL     = 2
 MAX_LOTTERY_LEGS      = 3
@@ -3585,7 +3585,7 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
                     rejected["hr_edge"] += 1; continue
                 if prob is not None and prob < MIN_PROB_MLB_HR:
                     rejected["hr_prob"] += 1; continue
-                if hr_count >= MAX_HR_SINGLES:
+                if MAX_HR_SINGLES > 0 and hr_count >= MAX_HR_SINGLES:
                     rejected["hr_cap"] += 1; continue
                 hr_count += 1
             elif _is_hits_pick(p):
@@ -4131,9 +4131,9 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
 
     candidates.sort(key=lambda p: ((p.edge_pct or 0), (p.probability or 0)), reverse=True)
 
-    # VERIFIED HR PICKS bauen (Pool bis 5, sortiert nach Confidence — stärkste Profile zuerst)
+    # VERIFIED HR PICKS bauen — keine globale künstliche HR-Begrenzung.
     candidates_hr.sort(key=lambda t: t[3], reverse=True)
-    for sp, hr_prob, odds, conf, hr_edge in candidates_hr[:5]:
+    for sp, hr_prob, odds, conf, hr_edge in candidates_hr:
         try:
             pk = Pick(
                 type="single",
@@ -4163,7 +4163,6 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
 
     out = []
     players = set()
-    per_market = defaultdict(int)
     for pk in candidates:
         name = (pk.player or "").lower().strip()
         if not name or name in players:
@@ -4171,18 +4170,9 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         g = (getattr(pk, "game", None) or getattr(pk, "team", None) or "unknown").strip()
         if per_game[g] >= 3:
             continue
-        # Max 3 Picks pro Markt-Typ (verhindert 8x RBI)
-        mkey = re.sub(r'[\d\.\s]+', '', (pk.market or "").lower())[:20]
-        if per_market[mkey] >= 3:
-            continue
-        if _is_hr_pick(pk):
-            if hr_count >= 6:
-                continue
-            hr_count += 1
         out.append(pk)
         players.add(name)
         per_game[g] += 1
-        per_market[mkey] += 1
         if len(out) >= max_picks:
             break
 
@@ -4228,8 +4218,8 @@ def merge_unique_picks(primary, extra, max_singles=8, max_total=12):
 
 def build_hr_321(picks):
     """
-    JK HR-Struktur: immer die besten — 3 Singles sind schon in picks,
-    daraus 2 Doubles (Top1+Top2, Top1+Top3) und 1 Triple (Top1+2+3).
+    HR 3-2-1 Struktur aus den drei stärksten verifizierten HR-Singles:
+    zwei Doubles (Top1+Top2, Top1+Top3) und ein Triple (Top1+2+3).
     """
     try:
         hrs = [p for p in picks if p.type == "single" and _is_hr_pick(p)]
@@ -4248,7 +4238,7 @@ def build_hr_321(picks):
                 market=f"{len(legs)}x Home Run",
                 direction="over", odds=odds, stake=stake,
                 probability=prob, edge_pct=0, ev=round(ev(prob, odds), 3),
-                game="JK HR Special",
+                game="HR 3-2-1 Special",
                 analysis=f"Verified: die {len(legs)} besten HR-Profile kombiniert.",
             )
             pk.legs = legs
@@ -4258,7 +4248,7 @@ def build_hr_321(picks):
             out.append(_combo([hrs[i], hrs[j]], 0.15))
         if len(hrs) >= 3:
             out.append(_combo(hrs, 0.10))
-        log.info("JK HR 3-2-1: %d singles → %d doubles + %d triple",
+        log.info("HR 3-2-1: %d singles → %d doubles + %d triple",
                  len(hrs), sum(1 for p in out if len(p.legs)==2), sum(1 for p in out if len(p.legs)==3))
         return out
     except Exception as e:
