@@ -50,7 +50,7 @@ def hit(rs,k,line):
     return round(sum(v>line for v in vs)/len(vs),4) if vs else None
 
 def main():
-    logs=select_rows("prop_hunter_player_gamelogs",limit=50000)
+    logs=select_rows("prop_hunter_player_gamelogs",limit=int(__import__("os").getenv("PH_FEATURE_LOG_LIMIT","250000")))
     g=defaultdict(list)
     for r in logs:
         nk=norm_name(r.get("player_name"))
