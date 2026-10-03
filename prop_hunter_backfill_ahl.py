@@ -293,7 +293,11 @@ def main() -> None:
     current, previous = seasons[0], seasons[1] if len(seasons) > 1 else seasons[0]
     players = current_players(current)
     existing = existing_player_ids()
-    pending = [p for p in players if existing.get(str(p.get("_player_id")), 0) < 30][:PROFILE_LIMIT]
+    # Any stored row means the player's two-season profile completed in an
+    # earlier batch. Players can legitimately have fewer than 30 career games,
+    # so using a "<30" threshold would re-download them forever and starve the
+    # remaining roster.
+    pending = [p for p in players if existing.get(str(p.get("_player_id")), 0) == 0][:PROFILE_LIMIT]
     log(f"AHL backfill seasons={seasons} current_players={len(players)} pending={len(pending)} limit={PROFILE_LIMIT}")
 
     rows: List[Dict[str, Any]] = []
