@@ -373,8 +373,9 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
             dedup_key(p.player or "", p.market or "", getattr(p, "point", None), p.direction)
             for p in singles
         ]
+        recent_combos = entry.get("kombis", [])[-len(combos):] if combos else []
         combo_ids = []
-        for idx, combo in enumerate(entry.get("kombis", [])[-len(combos):] if combos else []):
+        for idx, combo in enumerate(recent_combos):
             cid = combo.get("combo_id")
             if not cid:
                 raw = json.dumps({
@@ -385,14 +386,38 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
                 cid = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
                 combo["combo_id"] = cid
             combo_ids.append(cid)
-        cards.append({
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "message_id": int(telegram_message_id),
-            "chat_id": str(TG_CHAT),
-            "text": telegram_text or "",
-            "pick_keys": pick_keys,
-            "combo_ids": combo_ids,
-        })
+
+        delivered = list(globals().get("_LAST_TELEGRAM_CARDS") or [])
+        if delivered:
+            for sent in delivered:
+                idxs = sent.get("combo_indices")
+                if idxs is None:
+                    scoped_combo_ids = list(combo_ids)
+                else:
+                    scoped_combo_ids = [
+                        combo_ids[int(i)] for i in idxs
+                        if isinstance(i, int) and 0 <= int(i) < len(combo_ids)
+                    ]
+                cards.append({
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "message_id": int(sent.get("message_id")),
+                    "chat_id": str(TG_CHAT),
+                    "text": str(sent.get("text") or ""),
+                    "pick_keys": list(pick_keys) if sent.get("include_singles") else [],
+                    "combo_ids": scoped_combo_ids,
+                    "card_kind": sent.get("kind") or "main",
+                })
+            globals()["_LAST_TELEGRAM_CARDS"] = []
+        else:
+            cards.append({
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "message_id": int(telegram_message_id),
+                "chat_id": str(TG_CHAT),
+                "text": telegram_text or "",
+                "pick_keys": pick_keys,
+                "combo_ids": combo_ids,
+                "card_kind": "main",
+            })
     save_history(h)
     log.info("persisted %d singles + %d combos",len(singles),len(combos))
 
