@@ -10,7 +10,9 @@ URL=f"https://www.sihf.ch/de/game-center/game/spielerstatistik/{GAME_ID}"
 HEADERS={"User-Agent":"PROP-HUNTER/swiss-nl-probe","Accept":"text/html,*/*"}
 
 def main():
-    r=requests.get(URL,headers=HEADERS,timeout=20)
+    session=requests.Session()
+    session.headers.update(HEADERS)
+    r=session.get(URL,timeout=20)
     print("SIHF_PAGE",r.status_code,len(r.text),r.url,flush=True)
     r.raise_for_status()
     hrefs=re.findall(r'href=["\']([^"\']+)["\']',r.text,re.I)
@@ -23,7 +25,7 @@ def main():
 
     base="https://www.sihf.ch/umbraco/GameCenter/GameDetail/ExportGamePlayerStats"
     for alias in ("gamePlayerStatsHome","gamePlayerStatsAway","gameGoalieStatsHome","gameGoalieStatsAway"):
-        x=requests.get(base,params={"gameId":GAME_ID,"format":"Csv","alias":alias},headers=HEADERS,timeout=20)
+        x=session.get(base,params={"gameId":GAME_ID,"format":"Csv","alias":alias},headers={"Referer":URL},timeout=20)
         print("SIHF_EXPORT",alias,x.status_code,x.headers.get("content-type"),len(x.content),flush=True)
         text=x.content.decode("utf-8-sig",errors="replace")
         print("SIHF_EXPORT_BEGIN",alias,flush=True)
@@ -31,7 +33,7 @@ def main():
         print("SIHF_EXPORT_END",alias,flush=True)
 
     schedule="https://www.sihf.ch/de/game-center/liga/spielplan/1-1"
-    sr=requests.get(schedule,headers=HEADERS,timeout=20)
+    sr=session.get(schedule,timeout=20)
     print("SIHF_SCHEDULE",sr.status_code,len(sr.text),sr.url,flush=True)
     sr.raise_for_status()
     shrefs=re.findall(r'href=["\']([^"\']+)["\']',sr.text,re.I)
@@ -44,7 +46,7 @@ def main():
 
     endpoint="https://www.sihf.ch/umbraco/GameCenter/League/GetGameDays"
     for season_id in ("2027","2026"):
-        gr=requests.get(endpoint,params={"leagueId":"1","regionId":"1","seasonId":season_id},headers={**HEADERS,"HX-Request":"true"},timeout=20)
+        gr=session.get(endpoint,params={"leagueId":"1","regionId":"1","seasonId":season_id},headers={"HX-Request":"true","HX-Current-URL":schedule,"Referer":schedule},timeout=20)
         ids=sorted(set(re.findall(r'/game/(\\d{14})',gr.text)))
         print("SIHF_GAMEDAYS",season_id,gr.status_code,len(gr.text),len(ids),ids[:8],ids[-8:],flush=True)
 
