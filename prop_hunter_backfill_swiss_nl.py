@@ -121,9 +121,9 @@ def schedule_game_ids(session: requests.Session) -> List[str]:
         r=session.get(url,timeout=TIMEOUT)
         r.raise_for_status()
         # Canonical game links used throughout the rendered schedule.
-        found.update(re.findall(r'/de/game-center/game/(\\d{14})(?:["\'/?#]|$)',r.text,re.I))
+        found.update(re.findall(r'/de/game-center/game/(\d{14})(?:["\'/?#]|$)',r.text,re.I))
         # Fallback for HTMX/compact cards where the id only appears in attrs.
-        found.update(re.findall(r'(?<!\\d)(20\\d{12})(?!\\d)',r.text))
+        found.update(re.findall(r'(?<!\d)(20\d{12})(?!\d)',r.text))
 
     # Swiss game ids start with the season end year and monotonically increase
     # within a competition, so descending lexical order is newest-first.
