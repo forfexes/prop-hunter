@@ -24,6 +24,7 @@ BASE="https://www.sihf.ch"
 SCHEDULE=f"{BASE}/de/game-center/liga/spielplan/1-1"
 GAME_STATS=f"{BASE}/de/game-center/game/spielerstatistik/{{game_id}}"
 EXPORT=f"{BASE}/umbraco/GameCenter/GameDetail/ExportGamePlayerStats"
+SCHEDULE_EXPORT=f"{BASE}/umbraco/GameCenter/League/ExportSchedule"
 LEAGUE="SWISS_NL"
 SPORT="ICE_HOCKEY"
 KEEP=max(30,min(40,int(os.getenv("PH_SWISS_NL_LAST_N","40"))))
@@ -35,6 +36,7 @@ HEADERS={"User-Agent":"PROP-HUNTER/swiss-nl-data","Accept":"text/html,text/csv,*
 
 SKATER_ALIASES=("gamePlayerStatsHome","gamePlayerStatsAway")
 GOALIE_ALIASES=("gameGoalieStatsHome","gameGoalieStatsAway")
+GAME_META: Dict[str,Dict[str,str]]={}
 
 
 def _session() -> requests.Session:
@@ -105,46 +107,50 @@ def _season(game_id: str, game_date: str | None) -> str:
 
 
 def schedule_game_ids(session: requests.Session) -> List[str]:
-    """Return newest completed Swiss NL game ids from current + previous season."""
+    """Return newest completed official Swiss NL games from schedule CSV."""
     now=datetime.now(timezone.utc)
     today=now.date()
     current_season=now.year+1 if now.month>=7 else now.year
     season_ids=(current_season,current_season-1)
     pairs=[]
 
-    # Rendered SIHF cards contain a game date and, shortly after it, the game id.
-    # Match the whole card fragment instead of relying on attribute order.
-    card_pattern=re.compile(
-        r'class=["\'][^"\']*\bjs-game-item\b[^"\']*["\'][\s\S]{0,2600}?'
-        r'data-date=["\'](20\d{2}-\d{2}-\d{2})["\'][\s\S]{0,2600}?'
-        r'data-game-id=["\'](\d{14})["\']',
-        re.I,
-    )
-    reverse_pattern=re.compile(
-        r'class=["\'][^"\']*\bjs-game-item\b[^"\']*["\'][\s\S]{0,2600}?'
-        r'data-game-id=["\'](\d{14})["\'][\s\S]{0,2600}?'
-        r'data-date=["\'](20\d{2}-\d{2}-\d{2})["\']',
-        re.I,
-    )
-
     for season_id in season_ids:
-        url=f"{SCHEDULE}?season={season_id}"
-        r=session.get(url,timeout=TIMEOUT)
-        r.raise_for_status()
-        for date_text,gid in card_pattern.findall(r.text):
+        r=session.get(
+            SCHEDULE_EXPORT,
+            params={"leagueId":"1","regionId":"1","format":"Csv","season":str(season_id)},
+            headers={"Referer":f"{SCHEDULE}?season={season_id}","Accept":"text/csv,*/*"},
+            timeout=TIMEOUT,
+        )
+        if r.status_code!=200 or "csv" not in str(r.headers.get("content-type") or "").lower():
+            log(f"Swiss NL schedule export failed season={season_id} status={r.status_code}")
+            continue
+        text=r.content.decode("utf-8-sig",errors="replace")
+        for record in csv.DictReader(io.StringIO(text),delimiter=";"):
+            gid=str(record.get("Id") or "").strip()
+            if not re.fullmatch(r"\d{14}",gid):
+                continue
+            if str(record.get("Liga") or "").strip().upper()!="NL":
+                continue
+            status=str(record.get("Status") or "").strip().lower()
+            if status not in {"ende","final","finished"}:
+                continue
+            phase=str(record.get("Phase") or "").strip()
+            phase_l=phase.lower()
+            if not phase or phase=="---" or "exhibition" in phase_l:
+                continue
             try:
-                d=datetime.fromisoformat(date_text).date()
+                d=datetime.strptime(str(record.get("Datum") or "").strip(),"%d.%m.%Y").date()
             except Exception:
                 continue
-            if d < today:
-                pairs.append((d,gid))
-        for gid,date_text in reverse_pattern.findall(r.text):
-            try:
-                d=datetime.fromisoformat(date_text).date()
-            except Exception:
+            if d>=today:
                 continue
-            if d < today:
-                pairs.append((d,gid))
+            GAME_META[gid]={
+                "date":d.isoformat(),
+                "home":str(record.get("Home") or "").strip(),
+                "away":str(record.get("Away") or "").strip(),
+                "phase":phase,
+            }
+            pairs.append((d,gid))
 
     seen=set()
     out=[]
@@ -153,7 +159,7 @@ def schedule_game_ids(session: requests.Session) -> List[str]:
             continue
         seen.add(gid)
         out.append(gid)
-    log(f"Swiss NL schedule discovery seasons={season_ids} completed={len(out)}")
+    log(f"Swiss NL schedule export seasons={season_ids} completed_official={len(out)}")
     return out[:MAX_GAMES]
 
 
@@ -185,17 +191,22 @@ def _skater_rows(records: List[Dict[str,str]],game_id: str,game_date: str | None
         goals=_float(record,"G",0.0) or 0.0
         assists=_float(record,"A",0.0) or 0.0
         points=_float(record,"PTS",goals+assists)
+        meta=GAME_META.get(game_id,{})
+        is_home=alias.endswith("Home")
+        team=meta.get("home") if is_home else meta.get("away")
+        opponent=meta.get("away") if is_home else meta.get("home")
         out.append({
             "sport":SPORT,"league":LEAGUE,"country":"CH","season":season,
             "source":"sihf_game_player_csv","source_game_id":game_id,"game_id":game_id,
             "game_date":game_date,"player_name":name,"normalized_name":norm_name(name),
+            "team":team or None,"opponent":opponent or None,
             "minutes":toi,"goals":goals,"assists_hockey":assists,
             "hockey_points":points if points is not None else goals+assists,
             "shots_on_goal":_float(record,"SOG",0.0),
             "blocked_shots":_float(record,"BkS",0.0),
             "raw":{
                 "side":"home" if alias.endswith("Home") else "away",
-                "sihf_name":record.get("Spieler"),"jersey":record.get("No"),
+                "phase":meta.get("phase"),"sihf_name":record.get("Spieler"),"jersey":record.get("No"),
                 "position":record.get("Pos"),"primary_assists":record.get("A1"),
                 "secondary_assists":record.get("A2"),"pim":record.get("PIM Total"),
                 "plus_minus":record.get("+/-"),"shots_missed":record.get("SHM Total"),
@@ -215,14 +226,19 @@ def _goalie_rows(records: List[Dict[str,str]],game_id: str,game_date: str | None
         toi=_minutes(record.get("MIP"))
         if not name or toi is None or toi<=0:
             continue
+        meta=GAME_META.get(game_id,{})
+        is_home=alias.endswith("Home")
+        team=meta.get("home") if is_home else meta.get("away")
+        opponent=meta.get("away") if is_home else meta.get("home")
         out.append({
             "sport":SPORT,"league":LEAGUE,"country":"CH","season":season,
             "source":"sihf_game_goalie_csv","source_game_id":game_id,"game_id":game_id,
             "game_date":game_date,"player_name":name,"normalized_name":norm_name(name),
+            "team":team or None,"opponent":opponent or None,
             "minutes":toi,"goalie_saves":_float(record,"SVS",0.0),
             "raw":{
                 "side":"home" if alias.endswith("Home") else "away",
-                "sihf_name":record.get("Spieler"),"jersey":record.get("No"),
+                "phase":meta.get("phase"),"sihf_name":record.get("Spieler"),"jersey":record.get("No"),
                 "goals_against":record.get("GA"),"shots_against":record.get("SA"),
                 "save_pct":record.get("SVS%"),"gaa":record.get("GAA"),"pim":record.get("PIM"),
             },
@@ -235,7 +251,7 @@ def fetch_game(session: requests.Session,game_id: str) -> List[Dict[str,Any]]:
     page=session.get(game_url,timeout=TIMEOUT)
     if page.status_code!=200:
         return []
-    game_date=_date_from_html(page.text)
+    game_date=(GAME_META.get(game_id) or {}).get("date") or _date_from_html(page.text)
     rows=[]
     valid=False
     for alias in SKATER_ALIASES:
