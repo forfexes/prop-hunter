@@ -219,18 +219,33 @@ def upsert_rows(table: str, rows: List[Dict[str, Any]], conflict: Optional[str] 
     warn(f"{table}: too many schema mismatches; skipped batch")
 
 def select_rows(table: str, limit: int = 1000, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Read up to limit rows, paging around PostgREST per-request row caps."""
     sb = supabase_client()
     if sb is None:
         return []
-    try:
-        q = sb.table(table).select("*").limit(limit)
-        for k, v in (filters or {}).items():
-            q = q.eq(k, v)
-        res = q.execute()
-        return res.data or []
-    except Exception as e:
-        warn(f"{table} select failed: {e}")
+    wanted = max(0, int(limit or 0))
+    if wanted == 0:
         return []
+    page_size = min(1000, wanted)
+    rows: List[Dict[str, Any]] = []
+    start = 0
+    try:
+        while len(rows) < wanted:
+            size = min(page_size, wanted - len(rows))
+            end = start + size - 1
+            q = sb.table(table).select("*").range(start, end)
+            for k, v in (filters or {}).items():
+                q = q.eq(k, v)
+            res = q.execute()
+            batch = res.data or []
+            rows.extend(batch)
+            if len(batch) < size:
+                break
+            start = end + 1
+        return rows[:wanted]
+    except Exception as e:
+        warn(f"{table} select failed after {len(rows)} rows: {e}")
+        return rows
 
 def _normalise_pick_row(row: Dict[str, Any], source_table: str) -> Dict[str, Any]:
     """Return one schema-neutral pick row from either Supabase picks table."""
