@@ -107,13 +107,27 @@ def _season(game_id: str, game_date: str | None) -> str:
 def schedule_game_ids(session: requests.Session) -> List[str]:
     r=session.get(SCHEDULE,timeout=TIMEOUT)
     r.raise_for_status()
-    ids=[]
-    for gid in re.findall(r'/de/game-center/game/(\d{14})',r.text,re.I):
-        if gid not in ids:
-            ids.append(gid)
-    # Current page mixes completed/upcoming games; newest numeric ids first gives
-    # bounded work while completed-game CSV validation remains authoritative.
-    return sorted(ids,reverse=True)[:MAX_GAMES]
+    today=datetime.now(timezone.utc).date()
+    pairs=[]
+    # Each public game card contains both data-date and data-game-id. Restrict
+    # initial/history collection to dates before today so live/future games do
+    # not waste four CSV export calls each.
+    pattern=r'class="js-game-item"[^>]*data-date="(20\\d{2}-\\d{2}-\\d{2})"[\\s\\S]{0,1400}?data-game-id="(\\d{14})"'
+    for date_text,gid in re.findall(pattern,r.text,re.I):
+        try:
+            d=datetime.fromisoformat(date_text).date()
+        except Exception:
+            continue
+        if d>=today:
+            continue
+        pairs.append((d,gid))
+    seen=set()
+    out=[]
+    for _date,gid in sorted(pairs,reverse=True):
+        if gid in seen:
+            continue
+        seen.add(gid);out.append(gid)
+    return out[:MAX_GAMES]
 
 
 def _csv_rows(session: requests.Session, game_url: str, game_id: str, alias: str) -> List[Dict[str,str]]:
