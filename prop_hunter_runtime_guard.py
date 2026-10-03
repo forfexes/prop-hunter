@@ -97,6 +97,9 @@ def safety_checks():
     ladder_hard=ph.Prop(player="Ladder Check",market="Hits",odds=2.0,point=1.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.70})
     if any(x.type=="ladder" for x in build_autonomous_extras([], [ladder_easy,ladder_hard],ph.Pick,ph.LadderLeg)): fail("inverted ladder prices accepted")
     if line_of_pick({"market":"Points Over 20.5"})!=20.5: fail("line fallback")
+    if line_of_pick({"market":"Home Run"})!=0.5: fail("binary HR line fallback")
+    if line_of_pick({"market":"Anytime TD"})!=0.5: fail("binary TD line fallback")
+    if line_of_pick({"market":"Home Run Over 0.5","line":5000})!=0.5: fail("corrupt binary line guard")
     if stat_value({"league":"NFL","passing_tds":3},"passing_touchdowns")!=3: fail("NFL alias")
     if stat_value({"league":"MLB","hits":3,"doubles":1,"triples":0,"home_runs":1},"singles")!=1: fail("MLB singles derivation")
     logs=[{"player_name":"Shohei Ohtani","game_date":"2026-09-18","game_id":"a"},{"player_name":"Shohei Ohtani","game_date":"2026-09-18","game_id":"b"}]
