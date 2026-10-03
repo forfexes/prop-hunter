@@ -5,7 +5,7 @@ Current production runtime: **13.10.1-KEYLESS-HARDENED**.
 PROP HUNTER collects observed player-prop prices, enriches them with sports data, creates +EV singles/ladders/builders, settles picks from official/result feeds and updates the original Telegram card in place. Browser work stays out of normal card runs.
 
 ## Production schedule
-- Card: 16:30 UTC and 21:00 UTC, 8-minute timeout.
+- Card: 07:30 UTC, 16:30 UTC and 21:00 UTC, 8-minute timeout.
 - Results: 10:15 UTC.
 - Daily workflow control: 04:45 UTC.
 - Self-maintenance: Sunday 03:15 UTC.
