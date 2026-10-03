@@ -86,6 +86,7 @@ jobs:
           PH_KEYLESS_MAX_PROP_CATEGORIES: '6'
           PH_KEYLESS_CACHE_TTL: '600'
           PH_KEYLESS_SOURCE_BUDGET_SEC: '18'
+          ODDSPAPI_KEYS: ${{ secrets.ODDSPAPI_KEYS }}
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
@@ -152,6 +153,7 @@ jobs:
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ODDSPAPI_KEYS: ${{ secrets.ODDSPAPI_KEYS }}
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
