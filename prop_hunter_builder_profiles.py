@@ -155,7 +155,10 @@ def _make_profile_builder(legs: Sequence[Any], profile: str, PickCls: Any, pairs
 
     stake = base._kelly(prob, odds, PROFILE_FRACTION[profile], PROFILE_CAP[profile])
     stake = max(PROFILE_FLOOR[profile], min(PROFILE_CAP[profile], stake))
-    same_player = any(v > 1 for v in Counter(base._player(x).lower() for x in legs).values())
+    player_keys = [base._player(x).lower().strip() for x in legs if base._player(x)]
+    # "Same-Player" means every leg belongs to one player. A mixed builder
+    # where one player happens to appear twice must not be mislabeled.
+    same_player = bool(player_keys) and len(set(player_keys)) == 1 and len(player_keys) == len(legs)
     book = base._book(legs[0])
     game = base._game(legs[0])
     label = {
