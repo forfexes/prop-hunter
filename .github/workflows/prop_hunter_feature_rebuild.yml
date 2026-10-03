@@ -27,11 +27,15 @@ jobs:
       - run: pip install -r requirements_results.txt
       - name: Regression
         run: |
-          python -m py_compile prop_hunter_feature_builder.py prop_hunter_shared_utils.py
+          python -m py_compile prop_hunter_feature_builder.py prop_hunter_shared_utils.py prop_hunter_gamelog_retention.py
+          python prop_hunter_gamelog_retention_test.py
           python prop_hunter_expansion_test.py
-      - name: Rebuild all player features
+      - name: Retain 40 games and rebuild all player features
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PH_GAMELOG_KEEP_PER_PLAYER: "40"
           PH_FEATURE_WRITE_BATCH: "400"
-        run: python prop_hunter_feature_builder.py
+        run: |
+          python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_feature_builder.py
