@@ -1266,7 +1266,8 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             feats["gamelog_n"] = n
             p.features = feats
             avg = sum(vals)/n
-            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% über Linie"
+            side_label = "unter Linie" if direction == "under" else "über Linie"
+            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% {side_label}"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue
@@ -3782,11 +3783,10 @@ def _source_prop_probability(p):
             if m in enrichment:
                 boost -= 0.015
 
-        # Basket: ohne Line gar nicht, mit Line kleiner Boost möglich
+        # Basket: ohne echte Modell-/Fair-Probability niemals Value aus der
+        # Quote oder der blossen Existenz einer Line konstruieren.
         if sport in ("NBA", "WNBA") or "basketball" in sport.lower():
-            if point is None:
-                return None
-            boost += 0.020
+            return None
 
         # MLB HR: hohe Quoten haben kleine implied probability, nur kleiner Kontextboost
         is_hr = "home run" in market or re.search(r"hr", market) is not None
@@ -4023,6 +4023,7 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             )
             pk.point = point
             pk.source_sport = sport
+            pk.sport = sport
             pk.source_game = _source_prop_game(sp)
             pk.features = getattr(sp, "features", {}) or {}
             candidates.append(pk)
@@ -4053,6 +4054,7 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             )
             pk.point = getattr(sp, "point", None)
             pk.source_sport = "MLB"
+            pk.sport = "MLB"
             pk.source_game = _source_prop_game(sp)
             pk.features = dict(getattr(sp, "features", {}) or {})
             pk.features["hr_confidence"] = conf
