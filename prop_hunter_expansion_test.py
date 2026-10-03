@@ -184,8 +184,10 @@ def test_delivery_failure_and_team_identity_guards():
 def test_supabase_select_rows_paginates():
     shared = Path("prop_hunter_shared_utils.py").read_text(encoding="utf-8")
     check('.range(start, end)' in shared, "Supabase reads are not paginated")
-    check('while len(rows) < wanted' in shared, "Supabase pagination loop missing")
-    check('return rows[:wanted]' in shared, "Supabase pagination does not honor requested limit")
+    check('while wanted is None or len(rows) < wanted' in shared, "Supabase pagination loop missing")
+    check('q = q.order(order_by, desc=desc)' in shared, "Supabase pagination lacks deterministic ordering")
+    check('return rows if wanted is None else rows[:wanted]' in shared,
+          "Supabase pagination does not support full reads and requested limits")
 
 def test_telegram_ladder_split_contract():
     core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
