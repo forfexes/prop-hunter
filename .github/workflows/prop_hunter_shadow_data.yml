@@ -12,6 +12,8 @@ name: Prop Hunter Shadow Data
       - 'prop_hunter_oddspapi.py'
       - 'prop_hunter_backfill_gleague.py'
       - 'prop_hunter_backfill_gleague_test.py'
+      - 'prop_hunter_feature_builder.py'
+      - 'prop_hunter_hockey_feature_test.py'
       - '.github/shadow-data-trigger'
 
 permissions:
@@ -40,6 +42,7 @@ jobs:
           python prop_hunter_shadow_leagues_test.py
           python prop_hunter_snapshot_retention_test.py
           python prop_hunter_backfill_gleague_test.py
+          python prop_hunter_hockey_feature_test.py
       - name: Collect shadow league data
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
