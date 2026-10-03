@@ -9,10 +9,12 @@ from datetime import datetime, timezone
 from typing import Any, Iterable
 
 PROFILE_HEADINGS = (
+    ("same_player", "🔥 SAME PLAYER SPECIALS:"),
     ("safe", "🛡️ SAFE SGP:"),
     ("value", "🎯 VALUE SGP:"),
     ("aggressive", "🔥 AGGRESSIVE SGP:"),
     ("longshot", "💣 LONGSHOT SGP:"),
+    ("td_acca", "🏈 TD ACCAS:"),
     ("acca_safe", "🧩 SAFE ACCA:"),
     ("acca_value", "🧩 VALUE ACCA:"),
     ("acca_aggressive", "🔥 AGGRESSIVE ACCA:"),
@@ -43,7 +45,7 @@ def _dedupe_builders(builders: Iterable[Any]):
 
 
 def _builder_sort_key(p: Any):
-    order={"safe":8,"value":7,"acca_safe":6,"acca_value":5,"aggressive":4,"acca_aggressive":3,"longshot":2,"acca_lottery":1,"generic":0}
+    order={"same_player":10,"safe":9,"value":8,"td_acca":7,"acca_safe":6,"acca_value":5,"aggressive":4,"acca_aggressive":3,"longshot":2,"acca_lottery":1,"generic":0}
     try:edge=float(getattr(p,"edge_pct",0) or 0)
     except Exception:edge=0.0
     try:prob=float(getattr(p,"probability",0) or 0)
@@ -62,9 +64,18 @@ def _fmt_stake(v):
     except Exception:return str(v or "0")
 
 
+def _is_td_combo(p: Any) -> bool:
+    legs=[str(x or "").lower() for x in (getattr(p,"legs",None) or []) if str(x or "").strip()]
+    if not legs:return False
+    import re
+    return all(("touchdown" in leg or re.search(r"\btds?\b",leg)) for leg in legs)
+
 def _profile(p: Any) -> str:
     feats=getattr(p,"features",{}) or {};value=str(feats.get("builder_profile") or "").lower()
+    if feats.get("same_player_multistat"):
+        return "same_player"
     if feats.get("combo_scope")=="cross_game":
+        if _is_td_combo(p):return "td_acca"
         return f"acca_{value}" if value in {"safe","value","aggressive","lottery"} else "generic"
     if value in {"safe","value","aggressive","longshot"}:return value
     cat=str(getattr(p,"category","") or "").lower()
