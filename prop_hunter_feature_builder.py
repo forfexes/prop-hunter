@@ -2,7 +2,8 @@ from collections import defaultdict
 from statistics import mean
 from prop_hunter_shared_utils import select_rows, upsert_rows, safe_json_write, log, norm_name, to_float, hash_key, now_iso
 
-OUT="prop_hunter_player_features.json"\nFEATURE_WRITE_BATCH=max(100,int(__import__("os").getenv("PH_FEATURE_WRITE_BATCH","500")) )
+OUT="prop_hunter_player_features.json"
+FEATURE_WRITE_BATCH=max(100,int(__import__("os").getenv("PH_FEATURE_WRITE_BATCH","500")))
 STATS=["points","rebounds","assists","pra","ra","pa","pr","threes_made","double_double","triple_double","hits","doubles","triples","total_bases","home_runs","rbi","runs","stolen_bases","hits_runs_rbis","pitcher_strikeouts","receptions","receiving_yards","receiving_touchdowns","rushing_touchdowns","rushing_yards","passing_yards","passing_touchdowns","touchdowns","anytime_td","two_plus_td","three_plus_td"]
 LINES={"pra":[24.5,29.5,34.5,39.5,44.5],"ra":[9.5,11.5,13.5,15.5,17.5],"pa":[14.5,19.5,24.5,29.5,34.5],"pr":[14.5,19.5,24.5,29.5,34.5],"points":[14.5,19.5,24.5,29.5],"rebounds":[5.5,7.5,9.5,11.5],"assists":[3.5,5.5,7.5,9.5],"threes_made":[0.5,1.5,2.5,3.5],"hits":[0.5,1.5],"doubles":[0.5],"triples":[0.5],"total_bases":[1.5,2.5,3.5],"home_runs":[0.5],"stolen_bases":[0.5],"hits_runs_rbis":[0.5,1.5,2.5,3.5],"pitcher_strikeouts":[3.5,4.5,5.5,6.5,7.5],"receiving_yards":[24.5,39.5,49.5,59.5,69.5],"rushing_yards":[24.5,39.5,49.5,59.5],"passing_yards":[199.5,224.5,249.5,274.5],"receptions":[2.5,3.5,4.5,5.5],"touchdowns":[0.5,1.5,2.5],"receiving_touchdowns":[0.5,1.5],"rushing_touchdowns":[0.5,1.5],"passing_touchdowns":[0.5,1.5,2.5,3.5]}
 
