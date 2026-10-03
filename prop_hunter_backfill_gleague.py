@@ -104,7 +104,7 @@ def _season_basketball(date_text: str) -> str:
 
 def fetch_espn() -> List[Dict[str, Any]]:
     """Fetch G League boxscores from ESPN, newest useful season only."""
-    base = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba-g-league"
+    base = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba-development"
     date_range = os.getenv("PH_GLEAGUE_ESPN_DATES", "20260101-20260415")
     payload = http_json(
         f"{base}/scoreboard",
