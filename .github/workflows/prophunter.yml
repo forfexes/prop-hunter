@@ -175,7 +175,6 @@ jobs:
 
       - name: Results, settlement and CLV
         continue-on-error: true
-        timeout-minutes: 3
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -200,13 +199,23 @@ jobs:
           PH_RESULTS_HTTP_TIMEOUT: '8'
           SETTLE_LOG_LIMIT: '8000'
         run: |
-          for f in prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py prop_hunter_results_euroleague.py; do
-            if [ -f "$f" ]; then python "$f" || echo "$f soft-fail"; fi
-          done
-          python prop_hunter_settler.py || echo "settler soft-fail; card continues"
-          python prop_hunter_settler_extras.py || echo "extra settler soft-fail; card continues"
-          python prophunter_results.py || echo "inline reporter soft-fail; card continues"
-          python prop_hunter_clv_engine.py || echo "CLV soft-fail; card continues"
+          set +e
+          timeout 150s bash -c '
+            for f in prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py prop_hunter_results_euroleague.py; do
+              if [ -f "$f" ]; then python "$f" || echo "$f soft-fail"; fi
+            done
+            python prop_hunter_settler.py || echo "settler soft-fail; card continues"
+            python prop_hunter_settler_extras.py || echo "extra settler soft-fail; card continues"
+            python prophunter_results.py || echo "inline reporter soft-fail; card continues"
+            python prop_hunter_clv_engine.py || echo "CLV soft-fail; card continues"
+          '
+          rc=$?
+          if [ "$rc" -eq 124 ]; then
+            echo "Results/settlement bounded timeout reached; card already posted, continuing to save state"
+          elif [ "$rc" -ne 0 ]; then
+            echo "Results/settlement soft-fail rc=$rc; continuing to save state"
+          fi
+          exit 0
 
       - name: Save card state
         run: |
