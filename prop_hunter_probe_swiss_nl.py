@@ -90,5 +90,23 @@ def main():
             for m in list(re.finditer(pat,js,re.I|re.S))[:8]:
                 print("SIHF_JS_CONTEXT",re.sub(r'\s+',' ',m.group(0))[:850],flush=True)
 
+    export_schedule="https://www.sihf.ch/umbraco/GameCenter/League/ExportSchedule"
+    for season_id in ("2027","2026"):
+        for season_key in ("season","seasonId"):
+            er=session.get(
+                export_schedule,
+                params={"leagueId":"1","regionId":"1","format":"Csv",season_key:season_id},
+                headers={
+                    "Referer":f"{schedule}?season={season_id}",
+                    "HX-Current-URL":f"{schedule}?season={season_id}",
+                    "Accept":"text/csv,*/*",
+                },
+                timeout=20,
+            )
+            body=er.content.decode("utf-8-sig",errors="replace")
+            ids=sorted(set(re.findall(r'(?<!\d)(20\d{12})(?!\d)',body)))
+            print("SIHF_SCHEDULE_EXPORT",season_key,season_id,er.status_code,er.headers.get("content-type"),len(er.content),len(ids),ids[:6],ids[-6:],flush=True)
+            print("SIHF_SCHEDULE_EXPORT_SAMPLE",season_key,season_id," | ".join(body.splitlines()[:6])[:1200],flush=True)
+
 if __name__=="__main__":
     main()
