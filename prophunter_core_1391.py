@@ -2678,7 +2678,17 @@ def build_post(picks):
         head = f"{p.emoji or '🎯'} {team + ' — ' if team else ''}{p.player}"
         line=f"{head}\n   └ {m} @{p.odds:.2f} → {p.stake}u"
         meta=[]
-        if p.edge_pct is not None: meta.append(f"Edge {p.edge_pct:+.1f}%")
+        if p.edge_pct is not None:
+            try:
+                # Core singles store probability edge in percentage points, while
+                # builder-generated verified singles store ROI EV as edge_pct.
+                ev_pct = float(p.ev) * 100 if p.ev is not None else None
+                if ev_pct is not None and abs(float(p.edge_pct) - ev_pct) <= 0.2:
+                    meta.append(f"EV {float(p.edge_pct):+.1f}%")
+                else:
+                    meta.append(f"Edge {float(p.edge_pct):+.1f}pp")
+            except Exception:
+                meta.append(f"Edge {p.edge_pct}")
         if p.probability is not None: meta.append(f"Prob {p.probability*100:.0f}%")
         meta.append(f"Confidence {_confidence_score(p)}/100")
         line += "\n   📈 " + " · ".join(meta)
