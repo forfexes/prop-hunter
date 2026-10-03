@@ -2,6 +2,13 @@ name: Prop Hunter Daily Control
 
 "on":
   workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - '*.py'
+      - 'requirements*.txt'
+      - '.github/workflows/**'
   schedule:
     - cron: '45 4 * * *'
 
