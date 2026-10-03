@@ -49,6 +49,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          ODDSPAPI_KEYS: ${{ secrets.ODDSPAPI_KEYS }}
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           PH_SHADOW_MAX_EVENTS: '3'
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
