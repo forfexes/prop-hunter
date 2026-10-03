@@ -27,7 +27,7 @@ EXPORT=f"{BASE}/umbraco/GameCenter/GameDetail/ExportGamePlayerStats"
 LEAGUE="SWISS_NL"
 SPORT="ICE_HOCKEY"
 KEEP=max(30,min(40,int(os.getenv("PH_SWISS_NL_LAST_N","40"))))
-MAX_GAMES=max(40,min(220,int(os.getenv("PH_SWISS_NL_MAX_GAMES","120"))))
+MAX_GAMES=max(80,min(420,int(os.getenv("PH_SWISS_NL_MAX_GAMES","340"))))
 TIMEOUT=max(5,min(30,int(os.getenv("PH_SWISS_NL_TIMEOUT","15"))))
 COOLDOWN=max(0.02,min(0.5,float(os.getenv("PH_SWISS_NL_COOLDOWN","0.06"))))
 BATCH=max(100,min(1000,int(os.getenv("PH_SWISS_NL_BATCH","500"))))
@@ -105,28 +105,30 @@ def _season(game_id: str, game_date: str | None) -> str:
 
 
 def schedule_game_ids(session: requests.Session) -> List[str]:
-    r=session.get(SCHEDULE,timeout=TIMEOUT)
-    r.raise_for_status()
-    today=datetime.now(timezone.utc).date()
-    pairs=[]
-    # Each public game card contains both data-date and data-game-id. Restrict
-    # initial/history collection to dates before today so live/future games do
-    # not waste four CSV export calls each.
-    pattern=r'class="js-game-item"[^>]*data-date="(20\\d{2}-\\d{2}-\\d{2})"[\\s\\S]{0,1400}?data-game-id="(\\d{14})"'
-    for date_text,gid in re.findall(pattern,r.text,re.I):
-        try:
-            d=datetime.fromisoformat(date_text).date()
-        except Exception:
-            continue
-        if d>=today:
-            continue
-        pairs.append((d,gid))
-    seen=set()
-    out=[]
-    for _date,gid in sorted(pairs,reverse=True):
-        if gid in seen:
-            continue
-        seen.add(gid);out.append(gid)
+    """Return newest Swiss NL game ids from current + previous season pages.
+
+    SIHF game cards always expose canonical /game/<14-digit-id> links. Reading
+    those is more robust than depending on changing card data-* attributes.
+    Completed-vs-live/future is validated later from the game page / CSV export.
+    """
+    now=datetime.now(timezone.utc)
+    current_season=now.year+1 if now.month>=7 else now.year
+    season_ids=(current_season,current_season-1)
+    found=set()
+
+    for season_id in season_ids:
+        url=f"{SCHEDULE}?season={season_id}"
+        r=session.get(url,timeout=TIMEOUT)
+        r.raise_for_status()
+        # Canonical game links used throughout the rendered schedule.
+        found.update(re.findall(r'/de/game-center/game/(\\d{14})(?:["\'/?#]|$)',r.text,re.I))
+        # Fallback for HTMX/compact cards where the id only appears in attrs.
+        found.update(re.findall(r'(?<!\\d)(20\\d{12})(?!\\d)',r.text))
+
+    # Swiss game ids start with the season end year and monotonically increase
+    # within a competition, so descending lexical order is newest-first.
+    out=sorted(found,reverse=True)
+    log(f"Swiss NL schedule discovery seasons={season_ids} found={len(out)}")
     return out[:MAX_GAMES]
 
 
