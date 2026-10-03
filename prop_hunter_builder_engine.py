@@ -134,6 +134,36 @@ def _is_hr(obj: Any) -> bool:
     return "home run" in market or bool(re.search(r"\bhr\b", market))
 
 
+def _plausible_ladder_line(obj: Any) -> bool:
+    """Reject feed-misaligned alternate lines before ladder construction."""
+    point = _point(obj)
+    if point is None or point < 0:
+        return False
+    market = _base_market(getattr(obj, "market", ""))
+    caps = (
+        (("passing yards",), 450.5),
+        (("rushing yards", "receiving yards"), 200.5),
+        (("receptions",), 15.5),
+        (("passing touchdowns",), 5.5),
+        (("rushing touchdowns", "receiving touchdowns", "touchdowns"), 3.5),
+        (("shots on goal",), 12.5),
+        (("goalie saves",), 60.5),
+        (("home run",), 2.5),
+        (("hits",), 4.5),
+        (("total bases",), 10.5),
+        (("rbi",), 6.5),
+        (("pitcher strikeouts",), 15.5),
+        (("rebounds",), 30.5),
+        (("assists",), 25.5),
+        (("three pointers", "threes"), 15.5),
+        (("points",), 65.5),
+    )
+    for needles, cap in caps:
+        if any(n in market for n in needles):
+            return point <= cap
+    return point <= 500.5
+
+
 def _candidate_probability(obj: Any) -> Optional[float]:
     """Return a conservative calibrated probability for a real bookmaker row."""
     odds = _odds(obj)
@@ -320,7 +350,7 @@ def _display_line(base: str, direction: str, point: float, original_market: str 
 
 def _ladder_leg_candidate(prop: Any) -> Optional[Dict[str, Any]]:
     """Validate one independently observed alternate line as its own +EV leg."""
-    if not _real_price(prop):
+    if not _real_price(prop) or not _plausible_ladder_line(prop):
         return None
     point, odds = _point(prop), _odds(prop)
     if point is None or odds <= 1.01:
