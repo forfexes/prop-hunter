@@ -94,7 +94,7 @@ def _builder_block(builders: Iterable[Any]) -> str:
                 try:meta.append(f"Prob {float(prob)*100:.1f}%")
                 except Exception:pass
             if edge is not None:
-                try:meta.append(f"Edge {float(edge):+.1f}%")
+                try:meta.append(f"EV {float(edge):+.1f}%")
                 except Exception:pass
             if meta:out.append("  📈 "+" · ".join(meta))
             if feats.get("combo_scope")=="cross_game":out.append("  🌐 Cross-Game · gleiche Sportsbook-Quelle")
