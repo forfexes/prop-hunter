@@ -205,7 +205,15 @@ def _candidate_from_prop(prop: Any, PickCls: Any) -> Optional[Any]:
     if point is not None and not _is_hr(prop):
         market = f"{market} {direction.title()} {point:g}"
     elif _is_hr(prop):
-        market = "Home Run"
+        if point is not None and float(point) > 0.5:
+            frac = abs(float(point) - math.floor(float(point)))
+            market = (
+                f"{int(math.floor(float(point)) + 1)}+ Home Runs"
+                if abs(frac - 0.5) < 1e-9
+                else f"Home Runs {direction.title()} {float(point):g}"
+            )
+        else:
+            market = "Home Run"
 
     features = dict(_features(prop))
     features["odds_observed"] = True
