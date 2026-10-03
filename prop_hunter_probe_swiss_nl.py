@@ -70,5 +70,19 @@ def main():
             if len(seen)>=12:
                 break
 
+    scripts=[urljoin(schedule,x) for x in re.findall(r'<script[^>]+src=["\']([^"\']+\.js[^"\']*)',sr.text,re.I)]
+    print("SIHF_SCRIPT_COUNT",len(scripts),flush=True)
+    for script_url in scripts:
+        try:
+            js=session.get(script_url,timeout=20).text
+        except Exception:
+            continue
+        if "season-changed" not in js and "seasonId" not in js and "data-season-id" not in js:
+            continue
+        print("SIHF_SCRIPT_MATCH",script_url,len(js),flush=True)
+        for pat in (r'.{0,300}season-changed.{0,500}',r'.{0,300}data-season-id.{0,500}',r'.{0,300}seasonId.{0,500}'):
+            for m in list(re.finditer(pat,js,re.I|re.S))[:8]:
+                print("SIHF_JS_CONTEXT",re.sub(r'\s+',' ',m.group(0))[:850],flush=True)
+
 if __name__=="__main__":
     main()
