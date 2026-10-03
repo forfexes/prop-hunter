@@ -1,0 +1,46 @@
+name: Prop Hunter 365d Backfill
+
+"on":
+  push:
+    paths:
+      - ".github/backfill-trigger"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prop-hunter-365d-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements_results.txt
+      - name: Install
+        run: pip install -r requirements_results.txt
+      - name: Compile and regression
+        run: |
+          python -m py_compile prop_hunter_backfill_365.py prop_hunter_shared_utils.py prop_hunter_feature_builder.py
+          python prop_hunter_expansion_test.py
+      - name: Backfill 365 days
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PH_BACKFILL_DAYS: "365"
+          PH_BACKFILL_SPORTS: "MLB,NBA,WNBA,NFL,NHL"
+          PH_BACKFILL_FLUSH_ROWS: "1000"
+          HTTP_TIMEOUT: "12"
+        run: python prop_hunter_backfill_365.py
+      - name: Rebuild player features
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python prop_hunter_feature_builder.py
