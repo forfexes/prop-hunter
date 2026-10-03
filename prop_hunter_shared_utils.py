@@ -218,31 +218,44 @@ def upsert_rows(table: str, rows: List[Dict[str, Any]], conflict: Optional[str] 
             return
     warn(f"{table}: too many schema mismatches; skipped batch")
 
-def select_rows(table: str, limit: int = 1000, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-    """Read up to limit rows, paging around PostgREST per-request row caps."""
+def select_rows(
+    table: str,
+    limit: Optional[int] = 1000,
+    filters: Optional[Dict[str, Any]] = None,
+    order_by: Optional[str] = None,
+    desc: bool = False,
+) -> List[Dict[str, Any]]:
+    """Read rows with stable paging around PostgREST per-request row caps.
+
+    limit=None reads until the final short page. For multi-page reads, pass a
+    deterministic order_by column (normally a unique id) so inserts/updates
+    cannot reshuffle pages and create duplicate/missing rows.
+    """
     sb = supabase_client()
     if sb is None:
         return []
-    wanted = max(0, int(limit or 0))
+    wanted = None if limit is None else max(0, int(limit))
     if wanted == 0:
         return []
-    page_size = min(1000, wanted)
+    page_size = 1000 if wanted is None else min(1000, wanted)
     rows: List[Dict[str, Any]] = []
     start = 0
     try:
-        while len(rows) < wanted:
-            size = min(page_size, wanted - len(rows))
+        while wanted is None or len(rows) < wanted:
+            size = page_size if wanted is None else min(page_size, wanted - len(rows))
             end = start + size - 1
-            q = sb.table(table).select("*").range(start, end)
+            q = sb.table(table).select("*")
             for k, v in (filters or {}).items():
                 q = q.eq(k, v)
-            res = q.execute()
+            if order_by:
+                q = q.order(order_by, desc=desc)
+            res = q.range(start, end).execute()
             batch = res.data or []
             rows.extend(batch)
             if len(batch) < size:
                 break
             start = end + 1
-        return rows[:wanted]
+        return rows if wanted is None else rows[:wanted]
     except Exception as e:
         warn(f"{table} select failed after {len(rows)} rows: {e}")
         return rows
