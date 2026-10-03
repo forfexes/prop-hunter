@@ -55,5 +55,20 @@ def main():
         print("SIHF_GAMEDAYS_ATTRS",season_id,attrs[:30],flush=True)
 
 
+    for pattern in (
+        r'.{0,250}season-changed.{0,450}',
+        r'.{0,250}data-season-id.{0,450}',
+        r'.{0,250}/umbraco/[^"' ]+.{0,300}',
+        r'.{0,250}seasonId.{0,450}',
+    ):
+        seen=set()
+        for m in re.finditer(pattern,sr.text,re.I|re.S):
+            snippet=re.sub(r'\s+',' ',m.group(0))[:700]
+            if snippet not in seen:
+                seen.add(snippet)
+                print("SIHF_ENDPOINT_CONTEXT",snippet,flush=True)
+            if len(seen)>=12:
+                break
+
 if __name__=="__main__":
     main()
