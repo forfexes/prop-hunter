@@ -142,8 +142,14 @@ def test_keyless_extension_and_card_formatter():
         features={"builder_profile":"safe","same_player_multistat":True,"builder_odds_estimated_from_legs":True})
     base=lambda picks:"🎯 PROP HUNTER\n\n🎯 BET BUILDER:\n• old @2.05 → 0.25u\n\n📊 Mehr Value Picks\n@prophunter"
     text=install_formatter(base)([p])
-    check("🛡️ SAFE SGP:" in text and "Same-Player" in text, "profile card formatter missing")
+    check("🔥 SAME PLAYER SPECIALS:" in text and "Same-Player" in text, "same-player card category missing")
     check("finale Book-Quote bestätigen" in text, "derived SGP quote disclosure missing")
+
+    td=P(type="betbuilder", market="2-Leg SAFE ACCA", odds=4.2, stake=.1, probability=.31, edge_pct=8.0,
+        legs=["Josh Allen Anytime TD @2.10","Jalen Hurts Anytime TD @2.00"],
+        features={"builder_profile":"safe","combo_scope":"cross_game","acca_odds_estimated_from_legs":True})
+    td_text=install_formatter(base)([td])
+    check("🏈 TD ACCAS:" in td_text, "TD ACCA category missing")
 
     dup=P(type="betbuilder", market="4-Leg SAFE SGP", odds=2.05, stake=.25, probability=.52, edge_pct=6.6,
         legs=list(p.legs), features=dict(p.features))
@@ -186,6 +192,14 @@ def test_telegram_ladder_split_contract():
           "ladder cards are not scoped to one combo")
     check('_LAST_TELEGRAM_CARDS' in hardened and '"card_kind": sent.get("kind") or "main"' in hardened,
           "split Telegram cards are not persisted for settlement")
+    check('getattr(leg,"probability",None)' in core and 'getattr(leg,"edge_pct",None)' in core,
+          "ladder rungs do not display their own probability/edge")
+    check("PROP HUNTER TD LADDER" in core and "PROP HUNTER PLAYER LADDER" in core,
+          "player/TD ladder card labels missing")
+    check("_next_real_line" not in core and "alt_odds = round" not in core,
+          "legacy synthetic ladder generator still present")
+    check('PH_MAX_HR_SINGLES", "0"' in core,
+          "global HR cap default is not disabled")
 
 
 def test_builder_persistence_and_learning_loop():
