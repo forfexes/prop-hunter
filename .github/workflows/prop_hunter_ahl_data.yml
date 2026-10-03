@@ -1,0 +1,53 @@
+name: Prop Hunter AHL Data
+
+"on":
+  workflow_dispatch: {}
+  schedule:
+    - cron: '5 6 * * *'
+  push:
+    paths:
+      - 'prop_hunter_backfill_ahl.py'
+      - 'prop_hunter_backfill_ahl_test.py'
+      - 'prop_hunter_feature_builder.py'
+      - 'prop_hunter_hockey_feature_test.py'
+      - '.github/ahl-data-trigger'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prop-hunter-ahl-data
+  cancel-in-progress: true
+
+jobs:
+  ahl-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements_results.txt
+      - name: Install
+        run: pip install -r requirements_results.txt
+      - name: Regression
+        run: |
+          python -m py_compile prop_hunter_backfill_ahl.py prop_hunter_gamelog_retention.py prop_hunter_feature_builder.py
+          python prop_hunter_backfill_ahl_test.py
+          python prop_hunter_hockey_feature_test.py
+      - name: Backfill AHL and rebuild features
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PH_AHL_LAST_N: '40'
+          PH_AHL_PROFILE_LIMIT: '250'
+          PH_AHL_COOLDOWN: '0.52'
+          PH_AHL_TIMEOUT: '10'
+          PH_GAMELOG_KEEP_PER_PLAYER: '40'
+          PH_FEATURE_WRITE_BATCH: '400'
+        run: |
+          python prop_hunter_backfill_ahl.py
+          python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_feature_builder.py
