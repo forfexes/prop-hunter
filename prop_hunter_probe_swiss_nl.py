@@ -58,7 +58,7 @@ def main():
     for pattern in (
         r'.{0,250}season-changed.{0,450}',
         r'.{0,250}data-season-id.{0,450}',
-        r'.{0,250}/umbraco/[^"' ]+.{0,300}',
+        r".{0,250}/umbraco/[^\"' ]+.{0,300}",
         r'.{0,250}seasonId.{0,450}',
     ):
         seen=set()
