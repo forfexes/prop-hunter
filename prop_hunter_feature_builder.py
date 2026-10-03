@@ -68,6 +68,10 @@ def main():
                     h=hit(sub,st,line)
                     if h is not None: feat[f"last_{n}"][f"{st}_over_{str(line).replace('.','_')}_hit_rate"]=h
         rows.append({"feature_id":hash_key(sport,league,nk),"sport":sport,"league":league,"player_name":items[0].get("player_name"),"normalized_name":nk,"games_total":len(items),"features":feat,"updated_at":now_iso()})
-    safe_json_write(OUT,rows); upsert_rows("prop_hunter_player_features",rows,"feature_id")
+    safe_json_write(OUT,rows)
+    for start in range(0,len(rows),FEATURE_WRITE_BATCH):
+        batch=rows[start:start+FEATURE_WRITE_BATCH]
+        upsert_rows("prop_hunter_player_features",batch,"feature_id")
+        log(f"feature builder saved batch={start//FEATURE_WRITE_BATCH+1} rows={len(batch)} progress={min(start+len(batch),len(rows))}/{len(rows)}")
     log(f"feature builder done players={len(rows)}")
 if __name__=="__main__": main()
