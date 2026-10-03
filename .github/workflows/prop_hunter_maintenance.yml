@@ -61,6 +61,7 @@ jobs:
           PH_BROWSER_ENABLED: '0'
           PH_FAST_BROWSER_JOBS: '0'
           PH_SKIP_BLOCKED_FREE: '1'
+          ODDSPAPI_KEYS: ${{ secrets.ODDSPAPI_KEYS }}
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
