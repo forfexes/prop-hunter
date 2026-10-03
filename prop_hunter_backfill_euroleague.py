@@ -17,6 +17,7 @@ import requests
 from prop_hunter_shared_utils import log, norm_name, select_rows, to_float, upsert_rows
 
 BASE = "https://api-live.euroleague.net/v2/competitions/E/seasons"
+MIRROR_BASE = "https://feeds.incrowdsports.com/provider/euroleague-feeds/v2/competitions/E/seasons"
 LEAGUE = "EUROLEAGUE"
 SPORT = "BASKETBALL"
 KEEP = max(30, min(40, int(os.getenv("PH_EUROLEAGUE_LAST_N", "40"))))
@@ -38,17 +39,35 @@ def _season_codes() -> List[str]:
     return [f"E{current}", f"E{current-1}"]
 
 
-def _get(url: str, params: Dict[str, Any] | None = None) -> Any:
+def _request_json(url: str, params: Dict[str, Any] | None = None) -> tuple[Any, int]:
     try:
         r = requests.get(url, params=params or {}, headers=HEADERS, timeout=TIMEOUT)
-        if r.status_code in {401, 403, 404, 429}:
-            log(f"EuroLeague HTTP {r.status_code} {url}")
-            return None
+        status = int(r.status_code)
+        if status in {401, 403, 404, 429}:
+            return None, status
         r.raise_for_status()
-        return r.json()
+        return r.json(), status
     except Exception as exc:
         log(f"EuroLeague request failed {url}: {type(exc).__name__}: {exc}")
+        return None, 0
+
+
+def _get(url: str, params: Dict[str, Any] | None = None) -> Any:
+    data, status = _request_json(url, params)
+    if data is not None:
+        return data
+    if status == 429 and url.startswith(BASE):
+        mirror = url.replace(BASE, MIRROR_BASE, 1)
+        time.sleep(0.35)
+        data2, status2 = _request_json(mirror, params)
+        if data2 is not None:
+            log(f"EuroLeague mirror fallback OK {mirror}")
+            return data2
+        log(f"EuroLeague mirror HTTP {status2} {mirror}")
         return None
+    if status:
+        log(f"EuroLeague HTTP {status} {url}")
+    return None
 
 
 def existing_rows() -> List[Dict[str, Any]]:
@@ -224,15 +243,21 @@ def main() -> None:
     games = games[:cap]
 
     counts: Counter = Counter()
+    existing_games = {str(r.get("game_id") or "") for r in existing if r.get("game_id")}
     if full_mode:
         for row in existing:
             nk = str(row.get("normalized_name") or "").strip()
             if nk:
                 counts[nk] += 1
 
+    before_skip = len(games)
+    games = [
+        (season, game) for season, game in games
+        if str(game.get("identifier") or f"{season}_{game.get('gameCode')}") not in existing_games
+    ]
     log(
         f"EuroLeague backfill mode={'full' if full_mode else 'incremental'} "
-        f"existing={len(existing)} seasons={seasons} events={len(games)} cap={cap}"
+        f"existing={len(existing)} seasons={seasons} events={len(games)}/{before_skip} cap={cap}"
     )
 
     pending: List[Dict[str, Any]] = []
