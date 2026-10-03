@@ -43,6 +43,8 @@ PREPARED_TARGETS: Dict[str, Tuple[Tuple[str, ...], Tuple[str, ...]]] = {
     "icehockey_shl": (("ice hockey", "icehockey", "hockey"), ("shl", "swedish hockey league")),
     "icehockey_liiga": (("ice hockey", "icehockey", "hockey"), ("liiga",)),
     "icehockey_del": (("ice hockey", "icehockey", "hockey"), ("del", "deutsche eishockey liga")),
+    "basketball_g_league": (("basketball",), ("nba g league", "g league")),
+    "americanfootball_cfl": (("american football", "americanfootball", "gridiron"), ("cfl", "canadian football league")),
 }
 SPORT_LABELS = {
     "baseball_mlb": "MLB",
@@ -58,6 +60,8 @@ SPORT_LABELS = {
     "icehockey_shl": "SHL",
     "icehockey_liiga": "LIIGA",
     "icehockey_del": "DEL",
+    "basketball_g_league": "NBA_G_LEAGUE",
+    "americanfootball_cfl": "CFL",
 }
 
 _PREFERRED_BOOKS = [
