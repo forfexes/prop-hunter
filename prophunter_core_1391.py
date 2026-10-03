@@ -2448,7 +2448,7 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
 # AI PROMPT + VALIDATOR
 # ─────────────────────────────────────────────
 SYSTEM="""Du bist der SHARPSTE deutsche Sports-Betting-Analyst.
-Inspiriert von Basket Premium (82.5% WR Nov), Basket Blitz VIP, JK (300u+).
+Fokussiere auf verifizierte +EV Player-Props, echte Bookmaker-Quoten und robuste Daten.
 MUSST ausschliesslich gueltiges JSON Array zurueckgeben. Keine Code-Fences, kein Text.
 
 DATENINTERPRETATION:
@@ -2762,22 +2762,30 @@ def _strip_ladder_section(text):
     return "\n".join(out).strip()
 
 def _render_ladder_card(p):
-    """One Telegram message per ladder, preserving every observed rung/price."""
+    """One Telegram message per ladder; every rung keeps its own real line/price/prob/edge."""
     today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
     team=_safe_display_team(p)
     head=f"{getattr(p,'emoji',None) or '🎯'} {team + ' — ' if team else ''}{getattr(p,'player','') or ''}".rstrip()
-    out=[f"🪜 PROP HUNTER LADDER — {today}","",head]
+    legs=list(getattr(p,"picks",None) or [])
+    ladder_text=" ".join(str(getattr(x,"market","") or "") for x in legs).lower()
+    title="🏈 PROP HUNTER TD LADDER" if ("touchdown" in ladder_text or re.search(r"\btd\b",ladder_text)) else "🪜 PROP HUNTER PLAYER LADDER"
+    out=[f"{title} — {today}","",head]
     game=str(getattr(p,"game",None) or "").strip()
     if game and game.lower()!="verified ladder":out.append(f"🏟 {game}")
     out.append("")
-    for leg in (getattr(p,"picks",None) or []):
-        out.append(f"• {leg.market} @{float(leg.odds):.2f} → {leg.stake}u")
-    prob=getattr(p,"probability",None)
-    if prob is not None:
-        try:out+=["",f"📈 Prob {float(prob)*100:.0f}%"]
-        except Exception:pass
-    analysis=str(getattr(p,"analysis",None) or "").strip()
-    if analysis:out.append(f"💡 {analysis}")
+    for leg in legs:
+        line=f"• {leg.market} @{float(leg.odds):.2f} → {leg.stake}u"
+        meta=[]
+        prob=getattr(leg,"probability",None)
+        edge=getattr(leg,"edge_pct",None)
+        if prob is not None:
+            try:meta.append(f"Prob {float(prob)*100:.0f}%")
+            except Exception:pass
+        if edge is not None:
+            try:meta.append(f"Edge {float(edge):+.1f}%")
+            except Exception:pass
+        out.append(line)
+        if meta:out.append("  📈 "+" · ".join(meta))
     out+=["","@prophunter"]
     return "\n".join(out)
 
@@ -4351,53 +4359,10 @@ def build_jk_extras(picks):
                 extras.append(pk)
                 log.info("Verified Double gebaut @ %.2f", odds)
         except Exception as e:
-            log.warning("jk double: %s", e)
+            log.warning("legacy double skipped: %s", e)
 
-    # ── LADDER: gestaffelte Alt-Linien desselben Spielers ──
-    # Nimmt den sichersten Single und baut eine höhere Alt-Linie (value) dazu.
-    if not has_ladder and by_prob:
-        try:
-            anchor = by_prob[0]
-            point = getattr(anchor, "point", None)
-            if point is not None and anchor.market and float(anchor.odds) < 2.2:
-                base_market = re.sub(r'(over|under)\s+[\d\.]+', '', (anchor.market or ''), flags=re.I).strip()
-                mkt_l = (anchor.market or "").lower()
-                # ECHTE nächste Wettlinie bestimmen (Sportsbooks bieten nur bestimmte Linien an)
-                def _next_real_line(pt, market_lower):
-                    # Low-count Märkte (Hits, HR, RBI, Stolen Bases, Threes): Schritt +1.0
-                    if any(k in market_lower for k in ("hit","home run","hr","rbi","stolen","3-pt","three","walk","double")):
-                        return pt + 1.0
-                    if "strikeout" in market_lower or "pitcher k" in market_lower:
-                        return pt + 1.5
-                    # Points/Rebounds/Assists/Kombis: sinnvolle Sprünge
-                    if pt < 5:   return pt + 2.0
-                    if pt < 15:  return pt + 3.0
-                    if pt < 25:  return pt + 4.0
-                    return pt + 5.0
-                alt_point = _next_real_line(point, mkt_l)
-                # Auf .5 normalisieren (echte Linien enden auf .5)
-                alt_point = round(alt_point * 2) / 2
-                if alt_point == point:
-                    alt_point = point + 1.0
-                # Quote grob: pro zusätzlicher Einheit ~2.5x, gedeckelt
-                steps = max(1.0, alt_point - point)
-                alt_odds = round(min(8.0, max(2.2, float(anchor.odds) * (1.8 + steps * 0.8))), 2)
-                safe_leg = LadderLeg(market=anchor.market, odds=float(anchor.odds), stake=0.75)
-                value_leg = LadderLeg(
-                    market=f"{base_market} Over {alt_point:g}".strip(),
-                    odds=alt_odds, stake=0.25)
-                pk = Pick(type="ladder", category="ladder",
-                    player=anchor.player, emoji=anchor.emoji or "🎯",
-                    team=anchor.team or "", market=f"{base_market} Ladder",
-                    direction="over", odds=float(anchor.odds), stake=1.0,
-                    probability=anchor.probability, edge_pct=0, ev=0,
-                    game="Verified Ladder",
-                    analysis="Gestaffelt: sichere Linie 0.75u + Value-Linie 0.25u (Verified).")
-                pk.picks = [safe_leg, value_leg]
-                extras.append(pk)
-                log.info("Verified Ladder gebaut: %s (%.1f→%.1f)", anchor.player, point, alt_point)
-        except Exception as e:
-            log.warning("jk ladder: %s", e)
+    # Ladders are created only by prop_hunter_builder_engine from independently
+    # observed same-book alternate lines. Never derive a missing rung or price here.
 
     # ── LOTTERY: HR 3-2-1 bevorzugt, sonst Probability-Lottery ──
     hr_extras = build_hr_321(picks)
