@@ -2736,27 +2736,108 @@ def build_post(picks):
 # ─────────────────────────────────────────────
 # TELEGRAM
 # ─────────────────────────────────────────────
-def send_telegram(text,dry_run=False):
-    """Send the card and return Telegram message_id for in-place settlement edits."""
+_LAST_TELEGRAM_CARDS = []
+
+def _strip_ladder_section(text):
+    """Remove the legacy combined LADDERS section from the main Telegram card."""
+    lines=str(text or "").splitlines()
+    try:start=next(i for i,line in enumerate(lines) if line.strip()=="🪜 LADDERS:")
+    except StopIteration:return str(text or "")
+    next_headings={
+        "🎯 BET BUILDER:","🛡️ SAFE SGP:","🎯 VALUE SGP:","🔥 AGGRESSIVE SGP:",
+        "💣 LONGSHOT SGP:","🧩 SAFE ACCA:","🧩 VALUE ACCA:","🔥 AGGRESSIVE ACCA:",
+        "💣 LOTTERY ACCA:","🔥 2-LEG KOMBIS:","🔥 3-LEG TRIPLES:","💣 LOTTERY BIGS:",
+        "📊 Mehr Value Picks · Keine negative Edge · Lines Pflicht 🎯",
+    }
+    end=len(lines)
+    for i in range(start+1,len(lines)):
+        if lines[i].strip() in next_headings:
+            end=i;break
+    kept=lines[:start]+lines[end:]
+    while kept and not kept[-1].strip():kept.pop()
+    out=[]
+    for line in kept:
+        if not line.strip() and out and not out[-1].strip():continue
+        out.append(line)
+    return "\n".join(out).strip()
+
+def _render_ladder_card(p):
+    """One Telegram message per ladder, preserving every observed rung/price."""
+    today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
+    team=_safe_display_team(p)
+    head=f"{getattr(p,'emoji',None) or '🎯'} {team + ' — ' if team else ''}{getattr(p,'player','') or ''}".rstrip()
+    out=[f"🪜 PROP HUNTER LADDER — {today}","",head]
+    game=str(getattr(p,"game",None) or "").strip()
+    if game and game.lower()!="verified ladder":out.append(f"🏟 {game}")
+    out.append("")
+    for leg in (getattr(p,"picks",None) or []):
+        out.append(f"• {leg.market} @{float(leg.odds):.2f} → {leg.stake}u")
+    prob=getattr(p,"probability",None)
+    if prob is not None:
+        try:out+=["",f"📈 Prob {float(prob)*100:.0f}%"]
+        except Exception:pass
+    analysis=str(getattr(p,"analysis",None) or "").strip()
+    if analysis:out.append(f"💡 {analysis}")
+    out+=["","@prophunter"]
+    return "\n".join(out)
+
+def _telegram_payloads(text,picks=None):
+    """Split ladders into their own Telegram windows without losing settlement scope."""
+    all_picks=list(picks or [])
+    combos=[p for p in all_picks if getattr(p,"type",None) in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")]
+    ladder_items=[(idx,p) for idx,p in enumerate(combos) if getattr(p,"type",None)=="ladder"]
+    if not ladder_items:
+        return [{"kind":"main","text":str(text or ""),"combo_indices":list(range(len(combos))),"include_singles":True}]
+    ladder_indices={idx for idx,_ in ladder_items}
+    main_text=_strip_ladder_section(text)
+    payloads=[{
+        "kind":"main","text":main_text,
+        "combo_indices":[i for i in range(len(combos)) if i not in ladder_indices],
+        "include_singles":True,
+    }]
+    for idx,p in ladder_items:
+        payloads.append({
+            "kind":"ladder","text":_render_ladder_card(p),
+            "combo_indices":[idx],"include_singles":False,
+        })
+    return [x for x in payloads if str(x.get("text") or "").strip()]
+
+def send_telegram(text,dry_run=False,picks=None):
+    """Send the main card plus one separate Telegram window per ladder."""
+    global _LAST_TELEGRAM_CARDS
+    payloads=_telegram_payloads(text,picks)
+    _LAST_TELEGRAM_CARDS=[]
     if dry_run:
-        log.info("DRY-RUN Telegram (%d chars)",len(text))
+        log.info("DRY-RUN Telegram: %d messages (%s)",len(payloads),", ".join(x.get("kind","?") for x in payloads))
         return 0
     if not TG_TOKEN or not TG_CHAT:
         log.warning("Telegram not configured")
         return None
-    try:
-        r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
-            json={"chat_id":TG_CHAT,"text":text,"disable_web_page_preview":True},timeout=TIMEOUT)
-        if r.status_code==200:
-            data = r.json() if r.content else {}
-            mid = ((data.get("result") or {}).get("message_id"))
-            log.info("Telegram OK message_id=%s", mid)
-            return int(mid) if mid is not None else None
-        log.error("Telegram %d: %s",r.status_code,r.text[:160])
-        return None
-    except Exception as e:
-        log.error("Telegram: %s",e)
-        return None
+    sent=[]
+    for payload in payloads:
+        body=str(payload.get("text") or "")
+        if len(body)>4096:
+            log.error("Telegram payload too long kind=%s chars=%d",payload.get("kind"),len(body))
+            return None
+        try:
+            r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
+                json={"chat_id":TG_CHAT,"text":body,"disable_web_page_preview":True},timeout=TIMEOUT)
+            if r.status_code!=200:
+                log.error("Telegram %d kind=%s: %s",r.status_code,payload.get("kind"),r.text[:160])
+                return None
+            data=r.json() if r.content else {}
+            mid=((data.get("result") or {}).get("message_id"))
+            if mid is None:
+                log.error("Telegram returned no message_id kind=%s",payload.get("kind"))
+                return None
+            item=dict(payload);item["message_id"]=int(mid);sent.append(item)
+        except Exception as e:
+            log.error("Telegram kind=%s: %s",payload.get("kind"),e)
+            return None
+    _LAST_TELEGRAM_CARDS=sent
+    first=sent[0]["message_id"] if sent else None
+    log.info("Telegram OK message_id=%s messages=%d ids=%s",first,len(sent),[x["message_id"] for x in sent])
+    return first
 
 
 # ─────────────────────────────────────────────
@@ -4387,7 +4468,7 @@ def run(dry_run=False,sport_filter=None):
         log.warning("verified builder skipped: %s", exc)
     body=build_post(picks)
     print("\n"+body+"\n")
-    telegram_message_id = send_telegram(body,dry_run=dry_run)
+    telegram_message_id = send_telegram(body,dry_run=dry_run,picks=picks)
     if not dry_run:
         if not telegram_message_id:
             # Never let GitHub report a green card run when Telegram delivery failed.
@@ -4395,7 +4476,10 @@ def run(dry_run=False,sport_filter=None):
             # them from the next successful run.
             log.error("card delivery failed — Telegram returned no message_id; picks NOT persisted")
             raise RuntimeError("PROP HUNTER Telegram delivery failed")
-        persist(picks, telegram_message_id=telegram_message_id, telegram_text=body)
+        primary_text=body
+        if _LAST_TELEGRAM_CARDS:
+            primary_text=str(_LAST_TELEGRAM_CARDS[0].get("text") or body)
+        persist(picks, telegram_message_id=telegram_message_id, telegram_text=primary_text)
     log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
 
 
