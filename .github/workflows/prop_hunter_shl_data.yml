@@ -1,0 +1,53 @@
+name: Prop Hunter SHL Data
+
+"on":
+  workflow_dispatch: {}
+  schedule:
+    - cron: '5 7 * * *'
+  push:
+    paths:
+      - 'prop_hunter_backfill_shl.py'
+      - 'prop_hunter_backfill_shl_test.py'
+      - '.github/shl-data-trigger'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prop-hunter-shl-data
+  cancel-in-progress: true
+
+jobs:
+  shl-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements_results.txt
+      - name: Install
+        run: |
+          pip install -r requirements_results.txt
+          pip install pdfplumber
+      - name: Regression
+        run: |
+          python -m py_compile prop_hunter_backfill_shl.py prop_hunter_gamelog_retention.py prop_hunter_feature_builder.py
+          python prop_hunter_backfill_shl_test.py
+          python prop_hunter_hockey_feature_test.py
+      - name: Backfill SHL and rebuild features
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PH_SHL_LAST_N: '40'
+          PH_SHL_MAX_EVENTS: '320'
+          PH_SHL_INCREMENTAL_DAYS: '7'
+          PH_SHL_INCREMENTAL_MAX_EVENTS: '50'
+          PH_GAMELOG_KEEP_PER_PLAYER: '40'
+          PH_FEATURE_WRITE_BATCH: '400'
+        run: |
+          python prop_hunter_backfill_shl.py
+          python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_feature_builder.py
