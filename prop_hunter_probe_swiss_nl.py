@@ -21,5 +21,26 @@ def main():
     for m in re.finditer(r'.{0,180}CSV.{0,220}',r.text,re.I|re.S):
         print("SIHF_CSV_CONTEXT",re.sub(r'\s+',' ',m.group(0))[:450],flush=True)
 
+    base="https://www.sihf.ch/umbraco/GameCenter/GameDetail/ExportGamePlayerStats"
+    for alias in ("gamePlayerStatsHome","gamePlayerStatsAway","gameGoalieStatsHome","gameGoalieStatsAway"):
+        x=requests.get(base,params={"gameId":GAME_ID,"format":"Csv","alias":alias},headers=HEADERS,timeout=20)
+        print("SIHF_EXPORT",alias,x.status_code,x.headers.get("content-type"),len(x.content),flush=True)
+        text=x.content.decode("utf-8-sig",errors="replace")
+        print("SIHF_EXPORT_BEGIN",alias,flush=True)
+        print("\n".join(text.splitlines()[:12]),flush=True)
+        print("SIHF_EXPORT_END",alias,flush=True)
+
+    schedule="https://www.sihf.ch/de/game-center/liga/spielplan/1-1"
+    sr=requests.get(schedule,headers=HEADERS,timeout=20)
+    print("SIHF_SCHEDULE",sr.status_code,len(sr.text),sr.url,flush=True)
+    sr.raise_for_status()
+    shrefs=re.findall(r'href=["\']([^"\']+)["\']',sr.text,re.I)
+    game_links=[urljoin(schedule,h) for h in shrefs if re.search(r'/game(?:/|$)|spielerstatistik',h,re.I)]
+    print("SIHF_SCHEDULE_GAME_LINKS",len(game_links),flush=True)
+    for x in game_links[:80]:
+        print("SIHF_GAME_LINK",x,flush=True)
+    for m in re.finditer(r'.{0,200}(?:season|saison).{0,300}',sr.text,re.I|re.S):
+        print("SIHF_SEASON_CONTEXT",re.sub(r'\s+',' ',m.group(0))[:520],flush=True)
+
 if __name__=="__main__":
     main()
