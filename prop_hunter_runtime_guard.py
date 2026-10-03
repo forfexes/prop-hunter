@@ -123,6 +123,8 @@ def safety_checks():
     core_text=Path("prophunter_core_1391.py").read_text(encoding="utf-8")
     for token in ('return "receptions"','return "receiving_yards"','return "rushing_yards"','return "passing_yards"','return "shots_on_goal"','return "goalie_saves"'):
         if token not in core_text: fail(f"gamelog ladder stat mapping missing: {token}")
+    for token in ('market = str(r.get("market_key") or r.get("market") or "").strip()','direction = str(r.get("direction") or "").strip().lower()','if market == "passing_rushing_yards": continue','direction=direction'):
+        if token not in core_text: fail(f"snapshot prop safety missing: {token}")
     nfl_easy=ph.Prop(player="Josh Downs",market="Receptions",odds=1.70,point=2.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.75,"gamelog_n":10})
     nfl_hard=ph.Prop(player="Josh Downs",market="Receptions",odds=2.10,point=3.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.55,"gamelog_n":10})
     nfl_ladders=[x for x in build_autonomous_extras([], [nfl_easy,nfl_hard],ph.Pick,ph.LadderLeg) if x.type=="ladder"]
