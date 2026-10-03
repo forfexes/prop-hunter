@@ -78,7 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF,EUROLEAGUE
+          PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL
           PH_KEYLESS_BOOKS_ENABLED: '1'
           PH_KEYLESS_BOOKS: draftkings,fanduel,bovada,betrivers
           PH_KEYLESS_TIMEOUT: '5'
@@ -188,11 +188,6 @@ jobs:
           WNBA_RESULT_GAME_CAP: '10'
           NFL_RESULTS_PLAYER_CAP: '80'
           NHL_RESULTS_PLAYER_CAP: '40'
-          PH_NCAA_RESULTS_MAX_DATES: '4'
-          PH_NCAA_RESULTS_MAX_EVENTS: '16'
-          PH_NCAA_RESULT_LEAGUES: NCAAB,NCAAF
-          PH_EUROLEAGUE_RESULTS_MAX_DATES: '4'
-          PH_EUROLEAGUE_RESULTS_MAX_EVENTS: '16'
           HTTP_TIMEOUT: '8'
           PH_RESULTS_LOOKBACK_DAYS: '4'
           PH_RESULTS_FALLBACK_SUMMARY: '0'
@@ -201,7 +196,7 @@ jobs:
         run: |
           set +e
           timeout 150s bash -c '
-            for f in prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py prop_hunter_results_euroleague.py; do
+            for f in prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py; do
               if [ -f "$f" ]; then python "$f" || echo "$f soft-fail"; fi
             done
             python prop_hunter_settler.py || echo "settler soft-fail; card continues"
