@@ -1096,6 +1096,26 @@ def enrich_gamelogs_fairprob(props: list) -> list:
         if "total base" in mkt: return "total_bases"
         if "runs batted in" in mkt or re.search(r"\brbi", mkt): return "rbi"
         if "batter walk" in mkt or "walk" in mkt: return "walks_batter"
+
+        # NFL player props
+        if "passing yard" in mkt: return "passing_yards"
+        if "rushing yard" in mkt: return "rushing_yards"
+        if "receiving yard" in mkt or "reception yard" in mkt: return "receiving_yards"
+        if "reception" in mkt and "yard" not in mkt: return "receptions"
+        if "passing touchdown" in mkt or "pass td" in mkt: return "passing_touchdowns"
+        if "rushing touchdown" in mkt or "rush td" in mkt: return "rushing_touchdowns"
+        if "receiving touchdown" in mkt or "receiving td" in mkt: return "receiving_touchdowns"
+        if "anytime td" in mkt or "anytime touchdown" in mkt or re.search(r"\btouchdowns?\b", mkt):
+            return "touchdowns"
+
+        # Hockey player props
+        if "shot on goal" in mkt or "shots on goal" in mkt or re.search(r"\bsog\b", mkt):
+            return "shots_on_goal"
+        if "goalie save" in mkt or re.search(r"\bsaves?\b", mkt):
+            return "goalie_saves"
+        if re.search(r"\bgoals?\b", mkt): return "goals"
+        if "hockey assist" in mkt: return "assists_hockey"
+
         if "steal" in mkt: return "steals"
         if "block" in mkt: return "blocks"
         if "stolen base" in mkt: return "stolen_bases"
@@ -1115,7 +1135,8 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 "strikeouts_batter,pitcher_strikeouts,total_bases,rbi,walks_batter,"
                 "steals,blocks,stolen_bases,hits,runs,receptions,receiving_yards,"
                 "rushing_yards,passing_yards,passing_touchdowns,rushing_touchdowns,"
-                "receiving_touchdowns,touchdowns,shots_on_goal,goalie_saves")
+                "receiving_touchdowns,touchdowns,shots_on_goal,goalie_saves,goals,"
+                "assists_hockey")
         chunk_size = max(10, min(int(os.getenv("PH_GAMELOG_PREFETCH_NAMES", "40")), 60))
         for pos in range(0, len(wanted_names), chunk_size):
             names_chunk = wanted_names[pos:pos + chunk_size]
