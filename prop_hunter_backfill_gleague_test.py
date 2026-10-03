@@ -41,7 +41,7 @@ assert 30 <= KEEP <= 40
 src = Path("prop_hunter_backfill_gleague.py").read_text(encoding="utf-8")
 assert 'league_id_nullable="20"' in src
 assert "last_n_games_nullable=KEEP" in src
-assert "basketball/nba-g-league" in src
+assert "basketball/nba-development" in src
 assert "PH_GLEAGUE_ESPN_DATES" in src
 assert 'PH_GLEAGUE_NBA_API_FALLBACK", "0"' in src
 assert '"sport,league,season,game_id,normalized_name"' in src
