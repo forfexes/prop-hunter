@@ -117,7 +117,16 @@ def _game(obj: Any) -> str:
 
 
 def _sport(obj: Any) -> str:
-    return str(getattr(obj, "sport", None) or getattr(obj, "league", None) or "UNKNOWN").upper()
+    feats = _features(obj)
+    return str(
+        getattr(obj, "sport", None)
+        or getattr(obj, "source_sport", None)
+        or getattr(obj, "league", None)
+        or feats.get("sport")
+        or feats.get("source_sport")
+        or feats.get("league")
+        or "UNKNOWN"
+    ).upper()
 
 
 def _is_hr(obj: Any) -> bool:
@@ -375,8 +384,18 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List
 
         # Natural ladder order: safer threshold first for overs, reverse for unders.
         legs.sort(key=lambda x: x["point"], reverse=(direction == "under"))
-        # Odds should generally increase with difficulty. Do not reject a genuine book row
-        # merely because of small pricing anomalies; all rungs are independently +EV checked.
+
+        # A harder rung must not become materially shorter-priced than the easier rung.
+        # Tiny feed/rounding noise is tolerated; obvious inversions are dropped.
+        monotonic = []
+        for item in legs:
+            if monotonic and item["odds"] < monotonic[-1]["odds"] * 0.95:
+                continue
+            monotonic.append(item)
+        legs = monotonic
+        if len(legs) < 2:
+            continue
+
         ladder_legs = []
         leg_details = []
         for item in legs:
@@ -419,7 +438,26 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List
         max((getattr(x, "edge_pct", 0) or 0) for x in (getattr(p, "picks", None) or [])),
         len(getattr(p, "picks", None) or []),
     ), reverse=True)
-    return ladders
+
+    # Different feeds/books can expose the exact same ladder. Show it only once.
+    deduped = []
+    seen = set()
+    for ladder in ladders:
+        sig = (
+            str(getattr(ladder, "player", "") or "").strip().lower(),
+            str(getattr(ladder, "market", "") or "").strip().lower(),
+            str(getattr(ladder, "direction", "") or "").strip().lower(),
+            _game(ladder),
+            tuple(
+                (round(float(getattr(leg, "point", 0) or 0), 4), round(float(getattr(leg, "odds", 0) or 0), 4))
+                for leg in (getattr(ladder, "picks", None) or [])
+            ),
+        )
+        if sig in seen:
+            continue
+        seen.add(sig)
+        deduped.append(ladder)
+    return deduped
 
 def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str, Any]) -> Optional[Any]:
     if not _valid_combo(legs):
