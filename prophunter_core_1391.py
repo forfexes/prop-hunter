@@ -1054,6 +1054,29 @@ def enrich_gamelogs_fairprob(props: list) -> list:
         if "triple double" in mkt or "triple-double" in mkt:
             return "triple_double"
 
+        # NFL/NHL player markets before generic "points"/"assists" matching.
+        mkt2 = mkt.replace("_", " ")
+        if "goalie save" in mkt2 or "saves goalie" in mkt2:
+            return "goalie_saves"
+        if "shots on goal" in mkt2 or "shot on goal" in mkt2 or re.search(r"\bsog\b", mkt2):
+            return "shots_on_goal"
+        if "passing yard" in mkt2:
+            return "passing_yards"
+        if "rushing yard" in mkt2:
+            return "rushing_yards"
+        if "receiving yard" in mkt2:
+            return "receiving_yards"
+        if "reception" in mkt2:
+            return "receptions"
+        if "passing touchdown" in mkt2 or re.search(r"\bpass(?:ing)?\s+tds?\b", mkt2):
+            return "passing_touchdowns"
+        if "rushing touchdown" in mkt2 or re.search(r"\brush(?:ing)?\s+tds?\b", mkt2):
+            return "rushing_touchdowns"
+        if "receiving touchdown" in mkt2 or re.search(r"\breceiv(?:ing)?\s+tds?\b", mkt2):
+            return "receiving_touchdowns"
+        if any(x in mkt2 for x in ("anytime td", "anytime touchdown", "touchdown scorer")):
+            return "touchdowns"
+
         # Threes VOR HR prüfen (sonst matcht 'hr' in 'threes')
         if "three" in mkt or "3-pt" in mkt or "3pt" in mkt or "3pm" in mkt:
             return "threes_made"
@@ -1090,7 +1113,9 @@ def enrich_gamelogs_fairprob(props: list) -> list:
         cols = ("normalized_name,game_date,points,rebounds,assists,threes_made,"
                 "double_double,triple_double,home_runs,pitcher_hits_allowed,"
                 "strikeouts_batter,pitcher_strikeouts,total_bases,rbi,walks_batter,"
-                "steals,blocks,stolen_bases,hits,runs")
+                "steals,blocks,stolen_bases,hits,runs,receptions,receiving_yards,"
+                "rushing_yards,passing_yards,passing_touchdowns,rushing_touchdowns,"
+                "receiving_touchdowns,touchdowns,shots_on_goal,goalie_saves")
         chunk_size = max(10, min(int(os.getenv("PH_GAMELOG_PREFETCH_NAMES", "40")), 60))
         for pos in range(0, len(wanted_names), chunk_size):
             names_chunk = wanted_names[pos:pos + chunk_size]
