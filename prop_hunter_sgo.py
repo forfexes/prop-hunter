@@ -25,6 +25,10 @@ LEAGUE_BY_SPORT = {
     "icehockey_nhl": "NHL",
     "basketball_ncaab": "NCAAB",
     "americanfootball_ncaaf": "NCAAF",
+    "icehockey_ahl": "AHL",
+    "icehockey_shl": "SHL",
+    "basketball_g_league": "NBA_G_LEAGUE",
+    "americanfootball_cfl": "CFL",
 }
 
 TEAM_ENTITIES = {"all", "home", "away", ""}
@@ -58,7 +62,7 @@ def _player_name(stat_entity_id: Any) -> str:
     """
     raw = str(stat_entity_id or "").strip()
     parts = [p for p in raw.split("_") if p]
-    if parts and parts[-1].upper() in {"NBA","WNBA","MLB","NFL","NHL","NCAAB","NCAAF"}:
+    if parts and parts[-1].upper() in {"NBA","WNBA","MLB","NFL","NHL","NCAAB","NCAAF","AHL","SHL","CFL","G","LEAGUE"}:
         parts = parts[:-1]
     if parts and parts[-1].isdigit():
         parts = parts[:-1]
@@ -215,6 +219,11 @@ def parse_events(events: Iterable[Dict[str, Any]], league: str) -> List[Dict[str
                             "odd_id": odd_id, "stat_entity_id": entity,
                             "last_updated": quote.get("lastUpdatedAt") or bm.get("lastUpdatedAt"),
                             "alt_line": bool(is_alt),
+                            "score": odd.get("score"),
+                            "scoring_supported": odd.get("scoringSupported"),
+                            "event_ended": (event.get("status") or {}).get("ended"),
+                            "event_finalized": (event.get("status") or {}).get("finalized"),
+                            "event_cancelled": event.get("cancelled"),
                         },
                     })
     return rows
