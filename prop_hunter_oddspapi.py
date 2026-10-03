@@ -79,7 +79,8 @@ _CACHE: Dict[str, Any] = {
 }
 _CALL_COUNT = {"sports": 0, "markets": 0, "fixtures": 0, "odds": 0}
 _LAST_HTTP: Dict[str, Any] = {}
-_RATE_LIMITED_FOR_RUN = False
+_KEY_INDEX = 0
+_BAD_KEYS: set[str] = set()
 
 
 def _debug_enabled() -> bool:
@@ -99,16 +100,31 @@ def last_http() -> Dict[str, Any]:
     return dict(_LAST_HTTP)
 
 
+def _keys() -> List[str]:
+    """Return unique OddsPapi keys from modern + legacy env names.
+
+    Every variable accepts comma/semicolon/newline separated keys so existing
+    single-secret setups keep working while multi-account rotation is possible.
+    """
+    out: List[str] = []
+    seen = set()
+    for name in ("ODDSPAPI_KEYS", "ODDSPAPI_KEY", "ODDSPAPI", "ODDSPAPI_API_KEY"):
+        raw = str(os.getenv(name, "") or "")
+        for part in re.split(r"[,;\\r\\n]+", raw):
+            key = part.strip()
+            if key and key not in seen:
+                seen.add(key)
+                out.append(key)
+    return out
+
+
 def _key() -> str:
-    return (
-        os.getenv("ODDSPAPI_KEY", "")
-        or os.getenv("ODDSPAPI", "")
-        or os.getenv("ODDSPAPI_API_KEY", "")
-    ).strip()
+    keys = _keys()
+    return keys[0] if keys else ""
 
 
 def configured() -> bool:
-    return bool(_key())
+    return bool(_keys())
 
 
 def _norm(value: Any) -> str:
@@ -118,35 +134,70 @@ def _norm(value: Any) -> str:
 
 
 def _api_get(path: str, params: Optional[Dict[str, Any]] = None, timeout: int = 8):
-    global _RATE_LIMITED_FOR_RUN
-    if _RATE_LIMITED_FOR_RUN:
-        return {"_rate_limited": True, "_http_error": 429}
-    if not _key():
+    global _KEY_INDEX
+    keys = _keys()
+    if not keys:
         _LAST_HTTP[path] = {"status": "no_key"}
         return None
-    payload = dict(params or {})
-    payload["apiKey"] = _key()
-    try:
-        response = requests.get(
-            f"{BASE_URL}/{path}",
-            params=payload,
-            timeout=timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
-                "Accept": "application/json",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
-        )
-        _LAST_HTTP[path] = {"status": int(response.status_code), "url": response.url.split("apiKey=")[0]}
-        if response.status_code == 429:
-            _RATE_LIMITED_FOR_RUN = True
-            return {"_rate_limited": True, "_http_error": 429}
-        if not response.ok:
-            return {"_http_error": int(response.status_code), "_body": response.text[:200]}
-        return response.json()
-    except Exception as exc:
-        _LAST_HTTP[path] = {"status": "exception", "error": f"{type(exc).__name__}: {exc}"[:200]}
-        return {"_error": f"{type(exc).__name__}: {exc}"}
+
+    usable = [k for k in keys if k not in _BAD_KEYS]
+    if not usable:
+        _LAST_HTTP[path] = {"status": 429, "all_keys_exhausted": True, "key_count": len(keys)}
+        return {"_rate_limited": True, "_http_error": 429}
+
+    # Start from the rotating cursor, but never reveal key material in logs.
+    last_auth_or_rate = None
+    for offset in range(len(keys)):
+        idx = (_KEY_INDEX + offset) % len(keys)
+        key = keys[idx]
+        if key in _BAD_KEYS:
+            continue
+        payload = dict(params or {})
+        payload["apiKey"] = key
+        try:
+            response = requests.get(
+                f"{BASE_URL}/{path}",
+                params=payload,
+                timeout=timeout,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+                    "Accept": "application/json",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
+            )
+            safe_url = response.url.split("apiKey=")[0]
+            _LAST_HTTP[path] = {
+                "status": int(response.status_code),
+                "url": safe_url,
+                "key_slot": idx + 1,
+                "key_count": len(keys),
+            }
+            if response.status_code in (401, 429):
+                _BAD_KEYS.add(key)
+                _KEY_INDEX = (idx + 1) % len(keys)
+                last_auth_or_rate = int(response.status_code)
+                continue
+            if not response.ok:
+                return {"_http_error": int(response.status_code), "_body": response.text[:200]}
+            _KEY_INDEX = (idx + 1) % len(keys)
+            return response.json()
+        except Exception as exc:
+            _LAST_HTTP[path] = {
+                "status": "exception",
+                "error": f"{type(exc).__name__}: {exc}"[:200],
+                "key_slot": idx + 1,
+                "key_count": len(keys),
+            }
+            return {"_error": f"{type(exc).__name__}: {exc}"}
+
+    # All configured keys were exhausted by auth/rate limits in this run.
+    status = int(last_auth_or_rate or 429)
+    _LAST_HTTP[path] = {
+        "status": status,
+        "all_keys_exhausted": True,
+        "key_count": len(keys),
+    }
+    return {"_rate_limited": status == 429, "_http_error": status}
 
 
 def get_sports(force: bool = False) -> List[Dict[str, Any]]:
