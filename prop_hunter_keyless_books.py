@@ -55,6 +55,7 @@ def _mk(v):
       (("points rebounds assists","points rebounds and assists","pra"),"pra"),(("total bases",),"total_bases"),
       (("home run","home runs"),"home_runs"),(("pitcher strikeout","pitcher strikeouts"),"pitcher_strikeouts"),
       (("stolen base","stolen bases"),"stolen_bases"),(("passing touchdown","pass td"),"passing_touchdowns"),
+      (("passing rushing yards","passing and rushing yards","pass rush yards"),"passing_rushing_yards"),
       (("passing yards","pass yds"),"passing_yards"),(("rushing yards","rush yds"),"rushing_yards"),
       (("receiving yards","reception yards"),"receiving_yards"),(("receptions",),"receptions"),
       (("anytime td","anytime touchdown","touchdown scorer"),"anytime_td"),(("shots on goal",),"shots_on_goal"),
