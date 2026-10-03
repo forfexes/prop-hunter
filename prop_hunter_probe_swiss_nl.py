@@ -52,7 +52,7 @@ def main():
 
     endpoint="https://www.sihf.ch/umbraco/GameCenter/League/GetGameDays"
     for season_id in ("2027","2026"):
-        gr=session.get(endpoint,params={"leagueId":"1","regionId":"1","season":season_id},headers={"HX-Request":"true","HX-Current-URL":schedule,"Referer":schedule},timeout=20)
+        gr=session.get(endpoint,params={"leagueId":"1","regionId":"1","season":season_id},headers={"HX-Request":"true","HX-Current-URL":f"{schedule}?season={season_id}","Referer":f"{schedule}?season={season_id}"},timeout=20)
         ids=sorted(set(re.findall(r'/game/(\d{14})',gr.text)))
         all14=sorted(set(re.findall(r'(?<!\d)(\d{14})(?!\d)',gr.text)))
         attrs=re.findall(r'(?:game|season)[-_]?(?:id)?=["\']?([^"\' >]+)',gr.text,re.I)
