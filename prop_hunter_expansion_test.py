@@ -277,4 +277,4 @@ if __name__ == "__main__":
 # Feature rebuild after large backfills must not issue one giant Supabase UPSERT.
 _fb = Path("prop_hunter_feature_builder.py").read_text(encoding="utf-8")
 assert "FEATURE_WRITE_BATCH" in _fb
-assert "range(0,len(rows),FEATURE_WRITE_BATCH)" in _fb.replace(" ", "")
+assert "range(0,len(rows),FEATURE_WRITE_BATCH)" in _fb.replace(" ", "").replace("\\n", "")
