@@ -137,19 +137,29 @@ def test_keyless_extension_and_card_formatter():
 
     class P:
         def __init__(self, **kw): self.__dict__.update(kw)
-    p=P(type="betbuilder", market="4-Leg SAFE SGP", odds=2.05, stake=.25, probability=.52, edge_pct=6.6,
-        legs=["A 15+ Points @1.20","A 7+ Rebounds @1.20","B 5+ Assists @1.18","C 20+ Points @1.25"],
+    p=P(type="betbuilder", market="2-Leg SAFE SGP", odds=2.05, stake=.25, probability=.52, edge_pct=6.6,
+        legs=["A 15+ Points @1.20","A 7+ Rebounds @1.20"],
         features={"builder_profile":"safe","same_player_multistat":True,"builder_odds_estimated_from_legs":True})
     base=lambda picks:"🎯 PROP HUNTER\n\n🎯 BET BUILDER:\n• old @2.05 → 0.25u\n\n📊 Mehr Value Picks\n@prophunter"
     text=install_formatter(base)([p])
     check("🔥 SAME PLAYER SPECIALS:" in text and "Same-Player" in text, "same-player card category missing")
-    check("finale Book-Quote bestätigen" in text, "derived SGP quote disclosure missing")
+    check("Keine synthetische Kombiquote/EV ausgegeben" in text, "derived SGP quote disclosure missing")
+    check("@2.05 → 0.25u" not in text, "derived combined price still shown as placeable quote")
 
     td=P(type="betbuilder", market="2-Leg SAFE ACCA", odds=4.2, stake=.1, probability=.31, edge_pct=8.0,
         legs=["Josh Allen Anytime TD @2.10","Jalen Hurts Anytime TD @2.00"],
         features={"builder_profile":"safe","combo_scope":"cross_game","acca_odds_estimated_from_legs":True})
     td_text=install_formatter(base)([td])
     check("🏈 TD ACCAS:" in td_text, "TD ACCA category missing")
+    check("@4.20" not in td_text and "Keine synthetische Kombiquote/EV ausgegeben" in td_text,
+          "derived ACCA price still shown as real quote")
+
+    mixed=P(type="betbuilder", market="4-Leg LONGSHOT SGP", odds=100, stake=.05, probability=.04, edge_pct=300,
+        legs=["A Points @2.0","B Rebounds @2.0","A Assists @2.0","C Points @2.0"],
+        features={"builder_profile":"longshot","same_player_multistat":False,"builder_odds_estimated_from_legs":True})
+    mixed_text=install_formatter(base)([mixed])
+    check("SAME PLAYER SPECIALS" not in mixed_text and "Same-Player" not in mixed_text,
+          "mixed-player builder mislabeled as same-player")
 
     dup=P(type="betbuilder", market="4-Leg SAFE SGP", odds=2.05, stake=.25, probability=.52, edge_pct=6.6,
         legs=list(p.legs), features=dict(p.features))
