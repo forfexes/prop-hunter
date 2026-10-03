@@ -21,6 +21,7 @@ SHADOW_LEAGUES = {
     "NBA_G_LEAGUE": {"sgo": "basketball_g_league", "oddspapi": "basketball_g_league"},
     "CFL": {"sgo": "americanfootball_cfl", "oddspapi": "americanfootball_cfl"},
     "SWISS_NL": {"oddspapi": "icehockey_swiss_nl"},
+    "EUROCUP": {"oddspapi": "basketball_eurocup"},
 }
 
 
