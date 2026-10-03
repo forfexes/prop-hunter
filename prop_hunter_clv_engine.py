@@ -137,7 +137,7 @@ def main():
     current = select_rows("prop_hunter_picks", limit=5000)
     legacy = select_rows("prop_picks", limit=5000)
     picks = current + [p for p in legacy if pick_id(p) not in {pick_id(x) for x in current}]
-    snaps = select_rows("prop_hunter_prop_snapshots", limit=50000)
+    snaps = select_rows("prop_hunter_prop_snapshots", limit=None, order_by="snapshot_id")
 
     rows = []
     report = []
