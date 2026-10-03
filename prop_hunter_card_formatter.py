@@ -98,19 +98,22 @@ def _builder_block(builders: Iterable[Any]) -> str:
         for p in items:
             feats=getattr(p,"features",{}) or {};legs=list(getattr(p,"legs",None) or [])
             label=getattr(p,"market",None) or f"{len(legs)}-Leg Builder";same=" · Same-Player" if feats.get("same_player_multistat") else ""
-            out.append(f"• {label} @{_fmt_odds(getattr(p,'odds',None))} → {_fmt_stake(getattr(p,'stake',0))}u{same}")
+            estimated=bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
+            if estimated:
+                out.append(f"• {label} — finale Book-Quote prüfen{same}")
+            else:
+                out.append(f"• {label} @{_fmt_odds(getattr(p,'odds',None))} → {_fmt_stake(getattr(p,'stake',0))}u{same}")
             for i,leg in enumerate(legs):out.append(f"  {'└' if i==len(legs)-1 else '├'} {leg}")
             meta=[];prob=getattr(p,"probability",None);edge=getattr(p,"edge_pct",None)
             if prob is not None:
-                try:meta.append(f"Prob {float(prob)*100:.1f}%")
+                try:meta.append(("Modell-Prob " if estimated else "Prob ")+f"{float(prob)*100:.1f}%")
                 except Exception:pass
-            if edge is not None:
+            if edge is not None and not estimated:
                 try:meta.append(f"EV {float(edge):+.1f}%")
                 except Exception:pass
             if meta:out.append("  📈 "+" · ".join(meta))
             if feats.get("combo_scope")=="cross_game":out.append("  🌐 Cross-Game · gleiche Sportsbook-Quelle")
-            if feats.get("acca_odds_estimated_from_legs"):out.append("  ⚠️ ACCA-Quote aus Einzelquoten — finale Book-Quote bestätigen")
-            elif feats.get("builder_odds_estimated_from_legs"):out.append("  ⚠️ SGP-Kombiquote aus Leg-Quoten — finale Book-Quote bestätigen")
+            if estimated:out.append("  ⚠️ Keine synthetische Kombiquote/EV ausgegeben — finale Quote beim Book prüfen")
         out.append("")
     return "\n".join(out).rstrip()
 
@@ -124,6 +127,18 @@ def install(base_build_post):
         tail=text[start:];markers=("\n🔥 2-LEG KOMBIS:","\n🔥 3-LEG TRIPLES:","\n💣 LOTTERY BIGS:","\n📊 Mehr Value Picks")
         ends=[tail.find(m) for m in markers if tail.find(m)>=0];end=start+(min(ends) if ends else len(tail))
         prefix=text[:start].rstrip();suffix=text[end:].lstrip("\n")
+        # Legacy KOMBIS/TRIPLES/LOTTERY BIGS use multiplied leg prices. Once the
+        # structured builder/ACCA block exists, remove those duplicate synthetic
+        # combined quotes from the user-visible card.
+        legacy_heads={"🔥 2-LEG KOMBIS:","🔥 3-LEG TRIPLES:","💣 LOTTERY BIGS:"}
+        kept=[];skip=False
+        for line in suffix.splitlines():
+            if line.strip() in legacy_heads:
+                skip=True;continue
+            if skip and line.strip().startswith("📊 Mehr Value Picks"):
+                skip=False
+            if not skip:kept.append(line)
+        suffix="\n".join(kept).lstrip("\n")
 
         def compose(items, omitted=0, compact_prefix=False):
             pre=prefix
