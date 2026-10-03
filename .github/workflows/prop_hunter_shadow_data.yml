@@ -54,11 +54,10 @@ jobs:
           PH_ODDSPAPI_MAX_ODDS_CALLS: '6'
           PH_SNAPSHOT_RETENTION_DAYS: '7'
           PH_GLEAGUE_LAST_N: '40'
-          PH_GAMELOG_KEEP_PER_PLAYER: '40'
-          PH_FEATURE_WRITE_BATCH: '400'
+          PH_GLEAGUE_DATA_ENABLED: '0'
         run: |
           python prop_hunter_snapshot_retention.py --apply
           python prop_hunter_shadow_leagues.py
-          python prop_hunter_backfill_gleague.py
-          python prop_hunter_gamelog_retention.py --apply
-          python prop_hunter_feature_builder.py
+          if [ "$PH_GLEAGUE_DATA_ENABLED" = "1" ]; then
+            python prop_hunter_backfill_gleague.py
+          fi
