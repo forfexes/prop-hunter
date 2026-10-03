@@ -2,6 +2,9 @@ name: Prop Hunter Autonomous
 
 "on":
   workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/card-trigger'
   schedule:
     - cron: '30 7 * * *'
     - cron: '30 16 * * *'
