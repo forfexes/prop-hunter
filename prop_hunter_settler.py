@@ -218,13 +218,32 @@ def _pick_target_date(pick: Dict[str, Any]):
     return None
 
 
-def find_gamelog(pick: Dict[str, Any], logs: List[Dict[str, Any]], aliases=None) -> Optional[Dict[str, Any]]:
+def build_log_index(logs: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Index gamelogs by canonical player name for fast settlement lookups."""
+    out: Dict[str, List[Dict[str, Any]]] = {}
+    for gl in logs:
+        nk = str(gl.get("normalized_name") or "").strip() or norm_name(gl.get("player_name"))
+        if nk:
+            out.setdefault(nk, []).append(gl)
+    return out
+
+
+def find_gamelog(
+    pick: Dict[str, Any],
+    logs: List[Dict[str, Any]],
+    aliases=None,
+    log_index: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+) -> Optional[Dict[str, Any]]:
     pname = pick.get("player_name") or pick.get("player") or pick.get("selection")
     game_id = str(pick.get("game_id") or pick.get("source_game_id") or "")
-    player_logs = [
-        gl for gl in logs
-        if (not pname or identity_match(pname, gl.get("player_name"), threshold=94, aliases=aliases))
-    ]
+    player_logs: List[Dict[str, Any]] = []
+    if pname and log_index is not None:
+        player_logs = list(log_index.get(norm_name(pname), []))
+    if not player_logs:
+        player_logs = [
+            gl for gl in logs
+            if (not pname or identity_match(pname, gl.get("player_name"), threshold=94, aliases=aliases))
+        ]
     if not player_logs:
         return None
 
@@ -262,14 +281,25 @@ def load_picks():
 
 def main():
     picks = load_picks()
-    logs = select_rows("prop_hunter_player_gamelogs", limit=int(os.getenv("SETTLE_LOG_LIMIT", "20000")))
+    pending_status = {"", "pending", "open", "none", "null", "unsettled"}
+    picks = [
+        p for p in picks
+        if str(p.get("status") or p.get("result") or "pending").lower() in pending_status
+    ]
+    logs = select_rows(
+        "prop_hunter_player_gamelogs",
+        limit=int(os.getenv("SETTLE_LOG_LIMIT", "8000")),
+        order_by="id",
+        desc=True,
+    )
     settled = []
     aliases = learn_aliases(list(picks) + list(logs))
+    log_index = build_log_index(logs)
     for p in picks:
         stat = detect_stat(p.get("market") or p.get("prop_type") or p.get("selection"))
         if not stat:
             continue
-        gl = find_gamelog(p, logs, aliases=aliases)
+        gl = find_gamelog(p, logs, aliases=aliases, log_index=log_index)
         if not gl:
             continue
         value = stat_value(gl, stat)
