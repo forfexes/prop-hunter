@@ -110,7 +110,7 @@ def _keys() -> List[str]:
     seen = set()
     for name in ("ODDSPAPI_KEYS", "ODDSPAPI_KEY", "ODDSPAPI", "ODDSPAPI_API_KEY"):
         raw = str(os.getenv(name, "") or "")
-        for part in re.split(r"[,;\\r\\n]+", raw):
+        for part in re.split(r"[,;\r\n]+", raw):
             key = part.strip()
             if key and key not in seen:
                 seen.add(key)
