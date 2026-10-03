@@ -58,12 +58,18 @@ def _looks_team_or_generic(player: str, home: str = "", away: str = "") -> bool:
     if any(term in padded for term in _MULTI_PLAYER_TERMS):
         return True
     h, a = _norm(home), _norm(away)
-    if p and (p == h or p == a):
+    # Strip ranking/seed numbers from team labels, e.g. "BYU (#10)" -> "byu".
+    # This must work for short acronyms too, so do not gate it behind len(p) >= 5.
+    h_team = re.sub(r"\b\d+\b", " ", h)
+    a_team = re.sub(r"\b\d+\b", " ", a)
+    h_team = re.sub(r"\s+", " ", h_team).strip()
+    a_team = re.sub(r"\s+", " ", a_team).strip()
+    if p and (p == h or p == a or p == h_team or p == a_team):
         return True
-    if len(p) >= 5:
-        if h and (p in h or h in p) and len(p.split()) <= max(2, len(h.split())):
+    if len(p) >= 3:
+        if h_team and (p in h_team or h_team in p) and len(p.split()) <= max(2, len(h_team.split())):
             return True
-        if a and (p in a or a in p) and len(p.split()) <= max(2, len(a.split())):
+        if a_team and (p in a_team or a_team in p) and len(p.split()) <= max(2, len(a_team.split())):
             return True
     return False
 
