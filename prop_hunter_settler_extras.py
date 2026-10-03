@@ -14,7 +14,7 @@ import re
 from typing import Any, Dict, Optional
 
 from prop_hunter_settler import (
-    detect_stat as legacy_detect_stat, find_gamelog, learn_aliases, line_of_pick,
+    build_log_index, detect_stat as legacy_detect_stat, find_gamelog, learn_aliases, line_of_pick,
     result_for_value, side_of_pick
 )
 from prop_hunter_shared_utils import (
@@ -142,8 +142,19 @@ def _allowed(stat: str, league_or_sport: str) -> bool:
 
 def main() -> None:
     picks = select_pick_rows(limit=5000)
-    logs = select_rows("prop_hunter_player_gamelogs", limit=20000)
+    pending_status = {"", "pending", "open", "none", "null", "unsettled"}
+    picks = [
+        p for p in picks
+        if str(p.get("status") or p.get("result") or "pending").lower() in pending_status
+    ]
+    logs = select_rows(
+        "prop_hunter_player_gamelogs",
+        limit=8000,
+        order_by="id",
+        desc=True,
+    )
     aliases = learn_aliases(list(picks) + list(logs))
+    log_index = build_log_index(logs)
     settled = []
     for p in picks:
         market = p.get("market") or p.get("prop_type") or p.get("selection")
@@ -156,7 +167,7 @@ def main() -> None:
         status_now = str(p.get("status") or p.get("result") or "pending").lower()
         if status_now not in {"", "pending", "open", "none", "null", "unsettled"}:
             continue
-        gl = find_gamelog(p, logs, aliases=aliases)
+        gl = find_gamelog(p, logs, aliases=aliases, log_index=log_index)
         if not gl:
             continue
         value = extra_stat_value(gl, stat)
