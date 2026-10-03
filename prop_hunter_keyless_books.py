@@ -140,11 +140,17 @@ def parse_fanduel_event_page(page,sport,event=None):
     markets=(page.get("attachments") or {}).get("markets") or {}; markets=markets.values() if isinstance(markets,dict) else markets if isinstance(markets,list) else [] ; out=[]
     for m in markets:
         if not isinstance(m,dict):continue
+        # FanDuel event pages may include attachment markets belonging to a
+        # different event. Never stamp those rows with the requested event.
+        market_eid=str(m.get("eventId") or m.get("eventID") or m.get("event_id") or "")
+        if eid and market_eid and market_eid != eid:continue
         runners=m.get("runners") or []
         if not any(isinstance(r,dict) and r.get("isPlayerSelection") for r in runners):continue
         name=str(m.get("marketName") or ""); mk=_mk(name); threshold=_fd_line(name)
         for r in runners:
             if not isinstance(r,dict) or not r.get("isPlayerSelection"):continue
+            runner_eid=str(r.get("eventId") or r.get("eventID") or r.get("event_id") or "")
+            if eid and runner_eid and runner_eid != eid:continue
             rn=str(r.get("runnerName") or "").strip(); line=_f(r.get("handicap")); side="over"; player=rn
             if threshold is not None:line=line if line is not None else threshold
             else:
