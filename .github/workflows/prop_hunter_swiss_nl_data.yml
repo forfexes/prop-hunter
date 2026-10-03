@@ -40,7 +40,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PH_SWISS_NL_LAST_N: '40'
-          PH_SWISS_NL_MAX_GAMES: '340'
+          PH_SWISS_NL_MAX_GAMES: '240'
           PH_GAMELOG_KEEP_PER_PLAYER: '40'
           PH_FEATURE_WRITE_BATCH: '400'
         run: |
