@@ -914,9 +914,14 @@ def fetch_snapshot_props(sport_filter=None) -> list:
 
         for r in snapshot_rows:
             odds = r.get("odds_decimal"); line = r.get("line")
-            player = r.get("player_name"); market = r.get("market")
+            player = r.get("player_name")
+            market = str(r.get("market_key") or r.get("market") or "").strip()
+            direction = str(r.get("direction") or "").strip().lower()
             sport = (r.get("sport") or r.get("league") or "").upper()
             if not (player and market and line is not None): continue
+            if market == "passing_rushing_yards": continue
+            if direction not in ("over", "under"):
+                direction = "under" if "under" in str(r.get("market") or "").lower() else "over"
             if sport_filter and sport_filter.lower() not in sport.lower(): continue
             if any(m in market.lower() for m in SEASON_MARKERS): continue
             if sport and sport not in active_sports: continue
@@ -933,7 +938,7 @@ def fetch_snapshot_props(sport_filter=None) -> list:
                     player=player, market=market, odds=odds_val,
                     point=float(line), sport=sport, emoji=emoji_map.get(sport,"🎯"),
                     game=f"{r.get('away_team','')} @ {r.get('home_team','')}",
-                    direction="under" if "under" in market.lower() else "over",
+                    direction=direction,
                     enrichment=f"src:{book}",
                     features={
                         "odds_observed": True, "price_type": "bookmaker", "bookmaker": book,
