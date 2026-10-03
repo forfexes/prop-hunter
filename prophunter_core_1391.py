@@ -3990,6 +3990,15 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         eventish = bool((feats or {}).get("event_market"))
         eventish = eventish or player_norm in {"game", "home", "away"} or player_norm.startswith("team ")
         eventish = eventish or player_norm.startswith(("total goals", "team total", "game total", "point spread", "alternate spread"))
+        # Some book feeds put the TEAM NAME into player_name for team totals,
+        # e.g. player="BYU", away_team="BYU (#10)". Strip ranking numbers and
+        # reject exact team aliases before they can become player singles.
+        def _team_base(value):
+            value = re.sub(r"\b\d+\b", " ", value or "")
+            return re.sub(r"\s+", " ", value).strip()
+        home_base, away_base = _team_base(home_norm), _team_base(away_norm)
+        if player_norm and player_norm in {home_base, away_base}:
+            eventish = True
         if not eventish and ("total" in player_norm or "spread" in player_norm):
             eventish = bool((home_norm and home_norm in player_norm) or (away_norm and away_norm in player_norm))
         if eventish:
