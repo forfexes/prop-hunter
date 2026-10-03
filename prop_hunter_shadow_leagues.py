@@ -16,12 +16,12 @@ from prop_hunter_source_orchestrator import _normalise, _snapshot_rows_for_db
 
 MAX_EVENTS = max(1, min(5, int(os.getenv("PH_SHADOW_MAX_EVENTS", "3"))))
 SHADOW_LEAGUES = {
+    "SWISS_NL": {"oddspapi": "icehockey_swiss_nl"},
+    "EUROCUP": {"oddspapi": "basketball_eurocup"},
     "AHL": {"sgo": "icehockey_ahl", "oddspapi": "icehockey_ahl"},
     "SHL": {"sgo": "icehockey_shl", "oddspapi": "icehockey_shl"},
     "NBA_G_LEAGUE": {"sgo": "basketball_g_league", "oddspapi": "basketball_g_league"},
     "CFL": {"sgo": "americanfootball_cfl", "oddspapi": "americanfootball_cfl"},
-    "SWISS_NL": {"oddspapi": "icehockey_swiss_nl"},
-    "EUROCUP": {"oddspapi": "basketball_eurocup"},
 }
 
 
@@ -66,7 +66,7 @@ def _fetch_oddspapi(key: str) -> List[Dict[str, Any]]:
         import prop_hunter_oddspapi as op
         if not op.configured():
             return []
-        return op.fetch_oddspapi_props(key, max_events=max(1, min(2, MAX_EVENTS)))
+        return op.fetch_oddspapi_props(key, max_events=1)
     except Exception as exc:
         log(f"shadow OddsPapi {key} failed: {exc}")
         return []
