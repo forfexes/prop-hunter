@@ -1,0 +1,58 @@
+name: Prop Hunter Diagnostic Dry Run
+
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/workflows/prop_hunter_diagnostic.yml'
+      - '.github/diagnostic-trigger'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prop-hunter-diagnostic
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Offline regression
+        run: |
+          python -m py_compile prophunter.py prophunter_core_1391.py prop_hunter_quote_guard.py prop_hunter_settler.py prop_hunter_settler_extras.py
+          python prop_hunter_runtime_guard.py
+          python prop_hunter_market_regression_test.py
+          python prop_hunter_settler_fast_test.py
+      - name: Full card dry run
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEYS: ${{ secrets.ODDS_API_KEYS }}
+          ODDSPAPI_KEYS: ${{ secrets.ODDSPAPI_KEYS }}
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          OPTICODDS_API_KEY: ${{ secrets.OPTICODDS_API_KEY }}
+          OPTICODDS_KEY: ${{ secrets.OPTICODDS_KEY }}
+          PARLAY_API_KEY: ${{ secrets.PARLAY_API_KEY }}
+          PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
+          ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
+          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+          PH_SNAPSHOT_MAX_ROWS: '30000'
+          PH_SNAPSHOT_EVENT_HORIZON_HOURS: '72'
+          PH_AI_RETRY: '0'
+          PH_RESCUE_MAX_PICKS: '20'
+        run: python prophunter.py --dry-run -v
