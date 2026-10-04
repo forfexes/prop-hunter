@@ -65,11 +65,39 @@ def fetch_snapshot_props(sport_filter=None):
     c=_sb_read()
     if c is None:return []
     try:
-        cutoff=(datetime.now(timezone.utc)-timedelta(hours=18)).isoformat();fields=('sport,league,source_event_id,player_name,market,market_key,direction,line,odds_decimal,commence_time,created_at,home_team,away_team,bookmaker,source,raw')
-        try:res=c.table('prop_hunter_prop_snapshots').select(fields).gte('created_at',cutoff).limit(10000).execute()
+        now_utc=datetime.now(timezone.utc)
+        cutoff=(now_utc-timedelta(hours=float(os.getenv('PH_SNAPSHOT_LOOKBACK_HOURS','18')))).isoformat()
+        event_floor=(now_utc-timedelta(minutes=5)).isoformat()
+        event_ceiling=(now_utc+timedelta(hours=float(os.getenv('PH_SNAPSHOT_EVENT_HORIZON_HOURS','72')))).isoformat()
+        fields=('sport,league,source_event_id,player_name,market,market_key,direction,line,odds_decimal,commence_time,created_at,home_team,away_team,bookmaker,source,raw')
+        max_rows=max(5000,min(50000,int(os.getenv('PH_SNAPSHOT_MAX_ROWS','30000'))))
+        page_size=1000
+        def _load_snapshot_pages(select_fields):
+            out=[]
+            start=0
+            while len(out)<max_rows:
+                size=min(page_size,max_rows-len(out))
+                res=(c.table('prop_hunter_prop_snapshots').select(select_fields)
+                     .gte('created_at',cutoff)
+                     .gte('commence_time',event_floor)
+                     .lte('commence_time',event_ceiling)
+                     .order('created_at',desc=True)
+                     .range(start,start+size-1).execute())
+                chunk=list(res.data or [])
+                out.extend(chunk)
+                if len(chunk)<size:
+                    break
+                start+=size
+            return out
+        try:
+            rows=_load_snapshot_pages(fields)
         except Exception:
-            fields=fields.rsplit(',raw',1)[0];res=c.table('prop_hunter_prop_snapshots').select(fields).gte('created_at',cutoff).limit(10000).execute()
-        rows=list(res.data or [])
+            fields=fields.rsplit(',raw',1)[0]
+            rows=_load_snapshot_pages(fields)
+        if len(rows)>=max_rows:
+            log.warning('Snapshot row cap reached: %d current rows; raise PH_SNAPSHOT_MAX_ROWS if needed',len(rows))
+        else:
+            log.info('Snapshot current-event rows loaded: %d',len(rows))
         try:
             from prop_hunter_quote_guard import sanitize_row,probability_sane
             rows=[safe for r in rows if (safe:=sanitize_row(r)) is not None]
