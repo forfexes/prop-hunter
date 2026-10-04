@@ -24,11 +24,12 @@ from __future__ import annotations
 
 import os
 import re
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional, Tuple, List
 
 from prop_hunter_shared_utils import (
     select_rows, select_pick_rows, upsert_rows, safe_json_write, log, warn, norm_name, norm_market,
-    to_float, hash_key, now_iso, pick_id
+    to_float, hash_key, now_iso, pick_id, supabase_client
 )
 
 try:
@@ -276,6 +277,75 @@ def find_gamelog(
     best = [gl for dist, pref, gl in dated if (dist, pref) == best_rank]
     return best[0] if len(best) == 1 else None
 
+def _load_relevant_gamelogs(picks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Load only current gamelogs for players that actually have pending picks.
+
+    The old global newest-N query became unsafe once backfills pushed the table
+    above 100k rows: recent WNBA/NHL rows could sit outside the newest 20k ids
+    and remain pending forever.  Filter by normalized player names + game date
+    instead, then page deterministically.
+    """
+    sb = supabase_client()
+    if sb is None:
+        return select_rows(
+            "prop_hunter_player_gamelogs",
+            limit=int(os.getenv("SETTLE_LOG_LIMIT", "20000")),
+            order_by="id",
+            desc=True,
+        )
+
+    names = sorted({
+        norm_name(p.get("player_name") or p.get("player") or p.get("selection"))
+        for p in (picks or [])
+        if norm_name(p.get("player_name") or p.get("player") or p.get("selection"))
+    })
+    if not names:
+        return []
+
+    dates = [d for d in (_pick_target_date(p) for p in (picks or [])) if d is not None]
+    today = datetime.now(timezone.utc).date()
+    lookback = max(3, int(os.getenv("PH_SETTLE_LOOKBACK_DAYS", "14")))
+    floor = today - timedelta(days=lookback)
+    start = max(min(dates) if dates else floor, floor) - timedelta(days=1)
+    end = min(max(dates) if dates else today, today + timedelta(days=2)) + timedelta(days=2)
+
+    rows: List[Dict[str, Any]] = []
+    batch_size = max(20, min(100, int(os.getenv("PH_SETTLE_PLAYER_BATCH", "80"))))
+    page_size = 1000
+    try:
+        for offset in range(0, len(names), batch_size):
+            batch = names[offset:offset + batch_size]
+            start_row = 0
+            while True:
+                q = (
+                    sb.table("prop_hunter_player_gamelogs")
+                    .select("*")
+                    .in_("normalized_name", batch)
+                    .gte("game_date", start.isoformat())
+                    .lte("game_date", end.isoformat())
+                    .order("id", desc=True)
+                )
+                res = q.range(start_row, start_row + page_size - 1).execute()
+                chunk = list(res.data or [])
+                rows.extend(chunk)
+                if len(chunk) < page_size:
+                    break
+                start_row += page_size
+        log(
+            f"settler gamelogs targeted: players={len(names)} "
+            f"window={start.isoformat()}..{end.isoformat()} rows={len(rows)}"
+        )
+        return rows
+    except Exception as exc:
+        warn(f"targeted settler gamelog read failed, using bounded fallback: {exc}")
+        return select_rows(
+            "prop_hunter_player_gamelogs",
+            limit=int(os.getenv("SETTLE_LOG_LIMIT", "20000")),
+            order_by="id",
+            desc=True,
+        )
+
+
 def load_picks():
     return select_pick_rows(limit=int(os.getenv("SETTLE_PICK_LIMIT", "5000")))
 
@@ -286,12 +356,7 @@ def main():
         p for p in picks
         if str(p.get("status") or p.get("result") or "pending").lower() in pending_status
     ]
-    logs = select_rows(
-        "prop_hunter_player_gamelogs",
-        limit=int(os.getenv("SETTLE_LOG_LIMIT", "8000")),
-        order_by="id",
-        desc=True,
-    )
+    logs = _load_relevant_gamelogs(picks)
     settled = []
     aliases = learn_aliases(list(picks) + list(logs))
     log_index = build_log_index(logs)
