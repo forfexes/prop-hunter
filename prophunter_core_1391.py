@@ -1110,6 +1110,8 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             return "tackles"
         if "successful field goal" in mkt2 or "field goals made" in mkt2:
             return "field_goals_made"
+        if "kicking point" in mkt2:
+            return "kicking_points"
         if any(x in mkt2 for x in ("anytime td", "anytime touchdown", "touchdown scorer")):
             return "touchdowns"
 
