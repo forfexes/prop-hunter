@@ -138,6 +138,8 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
         return "tackles"
     if "successful field goal" in text and "three point" not in text and "3 point" not in text:
         return "field_goals_made"
+    if "kicking point" in text:
+        return "kicking_points"
 
     if any(x in text for x in ("points rebounds", "points and rebounds")) and "assists" not in text:
         return "pr"
