@@ -407,7 +407,7 @@ def _sync_pick_table(pick: dict) -> None:
     headers = _headers({"Content-Type": "application/json", "Prefer": "return=minimal"})
     targets = [
         ("prop_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"result": status, "profit": profit}),
-        ("prop_hunter_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"status": status, "profit_units": profit}),
+        ("prop_hunter_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"status": status, "result": status, "profit_units": profit}),
     ]
     if d:
         targets[0][1]["date"] = f"eq.{d}"
