@@ -93,6 +93,8 @@ def safety_checks():
     combo=sanitize_row({"player_name":"Cam Ward","market":"rushing_yards","market_original":"Total Passing & Rushing Yards O/U - Cam Ward (TEN)","direction":"under","line":198.5,"odds_decimal":1.87})
     if combo: fail(f"combined passing+rushing market accepted as pure rushing: {combo}")
     binary=sanitize_row({"player_name":"Josh Allen","market":"anytime_td","direction":"yes","line":None,"odds_decimal":2.2,"selection":"Yes"})
+    binary_line_one=sanitize_row({"player_name":"Josh Allen","market":"anytime_td","market_original":"Anytime TD","direction":"over","line":1,"odds_decimal":2.2})
+    if not binary_line_one or binary_line_one["line"]!=.5: fail(f"binary placeholder line=1 not normalized: {binary_line_one}")
     if not binary or binary["line"]!=.5 or binary["direction"]!="over": fail("binary market normalization")
     if sanitize_row({"player_name":"Zay Flowers","market":"longest_reception","direction":"under","line":26.5,"odds_decimal":1.91}): fail("unsupported longest reception accepted")
     if sanitize_row({"player_name":"Zay Flowers","market":"player_to_score_a_touchdown_first_half","direction":"over","line":.5,"odds_decimal":4.0,"selection":"Yes"}): fail("period TD accepted as full-game TD")
