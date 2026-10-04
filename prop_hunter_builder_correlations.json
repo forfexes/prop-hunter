@@ -1,6 +1,90 @@
 {
   "version": 2,
-  "pairs": {},
-  "profiles": {},
-  "updated_at": "2026-10-03T14:51:22.297595+00:00"
+  "pairs": {
+    "UNKNOWN:rbi:under|UNKNOWN:rbi:under": {
+      "factor": 1.0,
+      "n": 4,
+      "both_wins": 4,
+      "observed_joint": 1.0,
+      "expected_joint": 0.6795,
+      "raw_ratio": 1.35
+    },
+    "MLB:rbi:under|UNKNOWN:rbi:under": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 3,
+      "observed_joint": 1.0,
+      "expected_joint": 0.43883,
+      "raw_ratio": 1.35
+    },
+    "MLB:home_runs:over|MLB:home_runs:over": {
+      "factor": 1.0,
+      "n": 4,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.05668,
+      "raw_ratio": 0.6
+    },
+    "UNKNOWN:runs:under|UNKNOWN:runs:under": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.82718,
+      "raw_ratio": 1.2089
+    }
+  },
+  "profiles": {
+    "value": {
+      "n": 1,
+      "wins": 1,
+      "losses": 0,
+      "pushes": 0,
+      "stake": 0.15,
+      "profit": 0.3,
+      "hit_rate": 1.0,
+      "roi": 2.0
+    },
+    "aggressive": {
+      "n": 1,
+      "wins": 1,
+      "losses": 0,
+      "pushes": 0,
+      "stake": 0.08,
+      "profit": 0.85,
+      "hit_rate": 1.0,
+      "roi": 10.625
+    },
+    "lottery": {
+      "n": 1,
+      "wins": 0,
+      "losses": 1,
+      "pushes": 0,
+      "stake": 0.03,
+      "profit": -0.03,
+      "hit_rate": 0.0,
+      "roi": -1.0
+    },
+    "safe": {
+      "n": 1,
+      "wins": 1,
+      "losses": 0,
+      "pushes": 0,
+      "stake": 0.25,
+      "profit": 0.26,
+      "hit_rate": 1.0,
+      "roi": 1.04
+    },
+    "longshot": {
+      "n": 1,
+      "wins": 0,
+      "losses": 1,
+      "pushes": 0,
+      "stake": 0.05,
+      "profit": -0.05,
+      "hit_rate": 0.0,
+      "roi": -1.0
+    }
+  },
+  "updated_at": "2026-10-04T15:27:20.638582+00:00"
 }
