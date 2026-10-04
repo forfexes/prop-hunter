@@ -113,10 +113,13 @@ def find_player(name: str) -> Dict[str, Any] | None:
     return None
 
 
-def fetch_gamelog(player_id: int | str, group: str, season: str) -> List[Dict[str, Any]]:
+def fetch_gamelog(player_id: int | str, group: str, season: str, game_type: str = "R") -> List[Dict[str, Any]]:
     data = http_json(
         PEOPLE_URL.format(player_id=player_id),
-        params={"stats": "gameLog", "group": group, "season": season, "hydrate": "team"},
+        params={
+            "stats": "gameLog", "group": group, "season": season,
+            "gameType": game_type, "hydrate": "team",
+        },
         retries=1,
     ) or {}
     stats = data.get("stats") or []
@@ -234,8 +237,15 @@ def main() -> None:
                 continue
             canonical = person.get("fullName") or player
             for group in sorted(groups):
-                splits = fetch_gamelog(person["id"], group, season)
-                splits = sorted(splits, key=lambda x: str(x.get("date") or ""), reverse=True)[:last_n]
+                # October cards can already be postseason. StatsAPI gameLog defaults
+                # to regular season, so fetch regular + postseason and merge by game id.
+                splits = []
+                for game_type in ("R", "P"):
+                    splits.extend(fetch_gamelog(person["id"], group, season, game_type=game_type))
+                uniq_splits = {}
+                for split in splits:
+                    uniq_splits[_game_id(split)] = split
+                splits = sorted(uniq_splits.values(), key=lambda x: str(x.get("date") or ""), reverse=True)[:last_n]
                 parser = parse_pitching if group == "pitching" else parse_hitting
                 rows.extend(parser(canonical, split, season) for split in splits)
         except Exception as exc:
