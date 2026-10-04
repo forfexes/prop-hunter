@@ -93,6 +93,13 @@ def test_nba_wnba_nfl_nhl_guards():
     check("sorted(by_date.items(), key=_date_priority)" in wnba, "WNBA recent-result prioritization missing")
     check("/api/v1/search/player" in nhl and "'type':'player'" not in nhl, "NHL current player-search endpoint missing")
     check("PH_MLB_RESULTS_LOOKBACK_DAYS" in mlb and "rows.sort(" in mlb, "MLB unresolved-card prioritization missing")
+    check('"gameType": game_type' in mlb and 'for game_type in ("R", "P")' in mlb, "MLB postseason gamelog fetch missing")
+    settler = Path("prop_hunter_settler.py").read_text(encoding="utf-8")
+    reporter = Path("prophunter_results.py").read_text(encoding="utf-8")
+    check("_pick_ready_for_settlement" in settler and "start_dt.hour < 7" in settler,
+          "settler can still grade future/wrong-date games")
+    check("_reset_premature_result" in reporter and "_settlement_ready_time" in reporter,
+          "Telegram reporter cannot undo premature settlements")
 
 
 def test_all_sports_sources():
