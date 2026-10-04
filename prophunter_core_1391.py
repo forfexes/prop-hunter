@@ -76,6 +76,15 @@ MIN_PROB_MLB_OTHER    = 0.55
 MIN_PROB_LOTTERY_LEG  = 0.58
 MIN_PROB_OTHER_SPORTS = 0.55
 MIN_EDGE_OTHER_SPORTS = 1.5
+# TD scorer markets are naturally lower-probability than yardage/reception props.
+# Require real gamelog history + positive edge instead of an inappropriate 55% floor.
+MIN_GAMES_TD          = 6
+MIN_PROB_ANYTIME_TD   = 0.25
+MIN_EDGE_ANYTIME_TD   = 3.0
+MIN_PROB_2PLUS_TD     = 0.08
+MIN_EDGE_2PLUS_TD     = 5.0
+MIN_PROB_3PLUS_TD     = 0.03
+MIN_EDGE_3PLUS_TD     = 8.0
 MAX_SINGLES_TOTAL     = int(os.getenv("PH_MAX_SINGLES", "0") or 0)  # 0 = no hard cap; +EV filter decides
 RESCUE_MAX_PICKS      = max(12, min(20, int(os.getenv("PH_RESCUE_MAX_PICKS", "18") or 18)))
 RESCUE_FILL_TARGET    = max(8, min(RESCUE_MAX_PICKS, int(os.getenv("PH_RESCUE_FILL_TARGET", "12") or 12)))
@@ -1061,7 +1070,21 @@ def enrich_gamelogs_fairprob(props: list) -> list:
 
         # NFL/NHL player markets before generic "points"/"assists" matching.
         mkt2 = mkt.replace("_", " ")
-        if "goalie save" in mkt2 or "saves goalie" in mkt2:
+        if any(x in mkt2 for x in (
+            "longest reception", "longest receiving", "longest rush",
+            "longest rushing", "longest completed pass", "longest pass completion",
+        )):
+            return None
+        if ("touchdown" in mkt2 or re.search(r"\btds?\b", mkt2)) and any(x in mkt2 for x in (
+            "first half", "1st half", "second half", "2nd half",
+            "quarter 1", "quarter 2", "quarter 3", "quarter 4",
+            "1st quarter", "2nd quarter", "3rd quarter", "4th quarter",
+            "drive 1", "first drive", "1st drive", "first touchdown", "1st touchdown",
+        )):
+            return None
+        if mkt2.strip() in {"2 plus td", "2 plus tds", "3 plus td", "3 plus tds"}:
+            return "touchdowns"
+        if "goalie save" in mkt2 or "saves goalie" in mkt2 or "total saves" in mkt2:
             return "goalie_saves"
         if "shots on goal" in mkt2 or "shot on goal" in mkt2 or re.search(r"\bsog\b", mkt2):
             return "shots_on_goal"
@@ -1071,6 +1094,10 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             return "rushing_yards"
         if "receiving yard" in mkt2:
             return "receiving_yards"
+        if "rushing attempt" in mkt2 or "rush attempt" in mkt2 or "carries" in mkt2:
+            return "rushing_attempts"
+        if "receiving target" in mkt2 or "receiver target" in mkt2 or mkt2.strip() == "targets":
+            return "targets"
         if "reception" in mkt2:
             return "receptions"
         if "passing touchdown" in mkt2 or re.search(r"\bpass(?:ing)?\s+tds?\b", mkt2):
@@ -1138,10 +1165,10 @@ def enrich_gamelogs_fairprob(props: list) -> list:
         cols = ("normalized_name,game_date,points,rebounds,assists,threes_made,"
                 "double_double,triple_double,home_runs,pitcher_hits_allowed,"
                 "strikeouts_batter,pitcher_strikeouts,total_bases,rbi,walks_batter,"
-                "steals,blocks,stolen_bases,hits,runs,receptions,receiving_yards,"
-                "rushing_yards,passing_yards,passing_touchdowns,rushing_touchdowns,"
+                "steals,blocks,stolen_bases,hits,runs,receptions,receiving_yards,targets,"
+                "rushing_yards,rushing_attempts,passing_yards,passing_touchdowns,rushing_touchdowns,"
                 "receiving_touchdowns,touchdowns,shots_on_goal,goalie_saves,goals,"
-                "assists_hockey")
+                "assists_hockey,hockey_points")
         chunk_size = max(10, min(int(os.getenv("PH_GAMELOG_PREFETCH_NAMES", "40")), 60))
         for pos in range(0, len(wanted_names), chunk_size):
             names_chunk = wanted_names[pos:pos + chunk_size]
@@ -1177,6 +1204,12 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             mkt = (p.market or "").lower()
             stat = _detect_stat(mkt)
             if not stat: continue
+            sport_label = (getattr(p, "sport", "") or "").upper()
+            if sport_label == "NHL":
+                if stat == "points":
+                    stat = "hockey_points"
+                elif stat == "assists":
+                    stat = "assists_hockey"
             key = norm_name(p.player)
             cache_k = f"{key}|{stat}"
             if cache_k not in _GAMELOG_CACHE:
@@ -4074,7 +4107,13 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             continue
         sport = (getattr(sp, "sport", "") or "").upper()
         market = getattr(sp, "market", "") or ""
+        market_norm = re.sub(r"[^a-z0-9]+", "_", market.lower()).strip("_")
         is_hr = sport == "MLB" and ("home run" in market.lower() or re.search(r"\bhr\b", market.lower()) is not None)
+        is_td_scorer = sport in ("NFL", "NCAAF") and (
+            market_norm.startswith("anytime_td")
+            or market_norm.startswith("2_plus_td")
+            or market_norm.startswith("3_plus_td")
+        )
         if not _has_observed_price(sp):
             rejected["unverified_odds"] += 1
             continue
@@ -4159,6 +4198,26 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
                 if edge < MIN_EDGE_SINGLE:
                     rejected["mlb_edge"] += 1
                     continue
+        elif is_td_scorer:
+            try:
+                td_n = int((feats or {}).get("gamelog_n") or 0)
+            except Exception:
+                td_n = 0
+            if td_n < MIN_GAMES_TD:
+                rejected["td_sample"] += 1
+                continue
+            if market_norm.startswith("3_plus_td"):
+                td_min_prob, td_min_edge = MIN_PROB_3PLUS_TD, MIN_EDGE_3PLUS_TD
+            elif market_norm.startswith("2_plus_td"):
+                td_min_prob, td_min_edge = MIN_PROB_2PLUS_TD, MIN_EDGE_2PLUS_TD
+            else:
+                td_min_prob, td_min_edge = MIN_PROB_ANYTIME_TD, MIN_EDGE_ANYTIME_TD
+            if prob < td_min_prob:
+                rejected["td_prob"] += 1
+                continue
+            if edge < td_min_edge:
+                rejected["td_edge"] += 1
+                continue
         else:
             if prob < MIN_PROB_OTHER_SPORTS or edge < MIN_EDGE_OTHER_SPORTS:
                 rejected["other_low"] += 1
