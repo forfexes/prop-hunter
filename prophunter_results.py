@@ -103,6 +103,46 @@ def _result_pick(row: dict) -> dict:
     return raw if isinstance(raw, dict) else {}
 
 
+def _commence_dt(p: dict):
+    raw = p.get("raw") if isinstance(p.get("raw"), dict) else {}
+    value = p.get("commence_time") or raw.get("commence_time")
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _settlement_ready_time(p: dict) -> bool:
+    start = _commence_dt(p)
+    if start is None:
+        return True
+    sport = str(p.get("sport") or p.get("league") or "").upper()
+    hours = {
+        "MLB": 4.0, "BASEBALL": 4.0, "NFL": 5.0, "NCAAF": 5.0,
+        "NBA": 3.5, "WNBA": 3.5, "NCAAB": 3.5, "EUROLEAGUE": 3.5,
+        "NHL": 4.0,
+    }.get(sport, 4.0)
+    return datetime.now(timezone.utc) >= start + timedelta(hours=hours)
+
+
+def _reset_premature_result(p: dict) -> bool:
+    if str(p.get("result") or p.get("status") or "").lower() not in CLOSED:
+        return False
+    if _settlement_ready_time(p):
+        return False
+    p["result"] = "pending"
+    p["status"] = "pending"
+    for key in ("profit", "profit_units", "actual_value", "settled_at", "settlement_note"):
+        if key in p:
+            p[key] = None
+    return True
+
+
 def _date_of_pick(p: dict) -> str:
     raw = p.get("sent_date") or p.get("date") or p.get("created_at") or ""
     return str(raw)[:10]
@@ -444,6 +484,9 @@ def main() -> int:
         picks = entry.get("picks") or []
         combos = entry.get("kombis") or []
         for p in picks:
+            if _reset_premature_result(p):
+                changed = True
+                _sync_pick_table(p)
             row = _match_result(p, by_dedup, by_signature)
             if not row:
                 continue
