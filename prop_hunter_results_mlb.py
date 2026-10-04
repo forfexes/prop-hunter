@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Iterable, List, Set, Tuple
 
 from prop_hunter_shared_utils import (
@@ -53,10 +53,33 @@ def _is_mlb(row: Dict[str, Any]) -> bool:
     return "MLB" in {sport, league} or sport == "BASEBALL"
 
 
+def _row_date(row: Dict[str, Any]):
+    for key in ("sent_date", "date", "created_at"):
+        raw = row.get(key)
+        if not raw:
+            continue
+        try:
+            return datetime.fromisoformat(str(raw).replace("Z", "+00:00")).date()
+        except Exception:
+            try:
+                return datetime.fromisoformat(str(raw)[:10]).date()
+            except Exception:
+                pass
+    return None
+
+
 def pending_player_groups(limit: int = 5000) -> List[Tuple[str, Set[str]]]:
-    grouped: Dict[str, Tuple[str, Set[str]]] = {}
-    for row in select_pick_rows(limit=limit):
-        if not _is_mlb(row) or not _is_pending(row):
+    # Settlement should finish older unresolved cards before spending the player
+    # budget on today's not-yet-finished games.
+    today = datetime.now(timezone.utc).date()
+    lookback = max(1, int(os.getenv("PH_MLB_RESULTS_LOOKBACK_DAYS", "4")))
+    floor = today - timedelta(days=lookback)
+    grouped: Dict[str, Dict[str, Any]] = {}
+    rows = [r for r in select_pick_rows(limit=limit) if _is_mlb(r) and _is_pending(r)]
+    rows.sort(key=lambda r: (_row_date(r) or today, str(r.get("created_at") or "")))
+    for row in rows:
+        d = _row_date(row)
+        if d and d < floor:
             continue
         player = str(row.get("player_name") or row.get("player") or "").strip()
         if not player:
@@ -64,12 +87,14 @@ def pending_player_groups(limit: int = 5000) -> List[Tuple[str, Set[str]]]:
         key = norm_name(player)
         market = str(row.get("market") or row.get("prop_type") or row.get("selection") or "").lower()
         group = "pitching" if any(tok in market for tok in PITCH_MARKET_TOKENS) else "hitting"
-        if key not in grouped:
-            grouped[key] = (player, set())
-        grouped[key][1].add(group)
+        rec = grouped.setdefault(key, {"player": player, "groups": set(), "date": d or today})
+        rec["groups"].add(group)
+        if d and d < rec["date"]:
+            rec["date"] = d
 
-    cap = max(1, int(os.getenv("PH_MLB_RESULTS_MAX_PLAYERS", "40")))
-    return list(grouped.values())[:cap]
+    cap = max(1, int(os.getenv("PH_MLB_RESULTS_MAX_PLAYERS", "80")))
+    ordered = sorted(grouped.values(), key=lambda x: (x["date"], norm_name(x["player"])))
+    return [(x["player"], x["groups"]) for x in ordered[:cap]]
 
 
 def find_player(name: str) -> Dict[str, Any] | None:
