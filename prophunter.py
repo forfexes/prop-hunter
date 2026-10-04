@@ -135,6 +135,26 @@ def fetch_snapshot_props(sport_filter=None):
             if not book:continue
             key=(sport,_snapshot_event_key(r),player.lower(),_snapshot_market_key(r),round(float(line),4),direction);cur=best.get(key)
             if cur is None or odds>float(cur.get('odds_decimal') or 0):best[key]=r
+        # Every persisted sportsbook row must pass the same central quote/market
+        # guard as live source rows before it reaches probability/edge logic.
+        # This is especially important for binary markets such as Anytime TD,
+        # whose source placeholder line=1 must be normalized to settlement line=.5.
+        try:
+            from prop_hunter_quote_guard import sanitize_row as _sanitize_snapshot_row
+            _clean_rows=[]
+            _snapshot_guard_rejected=0
+            for _row in rows:
+                _clean=_sanitize_snapshot_row(_row)
+                if _clean is None:
+                    _snapshot_guard_rejected+=1
+                    continue
+                _clean_rows.append(_clean)
+            rows=_clean_rows
+            if _snapshot_guard_rejected:
+                log.info('Snapshot central guard: kept=%d rejected=%d',len(rows),_snapshot_guard_rejected)
+        except Exception as exc:
+            log.warning('Snapshot central guard unavailable: %s',exc)
+
         try:
             from prop_hunter_market_intelligence import movement_index,market_key as _mi_key,consensus_count
             _movement=movement_index(rows)
