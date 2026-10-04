@@ -94,6 +94,12 @@ def safety_checks():
     if combo: fail(f"combined passing+rushing market accepted as pure rushing: {combo}")
     binary=sanitize_row({"player_name":"Josh Allen","market":"anytime_td","direction":"yes","line":None,"odds_decimal":2.2,"selection":"Yes"})
     if not binary or binary["line"]!=.5 or binary["direction"]!="over": fail("binary market normalization")
+    if sanitize_row({"player_name":"Zay Flowers","market":"longest_reception","direction":"under","line":26.5,"odds_decimal":1.91}): fail("unsupported longest reception accepted")
+    if sanitize_row({"player_name":"Zay Flowers","market":"player_to_score_a_touchdown_first_half","direction":"over","line":.5,"odds_decimal":4.0,"selection":"Yes"}): fail("period TD accepted as full-game TD")
+    td2=sanitize_row({"player_name":"Derrick Henry","market":"2_touchdown_to_be_scored_by_the_player_including_overtime","direction":"over","line":1.5,"odds_decimal":3.25,"selection":"Yes"})
+    if not td2 or td2["market_key"]!="2_plus_td" or td2["line"]!=1.5: fail(f"2+ TD normalization failed: {td2}")
+    td3=sanitize_row({"player_name":"Derrick Henry","market":"to_score_3_touchdowns","direction":"over","line":2.5,"odds_decimal":9.5,"selection":"Yes"})
+    if not td3 or td3["market_key"]!="3_plus_td" or td3["line"]!=2.5: fail(f"3+ TD normalization failed: {td3}")
     if not probability_sane(.60,1.90): fail("reasonable model/market gap rejected")
     if probability_sane(.90,5.0): fail("absurd model/market gap accepted")
 
@@ -123,6 +129,8 @@ def safety_checks():
     core_text=Path("prophunter_core_1391.py").read_text(encoding="utf-8")
     for token in ('return "receptions"','return "receiving_yards"','return "rushing_yards"','return "passing_yards"','return "shots_on_goal"','return "goalie_saves"'):
         if token not in core_text: fail(f"gamelog ladder stat mapping missing: {token}")
+    for token in ('MIN_PROB_ANYTIME_TD','MIN_EDGE_ANYTIME_TD','MIN_PROB_2PLUS_TD','MIN_EDGE_2PLUS_TD','MIN_GAMES_TD','rejected["td_sample"]','return "rushing_attempts"','return "targets"'):
+        if token not in core_text: fail(f"TD/extended prop lane missing: {token}")
     for token in ('market = str(r.get("market_key") or r.get("market") or "").strip()','direction = str(r.get("direction") or "").strip().lower()','if market == "passing_rushing_yards": continue','direction=direction'):
         if token not in core_text: fail(f"snapshot prop safety missing: {token}")
     nfl_easy=ph.Prop(player="Josh Downs",market="Receptions",odds=1.70,point=2.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.75,"gamelog_n":10})
