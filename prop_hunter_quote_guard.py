@@ -122,6 +122,23 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
         return "double_double"
     if any(x in text for x in ("points rebounds assists", "points rebounds and assists")) or text == "pra":
         return "pra"
+    # Period-specific player props cannot be graded against full-game gamelogs.
+    if any(x in text for x in (
+        "first half", "1st half", "second half", "2nd half",
+        "quarter 1", "quarter 2", "quarter 3", "quarter 4",
+        "1st quarter", "2nd quarter", "3rd quarter", "4th quarter",
+        "drive 1", "first drive", "1st drive",
+    )):
+        return "unsupported_period"
+
+    # Cross-sport labels that generic word matching would misclassify.
+    if "three point field goal" in text or "3 point field goal" in text:
+        return "threes"
+    if "defensive tackle" in text or ("tackle" in text and "solo" in text and "assist" in text):
+        return "tackles"
+    if "successful field goal" in text and "three point" not in text and "3 point" not in text:
+        return "field_goals_made"
+
     if any(x in text for x in ("points rebounds", "points and rebounds")) and "assists" not in text:
         return "pr"
     if any(x in text for x in ("points assists", "points and assists")) and "rebounds" not in text:
@@ -263,7 +280,7 @@ def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     canon = canonical_market(market, original_market)
     # Combined passing+rushing yards is distinct from both pure yardage stats.
     # Until dedicated gamelog/settlement support exists, keep it off cards.
-    if canon in {"passing_rushing_yards", "unsupported_longest", "unsupported_period_td"}:
+    if canon in {"passing_rushing_yards", "unsupported_longest", "unsupported_period_td", "unsupported_period"}:
         return None
     out["player_name"] = player
     out["market"] = canon
