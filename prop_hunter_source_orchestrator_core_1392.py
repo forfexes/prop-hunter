@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
-from prop_hunter_shared_utils import hash_key, now_iso, safe_json_load, safe_json_write, to_float, upsert_rows, warn
+from prop_hunter_shared_utils import hash_key, norm_name, now_iso, safe_json_load, safe_json_write, to_float, upsert_rows, warn
 from prop_hunter_source_catalog import SOURCES, as_rows
 
 SPORTS = tuple(x.strip().upper() for x in os.getenv("PROP_HUNTER_SPORTS", "MLB,WNBA,NBA,NFL,NHL,NCAAB,NCAAF").split(",") if x.strip())
@@ -40,6 +40,8 @@ def _normalise(row: Dict[str, Any], source: str) -> Optional[Dict[str, Any]]:
     if not player or not market or line is None:
         return None
     out = dict(row)
+    out["player_name"] = str(player).strip()
+    out["normalized_name"] = str(out.get("normalized_name") or norm_name(player)).strip()
     out["source"] = str(out.get("source") or source).lower()
     out["bookmaker"] = str(out.get("bookmaker") or out["source"]).lower()
     out["sport"] = str(out.get("sport") or out.get("league") or "").upper()
