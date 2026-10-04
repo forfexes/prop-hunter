@@ -1106,6 +1106,10 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             return "rushing_touchdowns"
         if "receiving touchdown" in mkt2 or re.search(r"\breceiv(?:ing)?\s+tds?\b", mkt2):
             return "receiving_touchdowns"
+        if "defensive tackle" in mkt2 or mkt2 == "tackles":
+            return "tackles"
+        if "successful field goal" in mkt2 or "field goals made" in mkt2:
+            return "field_goals_made"
         if any(x in mkt2 for x in ("anytime td", "anytime touchdown", "touchdown scorer")):
             return "touchdowns"
 
