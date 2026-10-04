@@ -85,8 +85,14 @@ def test_nba_wnba_nfl_nhl_guards():
     check("load_schedules" in nfl and '"game_date": game_date' in nfl, "NFL schedule/date mapping missing")
     nba = Path("prop_hunter_results_nba.py").read_text(encoding="utf-8")
     wnba = Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
+    nhl = Path("prop_hunter_results_nhl.py").read_text(encoding="utf-8")
+    mlb = Path("prop_hunter_results_mlb.py").read_text(encoding="utf-8")
     check("pending_picks" in nba and "espn_pending_logs" in nba, "NBA pending-pick fallback missing")
     check("pending_picks" in wnba and "event_players" in wnba, "WNBA pending-pick path missing")
+    check("def _event_final" in wnba and "not _event_final(ev)" in wnba, "WNBA final-game guard missing")
+    check("sorted(by_date.items(), key=_date_priority)" in wnba, "WNBA recent-result prioritization missing")
+    check("/api/v1/search/player" in nhl and "'type':'player'" not in nhl, "NHL current player-search endpoint missing")
+    check("PH_MLB_RESULTS_LOOKBACK_DAYS" in mlb and "rows.sort(" in mlb, "MLB unresolved-card prioritization missing")
 
 
 def test_all_sports_sources():
