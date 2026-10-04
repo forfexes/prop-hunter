@@ -7,7 +7,7 @@ from prop_hunter_shared_utils import select_pick_rows, upsert_rows, safe_json_wr
 from prop_hunter_identity_hub import identity_match
 
 OUT='prop_hunter_results_nhl_raw.json'
-SEARCH='https://search.d3.nhle.com/api/v1/search'
+SEARCH='https://search.d3.nhle.com/api/v1/search/player'
 API='https://api-web.nhle.com/v1'
 
 def season_id(now=None):
@@ -43,7 +43,7 @@ def _candidate_name(row):
     return full
 
 def player_id(name):
-    data=http_json(SEARCH,params={'q':name,'type':'player','culture':'en-us','limit':8},retries=1) or []
+    data=http_json(SEARCH,params={'q':name,'culture':'en-us','limit':8},retries=1) or []
     if isinstance(data,dict): data=data.get('searchResults') or data.get('playerSearchResults') or data.get('data') or []
     if not isinstance(data,list): return None
     exact=[]; fuzzy=[]
