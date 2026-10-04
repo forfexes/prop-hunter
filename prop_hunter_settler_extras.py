@@ -14,8 +14,8 @@ import re
 from typing import Any, Dict, Optional
 
 from prop_hunter_settler import (
-    build_log_index, detect_stat as legacy_detect_stat, find_gamelog, learn_aliases, line_of_pick,
-    result_for_value, side_of_pick
+    _load_relevant_gamelogs, build_log_index, detect_stat as legacy_detect_stat,
+    find_gamelog, learn_aliases, line_of_pick, result_for_value, side_of_pick
 )
 from prop_hunter_shared_utils import (
     hash_key, log, norm_name, now_iso, pick_id, safe_json_write,
@@ -46,7 +46,7 @@ def detect_extra_stat(market: Any) -> Optional[str]:
         return "rushing_touchdowns"
     if "passing touchdown" in m:
         return None
-    if "touchdown" in m or m.strip() in {"td", "tds"}:
+    if "touchdown" in m or m.strip() in {"td", "tds"} or re.search(r"\b[23]\s+plus\s+tds?\b", m):
         return "touchdowns"
     return None
 
@@ -147,12 +147,7 @@ def main() -> None:
         p for p in picks
         if str(p.get("status") or p.get("result") or "pending").lower() in pending_status
     ]
-    logs = select_rows(
-        "prop_hunter_player_gamelogs",
-        limit=8000,
-        order_by="id",
-        desc=True,
-    )
+    logs = _load_relevant_gamelogs(picks)
     aliases = learn_aliases(list(picks) + list(logs))
     log_index = build_log_index(logs)
     settled = []
