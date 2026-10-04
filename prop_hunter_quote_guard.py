@@ -102,6 +102,12 @@ def _explicit_threshold_line(label: str) -> Optional[float]:
         return 0.5
     if any(x in text for x in ("anytime td", "anytime touchdown", "to score a touchdown")):
         return 0.5
+    # Explicit scorer thresholds exposed as "2 touchdowns" / "3 touchdowns".
+    # Do not apply this to quarterback passing-TD totals.
+    if "pass" not in text:
+        m_td = re.search(r"\b([23])\s+touchdowns?\b", text)
+        if m_td and any(x in text for x in ("to score", "scored by the player", "touchdown to be scored")):
+            return float(int(m_td.group(1))) - 0.5
     return None
 
 def canonical_market(market: Any, original_market: Any = "") -> str:
@@ -143,6 +149,39 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
         return "hits"
     if re.search(r"\bruns?\b", text) and "home run" not in text and "runs batted" not in text:
         return "runs"
+
+    # Unsupported NFL markets must never be evaluated against a different
+    # gamelog statistic. We currently do not store longest-catch/rush/pass stats.
+    if any(x in text for x in (
+        "longest reception", "longest receiving", "longest rush",
+        "longest rushing", "longest completed pass", "longest pass completion",
+    )):
+        return "unsupported_longest"
+
+    # Period/drive touchdown markets need period-specific gamelogs. Do not use
+    # a full-game TD rate for them.
+    if ("touchdown" in text or re.search(r"\btds?\b", text)) and any(x in text for x in (
+        "first half", "1st half", "second half", "2nd half",
+        "quarter 1", "quarter 2", "quarter 3", "quarter 4",
+        "1st quarter", "2nd quarter", "3rd quarter", "4th quarter",
+        "drive 1", "first drive", "1st drive", "first touchdown", "1st touchdown",
+    )):
+        return "unsupported_period_td"
+
+    # Full-game scorer thresholds. Passing-TD totals are a separate QB market.
+    if "pass" not in text:
+        if (
+            "to score 3 touchdowns" in text
+            or "3 touchdown to be scored by the player" in text
+            or "3 touchdowns to be scored by the player" in text
+        ):
+            return "3_plus_td"
+        if (
+            "to score 2 touchdowns" in text
+            or "2 touchdown to be scored by the player" in text
+            or "2 touchdowns to be scored by the player" in text
+        ):
+            return "2_plus_td"
 
     aliases = (
         (("passing touchdowns", "pass tds", "pass td"), "passing_touchdowns"),
@@ -224,7 +263,7 @@ def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     canon = canonical_market(market, original_market)
     # Combined passing+rushing yards is distinct from both pure yardage stats.
     # Until dedicated gamelog/settlement support exists, keep it off cards.
-    if canon == "passing_rushing_yards":
+    if canon in {"passing_rushing_yards", "unsupported_longest", "unsupported_period_td"}:
         return None
     out["player_name"] = player
     out["market"] = canon
