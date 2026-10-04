@@ -44,6 +44,24 @@ def main():
     check(canonical_market("to_hit_a_triple") == "triples", "triple mapped to generic hits")
     check(canonical_market("to_hit_a_double") == "doubles", "double mapped to generic hits")
     check(canonical_market("to_hit_a_single") == "singles", "single mapped to generic hits")
+    check(canonical_market("2 touchdown to be scored by the player including overtime") == "2_plus_td", "2+ TD canonical mapping")
+    check(canonical_market("to score 3 touchdowns") == "3_plus_td", "3+ TD canonical mapping")
+    td2 = sanitize_row({
+        "source":"kambi","bookmaker":"betrivers","sport":"NFL","league":"NFL",
+        "player_name":"Derrick Henry","market":"2_touchdown_to_be_scored_by_the_player_including_overtime",
+        "direction":"over","line":1.5,"odds_decimal":3.25,"selection":"Yes"
+    })
+    check(td2 is not None and td2["market_key"]=="2_plus_td" and td2["line"]==1.5, "2+ TD row normalization")
+    check(sanitize_row({
+        "source":"bovada_direct","bookmaker":"bovada","sport":"NFL","league":"NFL",
+        "player_name":"Zay Flowers","market":"longest_reception","direction":"under",
+        "line":26.5,"odds_decimal":1.91
+    }) is None, "longest reception reached card pool")
+    check(sanitize_row({
+        "source":"kambi","bookmaker":"betrivers","sport":"NFL","league":"NFL",
+        "player_name":"Zay Flowers","market":"player_to_score_a_touchdown_first_half",
+        "direction":"over","line":0.5,"odds_decimal":4.0,"selection":"Yes"
+    }) is None, "period TD reached full-game card pool")
     check(not probability_sane(.91, 71.0), "91% @71 absurd probability accepted")
     future = sanitize_row({
         "source":"draftkings_direct","bookmaker":"draftkings","sport":"NHL",
