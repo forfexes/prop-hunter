@@ -64,6 +64,8 @@ MARKET_STAT_MAP = {
     "passing touchdowns": "passing_touchdowns", "pass tds": "passing_touchdowns", "pass td": "passing_touchdowns",
     "receiving yards": "receiving_yards", "rushing yards": "rushing_yards",
     "passing yards": "passing_yards", "receptions": "receptions",
+    "tackles": "tackles", "defensive tackles": "tackles",
+    "field goals made": "field_goals_made", "successful field goals": "field_goals_made",
     "3 plus td": "three_plus_td", "3plus td": "three_plus_td", "3 td": "three_plus_td",
     "2 plus td": "two_plus_td", "2plus td": "two_plus_td", "2 td": "two_plus_td",
     "anytime td": "anytime_td", "1 plus td": "anytime_td", "1plus td": "anytime_td", "1 td": "anytime_td", "touchdown": "anytime_td",
