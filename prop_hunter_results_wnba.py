@@ -83,6 +83,15 @@ def _event_team_names(ev):
                 out.append(str(t[k]).lower())
     return out
 
+def _event_final(ev):
+    status = ev.get("status") or {}
+    typ = status.get("type") or {}
+    if typ.get("completed") is True:
+        return True
+    state = str(typ.get("state") or typ.get("name") or "").lower()
+    return state in {"post", "final", "completed"}
+
+
 def _event_matches(ev, pick):
     game = _game_text(pick)
     if not game:
@@ -151,10 +160,20 @@ def main():
     event_players = {}
     max_dates = max(1, int(os.getenv("WNBA_RESULTS_MAX_DATES", "5")))
     max_events = max(1, int(os.getenv("WNBA_RESULT_GAME_CAP", "20")))
-    for ymd, ps in list(by_date.items())[:max_dates]:
+    today = datetime.now(timezone.utc).date()
+    def _date_priority(item):
+        ymd, _ = item
+        try:
+            d = datetime.strptime(ymd, "%Y%m%d").date()
+        except Exception:
+            return (9, 9999, ymd)
+        # Completed recent games first; future windows are last.
+        return (0 if d <= today else 1, abs((today - d).days), -d.toordinal())
+
+    for ymd, ps in sorted(by_date.items(), key=_date_priority)[:max_dates]:
         for ev in espn_scoreboard(ymd):
             eid = str(ev.get("id") or "")
-            if not eid:
+            if not eid or not _event_final(ev):
                 continue
             matched = [p for p in ps if _event_matches(ev, p)]
             if not matched:
