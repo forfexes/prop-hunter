@@ -1175,6 +1175,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             try:
                 res = (c.table("prop_hunter_player_gamelogs").select(cols)
                        .in_("normalized_name", names_chunk)
+                       .not_.is_("game_date", "null")
                        .order("game_date", desc=True).limit(max(200, len(names_chunk) * 15)).execute())
                 for row in (res.data or []):
                     nk = row.get("normalized_name")
@@ -1237,7 +1238,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                     cols2 = COMBO_STATS[stat]
                     res = c.table("prop_hunter_player_gamelogs").select(
                         ",".join(cols2) + ",game_date").eq(
-                        "normalized_name", key).order(
+                        "normalized_name", key).not_.is_("game_date", "null").order(
                         "game_date", desc=True).limit(10).execute()
                     combo_vals = []
                     for r in (res.data or []):
@@ -1248,7 +1249,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 elif stat in ("double_double", "triple_double"):
                     res = c.table("prop_hunter_player_gamelogs").select(
                         "points,rebounds,assists,game_date").eq(
-                        "normalized_name", key).order(
+                        "normalized_name", key).not_.is_("game_date", "null").order(
                         "game_date", desc=True).limit(10).execute()
                     dd_vals = []
                     need = 2 if stat == "double_double" else 3
@@ -1260,7 +1261,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                     _GAMELOG_CACHE[cache_k] = dd_vals
                 else:
                     res = c.table("prop_hunter_player_gamelogs").select(stat).eq(
-                        "normalized_name", key).not_.is_(stat, "null").order(
+                        "normalized_name", key).not_.is_(stat, "null").not_.is_("game_date", "null").order(
                         "game_date", desc=True).limit(10).execute()
                     _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
             vals = _GAMELOG_CACHE[cache_k]
