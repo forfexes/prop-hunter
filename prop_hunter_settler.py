@@ -210,6 +210,40 @@ def _date_only(value: Any):
             return None
 
 
+def _pick_commence_dt(pick: Dict[str, Any]):
+    raw = pick.get("raw") if isinstance(pick.get("raw"), dict) else {}
+    value = pick.get("commence_time") or raw.get("commence_time")
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _pick_ready_for_settlement(pick: Dict[str, Any]) -> bool:
+    """Never grade a pick against an older gamelog before its event could be final."""
+    start = _pick_commence_dt(pick)
+    if start is None:
+        return True
+    sport = str(pick.get("sport") or pick.get("league") or "").upper()
+    hours = {
+        "MLB": 4.0,
+        "BASEBALL": 4.0,
+        "NFL": 5.0,
+        "NCAAF": 5.0,
+        "NBA": 3.5,
+        "WNBA": 3.5,
+        "NCAAB": 3.5,
+        "EUROLEAGUE": 3.5,
+        "NHL": 4.0,
+    }.get(sport, 4.0)
+    return datetime.now(timezone.utc) >= start + timedelta(hours=hours)
+
+
 def _pick_target_date(pick: Dict[str, Any]):
     raw = pick.get("raw") if isinstance(pick.get("raw"), dict) else {}
     for value in (
@@ -251,6 +285,9 @@ def find_gamelog(
     if not player_logs:
         return None
 
+    if not _pick_ready_for_settlement(pick):
+        return None
+
     if game_id:
         exact = [
             gl for gl in player_logs
@@ -271,7 +308,11 @@ def find_gamelog(
         if gd is None:
             continue
         delta = (gd - target).days
-        if -1 <= delta <= 2:
+        start_dt = _pick_commence_dt(pick)
+        # For North-American late-night events, a UTC start shortly after midnight
+        # can legitimately have an official local game_date one day earlier.
+        allow_previous_day = bool(start_dt and start_dt.hour < 7)
+        if delta == 0 or (delta == -1 and allow_previous_day) or (1 <= delta <= 2):
             dated.append((abs(delta), 0 if delta == 0 else 1 if delta == -1 else 2 + delta, gl))
     if not dated:
         return None
