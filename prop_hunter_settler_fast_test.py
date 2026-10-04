@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from pathlib import Path
 from prop_hunter_settler import build_log_index, find_gamelog
 
 logs=[]
@@ -23,4 +24,11 @@ pick={"player":"Exact Player","game_id":"game-123","date":"2026-10-02"}
 gl=find_gamelog(pick,logs,aliases={},log_index=idx)
 assert gl and gl["game_id"]=="game-123", gl
 assert len(idx["exact player"])==1
+
+source=Path("prop_hunter_settler.py").read_text(encoding="utf-8")
+assert 'def _load_relevant_gamelogs' in source
+assert '.in_("normalized_name", batch)' in source
+assert '.gte("game_date", start.isoformat())' in source
+assert '.lte("game_date", end.isoformat())' in source
+assert 'logs = _load_relevant_gamelogs(picks)' in source
 print("SETTLER FAST INDEX TEST PASSED")
