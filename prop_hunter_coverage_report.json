@@ -1,81 +1,153 @@
 {
-  "updated_at": "2026-10-04T15:27:37.202711+00:00",
+  "updated_at": "2026-10-05T19:21:45.883167+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 798,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "fanduel_direct",
-        "kambi"
-      ],
-      "market_count": 18,
-      "latest": "2026-10-03T23:35:39.939286+00:00",
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
       "missing_core": [
         "home run",
+        "hits",
         "total bases",
+        "rbi",
         "pitcher strikeouts"
       ]
     },
     "NBA": {
-      "rows": 18,
-      "sources": [
-        "fanduel_direct",
-        "kambi"
-      ],
-      "market_count": 4,
-      "latest": "2026-10-03T23:35:16.760239+00:00",
-      "missing_core": []
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
     },
     "WNBA": {
-      "rows": 814,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "fanduel_direct",
-        "kambi"
-      ],
-      "market_count": 13,
-      "latest": "2026-10-03T23:35:50.972509+00:00",
-      "missing_core": []
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
     },
     "NFL": {
-      "rows": 1805,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
-      ],
-      "market_count": 76,
-      "latest": "2026-10-03T23:36:00.297508+00:00",
-      "missing_core": []
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing",
+        "receptions"
+      ]
     },
     "NHL": {
-      "rows": 1314,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
-      ],
-      "market_count": 7,
-      "latest": "2026-10-03T23:36:09.211557+00:00",
-      "missing_core": []
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "shots",
+        "goals",
+        "points",
+        "assists",
+        "saves"
+      ]
     }
   },
   "issues": [
+    {
+      "sport": "MLB",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
     {
       "sport": "MLB",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
         "home run",
+        "hits",
         "total bases",
+        "rbi",
         "pitcher strikeouts"
+      ]
+    },
+    {
+      "sport": "NBA",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "NBA",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
+    },
+    {
+      "sport": "WNBA",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "WNBA",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
+    },
+    {
+      "sport": "NFL",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "NFL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing",
+        "receptions"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "NHL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "shots",
+        "goals",
+        "points",
+        "assists",
+        "saves"
       ]
     }
   ]

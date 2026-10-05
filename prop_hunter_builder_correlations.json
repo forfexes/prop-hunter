@@ -3,10 +3,10 @@
   "pairs": {
     "UNKNOWN:rbi:under|UNKNOWN:rbi:under": {
       "factor": 1.0,
-      "n": 4,
-      "both_wins": 4,
+      "n": 5,
+      "both_wins": 5,
       "observed_joint": 1.0,
-      "expected_joint": 0.6795,
+      "expected_joint": 0.64572,
       "raw_ratio": 1.35
     },
     "MLB:rbi:under|UNKNOWN:rbi:under": {
@@ -32,18 +32,50 @@
       "observed_joint": 1.0,
       "expected_joint": 0.82718,
       "raw_ratio": 1.2089
+    },
+    "MLB:rbi:under|MLB:rbi:under": {
+      "factor": 1.0,
+      "n": 2,
+      "both_wins": 2,
+      "observed_joint": 1.0,
+      "expected_joint": 0.34087,
+      "raw_ratio": 1.35
+    },
+    "NFL:receptions:under|NFL:receptions:under": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.67952,
+      "raw_ratio": 0.6
+    },
+    "MLB:rbi:over|MLB:rbi:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.33809,
+      "raw_ratio": 0.6
+    },
+    "WNBA:threes:over|WNBA:threes:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.4746,
+      "raw_ratio": 0.6
     }
   },
   "profiles": {
     "value": {
-      "n": 1,
-      "wins": 1,
-      "losses": 0,
-      "pushes": 0,
-      "stake": 0.15,
-      "profit": 0.3,
-      "hit_rate": 1.0,
-      "roi": 2.0
+      "n": 5,
+      "wins": 2,
+      "losses": 2,
+      "pushes": 1,
+      "stake": 0.72,
+      "profit": 0.54,
+      "hit_rate": 0.5,
+      "roi": 0.75
     },
     "aggressive": {
       "n": 1,
@@ -66,14 +98,14 @@
       "roi": -1.0
     },
     "safe": {
-      "n": 1,
-      "wins": 1,
-      "losses": 0,
+      "n": 4,
+      "wins": 3,
+      "losses": 1,
       "pushes": 0,
-      "stake": 0.25,
-      "profit": 0.26,
-      "hit_rate": 1.0,
-      "roi": 1.04
+      "stake": 0.85,
+      "profit": 1.54,
+      "hit_rate": 0.75,
+      "roi": 1.81176
     },
     "longshot": {
       "n": 1,
@@ -86,5 +118,5 @@
       "roi": -1.0
     }
   },
-  "updated_at": "2026-10-04T15:27:20.638582+00:00"
+  "updated_at": "2026-10-05T19:21:34.525522+00:00"
 }
