@@ -219,8 +219,10 @@ def test_telegram_ladder_split_contract():
           "ladder Telegram splitter missing")
     check('send_telegram(body,dry_run=dry_run,picks=picks)' in core,
           "card run does not pass picks to Telegram splitter")
-    check('"kind":"ladder"' in core and '"combo_indices":[idx]' in core,
-          "ladder cards are not scoped to one combo")
+    check('"kind":"ladders"' in core and 'PH_TELEGRAM_LADDER_BUNDLE_CHARS' in core,
+          "ladder cards are not bundled for Telegram flood safety")
+    check('"combo_indices":list(current_indices)' in core,
+          "bundled ladder cards lost settlement combo scope")
     check('_LAST_TELEGRAM_CARDS' in hardened and '"card_kind": sent.get("kind") or "main"' in hardened,
           "split Telegram cards are not persisted for settlement")
     check('getattr(leg,"probability",None)' in core and 'getattr(leg,"edge_pct",None)' in core,
