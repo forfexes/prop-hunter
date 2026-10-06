@@ -229,6 +229,8 @@ def test_telegram_ladder_split_contract():
           "player/TD ladder card labels missing")
     check("_next_real_line" not in core and "alt_odds = round" not in core,
           "legacy synthetic ladder generator still present")
+    check("PH_TELEGRAM_429_RETRIES" in core and "retry_after" in core and "PH_TELEGRAM_SEND_DELAY" in core,
+          "Telegram 429 retry/backoff missing")
     check('PH_MAX_HR_SINGLES", "0"' in core,
           "global HR cap default is not disabled")
 
