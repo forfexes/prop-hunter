@@ -208,6 +208,7 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
     aliases = (
         (("passing touchdowns", "pass tds", "pass td"), "passing_touchdowns"),
         (("passing rushing yards", "passing and rushing yards", "pass rush yards"), "passing_rushing_yards"),
+        (("rushing receiving yards", "rushing and receiving yards", "rush receiving yards", "rushing & receiving yards"), "rushing_receiving_yards"),
         (("passing yards", "pass yds"), "passing_yards"),
         (("passing attempts", "pass attempts"), "passing_attempts"),
         (("passing completions", "pass completions", "completions"), "passing_completions"),
@@ -285,7 +286,7 @@ def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     canon = canonical_market(market, original_market)
     # Combined passing+rushing yards is distinct from both pure yardage stats.
     # Until dedicated gamelog/settlement support exists, keep it off cards.
-    if canon in {"passing_rushing_yards", "unsupported_longest", "unsupported_period_td", "unsupported_period"}:
+    if canon in {"passing_rushing_yards", "rushing_receiving_yards", "unsupported_longest", "unsupported_period_td", "unsupported_period"}:
         return None
     out["player_name"] = player
     out["market"] = canon
