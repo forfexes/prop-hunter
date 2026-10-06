@@ -2914,7 +2914,7 @@ def send_telegram(text,dry_run=False,picks=None):
         return None
     sent=[]
     max_retries=max(1,min(5,int(os.getenv("PH_TELEGRAM_429_RETRIES","3"))))
-    send_delay=max(0.0,min(3.0,float(os.getenv("PH_TELEGRAM_SEND_DELAY","1.1"))))
+    send_delay=max(0.0,min(5.0,float(os.getenv("PH_TELEGRAM_SEND_DELAY","3.2"))))
     log.info("Telegram delivery: payloads=%d delay=%.1fs 429_retries=%d",len(payloads),send_delay,max_retries)
     for payload_idx,payload in enumerate(payloads):
         body=str(payload.get("text") or "")
