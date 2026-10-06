@@ -2881,12 +2881,18 @@ def _render_ladder_card(p):
     return "\n".join(out)
 
 def _telegram_payloads(text,picks=None):
-    """Split ladders into their own Telegram windows without losing settlement scope."""
+    """Split the main card from ladders, bundling ladders into Telegram-safe chunks.
+
+    One-message-per-ladder produced 150+ messages on large cards and hit Telegram
+    flood control.  Keep every ladder and its settlement scope, but pack multiple
+    ladder blocks into messages below the 4096-character API limit.
+    """
     all_picks=list(picks or [])
     combos=[p for p in all_picks if getattr(p,"type",None) in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")]
     ladder_items=[(idx,p) for idx,p in enumerate(combos) if getattr(p,"type",None)=="ladder"]
     if not ladder_items:
         return [{"kind":"main","text":str(text or ""),"combo_indices":list(range(len(combos))),"include_singles":True}]
+
     ladder_indices={idx for idx,_ in ladder_items}
     main_text=_strip_ladder_section(text)
     payloads=[{
@@ -2894,11 +2900,46 @@ def _telegram_payloads(text,picks=None):
         "combo_indices":[i for i in range(len(combos)) if i not in ladder_indices],
         "include_singles":True,
     }]
-    for idx,p in ladder_items:
+
+    max_chars=max(1200,min(3950,int(os.getenv("PH_TELEGRAM_LADDER_BUNDLE_CHARS","3800"))))
+    separator="\n\n━━━━━━━━━━━━━━━━\n\n"
+    current_blocks=[]
+    current_indices=[]
+
+    def _clean_ladder_block(p):
+        block=_render_ladder_card(p).strip()
+        lines=block.splitlines()
+        if lines and lines[-1].strip()=="@prophunter":
+            lines=lines[:-1]
+        return "\n".join(lines).strip()
+
+    def _flush():
+        nonlocal current_blocks,current_indices
+        if not current_blocks:
+            return
+        body=separator.join(current_blocks).rstrip()+"\n\n@prophunter"
         payloads.append({
-            "kind":"ladder","text":_render_ladder_card(p),
-            "combo_indices":[idx],"include_singles":False,
+            "kind":"ladders","text":body,
+            "combo_indices":list(current_indices),"include_singles":False,
         })
+        current_blocks=[]
+        current_indices=[]
+
+    for idx,p in ladder_items:
+        block=_clean_ladder_block(p)
+        if not block:
+            continue
+        candidate=separator.join(current_blocks+[block]).rstrip()+"\n\n@prophunter"
+        if current_blocks and len(candidate)>max_chars:
+            _flush()
+        # A pathological single ladder should still be visible rather than
+        # silently discarded; send_telegram retains the hard 4096 guard.
+        current_blocks.append(block)
+        current_indices.append(idx)
+    _flush()
+
+    log.info("Telegram payload plan: singles/main + %d ladders bundled into %d messages",
+             len(ladder_items),max(0,len(payloads)-1))
     return [x for x in payloads if str(x.get("text") or "").strip()]
 
 def send_telegram(text,dry_run=False,picks=None):
