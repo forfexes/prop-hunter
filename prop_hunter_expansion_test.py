@@ -233,6 +233,11 @@ def test_telegram_ladder_split_contract():
           "legacy synthetic ladder generator still present")
     check("PH_TELEGRAM_429_RETRIES" in core and "retry_after" in core and "PH_TELEGRAM_SEND_DELAY" in core,
           "Telegram 429 retry/backoff missing")
+    check("PH_TELEGRAM_MAX_PAYLOADS" in core and "Telegram payload cap" in core,
+          "Telegram payload-volume safety cap missing")
+    builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
+    check("PH_MAX_LADDERS" in builder and "selected_keys" in builder and "selected=selected" in builder,
+          "ladder generation is not bounded to selected card ideas")
     check('PH_MAX_HR_SINGLES", "0"' in core,
           "global HR cap default is not disabled")
 
