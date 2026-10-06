@@ -443,6 +443,21 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
         if len(legs) < 2:
             continue
 
+        # Keep ladders readable and actionable. Every rung is still a real observed
+        # bookmaker line, but dozens of alt-lines for one player add noise rather
+        # than a distinct betting idea. Preserve easy/hard endpoints plus the best
+        # intermediate +EV rungs.
+        max_rungs = max(2, min(6, int(os.getenv("PH_MAX_LADDER_RUNGS", "4"))))
+        if len(legs) > max_rungs:
+            endpoints = [legs[0], legs[-1]]
+            middle = sorted(
+                legs[1:-1],
+                key=lambda x: (x["edge"], x["probability"]),
+                reverse=True,
+            )[:max_rungs-2]
+            keep_ids = {id(x) for x in endpoints + middle}
+            legs = [x for x in legs if id(x) in keep_ids]
+
         ladder_legs = []
         leg_details = []
         for item in legs:
