@@ -112,9 +112,12 @@ def _explicit_threshold_line(label: str) -> Optional[float]:
 
 def canonical_market(market: Any, original_market: Any = "") -> str:
     """Canonical market key used before any gamelog/stat matching."""
-    raw = _norm(original_market) or _norm(market)
+    raw = _norm(original_market)
     cur = _norm(market)
-    text = raw or cur
+    # Use both labels. Some feeds put only "Yes/No" in selection/original_market
+    # while the actual market key still carries qualifiers such as first_half.
+    # Dropping the market text here let period TD props masquerade as full-game TDs.
+    text = " ".join(x for x in (raw, cur) if x).strip()
 
     if "triple double" in text:
         return "triple_double"
