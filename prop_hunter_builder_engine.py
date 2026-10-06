@@ -381,12 +381,17 @@ def _ladder_leg_candidate(prop: Any) -> Optional[Dict[str, Any]]:
     }
 
 
-def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List[Any]:
+def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selected: Sequence[Any] = ()) -> List[Any]:
     """Build every verified same-player/same-book ladder with >=2 +EV rungs.
 
     Important: exact alternate lines remain distinct. We do not collapse 10+/15+/20+
     into one pick and we do not invent missing rungs or prices.
     """
+    selected_keys = {
+        (_player(p).lower(), _base_market(getattr(p, "market", "")), _direction(p))
+        for p in (selected or [])
+        if _player(p) and _base_market(getattr(p, "market", ""))
+    }
     grouped: Dict[Tuple[str, str, str, str, str], List[Any]] = {}
     for p in props or []:
         if not _real_price(p):
@@ -397,6 +402,10 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List
         direction = _direction(p)
         game = _game(p)
         if not player or not book or not base or _point(p) is None:
+            continue
+        # Ladders are an extension of selected card ideas, not a second unbounded
+        # card built from every raw alternate line in the feed.
+        if selected_keys and (player, base, direction) not in selected_keys:
             continue
         grouped.setdefault((player, base, direction, book, game), []).append(p)
 
@@ -495,7 +504,8 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List
             continue
         seen.add(sig)
         deduped.append(ladder)
-    return deduped
+    max_ladders = max(0, min(12, int(os.getenv("PH_MAX_LADDERS", "6"))))
+    return deduped[:max_ladders]
 
 def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str, Any]) -> Optional[Any]:
     if not _valid_combo(legs):
@@ -607,7 +617,7 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
 
     # All genuine same-book ladders whose individual rungs are independently +EV.
     # Same player + same market at 10+/15+/20+ (or TD 1+/2+/3+) must survive.
-    extras.extend(_real_ladders(props, PickCls, LadderLegCls))
+    extras.extend(_real_ladders(props, PickCls, LadderLegCls, selected=selected))
 
     candidates: Dict[str, List[Any]] = {
         "SAFE": [], "VALUE": [], "RISK": [], "LOTTERY": []
