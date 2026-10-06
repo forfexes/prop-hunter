@@ -2946,6 +2946,10 @@ def send_telegram(text,dry_run=False,picks=None):
     """Send the main card plus one separate Telegram window per ladder."""
     global _LAST_TELEGRAM_CARDS
     payloads=_telegram_payloads(text,picks)
+    max_payloads=max(1,min(12,int(os.getenv("PH_TELEGRAM_MAX_PAYLOADS","8"))))
+    if len(payloads)>max_payloads:
+        log.warning("Telegram payload cap: %d -> %d; excess ladder windows suppressed",len(payloads),max_payloads)
+        payloads=payloads[:max_payloads]
     _LAST_TELEGRAM_CARDS=[]
     if dry_run:
         log.info("DRY-RUN Telegram: %d messages (%s)",len(payloads),", ".join(x.get("kind","?") for x in payloads))
