@@ -2913,26 +2913,55 @@ def send_telegram(text,dry_run=False,picks=None):
         log.warning("Telegram not configured")
         return None
     sent=[]
-    for payload in payloads:
+    max_retries=max(1,min(5,int(os.getenv("PH_TELEGRAM_429_RETRIES","3"))))
+    send_delay=max(0.0,min(3.0,float(os.getenv("PH_TELEGRAM_SEND_DELAY","1.1"))))
+    log.info("Telegram delivery: payloads=%d delay=%.1fs 429_retries=%d",len(payloads),send_delay,max_retries)
+    for payload_idx,payload in enumerate(payloads):
         body=str(payload.get("text") or "")
         if len(body)>4096:
             log.error("Telegram payload too long kind=%s chars=%d",payload.get("kind"),len(body))
+            _LAST_TELEGRAM_CARDS=sent
             return None
-        try:
-            r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
-                json={"chat_id":TG_CHAT,"text":body,"disable_web_page_preview":True},timeout=TIMEOUT)
-            if r.status_code!=200:
-                log.error("Telegram %d kind=%s: %s",r.status_code,payload.get("kind"),r.text[:160])
-                return None
-            data=r.json() if r.content else {}
-            mid=((data.get("result") or {}).get("message_id"))
-            if mid is None:
-                log.error("Telegram returned no message_id kind=%s",payload.get("kind"))
-                return None
-            item=dict(payload);item["message_id"]=int(mid);sent.append(item)
-        except Exception as e:
-            log.error("Telegram kind=%s: %s",payload.get("kind"),e)
+        delivered=False
+        for attempt in range(max_retries+1):
+            try:
+                r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
+                    json={"chat_id":TG_CHAT,"text":body,"disable_web_page_preview":True},timeout=TIMEOUT)
+                if r.status_code==429:
+                    retry_after=1
+                    try:
+                        retry_after=int(((r.json().get("parameters") or {}).get("retry_after")) or 1)
+                    except Exception:
+                        pass
+                    if attempt>=max_retries:
+                        log.error("Telegram 429 exhausted kind=%s retry_after=%ss",payload.get("kind"),retry_after)
+                        break
+                    wait_s=max(1,min(90,retry_after+1))
+                    log.warning("Telegram 429 kind=%s attempt=%d/%d; retrying after %ss",
+                                payload.get("kind"),attempt+1,max_retries,wait_s)
+                    time.sleep(wait_s)
+                    continue
+                if r.status_code!=200:
+                    log.error("Telegram %d kind=%s: %s",r.status_code,payload.get("kind"),r.text[:160])
+                    break
+                data=r.json() if r.content else {}
+                mid=((data.get("result") or {}).get("message_id"))
+                if mid is None:
+                    log.error("Telegram returned no message_id kind=%s",payload.get("kind"))
+                    break
+                item=dict(payload);item["message_id"]=int(mid);sent.append(item)
+                delivered=True
+                break
+            except Exception as e:
+                log.error("Telegram kind=%s attempt=%d: %s",payload.get("kind"),attempt+1,e)
+                if attempt>=max_retries:
+                    break
+                time.sleep(min(3,attempt+1))
+        if not delivered:
+            _LAST_TELEGRAM_CARDS=sent
             return None
+        if send_delay and payload_idx < len(payloads)-1:
+            time.sleep(send_delay)
     _LAST_TELEGRAM_CARDS=sent
     first=sent[0]["message_id"] if sent else None
     log.info("Telegram OK message_id=%s messages=%d ids=%s",first,len(sent),[x["message_id"] for x in sent])
