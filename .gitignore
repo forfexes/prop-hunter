@@ -1,0 +1,23 @@
+# Local secrets / credentials
+.env
+.env.*
+!.env.example
+secrets.*
+credentials.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python / local environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local logs / OS files
+*.log
+.DS_Store
+Thumbs.db
