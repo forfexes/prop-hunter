@@ -2176,6 +2176,10 @@ def generate_hr_props_from_data(mlb_lineups, mlb_batters, mlb_pitchers) -> list:
                         "mlb_slg": iso + 0.3,
                         "fair_prob": round(hr_prob, 4),
                         "roster_team": team,
+                        "odds_observed": False,
+                        "price_type": "synthetic",
+                        "bookmaker": "synthetic",
+                        "research_only": True,
                     },
                 )
                 p.team = team
