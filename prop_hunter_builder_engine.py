@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import itertools
 import math
+import os
 import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
