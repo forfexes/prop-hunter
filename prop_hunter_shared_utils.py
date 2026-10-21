@@ -170,6 +170,15 @@ def upsert_rows(table: str, rows: List[Dict[str, Any]], conflict: Optional[str] 
     if not clean_rows:
         return
 
+    # Keep PostgREST writes small enough to avoid statement timeouts on the
+    # larger gamelog/snapshot tables. This is a transport batch only; conflict
+    # handling and row semantics stay unchanged.
+    write_batch = max(50, min(500, int(os.getenv("PH_SUPABASE_WRITE_BATCH", "200"))))
+    if len(clean_rows) > write_batch:
+        for start in range(0, len(clean_rows), write_batch):
+            upsert_rows(table, clean_rows[start:start + write_batch], conflict)
+        return
+
     # PostgreSQL rejects one UPSERT statement when the same conflict key occurs
     # twice in that statement. Keep the last observation for each key locally.
     if conflict:
