@@ -3395,12 +3395,15 @@ def gather(sport_filter=None):
             tags=[f"PTS{ws.get('avg_pts')}","REB{:.1f}".format(ws.get('avg_reb') or 0)]
             p.enrichment=(p.enrichment+" | " if p.enrichment else "")+" ".join(t for t in tags if t)
     all_props=enrich_propsmadness(all_props)
-    all_props=enrich_statz(all_props)
+    if str(os.getenv("PH_STATZ_ENABLED","0")).lower() in {"1","true","yes","on"}:
+        all_props=enrich_statz(all_props)
     all_props=enrich_propcruncher(all_props)
     all_props=enrich_fpp_nhl(all_props)
     all_props=enrich_bdl_props(all_props)
-    all_props=enrich_datastreak(all_props)
-    all_props=enrich_oddspedia(all_props)
+    if str(os.getenv("PH_DATASTREAK_ENABLED","0")).lower() in {"1","true","yes","on"}:
+        all_props=enrich_datastreak(all_props)
+    if str(os.getenv("PH_ODDSPEDIA_ENABLED","0")).lower() in {"1","true","yes","on"}:
+        all_props=enrich_oddspedia(all_props)
     if new_cache:
         combined={**cache,**new_cache}; save_cache(combined,earliest)
     # QUELLEN-KETTE: Odds API → OddsPapi → ProCruncher → Supabase Snapshots
@@ -3424,7 +3427,8 @@ def gather(sport_filter=None):
         log.info("ProCruncher Fallback aktiviert")
         all_props = gather_propcruncher_fallback(sport_filter)
         if all_props:
-            all_props=enrich_statz(all_props)
+            if str(os.getenv("PH_STATZ_ENABLED","0")).lower() in {"1","true","yes","on"}:
+                all_props=enrich_statz(all_props)
             all_props=enrich_gamelogs_fairprob(all_props)
             log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
             return all_props
