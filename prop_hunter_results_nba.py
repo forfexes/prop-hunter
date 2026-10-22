@@ -239,8 +239,14 @@ def dedupe_player_date(rows):
 def main():
     picks = pending_picks(limit=int(os.getenv("NBA_PICK_SCAN_LIMIT", "5000")))
     names = pending_players(picks)
-    rows = nba_api_player_logs(names, last_n=int(os.getenv("LAST_N_GAMES", "20")))
-    rows.extend(espn_pending_logs(picks))
+    # ESPN event summaries are faster and event-scoped. stats.nba.com is kept as
+    # an opt-in fallback because repeated PlayerGameLog calls routinely time out
+    # on GitHub runners and can waste a full minute without adding a single row.
+    rows = espn_pending_logs(picks)
+    if str(os.getenv("PH_NBA_API_RESULTS_ENABLED", "0")).lower() in {"1","true","yes","on"}:
+        rows.extend(nba_api_player_logs(names, last_n=int(os.getenv("LAST_N_GAMES", "20"))))
+    else:
+        log("NBA results: nba_api disabled; using event-scoped ESPN summaries")
     rows = dedupe_player_date(rows)
     safe_json_write(OUT, rows)
     if rows:
