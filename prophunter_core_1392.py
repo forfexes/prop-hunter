@@ -291,6 +291,19 @@ def sb_insert(row):
         "raw": src.get("raw") or {},
     }
     canonical={k:v for k,v in canonical.items() if v is not None}
+    # Idempotent persistence: repeated public verification runs must not create
+    # duplicate canonical picks for the same card/event/book.
+    try:
+        q=(sb.table("prop_hunter_picks").select("id").eq("date",canonical.get("date")).eq("dedup_key",canonical.get("dedup_key")))
+        if canonical.get("event_id"):
+            q=q.eq("event_id",canonical.get("event_id"))
+        if canonical.get("bookmaker"):
+            q=q.eq("bookmaker",canonical.get("bookmaker"))
+        existing=q.limit(1).execute()
+        if existing.data:
+            return
+    except Exception as e:
+        log.warning("canonical duplicate precheck failed; continuing with insert: %s", e)
     try:
         sb.table("prop_hunter_picks").insert(canonical).execute()
         return
