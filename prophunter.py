@@ -68,7 +68,7 @@ def fetch_snapshot_props(sport_filter=None):
         now_utc=datetime.now(timezone.utc)
         cutoff=(now_utc-timedelta(hours=float(os.getenv('PH_SNAPSHOT_LOOKBACK_HOURS','18')))).isoformat()
         event_floor=(now_utc-timedelta(minutes=5)).isoformat()
-        event_ceiling=(now_utc+timedelta(hours=float(os.getenv('PH_SNAPSHOT_EVENT_HORIZON_HOURS','72')))).isoformat()
+        event_ceiling=(now_utc+timedelta(hours=float(os.getenv('PH_SNAPSHOT_EVENT_HORIZON_HOURS','18')))).isoformat()
         fields=('sport,league,source_event_id,player_name,market,market_key,direction,line,odds_decimal,commence_time,created_at,home_team,away_team,bookmaker,source,raw')
         max_rows=max(5000,min(50000,int(os.getenv('PH_SNAPSHOT_MAX_ROWS','30000'))))
         page_size=1000
