@@ -32,3 +32,26 @@ assert '.gte("game_date", start.isoformat())' in source
 assert '.lte("game_date", end.isoformat())' in source
 assert 'logs = _load_relevant_gamelogs(picks)' in source
 print("SETTLER FAST INDEX TEST PASSED")
+
+
+# Future-date gamelogs must never settle a current pick.
+future_logs=[{
+    "id":4001,
+    "player_name":"Exact Player",
+    "normalized_name":"exact player",
+    "game_id":"future-game",
+    "game_date":"2026-10-04",
+    "points":33,
+}]
+future_pick={
+    "player":"Exact Player",
+    "date":"2026-10-02",
+    "commence_time":"2026-10-02T20:00:00+00:00",
+}
+assert find_gamelog(future_pick,future_logs,aliases={},log_index=build_log_index(future_logs)) is None
+
+from prop_hunter_shared_utils import pick_id
+a={"id":96,"date":"2026-10-21","dedup_key":"same|market|0.5|under","event_id":"event-a","bookmaker":"book"}
+b={"id":96,"date":"2026-10-06","dedup_key":"same|market|0.5|under","event_id":"event-b","bookmaker":"book"}
+assert pick_id(a) != pick_id(b), (pick_id(a), pick_id(b))
+print("SETTLEMENT IDENTITY/DATE GUARDS PASSED")
