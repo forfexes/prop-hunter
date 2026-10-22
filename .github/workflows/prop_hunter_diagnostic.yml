@@ -52,7 +52,7 @@ jobs:
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           PH_SNAPSHOT_MAX_ROWS: '30000'
-          PH_SNAPSHOT_EVENT_HORIZON_HOURS: '72'
+          PH_SNAPSHOT_EVENT_HORIZON_HOURS: '18'
           PH_AI_RETRY: '0'
           PH_RESCUE_MAX_PICKS: '20'
         run: python prophunter.py --dry-run -v
