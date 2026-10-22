@@ -312,8 +312,12 @@ def find_gamelog(
         # For North-American late-night events, a UTC start shortly after midnight
         # can legitimately have an official local game_date one day earlier.
         allow_previous_day = bool(start_dt and start_dt.hour < 7)
-        if delta == 0 or (delta == -1 and allow_previous_day) or (1 <= delta <= 2):
-            dated.append((abs(delta), 0 if delta == 0 else 1 if delta == -1 else 2 + delta, gl))
+        # Settlement may match the official event date, or the previous local
+        # calendar date for North-American games starting shortly after midnight
+        # UTC. Never match a later gamelog (+1/+2 days): that can grade a future
+        # card against a different game by the same player.
+        if delta == 0 or (delta == -1 and allow_previous_day):
+            dated.append((abs(delta), 0 if delta == 0 else 1, gl))
     if not dated:
         return None
     dated.sort(key=lambda x: (x[0], x[1]))
