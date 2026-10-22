@@ -174,37 +174,69 @@ def _signature(p: dict) -> Tuple[str, str, Optional[float], str]:
     )
 
 
+def _result_context(p: dict) -> Tuple[str, str]:
+    raw = p.get("raw") if isinstance(p.get("raw"), dict) else {}
+    event = str(
+        p.get("event_id") or p.get("game_id") or p.get("source_game_id")
+        or raw.get("source_event_id") or raw.get("event_id") or ""
+    ).strip()
+    commence = p.get("commence_time") or raw.get("commence_time")
+    d = ""
+    if commence:
+        try:
+            d = datetime.fromisoformat(str(commence).replace("Z", "+00:00")).date().isoformat()
+        except Exception:
+            d = str(commence)[:10]
+    if not d:
+        d = str(p.get("sent_date") or p.get("date") or p.get("created_at") or "")[:10]
+    return d, event
+
+
 def _index_results(rows: Iterable[dict]):
-    by_dedup: Dict[str, dict] = {}
-    by_signature: Dict[Tuple[str, str, Optional[float], str], dict] = {}
+    by_dedup: Dict[Tuple[str, str, str], dict] = {}
+    by_signature: Dict[Tuple[Tuple[str, str, Optional[float], str], str, str], dict] = {}
     for row in rows:
         if _result_status(row) not in CLOSED:
             continue
         raw = _result_pick(row)
+        d, event = _result_context(raw or row)
         dedup = str(raw.get("dedup_key") or "").strip()
-        if dedup and dedup not in by_dedup:
-            by_dedup[dedup] = row
+        dkey = (dedup, d, event)
+        if dedup and d and dkey not in by_dedup:
+            by_dedup[dkey] = row
         sig = _signature(raw or row)
-        if sig[0] and sig[1] and sig not in by_signature:
-            by_signature[sig] = row
+        skey = (sig, d, event)
+        if sig[0] and sig[1] and d and skey not in by_signature:
+            by_signature[skey] = row
     return by_dedup, by_signature
 
 
 def _match_result(pick: dict, by_dedup: dict, by_signature: dict) -> Optional[dict]:
+    d, event = _result_context(pick)
+    if not d:
+        return None
     dedup = str(pick.get("dedup_key") or "").strip()
-    if dedup and dedup in by_dedup:
-        return by_dedup[dedup]
+    if dedup:
+        exact = by_dedup.get((dedup, d, event))
+        if exact:
+            return exact
+        # Event ids can differ between a sportsbook and an official stats feed,
+        # but the stored result's pick_raw preserves the sportsbook event id.
+        # Only allow a date-only fallback when exactly one matching row exists.
+        same_day = [row for (dk, rd, _ev), row in by_dedup.items() if dk == dedup and rd == d]
+        if len(same_day) == 1:
+            return same_day[0]
+
     sig = _signature(pick)
-    exact = by_signature.get(sig)
+    exact = by_signature.get((sig, d, event))
     if exact:
         return exact
-    # Safe fallback: same player + normalized market + side; accept one unique line-near candidate.
-    candidates = []
-    for rsig, row in by_signature.items():
-        if sig[0] and rsig[0] == sig[0] and rsig[1] == sig[1] and rsig[3] == sig[3]:
-            if sig[2] is None or rsig[2] is None or abs(float(sig[2]) - float(rsig[2])) < 1e-9:
-                candidates.append(row)
-    return candidates[0] if len(candidates) == 1 else None
+    same_day = [
+        row for (rsig, rd, _ev), row in by_signature.items()
+        if rd == d and sig[0] and rsig[0] == sig[0] and rsig[1] == sig[1] and rsig[3] == sig[3]
+        and (sig[2] is None or rsig[2] is None or abs(float(sig[2]) - float(rsig[2])) < 1e-9)
+    ]
+    return same_day[0] if len(same_day) == 1 else None
 
 
 def _profit_for(pick: dict, status: str) -> float:
