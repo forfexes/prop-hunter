@@ -2,6 +2,13 @@ name: Prop Hunter Results Autonomous
 
 "on":
   workflow_dispatch: {}
+  push:
+    paths:
+      - 'prop_hunter_settler.py'
+      - 'prop_hunter_shared_utils.py'
+      - 'prophunter_results.py'
+      - 'prop_hunter_settler_fast_test.py'
+      - '.github/results-trigger'
   schedule:
     - cron: '15 10 * * *'
 
@@ -60,6 +67,7 @@ jobs:
           python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py prop_hunter_expansion_test.py prop_hunter_euroleague_test.py
           python prop_hunter_expansion_test.py
           python prop_hunter_euroleague_test.py
+          python prop_hunter_settler_fast_test.py
 
       - name: Fetch official results and gamelogs
         env:
