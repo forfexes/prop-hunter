@@ -356,7 +356,32 @@ def select_pick_rows(limit: int = 5000) -> List[Dict[str, Any]]:
 
 
 def pick_id(row: Dict[str, Any]) -> str:
-    return str(row.get("pick_id") or row.get("id") or row.get("row_hash") or row.get("selection_id") or hash_key(row))
+    """Stable cross-table pick identity.
+
+    Never use a bare numeric database id as the primary identity because the
+    legacy and canonical pick tables can contain the same numeric id.
+    """
+    explicit = row.get("pick_id") or row.get("row_hash") or row.get("selection_id")
+    if explicit:
+        return str(explicit)
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    date_key = str(row.get("sent_date") or row.get("date") or row.get("created_at") or "")[:10]
+    dedup = str(row.get("dedup_key") or row.get("pick_key") or "").strip()
+    event = str(
+        row.get("event_id") or row.get("game_id") or row.get("source_game_id")
+        or raw.get("source_event_id") or raw.get("event_id") or ""
+    ).strip()
+    book = str(row.get("bookmaker") or row.get("book") or raw.get("bookmaker") or "").strip().lower()
+    if dedup:
+        return hash_key("pick", date_key, dedup, event, book)
+    return hash_key(
+        "pick", date_key,
+        row.get("player") or row.get("player_name") or row.get("selection"),
+        row.get("market") or row.get("prop_type"),
+        row.get("line") or row.get("point"),
+        row.get("side") or row.get("direction"),
+        event, book,
+    )
 
 def implied_prob(decimal_odds: Any) -> Optional[float]:
     odds = to_float(decimal_odds)
