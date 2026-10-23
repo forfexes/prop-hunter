@@ -212,17 +212,17 @@ def test_supabase_select_rows_paginates():
     check('return rows if wanted is None else rows[:wanted]' in shared,
           "Supabase pagination does not support full reads and requested limits")
 
-def test_telegram_ladder_split_contract():
+def test_telegram_pro_tip_window_contract():
     core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
     hardened = Path("prophunter_core_1392.py").read_text(encoding="utf-8")
     check("def _telegram_payloads" in core and "def _render_ladder_card" in core,
-          "ladder Telegram splitter missing")
+          "PRO TIP Telegram splitter missing")
     check('send_telegram(body,dry_run=dry_run,picks=picks)' in core,
           "card run does not pass picks to Telegram splitter")
-    check('"kind":"ladders"' in core and 'PH_TELEGRAM_LADDER_BUNDLE_CHARS' in core,
-          "ladder cards are not bundled for Telegram flood safety")
-    check('"combo_indices":list(current_indices)' in core,
-          "bundled ladder cards lost settlement combo scope")
+    check('"kind":"single"' in core and '"single_indices":[idx]' in core,
+          "single PRO TIP windows do not keep exact pick scope")
+    check('"combo_indices":[idx]' in core and 'one tip = one window' in core,
+          "combo/ladder PRO TIP windows do not keep exact settlement scope")
     check('_LAST_TELEGRAM_CARDS' in hardened and '"card_kind": sent.get("kind") or "main"' in hardened,
           "split Telegram cards are not persisted for settlement")
     check('getattr(leg,"probability",None)' in core and 'getattr(leg,"edge_pct",None)' in core,
