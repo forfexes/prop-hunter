@@ -411,12 +411,20 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
                         combo_ids[int(i)] for i in idxs
                         if isinstance(i, int) and 0 <= int(i) < len(combo_ids)
                     ]
+                sidxs = sent.get("single_indices")
+                if sidxs is None:
+                    scoped_pick_keys = list(pick_keys) if sent.get("include_singles") else []
+                else:
+                    scoped_pick_keys = [
+                        pick_keys[int(i)] for i in sidxs
+                        if isinstance(i, int) and 0 <= int(i) < len(pick_keys)
+                    ]
                 cards.append({
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "message_id": int(sent.get("message_id")),
                     "chat_id": str(TG_CHAT),
                     "text": str(sent.get("text") or ""),
-                    "pick_keys": list(pick_keys) if sent.get("include_singles") else [],
+                    "pick_keys": scoped_pick_keys,
                     "combo_ids": scoped_combo_ids,
                     "card_kind": sent.get("kind") or "main",
                 })
