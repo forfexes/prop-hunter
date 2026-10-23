@@ -2884,75 +2884,110 @@ def _render_ladder_card(p):
     out+=["","@prophunter"]
     return "\n".join(out)
 
+def _render_single_pro_tip(p):
+    today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
+    team=_safe_display_team(p)
+    title="🎯 PROP HUNTER PRO TIP — SINGLE"
+    out=[f"{title} — {today}",""]
+    head=f"{getattr(p,'emoji',None) or '🎯'} {team + ' — ' if team else ''}{getattr(p,'player','') or ''}".rstrip()
+    out.append(head)
+    game=str(getattr(p,"game",None) or "").strip()
+    if game:out.append(f"🏟 {game}")
+    market=_market_with_line(getattr(p,"market","") or "",getattr(p,"direction","over"),getattr(p,"point",None))
+    out+=["",f"• {market} @{float(getattr(p,'odds',0) or 0):.2f} → {getattr(p,'stake',0)}u"]
+    meta=[]
+    prob=getattr(p,"probability",None);edge=getattr(p,"edge_pct",None)
+    if prob is not None:
+        try:meta.append(f"Prob {float(prob)*100:.0f}%")
+        except Exception:pass
+    if edge is not None:
+        try:meta.append(f"Edge {float(edge):+.1f}%")
+        except Exception:pass
+    try:meta.append(f"Confidence {_confidence_score(p)}/100")
+    except Exception:pass
+    if meta:out.append("📈 "+" · ".join(meta))
+    if getattr(p,"analysis",None):out.append(f"💡 {p.analysis}")
+    out+=["","🏁 Auswertung: ⏳ offen","@prophunter"]
+    return "\n".join(out)
+
+def _combo_pro_title(p):
+    feats=getattr(p,"features",{}) or {}
+    typ=str(getattr(p,"type","") or "")
+    if typ=="ladder":return "🪜 PROP HUNTER PRO TIP — LADDER"
+    if feats.get("combo_scope")=="cross_game":return "🌐 PROP HUNTER PRO TIP — CROSS"
+    if typ=="betbuilder":return "🎯 PROP HUNTER PRO TIP — BUILDER"
+    if typ in ("big","super","lottery"):return "💣 PROP HUNTER PRO TIP — LOTTERY"
+    if typ=="kombi3":return "🔥 PROP HUNTER PRO TIP — 3-LEG"
+    return "🔥 PROP HUNTER PRO TIP — 2-LEG"
+
+def _render_combo_pro_tip(p):
+    if getattr(p,"type",None)=="ladder":
+        text=_render_ladder_card(p)
+        lines=text.splitlines()
+        if lines:lines[0]=_combo_pro_title(p)+" — "+datetime.now(timezone.utc).strftime("%d.%m.%Y")
+        if lines and lines[-1].strip()=="@prophunter":lines=lines[:-1]
+        lines+=["","🏁 Auswertung: ⏳ offen","@prophunter"]
+        return "\n".join(lines)
+    today=datetime.now(timezone.utc).strftime("%d.%m.%Y")
+    feats=getattr(p,"features",{}) or {}
+    legs=list(getattr(p,"legs",None) or [])
+    singles=[]
+    title=_combo_pro_title(p)
+    game=str(getattr(p,"game",None) or "").strip()
+    estimated=bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
+    odds=getattr(p,"odds",None)
+    label=getattr(p,"market",None) or f"{len(legs)}-Leg"
+    out=[f"{title} — {today}",""]
+    if game:out.append(f"🏟 {game}")
+    if estimated:
+        out.append(f"• {label} — finale Book-Quote prüfen")
+    else:
+        try:out.append(f"• {label} @{float(odds):.2f} → {getattr(p,'stake',0)}u")
+        except Exception:out.append(f"• {label} → {getattr(p,'stake',0)}u")
+    for i,leg in enumerate(legs):
+        out.append(f"  {'└' if i==len(legs)-1 else '├'} {_fmt_leg(leg,singles)}")
+    meta=[];prob=getattr(p,"probability",None);edge=getattr(p,"edge_pct",None)
+    if prob is not None:
+        try:meta.append(f"Prob {float(prob)*100:.1f}%")
+        except Exception:pass
+    if edge is not None and not estimated:
+        try:meta.append(f"EV {float(edge):+.1f}%")
+        except Exception:pass
+    if meta:out.append("📈 "+" · ".join(meta))
+    if feats.get("combo_scope")=="cross_game":out.append("🌐 Cross-Game")
+    if estimated:out.append("⚠️ Keine synthetische Kombiquote/EV — finale Quote beim Book prüfen")
+    out+=["","🏁 Auswertung: ⏳ offen","@prophunter"]
+    return "\n".join(out)
+
 def _telegram_payloads(text,picks=None):
-    """Split the main card from ladders, bundling ladders into Telegram-safe chunks.
-
-    One-message-per-ladder produced 150+ messages on large cards and hit Telegram
-    flood control.  Keep every ladder and its settlement scope, but pack multiple
-    ladder blocks into messages below the 4096-character API limit.
-    """
+    """One Telegram window per tip so settlement can edit that exact tip later."""
     all_picks=list(picks or [])
+    singles=[p for p in all_picks if getattr(p,"type",None)=="single"]
     combos=[p for p in all_picks if getattr(p,"type",None) in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")]
-    ladder_items=[(idx,p) for idx,p in enumerate(combos) if getattr(p,"type",None)=="ladder"]
-    if not ladder_items:
-        return [{"kind":"main","text":str(text or ""),"combo_indices":list(range(len(combos))),"include_singles":True}]
-
-    ladder_indices={idx for idx,_ in ladder_items}
-    main_text=_strip_ladder_section(text)
-    payloads=[{
-        "kind":"main","text":main_text,
-        "combo_indices":[i for i in range(len(combos)) if i not in ladder_indices],
-        "include_singles":True,
-    }]
-
-    max_chars=max(1200,min(3950,int(os.getenv("PH_TELEGRAM_LADDER_BUNDLE_CHARS","3800"))))
-    separator="\n\n━━━━━━━━━━━━━━━━\n\n"
-    current_blocks=[]
-    current_indices=[]
-
-    def _clean_ladder_block(p):
-        block=_render_ladder_card(p).strip()
-        lines=block.splitlines()
-        if lines and lines[-1].strip()=="@prophunter":
-            lines=lines[:-1]
-        return "\n".join(lines).strip()
-
-    def _flush():
-        nonlocal current_blocks,current_indices
-        if not current_blocks:
-            return
-        body=separator.join(current_blocks).rstrip()+"\n\n@prophunter"
+    payloads=[]
+    for idx,p in enumerate(singles):
         payloads.append({
-            "kind":"ladders","text":body,
-            "combo_indices":list(current_indices),"include_singles":False,
+            "kind":"single","text":_render_single_pro_tip(p),
+            "single_indices":[idx],"combo_indices":[],"include_singles":False,
         })
-        current_blocks=[]
-        current_indices=[]
-
-    for idx,p in ladder_items:
-        block=_clean_ladder_block(p)
-        if not block:
-            continue
-        candidate=separator.join(current_blocks+[block]).rstrip()+"\n\n@prophunter"
-        if current_blocks and len(candidate)>max_chars:
-            _flush()
-        # A pathological single ladder should still be visible rather than
-        # silently discarded; send_telegram retains the hard 4096 guard.
-        current_blocks.append(block)
-        current_indices.append(idx)
-    _flush()
-
-    log.info("Telegram payload plan: singles/main + %d ladders bundled into %d messages",
-             len(ladder_items),max(0,len(payloads)-1))
+    for idx,p in enumerate(combos):
+        payloads.append({
+            "kind":str(getattr(p,"type",None) or "combo"),"text":_render_combo_pro_tip(p),
+            "single_indices":[],"combo_indices":[idx],"include_singles":False,
+        })
+    log.info(
+        "Telegram PRO TIP plan: singles=%d combos=%d windows=%d (one tip = one window)",
+        len(singles),len(combos),len(payloads)
+    )
     return [x for x in payloads if str(x.get("text") or "").strip()]
 
 def send_telegram(text,dry_run=False,picks=None):
-    """Send the main card plus one separate Telegram window per ladder."""
+    """Send one Telegram PRO TIP window per single/ladder/builder/cross/lottery."""
     global _LAST_TELEGRAM_CARDS
     payloads=_telegram_payloads(text,picks)
-    max_payloads=max(1,min(12,int(os.getenv("PH_TELEGRAM_MAX_PAYLOADS","8"))))
+    max_payloads=max(1,min(40,int(os.getenv("PH_TELEGRAM_MAX_PAYLOADS","30"))))
     if len(payloads)>max_payloads:
-        log.warning("Telegram payload cap: %d -> %d; excess ladder windows suppressed",len(payloads),max_payloads)
+        log.warning("Telegram payload cap: %d -> %d; excess PRO TIP windows suppressed",len(payloads),max_payloads)
         payloads=payloads[:max_payloads]
     _LAST_TELEGRAM_CARDS=[]
     if dry_run:
