@@ -369,6 +369,38 @@ def _decorate_combo(lines: List[str], combo: dict, used: set) -> bool:
     icon = _status_icon(combo.get("result"))
     if not icon:
         return False
+
+    if combo.get("type") == "ladder":
+        legs = combo.get("settlement_legs") or combo.get("ladder_legs") or []
+        changed = False
+        for leg in legs:
+            leg_icon = _status_icon(leg.get("result"))
+            if not leg_icon:
+                continue
+            market = _norm(leg.get("market") or leg.get("selection") or "")
+            odds = _to_float(leg.get("odds"))
+            for i, line in enumerate(lines):
+                if i in used or not line.lstrip().startswith(("•", "✅", "❌", "↔️")):
+                    continue
+                nline = _norm(line)
+                market_words = [w for w in market.split() if w not in {"over","under"}]
+                if market_words and not all(w in nline for w in market_words[:min(3,len(market_words))]):
+                    continue
+                if odds is not None and f"@{odds:.2f}" not in line and f"@{odds:.1f}" not in line:
+                    continue
+                clean = re.sub(r"^[•✅❌↔️]\s*", "", line.lstrip())
+                clean = re.sub(r"\s+·\s+Ergebnis\s+[^·]+(?:\s+·\s+[+-]?\d+(?:\.\d+)?u)?\s*$", "", clean)
+                actual = _fmt_actual(leg.get("actual_value"))
+                profit = _profit_for(leg, str(leg.get("result") or ""))
+                suffix = f" · Ergebnis {actual}" if actual else ""
+                suffix += f" · {profit:+.2f}u"
+                prefix = line[:len(line)-len(line.lstrip())]
+                lines[i] = f"{prefix}{leg_icon} {clean}{suffix}"
+                used.add(i)
+                changed = True
+                break
+        return changed
+
     odds = _to_float(combo.get("odds"))
     # Locate by odds first; combo text can contain several player names.
     tokens = []
