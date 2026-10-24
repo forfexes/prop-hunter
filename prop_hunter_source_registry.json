@@ -16,7 +16,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575613+00:00"
+    "updated_at": "2026-10-24T18:59:34.945797+00:00"
   },
   {
     "source_name": "prizepicks",
@@ -37,7 +37,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575629+00:00"
+    "updated_at": "2026-10-24T18:59:34.945812+00:00"
   },
   {
     "source_name": "sleeper",
@@ -56,7 +56,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575633+00:00"
+    "updated_at": "2026-10-24T18:59:34.945815+00:00"
   },
   {
     "source_name": "betr",
@@ -75,7 +75,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575635+00:00"
+    "updated_at": "2026-10-24T18:59:34.945819+00:00"
   },
   {
     "source_name": "dabble",
@@ -94,7 +94,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575638+00:00"
+    "updated_at": "2026-10-24T18:59:34.945821+00:00"
   },
   {
     "source_name": "chalkboard",
@@ -113,7 +113,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575640+00:00"
+    "updated_at": "2026-10-24T18:59:34.945824+00:00"
   },
   {
     "source_name": "parlayplay",
@@ -132,7 +132,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575642+00:00"
+    "updated_at": "2026-10-24T18:59:34.945826+00:00"
   },
   {
     "source_name": "oddspapi",
@@ -152,7 +152,87 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575647+00:00"
+    "updated_at": "2026-10-24T18:59:34.945830+00:00"
+  },
+  {
+    "source_name": "sportsgameodds",
+    "source_type": "sportsbook_aggregator",
+    "url": "https://sportsgameodds.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": true,
+    "priority": 98,
+    "notes": "Optional key-gated source. One /v2/events league request can return bookmaker-level player props.",
+    "raw": {
+      "display_name": "SportsGameOdds",
+      "access": "free_key_required",
+      "methods": [
+        "official_json",
+        "single_request_props",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945833+00:00"
+  },
+  {
+    "source_name": "oddsapi_io",
+    "source_type": "sportsbook_aggregator",
+    "url": "https://odds-api.io/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": true,
+    "priority": 97,
+    "notes": "Current v3 event -> odds adapter; player props use observed decimal bookmaker prices only.",
+    "raw": {
+      "display_name": "Odds-API.io",
+      "access": "free_key_required",
+      "methods": [
+        "official_json",
+        "event_odds",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945836+00:00"
+  },
+  {
+    "source_name": "kambi",
+    "source_type": "sportsbook_aggregator",
+    "url": "https://www.kambi.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": false,
+    "priority": 72,
+    "notes": "Optional no-key fallback derived from NETRATTLER. Brand/geo availability varies; never browser-bypassed.",
+    "raw": {
+      "display_name": "Kambi Offering",
+      "access": "public_best_effort",
+      "methods": [
+        "public_json",
+        "event_offer",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945839+00:00"
+  },
+  {
+    "source_name": "propline",
+    "source_type": "sportsbook_aggregator",
+    "url": "https://prop-line.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": false,
+    "priority": 97,
+    "notes": "Watcher-qualified candidate: strong player-prop/alt-line coverage; keep disabled until an API key is configured and adapter is explicitly enabled.",
+    "raw": {
+      "display_name": "PropLine",
+      "access": "free_key_required",
+      "methods": [
+        "official_sdk",
+        "alt_lines",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945841+00:00"
   },
   {
     "source_name": "draftkings",
@@ -172,7 +252,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575652+00:00"
+    "updated_at": "2026-10-24T18:59:34.945843+00:00"
   },
   {
     "source_name": "fanduel",
@@ -192,7 +272,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575657+00:00"
+    "updated_at": "2026-10-24T18:59:34.945846+00:00"
   },
   {
     "source_name": "bovada",
@@ -212,7 +292,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575661+00:00"
+    "updated_at": "2026-10-24T18:59:34.945848+00:00"
   },
   {
     "source_name": "betmgm",
@@ -231,7 +311,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575664+00:00"
+    "updated_at": "2026-10-24T18:59:34.945850+00:00"
   },
   {
     "source_name": "caesars",
@@ -250,7 +330,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575666+00:00"
+    "updated_at": "2026-10-24T18:59:34.945852+00:00"
   },
   {
     "source_name": "betrivers",
@@ -269,7 +349,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575668+00:00"
+    "updated_at": "2026-10-24T18:59:34.945854+00:00"
   },
   {
     "source_name": "superbook",
@@ -288,7 +368,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575671+00:00"
+    "updated_at": "2026-10-24T18:59:34.945856+00:00"
   },
   {
     "source_name": "espn_bet",
@@ -308,7 +388,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575673+00:00"
+    "updated_at": "2026-10-24T18:59:34.945858+00:00"
   },
   {
     "source_name": "fanatics",
@@ -327,7 +407,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575675+00:00"
+    "updated_at": "2026-10-24T18:59:34.945861+00:00"
   },
   {
     "source_name": "hardrock",
@@ -346,7 +426,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575678+00:00"
+    "updated_at": "2026-10-24T18:59:34.945863+00:00"
   },
   {
     "source_name": "thescore",
@@ -365,7 +445,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575680+00:00"
+    "updated_at": "2026-10-24T18:59:34.945865+00:00"
   },
   {
     "source_name": "bet365",
@@ -386,7 +466,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575682+00:00"
+    "updated_at": "2026-10-24T18:59:34.945868+00:00"
   },
   {
     "source_name": "betfair",
@@ -404,7 +484,7 @@
         "official_api"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575684+00:00"
+    "updated_at": "2026-10-24T18:59:34.945870+00:00"
   },
   {
     "source_name": "pinnacle",
@@ -422,7 +502,7 @@
         "official_or_partner_api"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575687+00:00"
+    "updated_at": "2026-10-24T18:59:34.945872+00:00"
   },
   {
     "source_name": "action_network",
@@ -442,7 +522,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575689+00:00"
+    "updated_at": "2026-10-24T18:59:34.945874+00:00"
   },
   {
     "source_name": "oddsportal",
@@ -461,7 +541,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575691+00:00"
+    "updated_at": "2026-10-24T18:59:34.945877+00:00"
   },
   {
     "source_name": "mlb_statsapi",
@@ -480,7 +560,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575694+00:00"
+    "updated_at": "2026-10-24T18:59:34.945879+00:00"
   },
   {
     "source_name": "statcast",
@@ -500,7 +580,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575696+00:00"
+    "updated_at": "2026-10-24T18:59:34.945881+00:00"
   },
   {
     "source_name": "nba_api",
@@ -520,7 +600,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575698+00:00"
+    "updated_at": "2026-10-24T18:59:34.945883+00:00"
   },
   {
     "source_name": "nba_live",
@@ -539,7 +619,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575701+00:00"
+    "updated_at": "2026-10-24T18:59:34.945886+00:00"
   },
   {
     "source_name": "nflverse",
@@ -559,7 +639,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575703+00:00"
+    "updated_at": "2026-10-24T18:59:34.945888+00:00"
   },
   {
     "source_name": "espn",
@@ -578,7 +658,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575705+00:00"
+    "updated_at": "2026-10-24T18:59:34.945890+00:00"
   },
   {
     "source_name": "nws",
@@ -597,7 +677,7 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575708+00:00"
+    "updated_at": "2026-10-24T18:59:34.945892+00:00"
   },
   {
     "source_name": "thesportsdb",
@@ -616,6 +696,154 @@
         "cache"
       ]
     },
-    "updated_at": "2026-09-13T08:20:15.575711+00:00"
+    "updated_at": "2026-10-24T18:59:34.945895+00:00"
+  },
+  {
+    "source_name": "draftkings_direct",
+    "source_type": "sportsbook",
+    "url": "https://sportsbook.draftkings.com/",
+    "sport": "MLB,NBA,NFL,NHL",
+    "league": "MLB,NBA,NFL,NHL",
+    "enabled": true,
+    "priority": 96,
+    "notes": "Keyless direct sportsbook JSON; real O/U and observed X+ ladder prices only.",
+    "raw": {
+      "display_name": "DraftKings Direct",
+      "access": "public_best_effort",
+      "methods": [
+        "public_json",
+        "player_props",
+        "alt_lines",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945897+00:00"
+  },
+  {
+    "source_name": "fanduel_direct",
+    "source_type": "sportsbook",
+    "url": "https://sportsbook.fanduel.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL",
+    "league": "MLB,NBA,WNBA,NFL,NHL",
+    "enabled": true,
+    "priority": 95,
+    "notes": "Keyless event-page player selections; observed threshold props only.",
+    "raw": {
+      "display_name": "FanDuel Direct",
+      "access": "public_best_effort",
+      "methods": [
+        "public_json",
+        "player_props",
+        "thresholds",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945899+00:00"
+  },
+  {
+    "source_name": "bovada_direct",
+    "source_type": "sportsbook",
+    "url": "https://www.bovada.lv/sports",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": true,
+    "priority": 94,
+    "notes": "Keyless coupon API; strong O/U pair candidate where public feed exposes props.",
+    "raw": {
+      "display_name": "Bovada Direct",
+      "access": "public_best_effort",
+      "methods": [
+        "public_json",
+        "player_props",
+        "paired_props",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945902+00:00"
+  },
+  {
+    "source_name": "betrivers_direct",
+    "source_type": "sportsbook",
+    "url": "https://www.betrivers.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": true,
+    "priority": 93,
+    "notes": "Keyless Kambi operator feed, audited as its own bookmaker.",
+    "raw": {
+      "display_name": "BetRivers Direct",
+      "access": "public_best_effort",
+      "methods": [
+        "kambi_public_json",
+        "player_props",
+        "paired_props",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945904+00:00"
+  },
+  {
+    "source_name": "opticodds",
+    "source_type": "sportsbook_aggregator",
+    "url": "https://opticodds.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": true,
+    "priority": 100,
+    "notes": "Trial/key-gated v3 source; strong multi-book consensus fallback.",
+    "raw": {
+      "display_name": "OpticOdds",
+      "access": "trial_key_required",
+      "methods": [
+        "official_json",
+        "multi_book",
+        "player_props",
+        "alt_lines",
+        "results",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945906+00:00"
+  },
+  {
+    "source_name": "parlayapi",
+    "source_type": "sportsbook_aggregator",
+    "url": "https://parlay-api.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": true,
+    "priority": 89,
+    "notes": "Optional keyed paired-prop fallback.",
+    "raw": {
+      "display_name": "ParlayAPI",
+      "access": "free_key_required",
+      "methods": [
+        "official_json",
+        "paired_props",
+        "multi_book",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945913+00:00"
+  },
+  {
+    "source_name": "1xbet",
+    "source_type": "sportsbook",
+    "url": "https://1xbet.com/",
+    "sport": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "league": "MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF",
+    "enabled": false,
+    "priority": 71,
+    "notes": "Keyless best-effort fallback adapted from NETRATTLER; no login/browser/proxy bypass.",
+    "raw": {
+      "display_name": "1xBet LineFeed",
+      "access": "public_best_effort",
+      "methods": [
+        "public_json",
+        "event_markets",
+        "cache"
+      ]
+    },
+    "updated_at": "2026-10-24T18:59:34.945917+00:00"
   }
 ]
