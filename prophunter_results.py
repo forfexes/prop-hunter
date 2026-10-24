@@ -169,7 +169,7 @@ def _side_of_pick(p: dict) -> str:
 def _signature(p: dict) -> Tuple[str, str, Optional[float], str]:
     return (
         _norm(p.get("player") or p.get("player_name") or p.get("selection")),
-        _norm(p.get("market") or p.get("prop_type") or p.get("selection")),
+        _norm(p.get("source_market") or p.get("market") or p.get("prop_type") or p.get("selection")),
         _line_of_pick(p),
         _side_of_pick(p),
     )
@@ -281,6 +281,14 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
     states = []
     profit = 0.0
     for leg in legs:
+        # Combo/ladder legs are persisted without their own date/event context.
+        # Inherit the parent context so the strict result matcher can safely
+        # resolve the leg without falling back across dates or fixtures.
+        for key in ("date","sent_date","created_at","commence_time","event_id","game_id","source_game_id"):
+            if not leg.get(key) and combo.get(key):
+                leg[key] = combo.get(key)
+        if not leg.get("game") and combo.get("game"):
+            leg["game"] = combo.get("game")
         row = _match_result(leg, by_dedup, by_signature)
         if not row:
             return False
