@@ -1,10 +1,86 @@
 {
   "version": 2,
-  "pairs": {},
-  "profiles": {},
-<<<<<<< Updated upstream
-  "updated_at": "2026-10-24T18:55:22.612085+00:00"
-=======
-  "updated_at": "2026-10-24T19:01:11.463094+00:00"
->>>>>>> Stashed changes
+  "pairs": {
+    "NBA:points:over|NBA:rebounds:over": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.41399,
+      "raw_ratio": 0.6
+    },
+    "NBA:points:over|NBA:points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.33378,
+      "raw_ratio": 0.6
+    },
+    "NBA:rebounds:over|NBA:rebounds:under": {
+      "factor": 1.0,
+      "n": 2,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.64315,
+      "raw_ratio": 0.6
+    },
+    "NBA:rebounds:over|NBA:threes:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.61241,
+      "raw_ratio": 0.6
+    },
+    "NBA:rebounds:under|NBA:threes:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.42694,
+      "raw_ratio": 0.6
+    },
+    "NBA:blocks:under|NBA:blocks:under": {
+      "factor": 1.0,
+      "n": 4,
+      "both_wins": 1,
+      "observed_joint": 0.25,
+      "expected_joint": 0.64418,
+      "raw_ratio": 0.6
+    }
+  },
+  "profiles": {
+    "aggressive": {
+      "n": 3,
+      "wins": 0,
+      "losses": 3,
+      "pushes": 0,
+      "stake": 0.24,
+      "profit": -0.24,
+      "hit_rate": 0.0,
+      "roi": -1.0
+    },
+    "safe": {
+      "n": 1,
+      "wins": 0,
+      "losses": 1,
+      "pushes": 0,
+      "stake": 0.25,
+      "profit": -0.25,
+      "hit_rate": 0.0,
+      "roi": -1.0
+    },
+    "value": {
+      "n": 2,
+      "wins": 0,
+      "losses": 2,
+      "pushes": 0,
+      "stake": 0.3,
+      "profit": -0.3,
+      "hit_rate": 0.0,
+      "roi": -1.0
+    }
+  },
+  "updated_at": "2026-10-24T20:59:04.182941+00:00"
 }
