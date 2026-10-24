@@ -14,8 +14,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: prop-hunter-card
-  cancel-in-progress: true
+  group: prop-hunter-history-writer
+  cancel-in-progress: false
 
 jobs:
   card:
@@ -179,7 +179,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase --autostash origin main
+          git pull --rebase origin main
+          if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' picks_history.json; then
+            echo "Refusing to commit conflicted picks_history.json"
+            exit 1
+          fi
+          python -m json.tool picks_history.json >/dev/null
           git add picks_history.json odds_cache.json ml_model.pkl prop_hunter_identity_cache.json 2>/dev/null || true
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter card $(date -u +%F-%H%M)"
