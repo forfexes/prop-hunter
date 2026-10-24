@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
+import time
 
 HISTORY = Path("picks_history.json")
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
@@ -471,19 +472,41 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None) -> bool:
     target = str(chat_id or TG_CHAT or "").strip()
     if not target:
         return False
-    try:
-        r = requests.post(
-            f"https://api.telegram.org/bot{TG_TOKEN}/editMessageText",
-            json={"chat_id": target, "message_id": int(message_id), "text": text, "disable_web_page_preview": True},
-            timeout=TIMEOUT,
-        )
-        if r.status_code == 200:
-            return True
-        if r.status_code == 400 and "message is not modified" in r.text.lower():
-            return True
-        print(f"Telegram edit {r.status_code}: {r.text[:200]}")
-    except Exception as exc:
-        print(f"Telegram edit failed: {exc}")
+    retries=max(1,min(6,int(os.getenv("PH_TELEGRAM_EDIT_429_RETRIES","4"))))
+    base_delay=max(0.0,min(5.0,float(os.getenv("PH_TELEGRAM_EDIT_DELAY","1.0"))))
+    for attempt in range(retries+1):
+        try:
+            r = requests.post(
+                f"https://api.telegram.org/bot{TG_TOKEN}/editMessageText",
+                json={"chat_id": target, "message_id": int(message_id), "text": text, "disable_web_page_preview": True},
+                timeout=TIMEOUT,
+            )
+            if r.status_code == 200:
+                if base_delay:
+                    time.sleep(base_delay)
+                return True
+            if r.status_code == 400 and "message is not modified" in r.text.lower():
+                return True
+            if r.status_code == 429:
+                retry_after=1
+                try:
+                    retry_after=int(((r.json().get("parameters") or {}).get("retry_after")) or 1)
+                except Exception:
+                    pass
+                if attempt>=retries:
+                    print(f"Telegram edit 429 exhausted: retry_after={retry_after}")
+                    return False
+                wait_s=max(1,min(90,retry_after+1))
+                print(f"Telegram edit 429: retrying after {wait_s}s ({attempt+1}/{retries})")
+                time.sleep(wait_s)
+                continue
+            print(f"Telegram edit {r.status_code}: {r.text[:200]}")
+            return False
+        except Exception as exc:
+            if attempt>=retries:
+                print(f"Telegram edit failed: {exc}")
+                return False
+            time.sleep(min(3,attempt+1))
     return False
 
 
