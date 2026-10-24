@@ -1,5 +1,9 @@
 {
+<<<<<<< Updated upstream
   "updated_at": "2026-10-24T20:59:04.905457+00:00",
+=======
+  "updated_at": "2026-10-24T21:03:40.957683+00:00",
+>>>>>>> Stashed changes
   "groups": {
     "NBA|NBA|points": {
       "group_type": "market",
@@ -91,6 +95,15 @@
       "status": "collecting",
       "min_active_samples": 60
     },
+    "NFL|receptions": {
+      "group_type": "sport_market",
+      "samples": 3,
+      "roi": 0.24096,
+      "hit_rate": 0.66667,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
     "MLB|MLB|rbi": {
       "group_type": "market",
       "samples": 86,
@@ -129,15 +142,6 @@
     },
     "NFL|NFL|receptions": {
       "group_type": "market",
-      "samples": 3,
-      "roi": 0.24096,
-      "hit_rate": 0.66667,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NFL|receptions": {
-      "group_type": "sport_market",
       "samples": 3,
       "roi": 0.24096,
       "hit_rate": 0.66667,
@@ -186,24 +190,6 @@
       "samples": 1,
       "roi": 1.14,
       "hit_rate": 1,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NHL|NHL|shots on goal": {
-      "group_type": "market",
-      "samples": 8,
-      "roi": 0.2242,
-      "hit_rate": 0.75,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NHL|shots on goal": {
-      "group_type": "sport_market",
-      "samples": 8,
-      "roi": 0.2242,
-      "hit_rate": 0.75,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
@@ -262,6 +248,27 @@
       "status": "collecting",
       "min_active_samples": 60
     },
+<<<<<<< Updated upstream
+=======
+    "NHL|NHL|shots on goal": {
+      "group_type": "market",
+      "samples": 8,
+      "roi": 0.2242,
+      "hit_rate": 0.75,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NHL|shots on goal": {
+      "group_type": "sport_market",
+      "samples": 8,
+      "roi": 0.2242,
+      "hit_rate": 0.75,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+>>>>>>> Stashed changes
     "MLB|MLB|hits": {
       "group_type": "market",
       "samples": 40,

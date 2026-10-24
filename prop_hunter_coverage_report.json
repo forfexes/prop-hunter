@@ -1,17 +1,30 @@
 {
+<<<<<<< Updated upstream
   "updated_at": "2026-10-24T20:59:20.256227+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
       "rows": 368,
+=======
+  "updated_at": "2026-10-24T21:03:52.200822+00:00",
+  "window_hours": 36,
+  "sports": {
+    "MLB": {
+      "rows": 536,
+>>>>>>> Stashed changes
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "fanduel_direct",
         "kambi"
       ],
+<<<<<<< Updated upstream
       "market_count": 23,
       "latest": "2026-10-24T18:57:07.009880+00:00",
+=======
+      "market_count": 21,
+      "latest": "2026-10-24T18:57:40.730004+00:00",
+>>>>>>> Stashed changes
       "missing_core": [
         "home run",
         "total bases",
@@ -19,7 +32,11 @@
       ]
     },
     "NBA": {
+<<<<<<< Updated upstream
       "rows": 4700,
+=======
+      "rows": 2427,
+>>>>>>> Stashed changes
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -27,6 +44,7 @@
         "fanduel_direct",
         "kambi"
       ],
+<<<<<<< Updated upstream
       "market_count": 15,
       "latest": "2026-10-24T18:57:45.037178+00:00",
       "missing_core": []
@@ -45,12 +63,21 @@
     },
     "NFL": {
       "rows": 1644,
+=======
+      "market_count": 12,
+      "latest": "2026-10-24T18:57:44.882887+00:00",
+      "missing_core": []
+    },
+    "WNBA": {
+      "rows": 120,
+>>>>>>> Stashed changes
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "fanduel_direct",
         "kambi"
       ],
+<<<<<<< Updated upstream
       "market_count": 48,
       "latest": "2026-10-24T18:57:52.488547+00:00",
       "missing_core": []
@@ -58,13 +85,38 @@
     "NHL": {
       "rows": 96,
       "sources": [
+=======
+      "market_count": 10,
+      "latest": "2026-10-23T23:47:08.258742+00:00",
+      "missing_core": []
+    },
+    "NFL": {
+      "rows": 439,
+      "sources": [
+        "betrivers_direct",
+>>>>>>> Stashed changes
         "bovada_direct",
         "fanduel_direct",
         "kambi"
       ],
+<<<<<<< Updated upstream
       "market_count": 5,
+=======
+      "market_count": 18,
+      "latest": "2026-10-24T18:57:52.488646+00:00",
+      "missing_core": []
+    },
+    "NHL": {
+      "rows": 37,
+      "sources": [
+        "bovada_direct",
+        "fanduel_direct"
+      ],
+      "market_count": 3,
+>>>>>>> Stashed changes
       "latest": "2026-10-24T18:57:28.306568+00:00",
       "missing_core": [
+        "assists",
         "saves"
       ]
     }
@@ -85,6 +137,7 @@
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
+        "assists",
         "saves"
       ]
     }
