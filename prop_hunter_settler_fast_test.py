@@ -55,3 +55,12 @@ a={"id":96,"date":"2026-10-21","dedup_key":"same|market|0.5|under","event_id":"e
 b={"id":96,"date":"2026-10-06","dedup_key":"same|market|0.5|under","event_id":"event-b","bookmaker":"book"}
 assert pick_id(a) != pick_id(b), (pick_id(a), pick_id(b))
 print("SETTLEMENT IDENTITY/DATE GUARDS PASSED")
+
+from prop_hunter_settler import detect_stat
+assert detect_stat("rushing_attempts Over 5.5") == "rushing_attempts"
+assert detect_stat("Rushing Attempts Over 9.5") == "rushing_attempts"
+# UTC Friday kickoff can be the previous official US gameday in nflverse.
+nfl_logs=[{"player_name":"Cole Kmet","normalized_name":"cole kmet","game_id":"2026_08_NE_CHI","game_date":"2026-10-22","receptions":4}]
+nfl_pick={"player":"Cole Kmet","league":"NFL","market":"receptions Over 1.5","commence_time":"2026-10-23T00:15:00Z"}
+assert find_gamelog(nfl_pick,nfl_logs,aliases={},log_index=build_log_index(nfl_logs)) is not None
+print("NFL SETTLEMENT MARKET/LOCAL-DATE TEST PASSED")
