@@ -240,6 +240,44 @@ def _match_result(pick: dict, by_dedup: dict, by_signature: dict) -> Optional[di
     return same_day[0] if len(same_day) == 1 else None
 
 
+def _match_actual_stat(pick: dict, by_signature: dict) -> Optional[dict]:
+    """Reuse an official settled actual for another observed line of the same stat.
+
+    Ladder rungs are not always persisted as standalone picks.  A settled row for
+    the same player/stat/day still provides the official actual_value needed to
+    grade every independently observed ladder threshold.
+    """
+    d, _event = _result_context(pick)
+    sig = _signature(pick)
+    if not d or not sig[0] or not sig[1]:
+        return None
+    candidates = []
+    for (rsig, rd, _ev), row in by_signature.items():
+        if rd != d or rsig[0] != sig[0] or rsig[1] != sig[1]:
+            continue
+        if row.get("actual_value") is None:
+            continue
+        candidates.append(row)
+    actuals = {_to_float(row.get("actual_value")) for row in candidates}
+    actuals.discard(None)
+    if len(actuals) != 1:
+        return None
+    return candidates[0] if candidates else None
+
+
+def _grade_from_actual(pick: dict, row: dict) -> Optional[str]:
+    actual = _to_float(row.get("actual_value"))
+    line = _line_of_pick(pick)
+    if actual is None or line is None:
+        return None
+    side = _side_of_pick(pick)
+    if abs(actual - line) < 1e-9:
+        return "push"
+    if side == "under":
+        return "win" if actual < line else "loss"
+    return "win" if actual > line else "loss"
+
+
 def _profit_for(pick: dict, status: str) -> float:
     stake = _to_float(pick.get("stake"), 1.0) or 0.0
     odds = _to_float(pick.get("odds"), 0.0) or 0.0
@@ -296,10 +334,11 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
         if not leg.get("date") and leg.get("created_at"):
             leg["date"] = str(leg.get("created_at"))[:10]
         row = _match_result(leg, by_dedup, by_signature)
-        if not row:
-            return False
-        status = _result_status(row)
-        if status not in CLOSED:
+        status = _result_status(row) if row else ""
+        if not row or status not in CLOSED:
+            row = _match_actual_stat(leg, by_signature)
+            status = _grade_from_actual(leg, row) if row else None
+        if not row or status not in CLOSED:
             return False
         leg["result"] = status
         leg["actual_value"] = row.get("actual_value")
