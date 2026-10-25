@@ -170,9 +170,22 @@ def _event_matches(ev, pick):
             matched_teams += 1
     return matched_teams >= 2
 
-def espn_summary_players(game_id, wanted):
+def _espn_game_payload(game_id):
     url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary"
     data = http_json(url, params={"event": game_id}, retries=1) or {}
+    if ((data.get("boxscore") or {}).get("players") or []):
+        return data, "espn_summary"
+    # Independent keyless ESPN CDN fallback. The payload mirrors the site
+    # summary under gamepackageJSON and often survives site-summary gaps.
+    cdn = http_json("https://cdn.espn.com/core/nba/boxscore",
+                    params={"xhr": 1, "gameId": game_id}, retries=1) or {}
+    package = cdn.get("gamepackageJSON") if isinstance(cdn, dict) else {}
+    if isinstance(package, dict) and ((package.get("boxscore") or {}).get("players") or []):
+        return package, "espn_cdn_boxscore"
+    return data, "espn_summary"
+
+def espn_summary_players(game_id, wanted):
+    data, result_source = _espn_game_payload(game_id)
     wanted_n = {norm_name(x) for x in wanted if x}
     rows = []
     game_date = str(((data.get("header") or {}).get("competitions") or [{}])[0].get("date") or "")[:10]
@@ -191,7 +204,7 @@ def espn_summary_players(game_id, wanted):
                 reb = to_float(sm.get("REB"), 0) or 0
                 ast = to_float(sm.get("AST"), 0) or 0
                 rows.append({
-                    "sport": "BASKETBALL", "league": "NBA", "season": current_nba_season(), "source": "espn_summary",
+                    "sport": "BASKETBALL", "league": "NBA", "season": current_nba_season(), "source": result_source,
                     "source_game_id": str(game_id), "game_id": str(game_id), "game_date": game_date,
                     "player_name": name, "normalized_name": norm_name(name), "team": team,
                     "minutes": to_float(sm.get("MIN")), "points": pts, "rebounds": reb, "assists": ast,
@@ -234,7 +247,7 @@ def espn_pending_logs(picks):
     return rows
 
 def dedupe_player_date(rows):
-    priority = {"nba_api": 2, "espn_summary": 1}
+    priority = {"nba_api": 3, "espn_summary": 2, "espn_cdn_boxscore": 1}
     best = {}
     for r in rows:
         if not r.get("normalized_name") or not r.get("game_date"):
