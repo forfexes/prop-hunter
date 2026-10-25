@@ -3564,6 +3564,17 @@ def _find_source_prop(pk: Pick, props: list[Prop]) -> Optional[Prop]:
         res = process.extractOne(player, names, scorer=fuzz.WRatio, score_cutoff=90)
         if res:
             candidates = [p for p in props if (p.player or "").lower().strip() == res[0]]
+    # Never let the LLM's matchup select a same-name/similar-name prop from a
+    # different event. If the AI supplied a game, restrict source candidates to
+    # that exact source matchup before copying line/team/event metadata.
+    ai_game = str(getattr(pk, "source_game", None) or getattr(pk, "game", None) or "").lower().strip()
+    if ai_game and candidates:
+        def _game_tokens(value):
+            return {t for t in re.split(r"[^a-z0-9]+", str(value or "").lower()) if len(t) >= 3}
+        wanted = _game_tokens(ai_game)
+        scoped = [p for p in candidates if len(wanted & _game_tokens(getattr(p, "game", ""))) >= 2]
+        if scoped:
+            candidates = scoped
     if not candidates:
         return None
     market_matches = [p for p in candidates if _same_market(pk.market or "", p.market or "")]
