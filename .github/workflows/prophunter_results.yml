@@ -138,7 +138,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Runtime files are intentionally modified before this step.
+          # Stash them before rebasing, then restore them after the branch is current.
+          git stash push -u -m prop-hunter-results-runtime
           git pull --rebase origin main
+          git stash pop
           if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' picks_history.json; then
             echo "Refusing to commit conflicted picks_history.json"
             exit 1
