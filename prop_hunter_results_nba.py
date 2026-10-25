@@ -152,14 +152,23 @@ def _event_team_names(ev):
 def _event_matches(ev, pick):
     game = _game_text(pick)
     if not game:
-        return True
-    for name in _event_team_names(ev):
-        if name in game:
-            return True
-        toks = [t for t in re.split(r"[^a-z0-9]+", name) if len(t) >= 4]
-        if any(t in game for t in toks):
-            return True
-    return False
+        return False
+    # Require BOTH teams from the ESPN event to be represented in the quoted
+    # sportsbook matchup. One shared city/nickname is not enough and previously
+    # allowed players to be attached to the wrong NBA event.
+    comp = (ev.get("competitions") or [{}])[0]
+    matched_teams = 0
+    for c in comp.get("competitors") or []:
+        t = c.get("team") or {}
+        variants = [str(t.get(k) or "").lower() for k in ("displayName","shortDisplayName","name","abbreviation")]
+        variants = [v for v in variants if v]
+        ok = any(v in game for v in variants)
+        if not ok:
+            tokens = {tok for v in variants for tok in re.split(r"[^a-z0-9]+", v) if len(tok) >= 4}
+            ok = any(tok in game for tok in tokens)
+        if ok:
+            matched_teams += 1
+    return matched_teams >= 2
 
 def espn_summary_players(game_id, wanted):
     url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary"
