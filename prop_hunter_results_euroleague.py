@@ -232,6 +232,43 @@ def _resolve_events(picks: List[Dict[str, Any]]) -> Dict[str, Set[str]]:
     return resolved
 
 
+def _native_rows_for_pick(pick: Dict[str, Any]) -> List[Dict[str, Any]]:
+    d=_pick_date(pick); start=d.year if d.month>=8 else d.year-1; season=f"E{start}"
+    base=f"https://api-live.euroleague.net/v2/competitions/E/seasons/{season}"
+    payload=http_json(base+"/games",params={"Limit":1000,"Offset":0},retries=1) or {}
+    wanted=norm_name(pick.get("_wanted_player") or ""); game_text=_pick_game_text(pick)
+    for game in payload.get("data") or []:
+        gd=_date_only(game.get("date") or game.get("localDate"))
+        if gd and abs((gd-d).days)>1: continue
+        import json
+        blob=json.dumps(game,ensure_ascii=False).lower()
+        toks={t for t in re.split(r"[^a-z0-9]+",game_text) if len(t)>=4}
+        if game_text and len([t for t in toks if t in blob])<2: continue
+        code=game.get("gameCode")
+        if code is None: continue
+        stats=http_json(base+f"/games/{code}/stats",retries=1) or {}
+        for side_name in ("local","road"):
+            for item in (stats.get(side_name) or {}).get("players") or []:
+                player=item.get("player") or {}; st=item.get("stats") or {}; person=player.get("person")
+                name=person if isinstance(person,str) else ""
+                if isinstance(person,dict): name=person.get("name") or person.get("nameLatin") or person.get("displayName") or ""
+                name=name or player.get("name") or player.get("playerName") or ""
+                if not name or norm_name(name)!=wanted: continue
+                def sv(*keys):
+                    for key in keys:
+                        if st.get(key) not in (None,""): return to_float(st.get(key))
+                    return None
+                pts=sv("points","score"); reb=sv("totalRebounds","rebounds"); ast=sv("assistances","assists")
+                return [{"sport":SPORT,"league":LEAGUE,"country":"EU","season":season,"source":"euroleague_v2_game_stats",
+                    "source_game_id":f"{season}_{code}","game_id":f"{season}_{code}","game_date":str(game.get("date") or game.get("localDate") or "")[:10] or None,
+                    "player_name":name,"normalized_name":norm_name(name),"points":pts,"rebounds":reb,"assists":ast,
+                    "pra":pts+reb+ast if None not in (pts,reb,ast) else None,"pr":pts+reb if None not in (pts,reb) else None,
+                    "pa":pts+ast if None not in (pts,ast) else None,"ra":reb+ast if None not in (reb,ast) else None,
+                    "threes_made":sv("fieldGoalsMade3"),"steals":sv("steals"),"blocks":sv("blocksFavour","blocks"),
+                    "turnovers":sv("turnovers"),"raw":{"game_code":code,"stats":st}}]
+    return []
+
+
 def main() -> None:
     picks = pending_picks(limit=int(os.getenv("EUROLEAGUE_PICK_SCAN_LIMIT", "5000")))
     if not picks:
@@ -245,6 +282,14 @@ def main() -> None:
             rows.extend(parse_summary(summary(event_id), players))
         except Exception as exc:
             warn(f"EUROLEAGUE summary failed event={event_id}: {exc}")
+    have={norm_name(r.get("player_name")) for r in rows}
+    for pick in picks:
+        if norm_name(pick.get("_wanted_player")) in have: continue
+        try:
+            extra=_native_rows_for_pick(pick); rows.extend(extra)
+            have.update(norm_name(r.get("player_name")) for r in extra)
+        except Exception as exc:
+            warn(f"EuroLeague native fallback failed {pick.get('_wanted_player')}: {exc}")
     safe_json_write(OUT, rows)
     if rows:
         upsert_rows("prop_hunter_player_gamelogs", rows, "sport,league,season,game_id,normalized_name")
