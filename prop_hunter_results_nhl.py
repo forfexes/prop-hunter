@@ -21,7 +21,9 @@ def pending_players():
         if str(r.get('sport') or r.get('league') or '').upper()!='NHL': continue
         if str(r.get('status') or r.get('result') or 'pending').lower() not in ('','pending','open','none','null','unsettled'): continue
         n=str(r.get('player_name') or r.get('player') or '').strip(); k=norm_name(n)
-        if n and k not in seen: seen.add(k); out.append(n)
+        words=set(k.split())
+        bad=bool(words & {'standings','team','october','november','december'}) or len(n.split())<2
+        if n and k not in seen and not bad: seen.add(k); out.append(n)
     return out[:max(1,int(os.getenv('NHL_RESULTS_PLAYER_CAP','80')))]
 
 def _candidate_name(row):
@@ -54,6 +56,9 @@ def player_id(name):
         if norm_name(cname)==norm_name(name): exact.append(row)
         elif identity_match(name,cname,threshold=96): fuzzy.append(row)
     matches=exact or fuzzy
+    if len(matches)>1:
+        active=[r for r in matches if str(r.get('active') or '').lower() in ('true','1') or r.get('teamAbbrev') or r.get('currentTeamAbbrev')]
+        if len(active)==1: matches=active
     if len(matches)!=1:
         if len(matches)>1: warn(f'NHL player search ambiguous: {name} matches={len(matches)}')
         elif data: warn(f'NHL player search no safe identity match: {name}')
