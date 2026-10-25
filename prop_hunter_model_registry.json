@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-25T12:07:48.395448+00:00",
+  "updated_at": "2026-10-25T12:27:06.893368+00:00",
   "groups": {
     "NBA|NBA|points": {
       "group_type": "market",
@@ -91,6 +91,24 @@
       "status": "collecting",
       "min_active_samples": 60
     },
+    "MLB|MLB|rbi": {
+      "group_type": "market",
+      "samples": 94,
+      "roi": 0.45689,
+      "hit_rate": 0.6383,
+      "weight": 1.277,
+      "status": "active",
+      "min_active_samples": 60
+    },
+    "MLB|hits": {
+      "group_type": "sport_market",
+      "samples": 40,
+      "roi": 3.53443,
+      "hit_rate": 0.4,
+      "weight": 1.1,
+      "status": "shadow",
+      "min_active_samples": 60
+    },
     "WNBA|WNBA|points": {
       "group_type": "market",
       "samples": 7,
@@ -125,24 +143,6 @@
       "hit_rate": 0.66667,
       "weight": 1.0,
       "status": "collecting",
-      "min_active_samples": 60
-    },
-    "MLB|MLB|rbi": {
-      "group_type": "market",
-      "samples": 94,
-      "roi": 0.45689,
-      "hit_rate": 0.6383,
-      "weight": 1.277,
-      "status": "active",
-      "min_active_samples": 60
-    },
-    "MLB|hits": {
-      "group_type": "sport_market",
-      "samples": 40,
-      "roi": 3.53443,
-      "hit_rate": 0.4,
-      "weight": 1.1,
-      "status": "shadow",
       "min_active_samples": 60
     },
     "WNBA|WNBA|assists": {
@@ -186,6 +186,24 @@
       "samples": 1,
       "roi": 1.14,
       "hit_rate": 1,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NHL|NHL|shots on goal": {
+      "group_type": "market",
+      "samples": 8,
+      "roi": 0.2242,
+      "hit_rate": 0.75,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NHL|shots on goal": {
+      "group_type": "sport_market",
+      "samples": 8,
+      "roi": 0.2242,
+      "hit_rate": 0.75,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
@@ -244,22 +262,13 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NHL|NHL|shots on goal": {
+    "MLB|MLB|hits": {
       "group_type": "market",
-      "samples": 8,
-      "roi": 0.2242,
-      "hit_rate": 0.75,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NHL|shots on goal": {
-      "group_type": "sport_market",
-      "samples": 8,
-      "roi": 0.2242,
-      "hit_rate": 0.75,
-      "weight": 1.0,
-      "status": "collecting",
+      "samples": 40,
+      "roi": 3.53443,
+      "hit_rate": 0.4,
+      "weight": 1.1,
+      "status": "shadow",
       "min_active_samples": 60
     },
     "NBA|NBA|assists": {
@@ -295,15 +304,6 @@
       "roi": 0.33621,
       "hit_rate": 0.6,
       "weight": 1.032,
-      "status": "shadow",
-      "min_active_samples": 60
-    },
-    "MLB|MLB|hits": {
-      "group_type": "market",
-      "samples": 40,
-      "roi": 3.53443,
-      "hit_rate": 0.4,
-      "weight": 1.1,
       "status": "shadow",
       "min_active_samples": 60
     },
