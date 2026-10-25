@@ -106,15 +106,20 @@ def _team_names(event: Dict[str, Any]) -> List[str]:
 def _event_matches_pick(event: Dict[str, Any], pick: Dict[str, Any]) -> bool:
     game = _pick_game_text(pick)
     if not game:
-        return True
-    names = _team_names(event)
-    if not names:
-        return True
-    for name in names:
-        tokens = [t for t in re.split(r"[^a-z0-9]+", name) if len(t) >= 4]
-        if name in game or any(t in game for t in tokens):
-            return True
-    return False
+        return False
+    # Two-team match only: one shared club/city token is insufficient.
+    hits = 0
+    comp = (event.get("competitions") or [{}])[0]
+    for competitor in comp.get("competitors") or []:
+        team = competitor.get("team") or {}
+        variants = [str(team.get(k) or "").lower() for k in ("displayName","shortDisplayName","name","abbreviation")]
+        variants = [v for v in variants if v]
+        ok = any(v in game for v in variants)
+        if not ok:
+            tokens = {t for v in variants for t in re.split(r"[^a-z0-9]+", v) if len(t) >= 4}
+            ok = any(t in game for t in tokens)
+        if ok: hits += 1
+    return hits >= 2
 
 
 def _keys(block: Dict[str, Any]) -> List[str]:
