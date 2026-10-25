@@ -289,6 +289,12 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
                 leg[key] = combo.get(key)
         if not leg.get("game") and combo.get("game"):
             leg["game"] = combo.get("game")
+        # Older ladder records predate event/date persistence. created_at is the
+        # card creation date, so promote its calendar date to the pick date.
+        # This keeps strict day-scoped matching while allowing historical rungs
+        # to resolve against official result rows.
+        if not leg.get("date") and leg.get("created_at"):
+            leg["date"] = str(leg.get("created_at"))[:10]
         row = _match_result(leg, by_dedup, by_signature)
         if not row:
             return False
