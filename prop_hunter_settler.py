@@ -63,6 +63,8 @@ MARKET_STAT_MAP = {
     # NFL / NCAAF
     "passing touchdowns": "passing_touchdowns", "pass tds": "passing_touchdowns", "pass td": "passing_touchdowns",
     "receiving yards": "receiving_yards", "rushing yards": "rushing_yards",
+    "rushing attempts": "rushing_attempts", "rush attempts": "rushing_attempts",
+    "carries": "rushing_attempts",
     "passing yards": "passing_yards", "receptions": "receptions",
     "tackles": "tackles", "defensive tackles": "tackles",
     "field goals made": "field_goals_made", "successful field goals": "field_goals_made",
