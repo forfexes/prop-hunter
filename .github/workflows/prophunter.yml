@@ -179,7 +179,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git stash push -u -m prop-hunter-card-runtime
           git pull --rebase origin main
+          git stash pop
           if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' picks_history.json; then
             echo "Refusing to commit conflicted picks_history.json"
             exit 1
