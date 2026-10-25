@@ -98,7 +98,7 @@ def _event_matches_pick(event: Dict[str, Any], pick: Dict[str, Any]) -> bool:
         tokens = [t for t in re.split(r"[^a-z0-9]+", name) if len(t) >= 4]
         if name in game or any(t in game for t in tokens):
             hits += 1
-    return hits >= 1
+    return hits >= 2
 
 def scoreboard(league: str, yyyymmdd: str) -> List[Dict[str, Any]]:
     sport, slug, _ = SPORTS[league]
