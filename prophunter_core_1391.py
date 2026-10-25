@@ -2985,10 +2985,9 @@ def send_telegram(text,dry_run=False,picks=None):
     """Send one Telegram PRO TIP window per single/ladder/builder/cross/lottery."""
     global _LAST_TELEGRAM_CARDS
     payloads=_telegram_payloads(text,picks)
-    max_payloads=max(1,min(40,int(os.getenv("PH_TELEGRAM_MAX_PAYLOADS","30"))))
-    if len(payloads)>max_payloads:
-        log.warning("Telegram payload cap: %d -> %d; excess PRO TIP windows suppressed",len(payloads),max_payloads)
-        payloads=payloads[:max_payloads]
+    # Every qualified PRO TIP gets its own Telegram window. Do not silently
+    # suppress valid tips with an arbitrary payload cap; transport throttling
+    # belongs in the sender/backoff layer instead.
     _LAST_TELEGRAM_CARDS=[]
     if dry_run:
         log.info("DRY-RUN Telegram: %d messages (%s)",len(payloads),", ".join(x.get("kind","?") for x in payloads))
