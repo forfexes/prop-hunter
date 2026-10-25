@@ -312,10 +312,14 @@ def find_gamelog(
         # For North-American late-night events, a UTC start shortly after midnight
         # can legitimately have an official local game_date one day earlier.
         allow_previous_day = bool(start_dt and start_dt.hour < 7)
+        # NFL sportsbook feeds can label Thursday/Sunday night games by UTC date
+        # while nflverse uses the local US gameday.  Accept the immediately
+        # previous official gameday for NFL as well, but never a later gamelog.
+        league = str(pick.get("league") or pick.get("sport") or "").upper()
+        allow_previous_day = allow_previous_day or league in {"NFL", "AMERICAN_FOOTBALL"}
         # Settlement may match the official event date, or the previous local
-        # calendar date for North-American games starting shortly after midnight
-        # UTC. Never match a later gamelog (+1/+2 days): that can grade a future
-        # card against a different game by the same player.
+        # calendar date. Never match a later gamelog (+1/+2 days): that can
+        # grade a future card against a different game by the same player.
         if delta == 0 or (delta == -1 and allow_previous_day):
             dated.append((abs(delta), 0 if delta == 0 else 1, gl))
     if not dated:
