@@ -227,15 +227,18 @@ def install_persistence(module: Any) -> bool:
             if telegram_message_id and telegram_text and combos and entry.get("cards"):
                 card=next((c for c in reversed(entry.get("cards") or []) if str(c.get("message_id"))==str(telegram_message_id)),None)
                 if card:
-                    visible=[];seen_sig=set()
-                    for row in target:
-                        legs=[str(x or "").strip() for x in (row.get("legs") or []) if str(x or "").strip()]
-                        sig=tuple(sorted(x.lower() for x in legs)) if legs else (str(row.get("market") or "").lower(),)
-                        if sig in seen_sig:continue
-                        is_visible=(all(leg in telegram_text for leg in legs) if legs else str(row.get("market") or "") in telegram_text)
-                        if is_visible and row.get("combo_id"):
-                            seen_sig.add(sig);visible.append(row["combo_id"])
-                    card["combo_ids"]=visible
+                    # New one-tip-one-window persistence already stores the exact
+                    # combo id. Never broaden/replace that scope by text matching.
+                    if not card.get("combo_ids"):
+                        visible=[];seen_sig=set()
+                        for row in target:
+                            legs=[str(x or "").strip() for x in (row.get("legs") or []) if str(x or "").strip()]
+                            sig=tuple(sorted(x.lower() for x in legs)) if legs else (str(row.get("market") or "").lower(),)
+                            if sig in seen_sig:continue
+                            is_visible=(all(leg in telegram_text for leg in legs) if legs else str(row.get("market") or "") in telegram_text)
+                            if is_visible and row.get("combo_id"):
+                                seen_sig.add(sig);visible.append(row["combo_id"])
+                        card["combo_ids"]=visible
                     card["text"]=telegram_text
             module.save_history(history);_fix_euroleague_db(module,euro_keys)
         except Exception as exc:
