@@ -142,7 +142,13 @@ jobs:
           # Stash them before rebasing, then restore them after the branch is current.
           git stash push -u -m prop-hunter-results-runtime
           git pull --rebase origin main
-          git stash pop
+          git stash pop || {
+            echo "Runtime report files changed upstream; keeping freshly generated versions"
+            for f in prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_model_registry.json prop_hunter_source_trust.json; do
+              if git ls-files -u -- "$f" | grep -q .; then git checkout --theirs -- "$f"; git add "$f"; fi
+            done
+            git diff --name-only --diff-filter=U | grep -q . && exit 1 || true
+          }
           if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' picks_history.json; then
             echo "Refusing to commit conflicted picks_history.json"
             exit 1
