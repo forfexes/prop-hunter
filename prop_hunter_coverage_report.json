@@ -1,17 +1,16 @@
 {
-  "updated_at": "2026-10-25T12:27:20.483267+00:00",
+  "updated_at": "2026-10-25T13:16:37.855526+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 236,
+      "rows": 648,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
-        "fanduel_direct",
-        "kambi"
+        "fanduel_direct"
       ],
-      "market_count": 18,
-      "latest": "2026-10-24T22:58:29.820848+00:00",
+      "market_count": 23,
+      "latest": "2026-10-25T12:40:42.886698+00:00",
       "missing_core": [
         "home run",
         "total bases",
@@ -19,7 +18,7 @@
       ]
     },
     "NBA": {
-      "rows": 214,
+      "rows": 1305,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -27,39 +26,42 @@
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 11,
-      "latest": "2026-10-24T22:58:06.891627+00:00",
+      "market_count": 13,
+      "latest": "2026-10-25T12:41:15.685344+00:00",
       "missing_core": []
     },
     "WNBA": {
-      "rows": 40,
+      "rows": 347,
       "sources": [
+        "betrivers_direct",
+        "fanduel_direct",
         "kambi"
       ],
-      "market_count": 5,
-      "latest": "2026-10-24T18:57:46.979632+00:00",
+      "market_count": 11,
+      "latest": "2026-10-25T12:40:47.646023+00:00",
       "missing_core": []
     },
     "NFL": {
-      "rows": 169,
+      "rows": 1070,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
+        "fanduel_direct",
         "kambi"
       ],
-      "market_count": 19,
-      "latest": "2026-10-24T22:58:14.510491+00:00",
+      "market_count": 58,
+      "latest": "2026-10-25T12:41:23.938492+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 629,
+      "rows": 1172,
       "sources": [
         "betrivers_direct",
-        "bovada_direct",
-        "fanduel_direct"
+        "fanduel_direct",
+        "kambi"
       ],
       "market_count": 5,
-      "latest": "2026-10-24T22:58:20.515504+00:00",
+      "latest": "2026-10-25T12:41:05.036174+00:00",
       "missing_core": [
         "saves"
       ]
@@ -74,14 +76,6 @@
         "home run",
         "total bases",
         "pitcher strikeouts"
-      ]
-    },
-    {
-      "sport": "WNBA",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "kambi"
       ]
     },
     {
