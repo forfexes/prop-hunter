@@ -95,14 +95,20 @@ def _event_final(ev):
 def _event_matches(ev, pick):
     game = _game_text(pick)
     if not game:
-        return True
-    for name in _event_team_names(ev):
-        if name in game:
-            return True
-        toks = [t for t in re.split(r"[^a-z0-9]+", name) if len(t) >= 4]
-        if any(t in game for t in toks):
-            return True
-    return False
+        return False
+    matched = 0
+    comp = (ev.get("competitions") or [{}])[0]
+    for competitor in comp.get("competitors") or []:
+        team = competitor.get("team") or {}
+        variants = [str(team.get(k) or "").lower() for k in ("displayName","shortDisplayName","name","abbreviation")]
+        variants = [v for v in variants if v]
+        ok = any(v in game for v in variants)
+        if not ok:
+            toks = {t for v in variants for t in re.split(r"[^a-z0-9]+", v) if len(t) >= 4}
+            ok = any(t in game for t in toks)
+        if ok:
+            matched += 1
+    return matched >= 2
 
 def _made(v):
     if v in (None, "", "--"):
