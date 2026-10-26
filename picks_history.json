@@ -6473,7 +6473,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:38.526047+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-26T01:29:36.119709+00:00",
+        "settled_at": "2026-10-26T01:33:52.94482+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -6543,7 +6543,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:39.391522+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-26T01:29:36.119763+00:00",
+        "settled_at": "2026-10-26T01:33:52.944877+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -6928,7 +6928,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:43.503053+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-26T01:29:36.109838+00:00",
+        "settled_at": "2026-10-26T01:33:52.935032+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -7033,7 +7033,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:44.625380+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-26T01:29:36.113058+00:00",
+        "settled_at": "2026-10-26T01:33:52.938188+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -15716,7 +15716,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:05.740418+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-26T01:29:36.119763+00:00",
+        "settled_at": "2026-10-26T01:33:52.944877+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -18902,11 +18902,14 @@
           "bookmaker": "kambi_ub",
           "source": "kambi"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.41,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-25T19:21:32.237673+00:00"
+        "created_at": "2026-10-25T19:21:32.237673+00:00",
+        "actual_value": 1,
+        "settled_at": "2026-10-26T01:33:52.913428+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-25",
@@ -18966,11 +18969,14 @@
           "bookmaker": "kambi_ub",
           "source": "kambi"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.4,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-25T19:21:33.584571+00:00"
+        "created_at": "2026-10-25T19:21:33.584571+00:00",
+        "actual_value": 0,
+        "settled_at": "2026-10-26T01:33:52.913516+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-25",
@@ -19065,11 +19071,14 @@
           "bookmaker": "betrivers",
           "source": "betrivers_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "loss",
+        "profit": -0.39,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-25T19:21:34.827846+00:00"
+        "created_at": "2026-10-25T19:21:34.827846+00:00",
+        "actual_value": 2,
+        "settled_at": "2026-10-26T01:33:52.913609+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-25",
@@ -21907,7 +21916,11 @@
             "odds": 2.14,
             "probability": 0.8017,
             "bookmaker": "kambi_ub",
-            "game": "Indiana Pacers @ Brooklyn Nets"
+            "game": "Indiana Pacers @ Brooklyn Nets",
+            "created_at": "2026-10-25T19:21:37.993105+00:00",
+            "date": "2026-10-25",
+            "result": "win",
+            "actual_value": 1
           },
           {
             "player": "Day'Ron Sharpe",
@@ -21919,13 +21932,17 @@
             "odds": 2.15,
             "probability": 0.793,
             "bookmaker": "kambi_ub",
-            "game": "Indiana Pacers @ Brooklyn Nets"
+            "game": "Indiana Pacers @ Brooklyn Nets",
+            "created_at": "2026-10-25T19:21:37.993105+00:00",
+            "date": "2026-10-25",
+            "result": "win",
+            "actual_value": 0
           }
         ],
         "odds": 4.6,
         "stake": 0.15,
         "probability": 0.6357,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-10-25T19:21:37.993105+00:00",
         "combo_id": "8fe936544decc0c9",
         "features": {
@@ -21947,7 +21964,42 @@
         "builder_odds_estimated_from_legs": true,
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
-        "same_player_multistat": false
+        "same_player_multistat": false,
+        "profit": 0.54,
+        "settlement_legs": [
+          {
+            "player": "Keon Ellis",
+            "sport": "NBA",
+            "market": "blocks Under 1.5",
+            "market_family": "blocks",
+            "direction": "under",
+            "point": 1.5,
+            "odds": 2.14,
+            "probability": 0.8017,
+            "bookmaker": "kambi_ub",
+            "game": "Indiana Pacers @ Brooklyn Nets",
+            "created_at": "2026-10-25T19:21:37.993105+00:00",
+            "date": "2026-10-25",
+            "result": "win",
+            "actual_value": 1
+          },
+          {
+            "player": "Day'Ron Sharpe",
+            "sport": "NBA",
+            "market": "blocks Under 1.5",
+            "market_family": "blocks",
+            "direction": "under",
+            "point": 1.5,
+            "odds": 2.15,
+            "probability": 0.793,
+            "bookmaker": "kambi_ub",
+            "game": "Indiana Pacers @ Brooklyn Nets",
+            "created_at": "2026-10-25T19:21:37.993105+00:00",
+            "date": "2026-10-25",
+            "result": "win",
+            "actual_value": 0
+          }
+        ]
       },
       {
         "type": "betbuilder",
@@ -24186,7 +24238,7 @@
         "combo_ids": [],
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 25.10.2026\n\n🏀 Ace Bailey\n🏟 Los Angeles Lakers @ Utah Jazz\n\n   ✅ • points Over 9.5 @1.58 → 0.39u · Ergebnis 17 · +0.23u\n📈 Prob 96% · Edge +32.8% · Confidence 99/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L10 avg 18.5, 96% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.23u\n@prophunter",
-        "settlement_updated_at": "2026-10-26T01:29:44.696192+00:00"
+        "settlement_updated_at": "2026-10-26T01:34:02.098351+00:00"
       },
       {
         "created_at": "2026-10-25T12:48:00.123917+00:00",
@@ -24210,7 +24262,7 @@
         "combo_ids": [],
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 25.10.2026\n\n🏀 Jaren Jackson Jr.\n🏟 Los Angeles Lakers @ Utah Jazz\n\n   ✅ • points Over 15.5 @1.56 → 0.39u · Ergebnis 20 · +0.22u\n📈 Prob 96% · Edge +31.9% · Confidence 99/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L10 avg 21.6, 96% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.22u\n@prophunter",
-        "settlement_updated_at": "2026-10-26T01:29:46.117211+00:00"
+        "settlement_updated_at": "2026-10-26T01:34:02.468321+00:00"
       },
       {
         "created_at": "2026-10-25T12:48:00.123925+00:00",
@@ -24430,7 +24482,9 @@
           "keon ellis|blocks under 1.5|1.5|under"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 25.10.2026\n\n🏀 Keon Ellis\n🏟 Indiana Pacers @ Brooklyn Nets\n\n   ✅ • blocks Under 1.5 @2.14 → 0.36u · Ergebnis 1 · +0.41u\n📈 Prob 80% · Edge +33.4% · Confidence 95/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L7 avg 0.0, 96% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.41u\n@prophunter",
+        "settlement_updated_at": "2026-10-26T01:34:03.907453+00:00"
       },
       {
         "created_at": "2026-10-25T19:21:37.993797+00:00",
@@ -24452,7 +24506,9 @@
           "day'ron sharpe|blocks under 1.5|1.5|under"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 25.10.2026\n\n🏀 Day'Ron Sharpe\n🏟 Indiana Pacers @ Brooklyn Nets\n\n   ✅ • blocks Under 1.5 @2.15 → 0.35u · Ergebnis 0 · +0.40u\n📈 Prob 79% · Edge +32.8% · Confidence 94/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L9 avg 0.3, 96% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.40u\n@prophunter",
+        "settlement_updated_at": "2026-10-26T01:34:05.448509+00:00"
       },
       {
         "created_at": "2026-10-25T19:21:37.993810+00:00",
@@ -24476,7 +24532,7 @@
         "combo_ids": [],
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 25.10.2026\n\n🏀 Isaiah Collier\n🏟 Los Angeles Lakers @ Utah Jazz\n\n   ❌ • assists Under 3.5 @3.10 → 0.33u · Ergebnis 6 · -0.33u\n📈 Prob 63% · Edge +30.9% · Confidence 83/100\n💡 src:bovada | DATA+: Basket Line vorhanden | DB L10 avg 0.3, 96% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-10-26T01:29:47.505169+00:00"
+        "settlement_updated_at": "2026-10-26T01:34:05.812776+00:00"
       },
       {
         "created_at": "2026-10-25T19:21:37.993823+00:00",
@@ -24487,7 +24543,9 @@
           "kelly oubre jr.|rebounds over 2.5|2.5|over"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 25.10.2026\n\n🏀 Kelly Oubre Jr.\n🏟 IND Pacers @ BKN Nets\n\n   ❌ • rebounds Over 2.5 @1.49 → 0.39u · Ergebnis 2 · -0.39u\n📈 Prob 96% · Edge +28.9% · Confidence 99/100\n💡 src:betrivers | DATA+: Basket Line vorhanden | DB L10 avg 5.7, 96% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.39u\n@prophunter",
+        "settlement_updated_at": "2026-10-26T01:34:10.405782+00:00"
       },
       {
         "created_at": "2026-10-25T19:21:37.993828+00:00",
@@ -24533,7 +24591,7 @@
         "combo_ids": [],
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 25.10.2026\n\n🏀 Lauri Markkanen\n🏟 Los Angeles Lakers @ Utah Jazz\n\n   ✅ • blocks Under 1.5 @1.73 → 0.36u · Ergebnis 0 · +0.26u\n📈 Prob 85% · Edge +27.0% · Confidence 97/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L9 avg 0.6, 91% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.26u\n@prophunter",
-        "settlement_updated_at": "2026-10-26T01:29:48.893694+00:00"
+        "settlement_updated_at": "2026-10-26T01:34:10.764705+00:00"
       },
       {
         "created_at": "2026-10-25T19:21:37.993849+00:00",
