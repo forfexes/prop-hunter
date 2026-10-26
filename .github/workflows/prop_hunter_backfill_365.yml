@@ -1,4 +1,4 @@
-name: Prop Hunter 365d Backfill
+name: Prop Hunter Cross-Season L15 Backfill
 
 "on":
   push:
@@ -28,13 +28,13 @@ jobs:
         run: pip install -r requirements_results.txt
       - name: Compile and regression
         run: |
-          python -m py_compile prop_hunter_backfill_365.py prop_hunter_shared_utils.py prop_hunter_feature_builder.py
+          python -m py_compile prop_hunter_backfill_365.py prop_hunter_shared_utils.py prop_hunter_feature_builder.py prop_hunter_gamelog_retention.py
           python prop_hunter_expansion_test.py
-      - name: Backfill 365 days
+      - name: Backfill across previous season
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          PH_BACKFILL_DAYS: "365"
+          PH_BACKFILL_DAYS: "550"
           PH_BACKFILL_SPORTS: "MLB,NBA,WNBA,NFL,NHL"
           PH_BACKFILL_FLUSH_ROWS: "1000"
           HTTP_TIMEOUT: "12"
@@ -43,4 +43,6 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python prop_hunter_feature_builder.py
+        run: |
+          PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_feature_builder.py
