@@ -1,16 +1,16 @@
 {
-  "updated_at": "2026-10-26T00:19:51.815145+00:00",
+  "updated_at": "2026-10-26T01:30:03.540507+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 123,
+      "rows": 29,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "fanduel_direct"
       ],
-      "market_count": 12,
-      "latest": "2026-10-25T19:13:21.455009+00:00",
+      "market_count": 7,
+      "latest": "2026-10-25T19:13:20.539355+00:00",
       "missing_core": [
         "home run",
         "total bases",
@@ -18,7 +18,7 @@
       ]
     },
     "NBA": {
-      "rows": 3243,
+      "rows": 4433,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -26,7 +26,7 @@
         "fanduel_direct"
       ],
       "market_count": 15,
-      "latest": "2026-10-25T23:03:41.589352+00:00",
+      "latest": "2026-10-25T23:03:41.580459+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -42,30 +42,29 @@
       ]
     },
     "NFL": {
-      "rows": 2241,
+      "rows": 1141,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
-        "draftkings_direct",
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 59,
-      "latest": "2026-10-25T19:13:34.586817+00:00",
+      "market_count": 42,
+      "latest": "2026-10-25T23:03:46.481814+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 2025,
+      "rows": 60,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "fanduel_direct"
       ],
-      "market_count": 6,
-      "latest": "2026-10-25T23:03:50.057437+00:00",
-      "missing_core": []
+      "market_count": 4,
+      "latest": "2026-10-25T19:13:37.805289+00:00",
+      "missing_core": [
+        "saves"
+      ]
     }
   },
   "issues": [
@@ -93,6 +92,14 @@
         "rebounds",
         "assists",
         "threes"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "saves"
       ]
     }
   ]
