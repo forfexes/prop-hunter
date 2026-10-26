@@ -51,7 +51,7 @@ def hit(rs,k,line):
 
 def main():
     # Read the full retained history with deterministic paging. The retention job
-    # caps each sport/league/player at 40 games, so L5/L10/L20/L30 stay complete.
+    # caps each sport/league/player at 15 games, so L5/L10/L15 stay complete.
     logs=select_rows("prop_hunter_player_gamelogs",limit=None,order_by="id")
     g=defaultdict(list)
     for r in logs:
@@ -61,7 +61,7 @@ def main():
     for (sport,league,nk),items in g.items():
         items.sort(key=lambda x:str(x.get("game_date") or x.get("created_at") or ""), reverse=True)
         feat={"games_total":len(items),"last_game_date":items[0].get("game_date")}
-        for n in [5,10,20,30]:
+        for n in [5,10,15]:
             sub=items[:n]; feat[f"last_{n}"]={}
             for st in STATS:
                 a=avg(sub,st)
