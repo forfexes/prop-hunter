@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Keep only the newest N player games per sport/league/player.
 
-This preserves L5/L10/L20/L30 feature history while preventing the gamelog
+This preserves L5/L10/L15 feature history while preventing the gamelog
 table from growing without bound. Picks, results, CLV and prop snapshots are
 not touched.
 """
@@ -15,7 +15,7 @@ from typing import Dict, List, Tuple
 from prop_hunter_shared_utils import log, supabase_client
 
 TABLE = "prop_hunter_player_gamelogs"
-KEEP = max(30, int(os.getenv("PH_GAMELOG_KEEP_PER_PLAYER", "40")))
+KEEP = max(15, int(os.getenv("PH_GAMELOG_KEEP_PER_PLAYER", "15")))
 PAGE = 1000
 DELETE_BATCH = max(100, min(1000, int(os.getenv("PH_GAMELOG_DELETE_BATCH", "500"))))
 
