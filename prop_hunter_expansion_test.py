@@ -312,3 +312,10 @@ if __name__ == "__main__":
 _fb = Path("prop_hunter_feature_builder.py").read_text(encoding="utf-8")
 assert "FEATURE_WRITE_BATCH" in _fb
 assert "range(0,len(rows),FEATURE_WRITE_BATCH)" in _fb.replace(" ", "").replace("\\n", "")
+
+# Source-prop event scoping must fail closed; never borrow a same-name prop from another game.
+core_src=Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+assert 'if not scoped:\n            return None' in core_src
+wnba_src=Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
+assert 'return matched >= 2' in wnba_src
+print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
