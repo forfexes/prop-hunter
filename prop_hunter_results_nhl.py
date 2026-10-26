@@ -86,7 +86,7 @@ def logs_for(name,last_n=30):
 def main():
     players=pending_players(); rows=[]
     for name in players:
-        try: rows.extend(logs_for(name,int(os.getenv('LAST_N_GAMES','30'))))
+        try: rows.extend(logs_for(name,int(os.getenv('LAST_N_GAMES','15'))))
         except Exception as e: warn(f'NHL gamelog failed {name}: {e}')
     safe_json_write(OUT,rows)
     if rows: upsert_rows('prop_hunter_player_gamelogs',rows,'sport,league,season,game_id,normalized_name')
