@@ -3573,8 +3573,11 @@ def _find_source_prop(pk: Pick, props: list[Prop]) -> Optional[Prop]:
             return {t for t in re.split(r"[^a-z0-9]+", str(value or "").lower()) if len(t) >= 3}
         wanted = _game_tokens(ai_game)
         scoped = [p for p in candidates if len(wanted & _game_tokens(getattr(p, "game", ""))) >= 2]
-        if scoped:
-            candidates = scoped
+        # Fail closed. A player/name match from another event must never be used
+        # to copy line/team/event metadata into the AI pick.
+        if not scoped:
+            return None
+        candidates = scoped
     if not candidates:
         return None
     market_matches = [p for p in candidates if _same_market(pk.market or "", p.market or "")]
