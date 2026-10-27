@@ -53,14 +53,31 @@ jobs:
           key = os.environ.get("SUPABASE_KEY", "")
           if not url or not key:
               raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
-          req = urllib.request.Request(f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1", headers={"apikey": key})
-          try:
-              with urllib.request.urlopen(req, timeout=15) as response:
-                  if response.status != 200: raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
-          except urllib.error.HTTPError as exc:
-              body = exc.read().decode("utf-8", "ignore")[:300]; raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
-          except Exception as exc: raise SystemExit(f"Supabase preflight failed: {exc}")
-          print("Supabase preflight OK")
+          # Keep preflight deliberately cheap. prop_hunter_db_health can aggregate
+          # large tables and has previously hit Postgres statement_timeout, which
+          # must not block the entire settlement pipeline.
+          import time
+          req = urllib.request.Request(
+              f"{url}/rest/v1/prop_hunter_results?select=result_id&limit=1",
+              headers={"apikey": key},
+          )
+          last = None
+          for attempt in range(3):
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as response:
+                      if response.status == 200:
+                          print("Supabase preflight OK")
+                          break
+                      last = f"HTTP {response.status}"
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode("utf-8", "ignore")[:300]
+                  last = f"HTTP {exc.code} {body}"
+              except Exception as exc:
+                  last = str(exc)
+              if attempt < 2:
+                  time.sleep(3 * (attempt + 1))
+          else:
+              raise SystemExit(f"Supabase preflight failed after 3 attempts: {last}")
           PY
 
       - name: Install
