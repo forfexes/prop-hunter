@@ -371,3 +371,7 @@ assert 'def prioritize_best_single_per_player(picks):' in core
 assert 'return (observed,prob,l15,min(n,15),edge)' in core
 assert 'picks = prioritize_best_single_per_player(picks)' in core
 assert 'build_autonomous_extras(picks, props, Pick, LadderLeg)' in core
+
+# NHL requests explicit alternate market keys so real ladder rungs can enter the raw pool.
+for key in ("player_shots_on_goal_alternate","player_goals_alternate","player_points_alternate","player_assists_alternate","player_goalie_saves_alternate"):
+    assert key in core
