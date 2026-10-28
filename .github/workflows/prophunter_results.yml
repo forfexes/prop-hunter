@@ -13,6 +13,7 @@ name: Prop Hunter Results Autonomous
       - 'prop_hunter_results_wnba.py'
       - 'prop_hunter_results_nfl.py'
       - 'prop_hunter_results_nhl.py'
+      - 'prop_hunter_results_euroleague.py'
       - '.github/results-trigger'
   schedule:
     - cron: '15 10 * * *'

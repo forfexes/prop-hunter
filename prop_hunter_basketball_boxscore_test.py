@@ -4,6 +4,7 @@ from unittest.mock import patch
 from prop_hunter_basketball_boxscore import official_gameday, observed_stats, unobserved_log
 from prop_hunter_settler import find_gamelog, build_log_index
 import prophunter_results as reporter
+from prop_hunter_learning_update import learn_builder_correlations
 import prop_hunter_results_nba as nba
 import prop_hunter_results_wnba as wnba
 
@@ -54,6 +55,11 @@ def main():
              'leg_details': [dict(pick, stake=.2, odds=2)]}
     assert reporter._settle_combo(combo, *indexes) and combo['result'] == 'pending'
     assert reporter._match_actual_stat(pick, indexes[1]) is None
+    combo['builder_profile'] = 'safe'
+    combo['leg_details'] = [{'player': 'A', 'market': 'points', 'sport': 'NBA', 'result': 'loss', 'probability': .6},
+                            {'player': 'B', 'market': 'rebounds', 'sport': 'NBA', 'result': 'win', 'probability': .7}]
+    learned = learn_builder_correlations([{'kombis': [combo]}])
+    assert learned['pairs'] == {} and learned['profiles'] == {}, learned
     assert find_gamelog({'player': 'Observed Player', 'date': '2026-08-11', 'league': 'WNBA'}, [empty], {}, build_log_index([empty])) is None
     print('BASKETBALL OFFICIAL DATE / OBSERVED BOXSCORE TEST PASSED')
 

@@ -300,8 +300,8 @@ def _profit_for(pick: dict, status: str) -> float:
 
 
 def _reopen_unobserved(pick: dict) -> bool:
-    changed = str(pick.get("result") or "pending") != "pending" or pick.get("profit") is not None or pick.get("actual_value") is not None
-    pick.update(result="pending", status="pending", profit=None, actual_value=None)
+    changed = str(pick.get("result") or "pending") != "pending" or pick.get("profit") is not None or pick.get("actual_value") is not None or not pick.get("settlement_invalidated")
+    pick.update(result="pending", status="pending", profit=None, actual_value=None, settlement_invalidated=True)
     pick.pop("settlement_legs", None)
     pick.pop("settled_at", None)
     return changed
@@ -320,6 +320,7 @@ def _merge_single(pick: dict, result_row: dict) -> bool:
         or pick.get("actual_value") != actual
         or _to_float(pick.get("profit"), 0.0) != profit
     )
+    pick.pop("settlement_invalidated", None)
     pick["result"] = "win" if status == "won" else "loss" if status == "lost" else status
     pick["actual_value"] = actual
     pick["profit"] = profit
@@ -417,6 +418,7 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict, context_picks
             final = "push"
             profit = 0.0
     old = (combo.get("result"), _to_float(combo.get("profit"), 0.0))
+    combo.pop("settlement_invalidated", None)
     combo["result"] = final
     combo["profit"] = round(profit, 2)
     combo["leg_details"] = legs if combo.get("leg_details") else combo.get("leg_details", [])

@@ -63,3 +63,21 @@ fm=FakeModule();check(cf.install_persistence(fm),'persistence install failed');f
 check(fm.hist[0]['picks'][0]['sport']=='EUROLEAGUE','EuroLeague history sport repair failed')
 check(fm.sb.t.updated and fm.sb.t.updated[-1].get('sport')=='EUROLEAGUE','EuroLeague DB sport repair failed')
 print('EUROLEAGUE PERSISTENCE TEST PASSED')
+
+# The official API uses surname-first names, including compact initials.
+check(mod._native_name_key("ZIZIC, ANTE") == mod._native_name_key("Ante Zizic"), "native surname-first name")
+check(mod._native_name_key("LAWSON, A.J.") == mod._native_name_key("A. J. Lawson"), "native initials")
+from unittest.mock import patch
+native_pick = {"_wanted_player": "Ante Zizic", "date": "2026-10-02", "raw": {"game": "Barcelona @ Besiktas"}}
+game = {"date": "2026-10-02", "gameCode": 25, "played": True, "home": "Besiktas", "away": "Barcelona"}
+native_stats = {"local": {"players": [{"player": {"person": {"name": "ZIZIC, ANTE"}},
+                 "stats": {"timePlayed": 906, "points": 9, "totalRebounds": 9, "assistances": 0}}]}}
+def native_http(url, **kwargs):
+    return {"data": [game]} if url.endswith("/games") else native_stats
+with patch.object(mod, "http_json", side_effect=native_http):
+    native_rows = mod._native_rows_for_pick(native_pick)
+check(len(native_rows) == 1 and native_rows[0]["player_name"] == "Ante Zizic" and native_rows[0]["rebounds"] == 9, "native exact player/stats resolution")
+with patch.object(mod, "http_json", side_effect=native_http):
+    game["played"] = False
+    check(mod._native_rows_for_pick(native_pick) == [], "unfinished native game must not produce results")
+print("EUROLEAGUE NATIVE NAME / FINAL-GAME TEST PASSED")

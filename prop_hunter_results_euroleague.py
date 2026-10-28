@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional, Set
 
@@ -232,12 +233,22 @@ def _resolve_events(picks: List[Dict[str, Any]]) -> Dict[str, Set[str]]:
     return resolved
 
 
+def _native_name_key(value):
+    text = str(value or "").strip()
+    if "," in text:
+        last, first = text.split(",", 1)
+        text = f"{first.strip()} {last.strip()}"
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]", "", text)
+
+
 def _native_rows_for_pick(pick: Dict[str, Any]) -> List[Dict[str, Any]]:
     d=_pick_date(pick); start=d.year if d.month>=8 else d.year-1; season=f"E{start}"
     base=f"https://api-live.euroleague.net/v2/competitions/E/seasons/{season}"
     payload=http_json(base+"/games",params={"Limit":1000,"Offset":0},retries=1) or {}
-    wanted=norm_name(pick.get("_wanted_player") or ""); game_text=_pick_game_text(pick)
+    wanted=_native_name_key(pick.get("_wanted_player") or ""); game_text=_pick_game_text(pick)
     for game in payload.get("data") or []:
+        if game.get("played") is not True: continue
         gd=_date_only(game.get("date") or game.get("localDate"))
         if gd and abs((gd-d).days)>1: continue
         import json
@@ -253,7 +264,10 @@ def _native_rows_for_pick(pick: Dict[str, Any]) -> List[Dict[str, Any]]:
                 name=person if isinstance(person,str) else ""
                 if isinstance(person,dict): name=person.get("name") or person.get("nameLatin") or person.get("displayName") or ""
                 name=name or player.get("name") or player.get("playerName") or ""
-                if not name or norm_name(name)!=wanted: continue
+                if not name or _native_name_key(name)!=wanted: continue
+                if (to_float(st.get("timePlayed"), 0) or 0) <= 0: continue
+                official_name = name
+                name = str(pick.get("_wanted_player") or name)
                 def sv(*keys):
                     for key in keys:
                         if st.get(key) not in (None,""): return to_float(st.get(key))
@@ -261,11 +275,11 @@ def _native_rows_for_pick(pick: Dict[str, Any]) -> List[Dict[str, Any]]:
                 pts=sv("points","score"); reb=sv("totalRebounds","rebounds"); ast=sv("assistances","assists")
                 return [{"sport":SPORT,"league":LEAGUE,"country":"EU","season":season,"source":"euroleague_v2_game_stats",
                     "source_game_id":f"{season}_{code}","game_id":f"{season}_{code}","game_date":str(game.get("date") or game.get("localDate") or "")[:10] or None,
-                    "player_name":name,"normalized_name":norm_name(name),"points":pts,"rebounds":reb,"assists":ast,
+                    "player_name":name,"normalized_name":norm_name(name),"minutes":sv("timePlayed")/60,"points":pts,"rebounds":reb,"assists":ast,
                     "pra":pts+reb+ast if None not in (pts,reb,ast) else None,"pr":pts+reb if None not in (pts,reb) else None,
                     "pa":pts+ast if None not in (pts,ast) else None,"ra":reb+ast if None not in (reb,ast) else None,
                     "threes_made":sv("fieldGoalsMade3"),"steals":sv("steals"),"blocks":sv("blocksFavour","blocks"),
-                    "turnovers":sv("turnovers"),"raw":{"game_code":code,"stats":st}}]
+                    "turnovers":sv("turnovers"),"raw":{"game_code":code,"stats":st,"official_player_name":official_name,"official_start_time":game.get("utcDate")}}]
     return []
 
 

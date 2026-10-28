@@ -78,6 +78,8 @@ def learn_builder_correlations(history: Iterable[Dict[str, Any]]) -> Dict[str, A
         for combo in entry.get("kombis") or []:
             if not isinstance(combo, dict):
                 continue
+            if combo.get("settlement_invalidated"):
+                continue
             status = str(combo.get("result") or "").lower()
             features = combo.get("features") if isinstance(combo.get("features"), dict) else {}
             profile = str(combo.get("builder_profile") or features.get("builder_profile") or "").lower()
