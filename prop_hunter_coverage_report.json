@@ -1,16 +1,16 @@
 {
-  "updated_at": "2026-10-28T22:36:54.108322+00:00",
+  "updated_at": "2026-10-28T22:39:38.090724+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 319,
+      "rows": 386,
       "sources": [
         "betrivers_direct",
-        "fanduel_direct",
-        "kambi"
+        "bovada_direct",
+        "fanduel_direct"
       ],
-      "market_count": 10,
-      "latest": "2026-10-28T14:13:59.725405+00:00",
+      "market_count": 18,
+      "latest": "2026-10-28T21:16:04.571739+00:00",
       "missing_core": [
         "home run",
         "total bases",
@@ -18,15 +18,15 @@
       ]
     },
     "NBA": {
-      "rows": 838,
+      "rows": 615,
       "sources": [
-        "betrivers_direct",
+        "bovada_direct",
         "draftkings_direct",
         "fanduel_direct",
         "kambi"
       ],
       "market_count": 10,
-      "latest": "2026-10-28T21:16:10.146937+00:00",
+      "latest": "2026-10-28T21:16:08.642392+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -42,27 +42,31 @@
       ]
     },
     "NFL": {
-      "rows": 32,
+      "rows": 2,
       "sources": [
-        "betrivers_direct"
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 7,
-      "latest": "2026-10-28T00:21:55.864188+00:00",
+      "market_count": 2,
+      "latest": "2026-10-28T14:15:06.808333+00:00",
       "missing_core": [
-        "touchdown"
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing"
       ]
     },
     "NHL": {
-      "rows": 3,
+      "rows": 1310,
       "sources": [
+        "betrivers_direct",
+        "bovada_direct",
+        "draftkings_direct",
         "fanduel_direct"
       ],
-      "market_count": 1,
-      "latest": "2026-10-27T20:54:39.661582+00:00",
+      "market_count": 5,
+      "latest": "2026-10-28T21:16:20.423683+00:00",
       "missing_core": [
-        "shots",
-        "goals",
-        "assists",
         "saves"
       ]
     }
@@ -96,26 +100,13 @@
     },
     {
       "sport": "NFL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "betrivers_direct"
-      ]
-    },
-    {
-      "sport": "NFL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "touchdown"
-      ]
-    },
-    {
-      "sport": "NHL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "fanduel_direct"
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing"
       ]
     },
     {
@@ -123,9 +114,6 @@
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "shots",
-        "goals",
-        "assists",
         "saves"
       ]
     }
