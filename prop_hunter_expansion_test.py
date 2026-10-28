@@ -357,3 +357,11 @@ assert 'if not scoped:\n            return None' in core_src
 wnba_src=Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
 assert 'return matched >= 2' in wnba_src
 print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
+
+# NFL/NHL ladders are dedicated lanes and must not depend on winning the Single slot.
+assert 'sport == "NHL"' in builder
+assert 'sport == "NFL"' in builder
+assert '"shots on goal", "goalie saves", "points", "assists", "goals"' in builder
+assert '"passing yards", "rushing yards", "receiving yards", "receptions"' in builder
+assert '"passing touchdowns", "rushing touchdowns", "receiving touchdowns", "touchdowns"' in builder
+assert 'and not dedicated_ladder' in builder
