@@ -376,10 +376,12 @@ def inherit_leg_context(leg: Dict[str, Any], context_rows) -> Dict[str, Any]:
         same_game = game and norm_name(p.get("game") or raw.get("game")) == game
         if same_player or same_game:
             candidates.append((p, raw, bool(same_game), bool(same_player)))
-    if any(same_player for _, _, _, same_player in candidates):
-        candidates = [c for c in candidates if c[3]]
-    if any(exact for _, _, exact, _ in candidates):
+    if any(exact and same_player for _, _, exact, same_player in candidates):
+        candidates = [c for c in candidates if c[2] and c[3]]
+    elif any(exact for _, _, exact, _ in candidates):
         candidates = [c for c in candidates if c[2]]
+    else:
+        candidates = [c for c in candidates if c[3]]
     starts = {str(p.get("commence_time") or raw.get("commence_time")) for p, raw, _, _ in candidates
               if p.get("commence_time") or raw.get("commence_time")}
     if len(starts) != 1:

@@ -20,6 +20,8 @@ def main():
     assert inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, duplicate_quote, teammate])['commence_time'] == quote['commence_time']
     ambiguous = dict(quote, commence_time='2026-10-23T07:30:00Z')
     assert 'commence_time' not in inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, ambiguous])
+    wrong_player_game = dict(quote, game='C @ D', commence_time='2026-10-23T07:30:00Z')
+    assert inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [wrong_player_game, teammate])['commence_time'] == teammate['commence_time']
     different_game = dict(quote, game='C @ D', commence_time='2026-10-23T07:30:00Z')
     assert inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, different_game])['commence_time'] == quote['commence_time']
     today = datetime.now(timezone.utc).date().isoformat()
