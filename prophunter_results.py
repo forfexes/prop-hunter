@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
+from prop_hunter_basketball_boxscore import unobserved_log
 import time
 
 HISTORY = Path("picks_history.json")
@@ -203,7 +204,9 @@ def _index_results(rows: Iterable[dict]):
     by_dedup: Dict[Tuple[str, str, str], dict] = {}
     by_signature: Dict[Tuple[Tuple[str, str, Optional[float], str], str, str], dict] = {}
     for row in rows:
-        if _result_status(row) not in CLOSED:
+        if unobserved_log(row.get("result_raw") or {}):
+            row = dict(row, result="withdrawn", actual_value=None, profit=None)
+        if _result_status(row) not in CLOSED | {"withdrawn"}:
             continue
         raw = _result_pick(row)
         if not _settlement_ready_time(raw or row):
@@ -263,7 +266,7 @@ def _match_actual_stat(pick: dict, by_signature: dict) -> Optional[dict]:
     for (rsig, rd, _ev), row in by_signature.items():
         if rd != d or rsig[0] != sig[0] or rsig[1] != sig[1]:
             continue
-        if row.get("actual_value") is None:
+        if _result_status(row) not in CLOSED or row.get("actual_value") is None:
             continue
         candidates.append(row)
     actuals = {_to_float(row.get("actual_value")) for row in candidates}
@@ -296,8 +299,18 @@ def _profit_for(pick: dict, status: str) -> float:
     return 0.0
 
 
+def _reopen_unobserved(pick: dict) -> bool:
+    changed = str(pick.get("result") or "pending") != "pending" or pick.get("profit") is not None or pick.get("actual_value") is not None
+    pick.update(result="pending", status="pending", profit=None, actual_value=None)
+    pick.pop("settlement_legs", None)
+    pick.pop("settled_at", None)
+    return changed
+
+
 def _merge_single(pick: dict, result_row: dict) -> bool:
     status = _result_status(result_row)
+    if status == "withdrawn":
+        return _reopen_unobserved(pick)
     if status not in CLOSED or not _settlement_ready_time(pick):
         return False
     actual = result_row.get("actual_value")
@@ -362,11 +375,12 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict, context_picks
             return False
         row = _match_result(leg, by_dedup, by_signature)
         status = _result_status(row) if row else ""
+        withdrawn = status == "withdrawn"
         if not row or status not in CLOSED:
             row = _match_actual_stat(leg, by_signature)
             status = _grade_from_actual(leg, row) if row else None
         if not row or status not in CLOSED:
-            return False
+            return _reopen_unobserved(combo) if withdrawn else False
         leg["result"] = status
         leg["actual_value"] = row.get("actual_value")
         states.append(status)

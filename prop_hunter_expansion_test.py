@@ -304,12 +304,30 @@ def test_builder_persistence_and_learning_loop():
     check(pair["n"]==24 and .85 <= pair["factor"] <= 1.12, "builder pair factor not bounded")
 
 
+def test_binary_enrichment_and_cross_game_pool():
+    core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+    acca = Path("prop_hunter_acca_engine.py").read_text(encoding="utf-8")
+    builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
+    check('if point is None and stat not in ("double_double", "triple_double")' in core,
+          "binary DD/TD enrichment is blocked by the numeric-line guard")
+    check('stat in ("double_double", "triple_double")' in core and 'gamelog_dd_rate' in core,
+          "binary DD/TD enrichment missing")
+    check('"triple_double"' in acca and 'event_options: Dict[str, List[Any]]' in acca,
+          "cross-game DD/TD alternative search missing")
+    check('len(event_options[game]) < 4' in acca and '_compatible' in acca,
+          "bounded per-event alternatives / event compatibility missing")
+    check('extras.extend(_real_ladders(props, PickCls, LadderLegCls, selected=selected))' in builder,
+          "independent observed-quote ladder lane missing")
+
+
+
 def main():
     tests=[
         test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,
         test_all_sports_sources,test_builder_profiles_and_market_guard,
         test_keyless_extension_and_card_formatter,test_delivery_failure_and_team_identity_guards,
         test_supabase_select_rows_paginates,test_telegram_pro_tip_window_contract,test_builder_persistence_and_learning_loop,
+        test_binary_enrichment_and_cross_game_pool,
     ]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
@@ -331,20 +349,3 @@ assert 'if not scoped:\n            return None' in core_src
 wnba_src=Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
 assert 'return matched >= 2' in wnba_src
 print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
-
-# L15 guard
-
-
-# Binary DD/TD enrichment must run before numeric-line guard
-assert 'if point is None and stat not in ("double_double", "triple_double")' in core
-assert 'stat in ("double_double", "triple_double")' in core and 'gamelog_dd_rate' in core
-
-
-# Cross-game engine must retain several real alt-line choices per event and DD/TD.
-acca = (ROOT / "prop_hunter_acca_engine.py").read_text(encoding="utf-8")
-assert '"triple_double"' in acca
-assert 'event_options: Dict[str, List[Any]]' in acca
-assert 'len(event_options[game]) < 4' in acca
-assert 'Final ACCAs still enforce one leg per event via _compatible()' in acca
-# Ladder lane remains independent and fed from raw props.
-assert 'extras.extend(_real_ladders(props, PickCls, LadderLegCls, selected=selected))' in builder

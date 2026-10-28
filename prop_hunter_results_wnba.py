@@ -7,6 +7,7 @@ linked to unresolved WNBA picks and writes player-level gamelogs.
 from __future__ import annotations
 
 import os
+from prop_hunter_basketball_boxscore import official_gameday, observed_stats
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
@@ -127,7 +128,8 @@ def espn_summary_players(game_id, wanted):
     data = http_json(url, params={"event": game_id}, retries=1) or {}
     wanted_n = {norm_name(x) for x in wanted if x}
     rows = []
-    game_date = str(((data.get("header") or {}).get("competitions") or [{}])[0].get("date") or "")[:10]
+    start_time = ((data.get("header") or {}).get("competitions") or [{}])[0].get("date")
+    game_date = official_gameday(start_time)
     for tb in ((data.get("boxscore") or {}).get("players") or []):
         team = ((tb.get("team") or {}).get("displayName") or (tb.get("team") or {}).get("abbreviation"))
         for group in tb.get("statistics") or []:
@@ -137,22 +139,22 @@ def espn_summary_players(game_id, wanted):
                 name = info.get("displayName") or info.get("shortName")
                 if not name or (wanted_n and norm_name(name) not in wanted_n):
                     continue
-                vals = ath.get("stats") or []
-                sm = {str(labels[i]).upper(): vals[i] for i in range(min(len(labels), len(vals)))}
-                pts = to_float(sm.get("PTS"), 0) or 0
-                reb = to_float(sm.get("REB"), 0) or 0
-                ast = to_float(sm.get("AST"), 0) or 0
+                observed = observed_stats(group, ath)
+                if not observed or not game_date:
+                    continue
+                sm = observed["stat_map"]
+                pts, reb, ast = (observed[k] for k in ("points", "rebounds", "assists"))
                 rows.append({
                     "sport": "BASKETBALL", "league": "WNBA", "season": _wnba_season(game_date), "source": "espn_summary",
                     "source_game_id": str(game_id), "game_id": str(game_id), "game_date": game_date,
                     "player_name": name, "normalized_name": norm_name(name), "team": team,
                     "minutes": to_float(sm.get("MIN")), "points": pts, "rebounds": reb, "assists": ast,
-                    "pra": pts + reb + ast, "ra": reb + ast, "threes_made": _made(sm.get("3PM") or sm.get("3PT")),
+                    "pra": observed["pra"], "ra": observed["ra"], "threes_made": _made(sm.get("3PM") or sm.get("3PT")),
                     "steals": to_float(sm.get("STL")), "blocks": to_float(sm.get("BLK")),
                     "turnovers": to_float(sm.get("TO") or sm.get("TOV")),
-                    "double_double": sum(1 for v in (pts, reb, ast) if v >= 10) >= 2,
-                    "triple_double": sum(1 for v in (pts, reb, ast) if v >= 10) >= 3,
-                    "raw": {"stat_map": sm, "athlete": info},
+                    "double_double": observed["double_double"],
+                    "triple_double": observed["triple_double"],
+                    "raw": {"stat_map": sm, "athlete": info, "start_time_utc": start_time},
                 })
     return rows
 

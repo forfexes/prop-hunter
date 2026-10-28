@@ -98,6 +98,8 @@ jobs:
           python prop_hunter_settler_fast_test.py
           python prop_hunter_settlement_backlog_test.py
           python prop_hunter_gamelog_retention_test.py
+          python prop_hunter_basketball_boxscore_test.py
+          python prop_hunter_binary_enrichment_test.py
 
       - name: Fetch official results and gamelogs
         if: env.PH_SETTLEMENT_REPLAY != '1'

@@ -9,6 +9,7 @@ legs in picks_history.json. Those factors are consumed by prop_hunter_builder_en
 on later cards, closing the builder settlement -> learning -> next-card loop.
 """
 from __future__ import annotations
+from prop_hunter_basketball_boxscore import unobserved_log
 from collections import defaultdict
 import itertools
 import json
@@ -155,6 +156,8 @@ def unique_results(rows):
     """A migrated result_id must never count a pick twice in learning."""
     newest = {}
     for row in sorted(rows, key=lambda r: str(r.get("settled_at") or ""), reverse=True):
+        if unobserved_log(row.get("result_raw") or {}):
+            continue
         if str(row.get("result") or "").lower() not in {"win", "loss", "push"}:
             continue
         key = row.get("pick_id") or row.get("result_id")

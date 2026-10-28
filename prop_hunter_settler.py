@@ -23,6 +23,7 @@ NHL: goals, assists, points, shots_on_goal, goalie_saves, blocked_shots, power_p
 from __future__ import annotations
 
 import os
+from prop_hunter_basketball_boxscore import unobserved_log
 import re
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional, Tuple, List
@@ -296,6 +297,7 @@ def find_gamelog(
             gl for gl in logs
             if (not pname or identity_match(pname, gl.get("player_name"), threshold=94, aliases=aliases))
         ]
+    player_logs = [gl for gl in player_logs if not unobserved_log(gl)]
     league = str(pick.get("league") or pick.get("sport") or "").upper()
     if league in {"NBA", "WNBA", "MLB", "NFL", "NHL", "NCAAB", "NCAAF", "EUROLEAGUE", "AHL", "SHL", "SWISS_NL"}:
         player_logs = [gl for gl in player_logs if not gl.get("league") or str(gl.get("league")).upper() == league]

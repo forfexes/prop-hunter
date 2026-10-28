@@ -7,6 +7,7 @@ prop_hunter_player_gamelogs with the canonical conflict key.
 """
 from __future__ import annotations
 import os, re, time
+from prop_hunter_basketball_boxscore import official_gameday, observed_stats
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from prop_hunter_shared_utils import http_json, log, norm_name, to_float, upsert_rows, warn
@@ -46,7 +47,8 @@ def espn_basketball(league):
             if not gid: continue
             data=http_json(f"https://site.api.espn.com/apis/site/v2/sports/basketball/{endpoint}/summary",
                            params={"event":gid},retries=1) or {}
-            gd=str(((data.get("header") or {}).get("competitions") or [{}])[0].get("date") or "")[:10] or d.isoformat()
+            start_time=((data.get("header") or {}).get("competitions") or [{}])[0].get("date")
+            gd=official_gameday(start_time) or d.isoformat()
             for tb in ((data.get("boxscore") or {}).get("players") or []):
                 team=((tb.get("team") or {}).get("abbreviation") or (tb.get("team") or {}).get("displayName"))
                 for group in tb.get("statistics") or []:
@@ -54,18 +56,20 @@ def espn_basketball(league):
                     for ath in group.get("athletes") or []:
                         info=ath.get("athlete") or {}; name=info.get("displayName") or info.get("shortName")
                         if not name: continue
-                        vals=ath.get("stats") or []; sm={labels[i]:vals[i] for i in range(min(len(labels),len(vals)))}
-                        pts=to_float(sm.get("PTS"),0) or 0; reb=to_float(sm.get("REB"),0) or 0; ast=to_float(sm.get("AST"),0) or 0
+                        observed=observed_stats(group,ath)
+                        if not observed: continue
+                        sm=observed["stat_map"]
+                        pts,reb,ast=(observed[k] for k in ("points","rebounds","assists"))
                         rows.append({"sport":"BASKETBALL","league":league,"season":str(d.year) if league=="WNBA" else season_basketball(d),
                           "source":"espn_summary_backfill","source_game_id":gid,"game_id":gid,"game_date":gd,
                           "player_name":name,"normalized_name":norm_name(name),"team":team,
                           "minutes":to_float(sm.get("MIN")),"points":pts,"rebounds":reb,"assists":ast,
-                          "pra":pts+reb+ast,"ra":reb+ast,"threes_made":made(sm.get("3PM") or sm.get("3PT")),
+                          "pra":observed["pra"],"ra":observed["ra"],"threes_made":made(sm.get("3PM") or sm.get("3PT")),
                           "steals":to_float(sm.get("STL")),"blocks":to_float(sm.get("BLK")),
                           "turnovers":to_float(sm.get("TO") or sm.get("TOV")),
-                          "double_double":sum(1 for v in (pts,reb,ast) if v>=10)>=2,
-                          "triple_double":sum(1 for v in (pts,reb,ast) if v>=10)>=3,
-                          "raw":{"stat_map":sm,"athlete_id":info.get("id"),"backfill_days":DAYS}})
+                          "double_double":observed["double_double"],
+                          "triple_double":observed["triple_double"],
+                          "raw":{"stat_map":sm,"athlete_id":info.get("id"),"backfill_days":DAYS,"start_time_utc":start_time}})
             total+=1
             if len(rows)>=BATCH: flush(rows)
         if events: log(f"{league} backfill {ymd}: games={len(events)} total_games={total}")
