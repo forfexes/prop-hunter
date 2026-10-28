@@ -74,3 +74,17 @@ Run links:
 - [#226](https://github.com/forfexes/prop-hunter/actions/runs/40781527720)
 
 The earlier ladders/legs, HR/longshots, historical settlement, and pending audit protections remain covered by the offline regressions. This follow-up does not assert that every retained historical record has sufficient official evidence, or that every player has 15 observed games. Missing observations remain missing.
+
+
+## Continuation: observed NHL saves and NFL kicking points
+
+The two remaining missing-stat cases had a concrete parser gap. Official NHL goalie logs store `shotsAgainst` and `goalsAgainst` without a direct `saves` field (Adin Hill: 26 minus 1 = 25). The NHL collector now derives saves only from complete, nonnegative integer counts with shots at least goals. Existing official raw rows can be read by settlement without rewriting historical evidence; explicit saves, including zero, retain precedence.
+
+NFL weekly raw rows already contain kicker position, `fg_made` and `pat_made`. The collector now preserves field goals made, longest field goal, and kicking points. Generic NFL player points are interpreted as kicking points only for a row explicitly marked position K. Missing components remain unknown. Neither touchdowns nor fantasy points are substituted.
+
+Commit `0372b60cfad7d908c92e344d5bb5c80781adac99` includes collector and settlement fixes with behavioral tests for both production collector parsing and existing-row fallback. Valid zero, partial data, contradictory goals/shots, and non-kicker/non-NHL controls pass. Existing settlement/backlog, basketball, binary L15, 12 expansion cases, EuroLeague, and retention tests pass. Tests use their own processes in CI; expansion fixtures must not leak mocked modules into another test process.
+
+[Results #227](https://github.com/forfexes/prop-hunter/actions/runs/40782062647) completed successfully, including tests, settlement, learning and runtime save. Database verification confirms Adin Hill: 25 saves, win; Joey Slye: four kicking points, loss. Slye's stored kickoff is October 4, matching official game `2026_04_TEN_BAL`, despite the October 1 sent date. Reporter merged one retained single and edited one card in place. Audit: 169 unresolved (86 awaiting completion, 72 no unique game, five ambiguous lines, six season/fantasy); zero missing-stat or ready-to-settle cases. Pending source picks fell from 91 to 89; duplicate result pick IDs remain zero. Learning now has 1,346 observed deduplicated result rows.
+
+This was a settlement replay: it verified existing official raw evidence and did not recollect all leagues or rebuild features. New collector fields will be populated during the next full results run.
+
