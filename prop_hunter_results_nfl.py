@@ -118,9 +118,22 @@ def nflreadpy_weekly(seasons=None, players=None) -> List[Dict[str, Any]]:
             "two_plus_td": 1.0 if total_td >= 2 else 0.0,
             "three_plus_td": 1.0 if total_td >= 3 else 0.0,
             "targets": to_float(r.get("targets")),
+            **kicking_stats(r),
             "raw": dict(r),
         })
     return rows
+
+def kicking_stats(row):
+    """Only a verified kicker row can resolve generic NFL player points."""
+    if str(row.get('position') or '').upper() != 'K':
+        return {}
+    def count(key):
+        value = to_float(row.get(key))
+        return value if value is not None and value >= 0 and value.is_integer() else None
+    fg, pat = count('fg_made'), count('pat_made')
+    return {'field_goals_made': fg,
+            'kicking_points': 3 * fg + pat if fg is not None and pat is not None else None,
+            'longest_field_goal': to_float(row.get('fg_long'))}
 
 def main():
     players = pending_players(limit=int(os.getenv("NFL_PICK_SCAN_LIMIT", "5000")))

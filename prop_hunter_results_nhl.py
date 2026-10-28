@@ -65,6 +65,23 @@ def player_id(name):
         return None
     return matches[0].get('playerId')
 
+def goalie_saves(game):
+    """Official goalie logs may expose shotsAgainst/goalsAgainst instead of saves."""
+    def count(key):
+        value = game.get(key)
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            n = float(value)
+            return n if n >= 0 and n.is_integer() else None
+        except (ValueError, TypeError):
+            return None
+    direct = count('saves')
+    if direct is not None:
+        return direct
+    shots, goals = count('shotsAgainst'), count('goalsAgainst')
+    return shots - goals if shots is not None and goals is not None and shots >= goals else None
+
 def logs_for(name,last_n=30):
     pid=player_id(name)
     if not pid: return []
@@ -77,7 +94,7 @@ def logs_for(name,last_n=30):
           'game_date':str(g.get('gameDate') or '')[:10],'player_name':name,'normalized_name':norm_name(name),
           'team':g.get('teamAbbrev'),'opponent':g.get('opponentAbbrev'),
           'goals':goals,'assists_hockey':assists,'hockey_points':goals+assists,
-          'shots_on_goal':float(g.get('shots') or 0),'goalie_saves':float(g.get('saves') or 0) if g.get('saves') is not None else None,
+          'shots_on_goal':float(g.get('shots') or 0),'goalie_saves':goalie_saves(g),
           'blocked_shots':float(g.get('blockedShots') or 0) if g.get('blockedShots') is not None else None,
           'power_play_points':float(g.get('powerPlayPoints') or 0),
           'toi':g.get('toi'),'raw':g})

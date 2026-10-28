@@ -64,3 +64,29 @@ nfl_logs=[{"player_name":"Cole Kmet","normalized_name":"cole kmet","game_id":"20
 nfl_pick={"player":"Cole Kmet","league":"NFL","market":"receptions Over 1.5","commence_time":"2026-10-23T00:15:00Z"}
 assert find_gamelog(nfl_pick,nfl_logs,aliases={},log_index=build_log_index(nfl_logs)) is not None
 print("NFL SETTLEMENT MARKET/LOCAL-DATE TEST PASSED")
+
+# Official NHL goalie logs omit saves but retain exact shots/goals against.
+from prop_hunter_results_nhl import goalie_saves, logs_for
+from prop_hunter_settler import stat_value
+from unittest.mock import patch
+for raw, expected in [({'shotsAgainst':26,'goalsAgainst':1},25),
+                      ({'shotsAgainst':0,'goalsAgainst':0},0),
+                      ({'shotsAgainst':26},None),
+                      ({'shotsAgainst':2,'goalsAgainst':3},None),
+                      ({'shotsAgainst':2.5,'goalsAgainst':1},None),
+                      ({'saves':0,'shotsAgainst':26,'goalsAgainst':1},0)]:
+    assert goalie_saves(raw) == expected
+    assert stat_value({'league':'NHL','source':'nhl_official_api','raw':raw}, 'goalie_saves') == expected
+assert stat_value({'league':'NBA','source':'nhl_official_api','raw':{'shotsAgainst':26,'goalsAgainst':1}},'goalie_saves') is None
+with patch('prop_hunter_results_nhl.player_id', return_value=1), patch('prop_hunter_results_nhl.http_json', return_value={'gameLog':[{'gameId':2026020196,'gameDate':'2026-10-27','shotsAgainst':26,'goalsAgainst':1}]}):
+    assert logs_for('Adin Hill')[0]['goalie_saves'] == 25
+print('OFFICIAL NHL GOALIE SAVES TEST PASSED')
+
+from prop_hunter_results_nfl import kicking_stats
+assert kicking_stats({'position':'K','fg_made':2,'pat_made':1})['kicking_points'] == 7
+assert kicking_stats({'position':'K','fg_made':0,'pat_made':0})['kicking_points'] == 0
+assert kicking_stats({'position':'K','fg_made':2})['kicking_points'] is None
+assert kicking_stats({'position':'WR','fg_made':2,'pat_made':1}) == {}
+assert stat_value({'league':'NFL','raw':{'position':'K','fg_made':0,'pat_made':1}}, 'points') == 1
+assert stat_value({'league':'NFL','raw':{'position':'WR','fg_made':0,'pat_made':1}}, 'points') is None
+print('NFL OBSERVED KICKER SCORING TEST PASSED')

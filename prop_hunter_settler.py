@@ -97,6 +97,16 @@ def detect_stat(market: Any) -> Optional[str]:
 
 
 def stat_value(gl: Dict[str, Any], stat: str) -> Any:
+    if stat == "goalie_saves" and str(gl.get("league") or "").upper() == "NHL" and gl.get("goalie_saves") is None and gl.get("saves") is None and gl.get("source") == "nhl_official_api":
+        from prop_hunter_results_nhl import goalie_saves
+        return goalie_saves(gl.get("raw") or {})
+    if str(gl.get("league") or "").upper() == "NFL" and stat in {"points", "kicking_points", "field_goals_made"}:
+        from prop_hunter_results_nfl import kicking_stats
+        raw = gl.get("raw") or {}
+        if stat == "points" and str(raw.get("position") or "").upper() == "K":
+            return gl.get("kicking_points") if gl.get("kicking_points") is not None else kicking_stats(raw).get("kicking_points")
+        if stat != "points" and gl.get(stat) is None:
+            return kicking_stats(raw).get(stat)
     if stat in gl and gl.get(stat) is not None:
         return gl.get(stat)
     if stat == "hits_runs_rbis":
