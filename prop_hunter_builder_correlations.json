@@ -98,19 +98,19 @@
       "raw_ratio": 0.6
     },
     "NBA:points:over|NBA:threes:over": {
-      "factor": 0.9828,
-      "n": 13,
+      "factor": 0.9968,
+      "n": 10,
       "both_wins": 3,
-      "observed_joint": 0.23077,
-      "expected_joint": 0.30651,
-      "raw_ratio": 0.7529
+      "observed_joint": 0.3,
+      "expected_joint": 0.3389,
+      "raw_ratio": 0.8852
     },
     "NBA:points:over|NBA:rebounds:over": {
-      "factor": 0.9444,
-      "n": 18,
+      "factor": 0.9556,
+      "n": 16,
       "both_wins": 2,
-      "observed_joint": 0.11111,
-      "expected_joint": 0.33083,
+      "observed_joint": 0.125,
+      "expected_joint": 0.35832,
       "raw_ratio": 0.6
     },
     "NBA:rebounds:over|NBA:rebounds:over": {
@@ -122,12 +122,12 @@
       "raw_ratio": 0.9483
     },
     "NBA:rebounds:over|NBA:threes:over": {
-      "factor": 0.9816,
-      "n": 13,
+      "factor": 0.993,
+      "n": 11,
       "both_wins": 4,
-      "observed_joint": 0.30769,
-      "expected_joint": 0.41828,
-      "raw_ratio": 0.7356
+      "observed_joint": 0.36364,
+      "expected_joint": 0.43752,
+      "raw_ratio": 0.8311
     },
     "NBA:assists:over|NBA:points:over": {
       "factor": 1.0,
@@ -275,11 +275,11 @@
     },
     "NBA:4+_rebounds:over|NBA:6+_rebounds:over": {
       "factor": 1.0,
-      "n": 5,
+      "n": 4,
       "both_wins": 1,
-      "observed_joint": 0.2,
-      "expected_joint": 0.34435,
-      "raw_ratio": 0.6
+      "observed_joint": 0.25,
+      "expected_joint": 0.39244,
+      "raw_ratio": 0.637
     },
     "NBA:4+_rebounds:over|NBA:7+_rebounds:over": {
       "factor": 1.0,
@@ -354,12 +354,12 @@
       "raw_ratio": 0.6
     },
     "NBA:points:over|NBA:points:over": {
-      "factor": 1.0146,
-      "n": 11,
-      "both_wins": 5,
-      "observed_joint": 0.45455,
-      "expected_joint": 0.28868,
-      "raw_ratio": 1.35
+      "factor": 1.0008,
+      "n": 9,
+      "both_wins": 3,
+      "observed_joint": 0.33333,
+      "expected_joint": 0.31481,
+      "raw_ratio": 1.0588
     },
     "NHL:shots_on_goal:over|NHL:shots_on_goal:over": {
       "factor": 1.0,
@@ -490,11 +490,11 @@
       "raw_ratio": 0.6
     },
     "NBA:points:under|NBA:points:under": {
-      "factor": 1.0875,
-      "n": 26,
-      "both_wins": 18,
-      "observed_joint": 0.69231,
-      "expected_joint": 0.29661,
+      "factor": 1.0583,
+      "n": 20,
+      "both_wins": 12,
+      "observed_joint": 0.6,
+      "expected_joint": 0.30647,
       "raw_ratio": 1.35
     },
     "NBA:4+_threes:over|NBA:5+_threes:over": {
@@ -643,10 +643,10 @@
     },
     "NBA:2+_threes:over|NBA:3+_threes:over": {
       "factor": 1.0,
-      "n": 4,
+      "n": 3,
       "both_wins": 2,
-      "observed_joint": 0.5,
-      "expected_joint": 0.20547,
+      "observed_joint": 0.66667,
+      "expected_joint": 0.2362,
       "raw_ratio": 1.35
     },
     "NBA:2+_threes:over|NBA:4+_threes:over": {
@@ -1130,11 +1130,11 @@
       "raw_ratio": 0.6
     },
     "NBA:rebounds:under|NBA:rebounds:under": {
-      "factor": 1.0437,
-      "n": 17,
-      "both_wins": 15,
-      "observed_joint": 0.88235,
-      "expected_joint": 0.39605,
+      "factor": 1.0,
+      "n": 8,
+      "both_wins": 6,
+      "observed_joint": 0.75,
+      "expected_joint": 0.46415,
       "raw_ratio": 1.35
     },
     "NHL:assists:over|NHL:shots_on_goal:over": {
@@ -1206,32 +1206,32 @@
       "roi": 0.27727
     },
     "value": {
-      "n": 12,
+      "n": 11,
       "wins": 5,
-      "losses": 6,
+      "losses": 5,
       "pushes": 1,
-      "stake": 1.74,
-      "profit": 2.09,
-      "hit_rate": 0.45455,
-      "roi": 1.20115
+      "stake": 1.59,
+      "profit": 2.24,
+      "hit_rate": 0.5,
+      "roi": 1.40881
     },
     "aggressive": {
-      "n": 14,
-      "wins": 2,
+      "n": 13,
+      "wins": 1,
       "losses": 12,
       "pushes": 0,
-      "stake": 1.1,
-      "profit": 1.71,
-      "hit_rate": 0.14286,
-      "roi": 1.55455
+      "stake": 1.02,
+      "profit": 0.48,
+      "hit_rate": 0.07692,
+      "roi": 0.47059
     },
     "longshot": {
-      "n": 12,
+      "n": 10,
       "wins": 0,
-      "losses": 12,
+      "losses": 10,
       "pushes": 0,
-      "stake": 0.6,
-      "profit": -0.6,
+      "stake": 0.5,
+      "profit": -0.5,
       "hit_rate": 0.0,
       "roi": -1.0
     },
@@ -1246,5 +1246,5 @@
       "roi": -1.0
     }
   },
-  "updated_at": "2026-10-28T04:09:21.357289+00:00"
+  "updated_at": "2026-10-28T04:19:53.933767+00:00"
 }
