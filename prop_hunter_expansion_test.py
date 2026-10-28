@@ -321,13 +321,21 @@ def test_binary_enrichment_and_cross_game_pool():
 
 
 
+def test_odds_api_observed_sides():
+    core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+    assert '"side_prices":{"over":[],"under":[]}' in core
+    assert 'for direction,prices in rec["side_prices"].items()' in core
+    assert 'direction=direction' in core
+    assert '1.0-fair_over' in core
+
+
 def main():
     tests=[
         test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,
         test_all_sports_sources,test_builder_profiles_and_market_guard,
         test_keyless_extension_and_card_formatter,test_delivery_failure_and_team_identity_guards,
         test_supabase_select_rows_paginates,test_telegram_pro_tip_window_contract,test_builder_persistence_and_learning_loop,
-        test_binary_enrichment_and_cross_game_pool,
+        test_binary_enrichment_and_cross_game_pool,test_odds_api_observed_sides,
     ]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
@@ -349,10 +357,3 @@ assert 'if not scoped:\n            return None' in core_src
 wnba_src=Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
 assert 'return matched >= 2' in wnba_src
 print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
-
-
-# Odds API normalization must preserve both Over and Under observed sides.
-assert '"side_prices":{"over":[],"under":[]}' in core
-assert 'for direction,prices in rec["side_prices"].items()' in core
-assert 'direction=direction' in core
-assert '1.0-fair_over' in core
