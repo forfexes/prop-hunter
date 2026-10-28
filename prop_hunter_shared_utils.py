@@ -375,16 +375,18 @@ def inherit_leg_context(leg: Dict[str, Any], context_rows) -> Dict[str, Any]:
         same_player = name and norm_name(p.get("player") or p.get("player_name")) == name
         same_game = game and norm_name(p.get("game") or raw.get("game")) == game
         if same_player or same_game:
-            candidates.append((p, raw, bool(same_game)))
-    if any(exact for _, _, exact in candidates):
+            candidates.append((p, raw, bool(same_game), bool(same_player)))
+    if any(same_player for _, _, _, same_player in candidates):
+        candidates = [c for c in candidates if c[3]]
+    if any(exact for _, _, exact, _ in candidates):
         candidates = [c for c in candidates if c[2]]
-    starts = {str(p.get("commence_time") or raw.get("commence_time")) for p, raw, _ in candidates
+    starts = {str(p.get("commence_time") or raw.get("commence_time")) for p, raw, _, _ in candidates
               if p.get("commence_time") or raw.get("commence_time")}
     if len(starts) != 1:
         return out
     out["commence_time"] = starts.pop()
     for key in ("event_id", "game_id"):
-        values = {str(p.get(key) or raw.get(key)) for p, raw, _ in candidates if p.get(key) or raw.get(key)}
+        values = {str(p.get(key) or raw.get(key)) for p, raw, _, _ in candidates if p.get(key) or raw.get(key)}
         if not out.get(key) and len(values) == 1:
             out[key] = values.pop()
     return out

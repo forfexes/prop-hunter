@@ -16,6 +16,8 @@ def main():
     duplicate_quote = dict(quote, market='Different threshold')
     leg = inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, duplicate_quote])
     assert leg['commence_time'] == quote['commence_time']
+    teammate = dict(quote, player='Teammate', commence_time='2026-10-23T01:40:00Z')
+    assert inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, duplicate_quote, teammate])['commence_time'] == quote['commence_time']
     ambiguous = dict(quote, commence_time='2026-10-23T07:30:00Z')
     assert 'commence_time' not in inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, ambiguous])
     different_game = dict(quote, game='C @ D', commence_time='2026-10-23T07:30:00Z')
