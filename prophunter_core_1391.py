@@ -4293,10 +4293,6 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             candidates_hr.append((sp, hr_prob, odds, conf, hr_edge))
             continue
 
-        if edge <= 0:
-            rejected["negative_edge"] += 1
-            continue
-
         point = getattr(sp, "point", None)
         direction = _source_prop_direction(sp)
         is_basket = sport in ("NBA", "WNBA")
@@ -4307,6 +4303,12 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         is_mlb = sport == "MLB"
         is_nhl = sport == "NHL"
         is_hits = ("hit" in market.lower()) and not is_hr
+
+        # DD/TD gets its edge from the real L15 rate below; all other markets
+        # must already have positive edge at this stage.
+        if not is_ddtd and edge <= 0:
+            rejected["negative_edge"] += 1
+            continue
 
         # NHL rescue/fill-up must be backed by real recent history.  A sportsbook
         # price alone is not enough to publish a fallback pick when our NHL L15
