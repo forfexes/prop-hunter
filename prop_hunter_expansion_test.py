@@ -200,6 +200,14 @@ def test_delivery_failure_and_team_identity_guards():
     hardened = Path("prophunter_core_1392.py").read_text(encoding="utf-8")
     check('sb.table("prop_hunter_picks").insert(canonical)' in hardened,
           "canonical prop_hunter_picks persistence missing")
+    check('"pick_type": src.get("pick_type") or src.get("type") or "single"' in hardened,
+          "canonical persistence still forces every pick to single")
+    check('"legs": src.get("legs") or []' in hardened and 'ladder_legs' in hardened,
+          "ladder/combo legs are not persisted canonically")
+    settler = Path("prop_hunter_settler.py").read_text(encoding="utf-8")
+    extras = Path("prop_hunter_settler_extras.py").read_text(encoding="utf-8")
+    check('hash_key("pick", pid)' in settler and 'hash_key("pick", pid)' in extras,
+          "settlement ids are not unique per pick")
     check('sb.table("prop_picks").insert(safe)' in hardened,
           "legacy persistence fallback missing")
 
