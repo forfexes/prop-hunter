@@ -21,7 +21,7 @@ from prop_hunter_shared_utils import (
     log,
     norm_name,
     safe_json_write,
-    select_pick_rows,
+    select_settlement_picks as select_pick_rows,
     to_float,
     upsert_rows,
     warn,
@@ -72,14 +72,14 @@ def pending_player_groups(limit: int = 5000) -> List[Tuple[str, Set[str]]]:
     # Settlement should finish older unresolved cards before spending the player
     # budget on today's not-yet-finished games.
     today = datetime.now(timezone.utc).date()
-    lookback = max(1, int(os.getenv("PH_MLB_RESULTS_LOOKBACK_DAYS", "4")))
+    lookback = max(0, int(os.getenv("PH_MLB_RESULTS_LOOKBACK_DAYS", "0")))
     floor = today - timedelta(days=lookback)
     grouped: Dict[str, Dict[str, Any]] = {}
     rows = [r for r in select_pick_rows(limit=limit) if _is_mlb(r) and _is_pending(r)]
     rows.sort(key=lambda r: (_row_date(r) or today, str(r.get("created_at") or "")))
     for row in rows:
         d = _row_date(row)
-        if d and d < floor:
+        if lookback and d and d < floor:
             continue
         player = str(row.get("player_name") or row.get("player") or "").strip()
         if not player:
@@ -226,6 +226,14 @@ def merge_rows(rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def main() -> None:
     season = current_season()
     last_n = max(1, int(os.getenv("LAST_N_GAMES", "30")))
+    pending_dates = {}
+    for p in select_pick_rows(limit=int(os.getenv("MLB_PICK_SCAN_LIMIT", "5000"))):
+        if _is_mlb(p) and _is_pending(p):
+            name = norm_name(p.get("player_name") or p.get("player"))
+            d = _row_date(p)
+            if d:
+                pending_dates.setdefault(name, set()).update(
+                    (d.isoformat(), (d - timedelta(days=1)).isoformat()))
     requests = pending_player_groups(limit=int(os.getenv("MLB_PICK_SCAN_LIMIT", "5000")))
     rows: List[Dict[str, Any]] = []
 
@@ -245,7 +253,11 @@ def main() -> None:
                 uniq_splits = {}
                 for split in splits:
                     uniq_splits[_game_id(split)] = split
-                splits = sorted(uniq_splits.values(), key=lambda x: str(x.get("date") or ""), reverse=True)[:last_n]
+                ordered = sorted(uniq_splits.values(), key=lambda x: str(x.get("date") or ""), reverse=True)
+                needed = pending_dates.get(norm_name(player), set())
+                splits = list({ _game_id(s): s for s in ordered[:last_n] + [
+                    s for s in ordered if str(s.get("date") or "")[:10] in needed
+                ]}.values())
                 parser = parse_pitching if group == "pitching" else parse_hitting
                 rows.extend(parser(canonical, split, season) for split in splits)
         except Exception as exc:

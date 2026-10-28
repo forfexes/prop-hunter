@@ -13,7 +13,7 @@ from prop_hunter_results_mlb import (
     current_season, fetch_gamelog, find_player, base_row, merge_rows
 )
 from prop_hunter_shared_utils import (
-    log, norm_name, safe_json_write, select_pick_rows, to_float, upsert_rows, warn
+    log, norm_name, safe_json_write, select_settlement_picks as select_pick_rows, to_float, upsert_rows, warn
 )
 
 OUT = "prop_hunter_results_mlb_extras_raw.json"

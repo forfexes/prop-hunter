@@ -3,7 +3,7 @@
 from __future__ import annotations
 import os
 from datetime import datetime, timezone
-from prop_hunter_shared_utils import select_pick_rows, upsert_rows, safe_json_write, log, warn, norm_name, http_json
+from prop_hunter_shared_utils import select_settlement_picks as select_pick_rows, upsert_rows, safe_json_write, log, warn, norm_name, http_json
 from prop_hunter_identity_hub import identity_match
 
 OUT='prop_hunter_results_nhl_raw.json'

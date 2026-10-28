@@ -7,6 +7,7 @@ stub=types.ModuleType('prop_hunter_shared_utils')
 stub.http_json=lambda *a,**k:{};stub.log=lambda *a,**k:None;stub.warn=lambda *a,**k:None
 stub.norm_name=lambda v:' '.join(str(v or '').lower().split())
 stub.safe_json_write=lambda *a,**k:None;stub.select_pick_rows=lambda *a,**k:[]
+stub.select_settlement_picks=stub.select_pick_rows
 stub.to_float=lambda v,default=None: default if v in (None,'','--') else float(v)
 stub.upsert_rows=lambda *a,**k:None
 sys.modules['prop_hunter_shared_utils']=stub

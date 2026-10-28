@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from prop_hunter_shared_utils import (
-    log, norm_name, safe_json_write, select_pick_rows, to_float, upsert_rows, warn
+    log, norm_name, safe_json_write, select_settlement_picks as select_pick_rows, to_float, upsert_rows, warn
 )
 
 OUT = "prop_hunter_results_nfl_raw.json"

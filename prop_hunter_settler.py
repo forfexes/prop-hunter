@@ -28,7 +28,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional, Tuple, List
 
 from prop_hunter_shared_utils import (
-    select_rows, select_pick_rows, upsert_rows, safe_json_write, log, warn, norm_name, norm_market,
+    select_rows, select_settlement_picks as select_pick_rows, upsert_rows, safe_json_write, log, warn, norm_name, norm_market,
     to_float, hash_key, now_iso, pick_id, supabase_client
 )
 
@@ -43,10 +43,10 @@ OUT = "prop_hunter_results_settled.json"
 MARKET_STAT_MAP = {
     # NBA / WNBA / NCAAB
     "points rebounds assists": "pra", "pra": "pra",
-    "points rebounds": "pr", "points assists": "pa",
+    "points rebounds": "pr", "points assists": "pa", "pr": "pr", "pa": "pa",
     "rebounds assists": "ra", "rba": "ra", "ra": "ra",
     "double double": "double_double", "triple double": "triple_double",
-    "three pointers": "threes_made", "3 pointers": "threes_made", "3pm": "threes_made", "threes": "threes_made",
+    "3 pt made": "threes_made", "three pointers": "threes_made", "3 pointers": "threes_made", "3pm": "threes_made", "threes": "threes_made",
     "rebounds": "rebounds", "reb": "rebounds",
     "assists": "assists", "ast": "assists",
     "blocks": "blocks", "steals": "steals", "points": "points", "pts": "points",
@@ -82,7 +82,7 @@ MARKET_STAT_MAP = {
 def detect_stat(market: Any) -> Optional[str]:
     m = norm_market(market)
     for k in sorted(MARKET_STAT_MAP, key=len, reverse=True):
-        if k in m:
+        if re.search(r"\b" + re.escape(k) + r"\b", m):
             return MARKET_STAT_MAP[k]
     return None
 
@@ -188,7 +188,7 @@ def result_for_value(value: Any, line: Optional[float], side: str) -> str:
     if value is None:
         return "no_result"
     if isinstance(value, bool):
-        return "win" if value else "loss"
+        return "win" if value == (side != "under") else "loss"
     v = to_float(value)
     if v is None or line is None:
         return "no_result"
@@ -284,6 +284,9 @@ def find_gamelog(
             gl for gl in logs
             if (not pname or identity_match(pname, gl.get("player_name"), threshold=94, aliases=aliases))
         ]
+    league = str(pick.get("league") or pick.get("sport") or "").upper()
+    if league in {"NBA", "WNBA", "MLB", "NFL", "NHL", "NCAAB", "NCAAF", "EUROLEAGUE", "AHL", "SHL", "SWISS_NL"}:
+        player_logs = [gl for gl in player_logs if not gl.get("league") or str(gl.get("league")).upper() == league]
     if not player_logs:
         return None
 
@@ -437,6 +440,20 @@ def mark_source_pick_settled(pick: Dict[str, Any], status: str) -> None:
         except Exception as e:
             warn(f"{table} settlement mirror failed for {dk}: {e}")
 
+def persist_settlements(rows):
+    """Only close source picks after the auditable result write succeeds."""
+    if not rows:
+        return
+    sb = supabase_client()
+    if sb is None:
+        raise RuntimeError("Supabase missing; source picks remain pending")
+    for offset in range(0, len(rows), 200):
+        batch = rows[offset:offset + 200]
+        sb.table("prop_hunter_results").upsert(batch, on_conflict="result_id").execute()
+        for row in batch:
+            mark_source_pick_settled(row["pick_raw"], row["result"])
+
+
 def main():
     picks = load_picks()
     pending_status = {"", "pending", "open", "none", "null", "unsettled"}
@@ -459,6 +476,8 @@ def main():
         side = side_of_pick(p)
         line = line_of_pick(p)
         status = result_for_value(value, line, side)
+        if status == "no_result":
+            continue
         pid = pick_id(p)
         settled.append({
             "result_id": hash_key("pick", pid),
@@ -478,9 +497,8 @@ def main():
             "pick_raw": p,
             "result_raw": gl,
         })
-        mark_source_pick_settled(p, status)
     safe_json_write(OUT, settled)
-    upsert_rows("prop_hunter_results", settled, "result_id")
+    persist_settlements(settled)
     log(f"settler done: picks={len(picks)} logs={len(logs)} settled={len(settled)}")
 
 if __name__ == "__main__":

@@ -151,8 +151,20 @@ def _update_builder_learning() -> Dict[str, Any]:
     return learned
 
 
+def unique_results(rows):
+    """A migrated result_id must never count a pick twice in learning."""
+    newest = {}
+    for row in sorted(rows, key=lambda r: str(r.get("settled_at") or ""), reverse=True):
+        if str(row.get("result") or "").lower() not in {"win", "loss", "push"}:
+            continue
+        key = row.get("pick_id") or row.get("result_id")
+        if key:
+            newest.setdefault(key, row)
+    return list(newest.values())
+
+
 def main():
-    results = select_rows("prop_hunter_results", limit=20000)
+    results = unique_results(select_rows("prop_hunter_results", limit=20000, order_by="settled_at", desc=True))
     audits = select_rows("prop_hunter_source_audit", limit=10000)
     groups = defaultdict(lambda: {"bets":0,"wins":0,"losses":0,"pushes":0,"profit":0.0,"stake":0.0})
     source_perf = defaultdict(lambda: {"bets":0,"wins":0,"losses":0,"pushes":0,"profit":0.0,"stake":0.0})

@@ -29,7 +29,7 @@ concurrency:
 jobs:
   results:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -92,6 +92,8 @@ jobs:
           python prop_hunter_expansion_test.py
           python prop_hunter_euroleague_test.py
           python prop_hunter_settler_fast_test.py
+          python prop_hunter_settlement_backlog_test.py
+          python prop_hunter_gamelog_retention_test.py
 
       - name: Fetch official results and gamelogs
         env:
@@ -104,8 +106,8 @@ jobs:
           NBA_RESULTS_TIMEOUT: '5'
           NBA_ESPN_MAX_DATES: '5'
           NBA_ESPN_MAX_EVENTS: '12'
-          WNBA_RESULTS_MAX_DATES: '5'
-          WNBA_RESULT_GAME_CAP: '12'
+          WNBA_RESULTS_MAX_DATES: '120'
+          WNBA_RESULT_GAME_CAP: '120'
           NFL_RESULTS_PLAYER_CAP: '100'
           NHL_RESULTS_PLAYER_CAP: '60'
           PH_NCAA_RESULTS_MAX_DATES: '5'
@@ -136,10 +138,11 @@ jobs:
           PH_RESULTS_FALLBACK_SUMMARY: '0'
           PH_RESULTS_HTTP_TIMEOUT: '8'
         run: |
-          PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
-          python prop_hunter_feature_builder.py
           python prop_hunter_settler.py
           python prop_hunter_settler_extras.py
+          # Preserve freshly backfilled historical games until both settlers finish.
+          PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
+          python prop_hunter_feature_builder.py
           python prophunter_results.py
 
       - name: Learn from settled picks

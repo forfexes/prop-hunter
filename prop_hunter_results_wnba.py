@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from prop_hunter_shared_utils import (
-    http_json, log, norm_name, safe_json_write, select_pick_rows, to_float,
+    http_json, log, norm_name, safe_json_write, select_settlement_picks as select_pick_rows, to_float,
     upsert_rows, warn
 )
 

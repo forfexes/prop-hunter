@@ -167,9 +167,11 @@ def _side_of_pick(p: dict) -> str:
 
 
 def _signature(p: dict) -> Tuple[str, str, Optional[float], str]:
+    from prop_hunter_settler import detect_stat
+    market = p.get("source_market") or p.get("market") or p.get("prop_type") or p.get("selection")
     return (
         _norm(p.get("player") or p.get("player_name") or p.get("selection")),
-        _norm(p.get("source_market") or p.get("market") or p.get("prop_type") or p.get("selection")),
+        detect_stat(market) or _norm(market),
         _line_of_pick(p),
         _side_of_pick(p),
     )
@@ -308,8 +310,17 @@ def _merge_single(pick: dict, result_row: dict) -> bool:
 
 
 def _leg_rows(combo: dict) -> list:
-    rows = combo.get("leg_details") or combo.get("ladder_legs") or []
-    return [dict(x) for x in rows if isinstance(x, dict)]
+    rows = combo.get("leg_details") or combo.get("ladder_legs") or combo.get("legs") or []
+    details = [dict(x) for x in rows if isinstance(x, dict)]
+    if combo.get("type") == "ladder":
+        rungs = combo.get("ladder_legs") or []
+        for i, leg in enumerate(details):
+            if i < len(rungs) and isinstance(rungs[i], dict):
+                leg.update(rungs[i])
+            for key in ("player", "player_name", "sport", "league"):
+                if not leg.get(key) and combo.get(key):
+                    leg[key] = combo[key]
+    return details
 
 
 def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
@@ -356,8 +367,25 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
         odds = _to_float(combo.get("odds"), 0.0) or 0.0
         profit = (odds - 1.0) * stake
     else:
-        final = "push"
-        profit = 0.0
+        # Push/void legs are removed from an accumulator; surviving wins pay.
+        winners = [leg for leg in legs if leg["result"] in {"win", "won"}]
+        if winners:
+            features = combo.get("features") or {}
+            scope = combo.get("combo_scope") or features.get("combo_scope")
+            if scope != "cross_game":
+                # Same-game void-leg repricing requires the bookmaker's price.
+                return False
+            odds = 1.0
+            for leg in winners:
+                price = _to_float(leg.get("odds"))
+                if price is None or price <= 1:
+                    return False
+                odds *= price
+            final = "win"
+            profit = (odds - 1.0) * (_to_float(combo.get("stake"), 0.0) or 0.0)
+        else:
+            final = "push"
+            profit = 0.0
     old = (combo.get("result"), _to_float(combo.get("profit"), 0.0))
     combo["result"] = final
     combo["profit"] = round(profit, 2)
@@ -586,7 +614,7 @@ def _sync_pick_table(pick: dict) -> None:
     d = _date_of_pick(pick)
     headers = _headers({"Content-Type": "application/json", "Prefer": "return=minimal"})
     targets = [
-        ("prop_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"result": status, "profit": profit}),
+        ("prop_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"result": status, "status": status, "profit": profit}),
         ("prop_hunter_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"status": status, "result": status, "profit_units": profit}),
     ]
     if d:
@@ -619,8 +647,8 @@ def main() -> int:
 
     for entry in history:
         day = str(entry.get("date") or "")[:10]
-        if day and day < cutoff:
-            continue
+        # Retained history can still contain unresolved ladders older than the
+        # notification lookback. Merge them using newly verified results too.
         picks = entry.get("picks") or []
         combos = entry.get("kombis") or []
         for p in picks:

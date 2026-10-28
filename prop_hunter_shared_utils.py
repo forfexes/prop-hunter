@@ -291,9 +291,11 @@ def _normalise_pick_row(row: Dict[str, Any], source_table: str) -> Dict[str, Any
         out.setdefault("prob", prob)
         out.setdefault("probability", prob)
 
-    status = out.get("status") or out.get("result") or "pending"
-    out.setdefault("status", status)
-    out.setdefault("result", status)
+    closed = {"win", "won", "loss", "lost", "push", "void"}
+    states = [str(out.get(k) or "").strip().lower() for k in ("result", "status")]
+    status = next((v for v in states if v in closed), states[1] or states[0] or "pending")
+    out["status"] = status
+    out["result"] = status
 
     profit = out.get("profit_units") if out.get("profit_units") is not None else out.get("profit")
     if profit is not None:
@@ -319,7 +321,7 @@ def select_pick_rows(limit: int = 5000) -> List[Dict[str, Any]]:
     """
     merged: Dict[str, Dict[str, Any]] = {}
     for table in ("prop_hunter_picks", "prop_picks"):
-        for raw in select_rows(table, limit=limit):
+        for raw in select_rows(table, limit=limit, order_by="id", desc=True):
             row = _normalise_pick_row(raw, table)
             date_key = str(row.get("sent_date") or row.get("date") or "")
             key = f"{date_key}|{row.get('dedup_key')}"
@@ -353,6 +355,37 @@ def select_pick_rows(limit: int = 5000) -> List[Dict[str, Any]]:
         key=lambda row: str(row.get("sent_date") or row.get("date") or row.get("created_at") or ""),
         reverse=True,
     )[:limit]
+
+
+def select_settlement_picks(limit: int = 5000) -> List[Dict[str, Any]]:
+    """Include retained combo legs so they can obtain their own official actuals."""
+    rows = select_pick_rows(limit=limit)
+    history = safe_json_load("picks_history.json", [])
+    for entry in history if isinstance(history, list) else []:
+        for combo in entry.get("kombis") or []:
+            if str(combo.get("result") or "pending").lower() in {"win", "loss", "push", "void"}:
+                continue
+            details = combo.get("leg_details") or combo.get("ladder_legs") or combo.get("legs") or []
+            rungs = combo.get("ladder_legs") or []
+            for i, detail in enumerate(details):
+                if not isinstance(detail, dict):
+                    continue
+                leg = dict(detail)
+                if combo.get("type") == "ladder" and i < len(rungs) and isinstance(rungs[i], dict):
+                    leg.update(rungs[i])
+                for key in ("player", "sport", "league", "game", "created_at", "commence_time", "event_id", "game_id"):
+                    if not leg.get(key) and combo.get(key):
+                        leg[key] = combo[key]
+                leg.setdefault("date", entry.get("date"))
+                leg.setdefault("league", leg.get("sport"))
+                # Virtual legs must never mirror their status onto a parent row.
+                leg = _normalise_pick_row(leg, "history_leg")
+                leg["_source_tables"] = []
+                rows.append(leg)
+    unique = {}
+    for row in rows:
+        unique.setdefault(pick_id(row), row)
+    return list(unique.values())[:limit]
 
 
 def pick_id(row: Dict[str, Any]) -> str:

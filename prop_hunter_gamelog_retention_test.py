@@ -16,7 +16,7 @@ for player,count in (("alpha",45),("beta",12)):
         rid += 1
 
 ids=rank_delete_ids(rows)
-assert len(ids)==5, ids
+assert len(ids)==30, ids
 assert all(i <= 45 for i in ids)
 assert not any(i > 45 for i in ids)
 print("RETENTION TEST PASSED")

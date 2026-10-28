@@ -15,11 +15,11 @@ from typing import Any, Dict, Optional
 
 from prop_hunter_settler import (
     _load_relevant_gamelogs, build_log_index, detect_stat as legacy_detect_stat,
-    find_gamelog, learn_aliases, line_of_pick, result_for_value, side_of_pick
+    find_gamelog, learn_aliases, line_of_pick, result_for_value, side_of_pick, persist_settlements
 )
 from prop_hunter_shared_utils import (
     hash_key, log, norm_name, now_iso, pick_id, safe_json_write,
-    select_pick_rows, select_rows, to_float, upsert_rows
+    select_settlement_picks as select_pick_rows, select_rows, to_float, upsert_rows
 )
 
 OUT = "prop_hunter_results_extras_settled.json"
@@ -192,7 +192,7 @@ def main() -> None:
             "result_raw": gl,
         })
     safe_json_write(OUT, settled)
-    upsert_rows("prop_hunter_results", settled, "result_id")
+    persist_settlements(settled)
     log(f"extras settler done: picks={len(picks)} logs={len(logs)} settled={len(settled)}")
 
 if __name__ == "__main__":
