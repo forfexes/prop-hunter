@@ -38313,11 +38313,14 @@
           "bookmaker": "kambi_ub",
           "source": "kambi"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "loss",
+        "profit": -0.64,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-27T00:23:08.629098+00:00"
+        "created_at": "2026-10-27T00:23:08.629098+00:00",
+        "actual_value": 47,
+        "settled_at": "2026-10-28T23:03:39.203165+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-27",
@@ -38485,11 +38488,14 @@
           "bookmaker": "kambi_ub",
           "source": "kambi"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.58,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-27T00:23:11.580717+00:00"
+        "created_at": "2026-10-27T00:23:11.580717+00:00",
+        "actual_value": 30,
+        "settled_at": "2026-10-28T23:03:39.203088+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-27",
@@ -38657,11 +38663,14 @@
           "bookmaker": "bovada",
           "source": "bovada_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.38,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-27T00:23:13.697317+00:00"
+        "created_at": "2026-10-27T00:23:13.697317+00:00",
+        "actual_value": 17,
+        "settled_at": "2026-10-28T23:03:39.203022+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-27",
@@ -38689,11 +38698,14 @@
           "bookmaker": "fanduel",
           "source": "fanduel_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.31,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-27T00:23:14.130811+00:00"
+        "created_at": "2026-10-27T00:23:14.130811+00:00",
+        "actual_value": 2,
+        "settled_at": "2026-10-28T23:03:39.202919+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-27",
@@ -39911,7 +39923,15 @@
             "probability": 0.615,
             "edge_pct": 11.3,
             "bookmaker": "kambi_ub",
-            "game": "Dallas Cowboys @ Philadelphia Eagles"
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
           },
           {
             "player": "Marquise Brown",
@@ -39924,7 +39944,15 @@
             "probability": 0.5399,
             "edge_pct": 2.0,
             "bookmaker": "kambi_ub",
-            "game": "Dallas Cowboys @ Philadelphia Eagles"
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
           },
           {
             "player": "Marquise Brown",
@@ -39937,7 +39965,15 @@
             "probability": 0.464,
             "edge_pct": 27.6,
             "bookmaker": "kambi_ub",
-            "game": "Dallas Cowboys @ Philadelphia Eagles"
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
           },
           {
             "player": "Marquise Brown",
@@ -39950,13 +39986,21 @@
             "probability": 0.3078,
             "edge_pct": 30.8,
             "bookmaker": "kambi_ub",
-            "game": "Dallas Cowboys @ Philadelphia Eagles"
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.15,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
           }
         ],
         "odds": 1.81,
         "stake": 0.9,
         "probability": 0.615,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-10-27T00:23:17.421781+00:00",
         "ladder_legs": [
           {
@@ -40019,7 +40063,94 @@
         "builder_odds_estimated_from_legs": false,
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
-        "same_player_multistat": false
+        "same_player_multistat": false,
+        "profit": 1.35,
+        "settlement_legs": [
+          {
+            "player": "Marquise Brown",
+            "sport": "NFL",
+            "market": "10+ Receiving Yards",
+            "source_market": "receiving_yards",
+            "direction": "over",
+            "point": 9.5,
+            "odds": 1.81,
+            "probability": 0.615,
+            "edge_pct": 11.3,
+            "bookmaker": "kambi_ub",
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
+          },
+          {
+            "player": "Marquise Brown",
+            "sport": "NFL",
+            "market": "11+ Receiving Yards",
+            "source_market": "receiving_yards",
+            "direction": "over",
+            "point": 10.5,
+            "odds": 1.89,
+            "probability": 0.5399,
+            "edge_pct": 2.0,
+            "bookmaker": "kambi_ub",
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
+          },
+          {
+            "player": "Marquise Brown",
+            "sport": "NFL",
+            "market": "20+ Receiving Yards",
+            "source_market": "receiving_yards",
+            "direction": "over",
+            "point": 19.5,
+            "odds": 2.75,
+            "probability": 0.464,
+            "edge_pct": 27.6,
+            "bookmaker": "kambi_ub",
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
+          },
+          {
+            "player": "Marquise Brown",
+            "sport": "NFL",
+            "market": "30+ Receiving Yards",
+            "source_market": "receiving_yards",
+            "direction": "over",
+            "point": 29.5,
+            "odds": 4.25,
+            "probability": 0.3078,
+            "edge_pct": 30.8,
+            "bookmaker": "kambi_ub",
+            "game": "Dallas Cowboys @ Philadelphia Eagles",
+            "stake": 0.15,
+            "created_at": "2026-10-27T00:23:17.421781+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
+          }
+        ]
       },
       {
         "type": "ladder",
@@ -40040,7 +40171,15 @@
             "probability": 0.615,
             "edge_pct": 11.3,
             "bookmaker": "betrivers",
-            "game": "DAL Cowboys @ PHI Eagles"
+            "game": "DAL Cowboys @ PHI Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421803+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
           },
           {
             "player": "Marquise Brown",
@@ -40053,7 +40192,15 @@
             "probability": 0.464,
             "edge_pct": 27.6,
             "bookmaker": "betrivers",
-            "game": "DAL Cowboys @ PHI Eagles"
+            "game": "DAL Cowboys @ PHI Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421803+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
           },
           {
             "player": "Marquise Brown",
@@ -40066,13 +40213,21 @@
             "probability": 0.3078,
             "edge_pct": 30.8,
             "bookmaker": "betrivers",
-            "game": "DAL Cowboys @ PHI Eagles"
+            "game": "DAL Cowboys @ PHI Eagles",
+            "stake": 0.15,
+            "created_at": "2026-10-27T00:23:17.421803+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
           }
         ],
         "odds": 1.81,
         "stake": 0.65,
         "probability": 0.615,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-10-27T00:23:17.421803+00:00",
         "ladder_legs": [
           {
@@ -40125,7 +40280,73 @@
         "builder_odds_estimated_from_legs": false,
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
-        "same_player_multistat": false
+        "same_player_multistat": false,
+        "profit": 1.13,
+        "settlement_legs": [
+          {
+            "player": "Marquise Brown",
+            "sport": "NFL",
+            "market": "10+ Receiving Yards",
+            "source_market": "receiving_yards",
+            "direction": "over",
+            "point": 9.5,
+            "odds": 1.81,
+            "probability": 0.615,
+            "edge_pct": 11.3,
+            "bookmaker": "betrivers",
+            "game": "DAL Cowboys @ PHI Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421803+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
+          },
+          {
+            "player": "Marquise Brown",
+            "sport": "NFL",
+            "market": "20+ Receiving Yards",
+            "source_market": "receiving_yards",
+            "direction": "over",
+            "point": 19.5,
+            "odds": 2.75,
+            "probability": 0.464,
+            "edge_pct": 27.6,
+            "bookmaker": "betrivers",
+            "game": "DAL Cowboys @ PHI Eagles",
+            "stake": 0.25,
+            "created_at": "2026-10-27T00:23:17.421803+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
+          },
+          {
+            "player": "Marquise Brown",
+            "sport": "NFL",
+            "market": "30+ Receiving Yards",
+            "source_market": "receiving_yards",
+            "direction": "over",
+            "point": 29.5,
+            "odds": 4.25,
+            "probability": 0.3078,
+            "edge_pct": 30.8,
+            "bookmaker": "betrivers",
+            "game": "DAL Cowboys @ PHI Eagles",
+            "stake": 0.15,
+            "created_at": "2026-10-27T00:23:17.421803+00:00",
+            "date": "2026-10-27",
+            "commence_time": "2026-10-27T00:15:00+00:00",
+            "event_id": "1028823704",
+            "game_id": "1028823704",
+            "result": "win",
+            "actual_value": 30
+          }
+        ]
       },
       {
         "type": "ladder",
@@ -44712,7 +44933,9 @@
           "dameon pierce|rushing yards under 19.5|19.5|under"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 27.10.2026\n\n🏈 DAL — Dameon Pierce\n\n   ❌ • Rushing Yards Under 19.5 @1.84 → 0.64u · Ergebnis 47 · -0.64u\n📈 Prob 73% · Edge +18.9% · Confidence 91/100\n💡 +6.9% Edge | L7 Schnitt 12.1 Yards, 70% unter der Linie | src:kambi_ub | DB L7 avg 12.1, 70% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.64u\n@prophunter",
+        "settlement_updated_at": "2026-10-28T23:06:38.750879+00:00"
       },
       {
         "created_at": "2026-10-27T00:23:17.422326+00:00",
@@ -44775,7 +44998,9 @@
           "marquise brown|receiving_yards over 19.5|19.5|over"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 27.10.2026\n\n🏈 Marquise Brown\n🏟 Dallas Cowboys @ Philadelphia Eagles\n\n   ✅ • receiving_yards Over 19.5 @2.75 → 0.33u · Ergebnis 30 · +0.58u\n📈 Prob 58% · Edge +21.6% · Confidence 82/100\n💡 src:kambi_ub | DB L10 avg 27.1, 57% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.58u\n@prophunter",
+        "settlement_updated_at": "2026-10-28T23:06:40.229908+00:00"
       },
       {
         "created_at": "2026-10-27T00:23:17.422345+00:00",
@@ -44838,7 +45063,9 @@
           "darius cooper|receiving_yards under 33.5|33.5|under"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 27.10.2026\n\n🏈 Darius Cooper\n🏟 Dallas Cowboys @ Philadelphia Eagles\n\n   ✅ • receiving_yards Under 33.5 @2.15 → 0.33u · Ergebnis 17 · +0.38u\n📈 Prob 65% · Edge +18.7% · Confidence 86/100\n💡 src:bovada | DB L10 avg 21.4, 86% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.38u\n@prophunter",
+        "settlement_updated_at": "2026-10-28T23:06:41.547293+00:00"
       },
       {
         "created_at": "2026-10-27T00:23:17.422361+00:00",
@@ -44849,7 +45076,9 @@
           "saquon barkley|receptions under 2.5|2.5|under"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 27.10.2026\n\n🏈 Saquon Barkley\n🏟 Dallas Cowboys @ Philadelphia Eagles\n\n   ✅ • receptions Under 2.5 @1.93 → 0.33u · Ergebnis 2 · +0.31u\n📈 Prob 70% · Edge +18.1% · Confidence 88/100\n💡 src:fanduel | DB L10 avg 0.9, 90% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.31u\n@prophunter",
+        "settlement_updated_at": "2026-10-28T23:06:42.869217+00:00"
       },
       {
         "created_at": "2026-10-27T00:23:17.422365+00:00",
@@ -44951,7 +45180,9 @@
         "combo_ids": [
           "add98db53b436ec6"
         ],
-        "card_kind": "ladder"
+        "card_kind": "ladder",
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 27.10.2026\n\n🏈 Marquise Brown\n🏟 Dallas Cowboys @ Philadelphia Eagles\n\n✅ 10+ Receiving Yards @1.81 → 0.25u · Ergebnis 30 · +0.20u\n  📈 Prob 62% · Edge +11.3%\n✅ 11+ Receiving Yards @1.89 → 0.25u · Ergebnis 30 · +0.22u\n  📈 Prob 54% · Edge +2.0%\n✅ 20+ Receiving Yards @2.75 → 0.25u · Ergebnis 30 · +0.44u\n  📈 Prob 46% · Edge +27.6%\n✅ 30+ Receiving Yards @4.25 → 0.15u · Ergebnis 30 · +0.49u\n  📈 Prob 31% · Edge +30.8%\n\n\n🏁 Auswertung: 1✅ 0❌ · +1.35u\n@prophunter",
+        "settlement_updated_at": "2026-10-28T23:06:44.345181+00:00"
       },
       {
         "created_at": "2026-10-27T00:23:17.422390+00:00",
@@ -44962,7 +45193,9 @@
         "combo_ids": [
           "7e897ab57419ba25"
         ],
-        "card_kind": "ladder"
+        "card_kind": "ladder",
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 27.10.2026\n\n🏈 Marquise Brown\n🏟 DAL Cowboys @ PHI Eagles\n\n✅ 10+ Receiving Yards @1.81 → 0.25u · Ergebnis 30 · +0.20u\n  📈 Prob 62% · Edge +11.3%\n✅ 20+ Receiving Yards @2.75 → 0.25u · Ergebnis 30 · +0.44u\n  📈 Prob 46% · Edge +27.6%\n✅ 30+ Receiving Yards @4.25 → 0.15u · Ergebnis 30 · +0.49u\n  📈 Prob 31% · Edge +30.8%\n\n\n🏁 Auswertung: 1✅ 0❌ · +1.13u\n@prophunter",
+        "settlement_updated_at": "2026-10-28T23:06:45.667388+00:00"
       },
       {
         "created_at": "2026-10-27T00:23:17.422393+00:00",
