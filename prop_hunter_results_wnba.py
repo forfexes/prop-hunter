@@ -94,8 +94,12 @@ def _event_final(ev):
 
 def _event_matches(ev, pick):
     game = _game_text(pick)
-    if not game:
-        return False
+    # Legacy PROP HUNTER rows often contain only player + pick date and no
+    # matchup/team metadata.  In that case event matching is resolved safely
+    # later by player presence in the final boxscore instead of rejecting every
+    # event up front.
+    if not game or game.strip() in {"wnba"}:
+        return True
     matched = 0
     comp = (ev.get("competitions") or [{}])[0]
     for competitor in comp.get("competitors") or []:
