@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28T02:16:03.817744+00:00",
+  "updated_at": "2026-10-28T02:21:08.635285+00:00",
   "groups": {
     "NBA|NBA|points": {
       "group_type": "market",
@@ -80,24 +80,6 @@
       "hit_rate": 0.18182,
       "weight": 1.298,
       "status": "active",
-      "min_active_samples": 60
-    },
-    "NFL|NFL|anytime td": {
-      "group_type": "market",
-      "samples": 4,
-      "roi": -0.20093,
-      "hit_rate": 0.25,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NFL|anytime td": {
-      "group_type": "sport_market",
-      "samples": 4,
-      "roi": -0.20093,
-      "hit_rate": 0.25,
-      "weight": 1.0,
-      "status": "collecting",
       "min_active_samples": 60
     },
     "NFL|NFL|receptions": {
@@ -226,21 +208,21 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NHL|NHL|shots on goal": {
+    "NFL|NFL|anytime td": {
       "group_type": "market",
-      "samples": 12,
-      "roi": 0.33352,
-      "hit_rate": 0.83333,
-      "weight": 1.006,
+      "samples": 4,
+      "roi": -0.20093,
+      "hit_rate": 0.25,
+      "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NHL|shots on goal": {
+    "NFL|anytime td": {
       "group_type": "sport_market",
-      "samples": 12,
-      "roi": 0.33352,
-      "hit_rate": 0.83333,
-      "weight": 1.006,
+      "samples": 4,
+      "roi": -0.20093,
+      "hit_rate": 0.25,
+      "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
     },
@@ -295,6 +277,24 @@
       "roi": -0.06494,
       "hit_rate": 0,
       "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NHL|NHL|shots on goal": {
+      "group_type": "market",
+      "samples": 12,
+      "roi": 0.33352,
+      "hit_rate": 0.83333,
+      "weight": 1.006,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NHL|shots on goal": {
+      "group_type": "sport_market",
+      "samples": 12,
+      "roi": 0.33352,
+      "hit_rate": 0.83333,
+      "weight": 1.006,
       "status": "collecting",
       "min_active_samples": 60
     },
@@ -460,15 +460,6 @@
       "status": "shadow",
       "min_active_samples": 60
     },
-    "NHL|NHL|assists": {
-      "group_type": "market",
-      "samples": 8,
-      "roi": -0.472,
-      "hit_rate": 0.28571,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "MLB|MLB|to hit a triple": {
       "group_type": "market",
       "samples": 8,
@@ -503,6 +494,15 @@
       "hit_rate": 0.35,
       "weight": 0.971,
       "status": "shadow",
+      "min_active_samples": 60
+    },
+    "NHL|NHL|assists": {
+      "group_type": "market",
+      "samples": 8,
+      "roi": -0.472,
+      "hit_rate": 0.28571,
+      "weight": 1.0,
+      "status": "collecting",
       "min_active_samples": 60
     },
     "MLB|MLB|pitcher k": {
@@ -613,24 +613,6 @@
       "status": "shadow",
       "min_active_samples": 60
     },
-    "NFL|NFL|passing yards": {
-      "group_type": "market",
-      "samples": 5,
-      "roi": 0.0032,
-      "hit_rate": 0.6,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NFL|passing yards": {
-      "group_type": "sport_market",
-      "samples": 5,
-      "roi": 0.0032,
-      "hit_rate": 0.6,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "MLB|MLB|to hit a double": {
       "group_type": "market",
       "samples": 4,
@@ -645,6 +627,24 @@
       "samples": 4,
       "roi": 0.0,
       "hit_rate": null,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NFL|NFL|passing yards": {
+      "group_type": "market",
+      "samples": 5,
+      "roi": 0.0032,
+      "hit_rate": 0.6,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NFL|passing yards": {
+      "group_type": "sport_market",
+      "samples": 5,
+      "roi": 0.0032,
+      "hit_rate": 0.6,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
