@@ -84,8 +84,10 @@ def nflreadpy_weekly(seasons=None, players=None) -> List[Dict[str, Any]]:
         return []
     schedules = _schedule_map(nfl, seasons)
     rows = []
-    cap = int(os.getenv("NFL_RESULT_ROW_CAP", "5000"))
-    for _, r in df.head(cap).iterrows():
+    cap = max(1, int(os.getenv("NFL_RESULT_ROW_CAP", "5000")))
+    # Limit matching output, not the league-wide input: late weeks and players
+    # near the end of the nflverse frame must remain reachable.
+    for _, r in df.iterrows():
         name = r.get("player_display_name") or r.get("player_name") or r.get("name")
         if not name or norm_name(name) not in wanted:
             continue
@@ -121,6 +123,8 @@ def nflreadpy_weekly(seasons=None, players=None) -> List[Dict[str, Any]]:
             **kicking_stats(r),
             "raw": dict(r),
         })
+        if len(rows) >= cap:
+            break
     return rows
 
 def kicking_stats(row):

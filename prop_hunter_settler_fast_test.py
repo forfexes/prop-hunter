@@ -90,3 +90,20 @@ assert kicking_stats({'position':'WR','fg_made':2,'pat_made':1}) == {}
 assert stat_value({'league':'NFL','raw':{'position':'K','fg_made':0,'pat_made':1}}, 'points') == 1
 assert stat_value({'league':'NFL','raw':{'position':'WR','fg_made':0,'pat_made':1}}, 'points') is None
 print('NFL OBSERVED KICKER SCORING TEST PASSED')
+
+# Row budget applies to wanted output, never to the league-wide input frame.
+import sys, types, os
+from prop_hunter_results_nfl import nflreadpy_weekly
+class WeeklyFixture:
+    def iterrows(self):
+        for i in range(6):
+            yield i, {'player_display_name':'Unrequested Player','season':2026,'week':1,'team':'NO'}
+        for week in (6,7,8):
+            yield week + 10, {'player_display_name':'Joey Slye','season':2026,'week':week,'team':'TEN','position':'K','fg_made':2,'pat_made':1}
+fixture_nfl = types.SimpleNamespace(load_player_stats=lambda **kw:WeeklyFixture())
+schedules = {('2026',str(w),'TEN'):{'game_id':f'2026_{w}_TEN_OPP','game_date':f'2026-10-{w:02}'} for w in (6,7,8)}
+with patch.dict(sys.modules, {'nflreadpy':fixture_nfl}), patch('prop_hunter_results_nfl._schedule_map',return_value=schedules), patch.dict(os.environ,{'NFL_RESULT_ROW_CAP':'2'}):
+    late = nflreadpy_weekly([2026], ['Joey Slye'])
+    assert [r['week'] for r in late] == ['6','7'], late
+    assert all(r['kicking_points'] == 7 and r['game_date'] for r in late)
+print('NFL LATE-WEEK ROW BUDGET TEST PASSED')
