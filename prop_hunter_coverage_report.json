@@ -1,15 +1,18 @@
 {
-  "updated_at": "2026-10-28T04:26:24.897681+00:00",
+  "updated_at": "2026-10-28T04:28:55.964144+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 34,
+      "rows": 683,
       "sources": [
+        "betrivers_direct",
         "bovada_direct",
-        "fanduel_direct"
+        "draftkings_direct",
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 6,
-      "latest": "2026-10-28T00:21:41.234737+00:00",
+      "market_count": 18,
+      "latest": "2026-10-28T00:21:41.236226+00:00",
       "missing_core": [
         "home run",
         "total bases",
@@ -17,48 +20,49 @@
       ]
     },
     "NBA": {
-      "rows": 985,
+      "rows": 1234,
       "sources": [
         "betrivers_direct",
-        "bovada_direct",
-        "draftkings_direct",
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 12,
-      "latest": "2026-10-28T00:21:46.042965+00:00",
+      "market_count": 13,
+      "latest": "2026-10-28T00:21:46.039757+00:00",
       "missing_core": []
     },
     "WNBA": {
-      "rows": 275,
+      "rows": 424,
       "sources": [
+        "betrivers_direct",
+        "bovada_direct",
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 10,
-      "latest": "2026-10-26T21:10:19.456014+00:00",
+      "market_count": 11,
+      "latest": "2026-10-28T00:22:25.349307+00:00",
       "missing_core": []
     },
     "NFL": {
-      "rows": 713,
+      "rows": 1451,
       "sources": [
         "betrivers_direct",
+        "bovada_direct",
+        "fanduel_direct",
         "kambi"
       ],
-      "market_count": 29,
-      "latest": "2026-10-28T00:22:32.262167+00:00",
+      "market_count": 46,
+      "latest": "2026-10-28T00:22:32.269570+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 1573,
+      "rows": 1369,
       "sources": [
-        "bovada_direct",
         "draftkings_direct",
         "fanduel_direct",
         "kambi"
       ],
       "market_count": 5,
-      "latest": "2026-10-28T00:22:00.192158+00:00",
+      "latest": "2026-10-28T00:22:39.063361+00:00",
       "missing_core": [
         "saves"
       ]
