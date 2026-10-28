@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import unicodedata
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Iterable, List, Set, Tuple
 
@@ -102,12 +103,14 @@ def find_player(name: str) -> Dict[str, Any] | None:
     people = data.get("people") or []
     if not people:
         return None
-    wanted = norm_name(name)
+    def identity(value):
+        return norm_name(unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode())
+    wanted = identity(name)
     for p in people:
-        if norm_name(p.get("fullName")) == wanted:
+        if identity(p.get("fullName")) == wanted:
             return p
     for p in people:
-        candidate = norm_name(p.get("fullName"))
+        candidate = identity(p.get("fullName"))
         if candidate and (candidate in wanted or wanted in candidate):
             return p
     return None
@@ -259,7 +262,11 @@ def main() -> None:
                     s for s in ordered if str(s.get("date") or "")[:10] in needed
                 ]}.values())
                 parser = parse_pitching if group == "pitching" else parse_hitting
-                rows.extend(parser(canonical, split, season) for split in splits)
+                for split in splits:
+                    row = parser(player, split, season)
+                    row["raw"]["official_player_name"] = canonical
+                    row["raw"]["official_player_id"] = person["id"]
+                    rows.append(row)
         except Exception as exc:
             warn(f"MLB gamelog failed {player}: {exc}")
 

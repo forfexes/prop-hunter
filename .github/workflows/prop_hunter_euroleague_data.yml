@@ -16,8 +16,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: prop-hunter-euroleague-data
-  cancel-in-progress: true
+  group: prop-hunter-history-writer
+  cancel-in-progress: false
 
 jobs:
   euroleague-data:

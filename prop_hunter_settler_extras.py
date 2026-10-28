@@ -26,6 +26,8 @@ OUT = "prop_hunter_results_extras_settled.json"
 
 def detect_extra_stat(market: Any) -> Optional[str]:
     m = str(market or "").lower().replace("_", " ")
+    if re.search(r"\b(season|fantasy|standings)\b", m) or len(re.findall(r"\b(?:over|under)\s+\d", m)) > 1:
+        return None
     if "triple" in m and "triple double" not in m:
         return "triples"
     if "double" in m and "double double" not in m:

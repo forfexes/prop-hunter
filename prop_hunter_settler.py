@@ -44,7 +44,7 @@ MARKET_STAT_MAP = {
     # NBA / WNBA / NCAAB
     "points rebounds assists": "pra", "pra": "pra",
     "points rebounds": "pr", "points assists": "pa", "pr": "pr", "pa": "pa",
-    "rebounds assists": "ra", "rba": "ra", "ra": "ra",
+    "rebs plus asts": "ra", "rebounds assists": "ra", "rba": "ra", "ra": "ra",
     "double double": "double_double", "triple double": "triple_double",
     "3 pt made": "threes_made", "three pointers": "threes_made", "3 pointers": "threes_made", "3pm": "threes_made", "threes": "threes_made",
     "rebounds": "rebounds", "reb": "rebounds",
@@ -55,6 +55,7 @@ MARKET_STAT_MAP = {
     "pitcher earned runs": "pitcher_earned_runs", "earned runs": "pitcher_earned_runs",
     "pitcher outs": "pitcher_outs", "outs recorded": "pitcher_outs",
     "pitcher strikeouts": "pitcher_strikeouts", "pitcher k": "pitcher_strikeouts",
+    "hits plus runs plus rbis": "hits_runs_rbis", "hits runs rbis": "hits_runs_rbis",
     "stolen bases": "stolen_bases", "stolen base": "stolen_bases",
     "total bases": "total_bases", "home runs": "home_runs", "home run": "home_runs", "hr": "home_runs",
     "triples": "triples", "triple": "triples", "doubles": "doubles", "double": "doubles",
@@ -65,7 +66,7 @@ MARKET_STAT_MAP = {
     "receiving yards": "receiving_yards", "rushing yards": "rushing_yards",
     "rushing attempts": "rushing_attempts", "rush attempts": "rushing_attempts",
     "carries": "rushing_attempts",
-    "passing yards": "passing_yards", "receptions": "receptions",
+    "pass yds": "passing_yards", "passing yards": "passing_yards", "receptions": "receptions",
     "tackles": "tackles", "defensive tackles": "tackles",
     "field goals made": "field_goals_made", "successful field goals": "field_goals_made",
     "kicking points": "kicking_points",
@@ -73,7 +74,7 @@ MARKET_STAT_MAP = {
     "2 plus td": "two_plus_td", "2plus td": "two_plus_td", "2 td": "two_plus_td",
     "anytime td": "anytime_td", "1 plus td": "anytime_td", "1plus td": "anytime_td", "1 td": "anytime_td", "touchdown": "anytime_td",
     # NHL
-    "shots on goal": "shots_on_goal", "goalie saves": "goalie_saves",
+    "total saves": "goalie_saves", "shots on goal": "shots_on_goal", "goalie saves": "goalie_saves",
     "blocked shots": "blocked_shots", "power play points": "power_play_points",
     "goals": "goals", "nhl assists": "nhl_assists", "nhl points": "nhl_points",
 }
@@ -81,6 +82,13 @@ MARKET_STAT_MAP = {
 
 def detect_stat(market: Any) -> Optional[str]:
     m = norm_market(market)
+    if len(re.findall(r"\b(?:over|under)\s+\d", m)) > 1:
+        return None
+    if re.search(r"\b(season|fantasy|standings)\b", m):
+        return None
+    for short, full in (("pts", "points"), ("rebs", "rebounds"), ("asts", "assists")):
+        m = re.sub(r"\b" + short + r"\b", full, m)
+    m = re.sub(r"\b(points|rebounds|assists)\s+plus\s+", r"\1 ", m)
     for k in sorted(MARKET_STAT_MAP, key=len, reverse=True):
         if re.search(r"\b" + re.escape(k) + r"\b", m):
             return MARKET_STAT_MAP[k]
@@ -90,6 +98,9 @@ def detect_stat(market: Any) -> Optional[str]:
 def stat_value(gl: Dict[str, Any], stat: str) -> Any:
     if stat in gl and gl.get(stat) is not None:
         return gl.get(stat)
+    if stat == "hits_runs_rbis":
+        parts = [to_float(gl.get(x)) for x in ("hits", "runs", "rbi")]
+        return sum(parts) if all(v is not None for v in parts) else None
     if stat == "singles":
         parts = [to_float(gl.get(x)) for x in ("hits", "doubles", "triples", "home_runs")]
         if any(v is None for v in parts):

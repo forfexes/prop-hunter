@@ -144,6 +144,7 @@ jobs:
           PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
           python prop_hunter_feature_builder.py
           python prophunter_results.py
+          python prop_hunter_pending_audit.py
 
       - name: Learn from settled picks
         env:
@@ -168,7 +169,7 @@ jobs:
             # After stash pop, --theirs is the freshly generated stashed runtime
             # version. The shared concurrency group guarantees this job is the
             # sole results writer, so keep it for history and generated reports.
-            for f in picks_history.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_model_registry.json prop_hunter_source_trust.json; do
+            for f in picks_history.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_model_registry.json prop_hunter_source_trust.json prop_hunter_pending_audit.json; do
               if git ls-files -u -- "$f" | grep -q .; then git checkout --theirs -- "$f"; git add "$f"; fi
             done
             git diff --name-only --diff-filter=U | grep -q . && exit 1 || true
@@ -179,7 +180,7 @@ jobs:
           fi
           python -m json.tool picks_history.json >/dev/null
           git add picks_history.json prop_hunter_model_registry.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_source_trust.json \
-            prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_identity_cache.json ml_model.pkl 2>/dev/null || true
+            prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_identity_cache.json prop_hunter_pending_audit.json ml_model.pkl 2>/dev/null || true
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter results $(date -u +%F)"
           git push origin main

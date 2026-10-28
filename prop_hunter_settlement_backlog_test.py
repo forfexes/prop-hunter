@@ -7,13 +7,24 @@ from prop_hunter_shared_utils import _normalise_pick_row, select_settlement_pick
 import prop_hunter_results_mlb as mlb
 import prophunter_results as reporter
 from prop_hunter_learning_update import unique_results
+from prop_hunter_pending_audit import classify
 
 
 def main():
     for market, expected in [('pa Over 18.5','pa'), ('PR Under 19.5','pr'),
-                             ('passing_yards Over 200.5','passing_yards'),
+                             ('passing_yards Over 200.5','passing_yards'), ('Pass Yds Over 229.5','passing_yards'),
+                             ('Rebs+Asts Over 9.5','ra'), ('Rebounds+Assists Over 9.5','ra'),
+                             ('Pts+Rebs+Asts Over 19.5','pra'), ('Pts+Rebs Over 14.5','pr'), ('total_saves Over 20.5','goalie_saves'),
                              ('Home Run','home_runs'), ('3-PT Made Over 1.5','threes_made')]:
         assert detect_stat(market) == expected, market
+    assert detect_stat('Hits+Runs+RBIS Under 0.5') == 'hits_runs_rbis'
+    assert stat_value({'hits': 1, 'runs': 2, 'rbi': 3}, 'hits_runs_rbis') == 6
+    assert detect_stat('Hits Over 1.5 Over 0.5') is None
+    assert classify({'market': 'Hits Over 1.5 Over 0.5'}, [], {}) == 'ambiguous_market_line'
+    assert classify({'market': 'Season Receiving Yards Over 649.5'}, [], {}) == 'unsupported_season_or_fantasy_market'
+    assert classify({'league': 'NBA/WNBA', 'market': 'points'}, [], {}) == 'ambiguous_league'
+    assert detect_stat('Season Receiving Yards Over 649.5') is None
+    assert detect_stat('Fantasy Points Over 8.5') is None
     assert stat_value({'points': 20, 'assists': 4}, 'pa') == 24
     assert result_for_value(False, .5, 'under') == 'win'
     assert result_for_value(None, .5, 'under') == 'no_result'
@@ -44,6 +55,9 @@ def main():
         assert virtual[0]['stake'] == .15 and virtual[0]['_source_tables'] == []
     combo = history[0]['kombis'][0]
     assert reporter._leg_rows(combo)[0]['stake'] == .15
+
+    with patch.object(mlb, 'http_json', return_value={'people': [{'id': 66, 'fullName': 'Teoscar Hernández'}]}):
+        assert mlb.find_player('Teoscar Hernandez')['id'] == 66
 
     old_pick = {'player': 'Historical Hitter', 'league': 'MLB', 'date': '2026-07-08', 'market': 'Home Run', 'status': 'pending'}
     with patch.object(mlb, 'select_pick_rows', return_value=[old_pick]), patch.dict('os.environ', {'PH_MLB_RESULTS_LOOKBACK_DAYS': '0'}):
