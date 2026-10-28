@@ -427,7 +427,7 @@ def main():
         status = result_for_value(value, line, side)
         pid = pick_id(p)
         settled.append({
-            "result_id": hash_key(pid, stat, gl.get("game_id")),
+            "result_id": hash_key("pick", pid),
             "pick_id": pid,
             "sport": p.get("sport") or gl.get("sport"),
             "league": p.get("league") or gl.get("league"),
