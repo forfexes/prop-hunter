@@ -10,12 +10,38 @@ from prop_hunter_settler import (
 from prop_hunter_settler_extras import detect_extra_stat, extra_stat_value, extra_line_of_pick
 
 
+def explicit_nonplayer_scope(pick):
+    player = str(pick.get('player_name') or pick.get('player') or '').strip().lower()
+    market = str(pick.get('market') or pick.get('prop_type') or '').lower()
+    if re.search(r"\bstandings\b", player) or any(word in market for word in ('season ', 'standings', 'fantasy')):
+        return 'unsupported_season_or_fantasy_market'
+    if player in {'game', 'total goals'} or player.startswith('total goals by '):
+        return 'unsupported_team_or_game_market'
+    return None
+
+
+def evidence_context(pick, index):
+    """Diagnostic observations only; never relax settlement matching."""
+    from prop_hunter_shared_utils import norm_name
+    league = str(pick.get('league') or pick.get('sport') or '').upper()
+    name = norm_name(pick.get('player_name') or pick.get('player'))
+    candidates = [r for r in index.get(name, [])
+                  if not league or not r.get('league') or str(r.get('league')).upper() == league]
+    dates = sorted({str(r.get('game_date'))[:10] for r in candidates if r.get('game_date')})
+    raw = pick.get('raw') if isinstance(pick.get('raw'), dict) else {}
+    return {'quoted_game_id': pick.get('game_id') or pick.get('source_game_id'),
+            'quoted_kickoff': pick.get('commence_time') or raw.get('commence_time'),
+            'quoted_game': pick.get('game') or raw.get('game'),
+            'loaded_player_rows': len(candidates),
+            'loaded_game_dates': dates}
+
 def classify(pick, logs, index):
     market = str(pick.get('market') or pick.get('prop_type') or '')
     if len(re.findall(r"\b(?:over|under)\s+\d", market.lower())) > 1:
         return 'ambiguous_market_line'
-    if any(word in market.lower() for word in ('season ', 'standings', 'fantasy')):
-        return 'unsupported_season_or_fantasy_market'
+    scope = explicit_nonplayer_scope(pick)
+    if scope:
+        return scope
     if '/' in str(pick.get('league') or ''):
         return 'ambiguous_league'
     if not _pick_ready_for_settlement(pick):
@@ -50,7 +76,8 @@ def main():
         details.append({'pick_id': pick_id(p), 'source': p.get('_source_table'),
                         'date': p.get('date'), 'league': p.get('league') or p.get('sport'),
                         'player': p.get('player') or p.get('player_name'),
-                        'market': p.get('market'), 'reason': reason})
+                        'market': p.get('market'), 'reason': reason,
+                        'evidence': evidence_context(p, index) if reason == 'no_unique_official_game' else None})
     report = {'generated_at': now_iso(), 'unresolved': len(details), 'counts': dict(counts), 'picks': details}
     safe_json_write('prop_hunter_pending_audit.json', report)
     print(f'Pending audit: unresolved={len(details)} reasons={dict(counts)}', flush=True)

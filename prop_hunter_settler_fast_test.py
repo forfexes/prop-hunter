@@ -107,3 +107,17 @@ with patch.dict(sys.modules, {'nflreadpy':fixture_nfl}), patch('prop_hunter_resu
     assert [r['week'] for r in late] == ['6','7'], late
     assert all(r['kicking_points'] == 7 and r['game_date'] for r in late)
 print('NFL LATE-WEEK ROW BUDGET TEST PASSED')
+
+# Diagnose explicit non-player records without guessing from short real names.
+from prop_hunter_pending_audit import classify, evidence_context
+assert classify({'player':'ANA Ducks October Standings','market':'points Under 15.5'}, [], {}) == 'unsupported_season_or_fantasy_market'
+for label in ('GAME','Total Goals','Total Goals by Colorado Avalanche'):
+    assert classify({'player':label,'market':'goals Over 1.5'}, [], {}) == 'unsupported_team_or_game_market'
+context_logs = [{'player_name':'Exact Player','normalized_name':'exact player','league':'WNBA','game_date':'2026-08-12'},
+                {'player_name':'Exact Player','normalized_name':'exact player','league':'NBA','game_date':'2026-08-13'}]
+context_pick = {'player':'Exact Player','league':'WNBA','date':'2026-08-15','market':'points Over 10.5'}
+context = evidence_context(context_pick,build_log_index(context_logs))
+assert context['loaded_game_dates'] == ['2026-08-12'] and context['loaded_player_rows'] == 1
+assert classify(context_pick,context_logs,build_log_index(context_logs)) == 'no_unique_official_game'
+assert evidence_context({'player':'Missing'},build_log_index(context_logs))['loaded_player_rows'] == 0
+print('PENDING AUDIT SCOPE / EVIDENCE TEST PASSED')
