@@ -1208,10 +1208,13 @@ def enrich_gamelogs_fairprob(props: list) -> list:
     for p in props:
         try:
             point = getattr(p, "point", None)
-            if point is None: continue
             mkt = (p.market or "").lower()
             stat = _detect_stat(mkt)
             if not stat: continue
+            # Binary DD/TD markets intentionally have no numeric line.
+            # They are evaluated from the real L15 P/R/A history below.
+            if point is None and stat not in ("double_double", "triple_double"):
+                continue
             sport_label = (getattr(p, "sport", "") or "").upper()
             if sport_label == "NHL":
                 if stat == "points":
@@ -2550,7 +2553,7 @@ MUSST ausschliesslich gueltiges JSON Array zurueckgeben. Keine Code-Fences, kein
 
 DATENINTERPRETATION:
 - NUR +EV Picks: edge_pct muss positiv sein, ideal >= +3%. Negative Edge niemals ausgeben.
-- Basket/NBA/WNBA nur mit konkreter Linie/Punktzahl ausgeben (z.B. Rebounds+Assists Over 17.5). Niemals nur "Over" ohne Linie.
+- Basket/NBA/WNBA: numerische Player-Props nur mit konkreter Linie/Punktzahl ausgeben (z.B. Rebounds+Assists Over 17.5). Double Double / Triple Double sind binäre Ja/Nein-Märkte und brauchen bewusst keine numerische Linie.
 - edge_pct >= 3% = +EV | avg_last > linie×1.08 = Over | < 0.87 = Under
 - Barrel% >= 12, HardHit% >= 45 = MLB HR Edge | NBA last10 > season+2 = Form Heat
 - Lineup CONFIRMED = posten | Injury Out = NICHT posten
