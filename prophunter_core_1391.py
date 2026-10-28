@@ -4286,8 +4286,8 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             conf += min(hr_score, 5.0) * 8                        # bis 40
             if slg: conf += max(0.0, (float(slg) - 0.400)) * 60   # SLG-Bonus
             if ops: conf += max(0.0, (float(ops) - 0.750)) * 30   # OPS-Bonus
-            db_rate = feats.get("gamelog_l10_rate")
-            if db_rate: conf += float(db_rate) * 20               # DB L10 Boost
+            db_rate = feats.get("gamelog_l15_rate", feats.get("gamelog_l10_rate"))
+            if db_rate: conf += float(db_rate) * 20               # DB L15 Boost
             conf = round(min(99, max(1, conf)), 1)
             candidates_hr.append((sp, hr_prob, odds, conf, hr_edge))
             continue
@@ -4300,7 +4300,22 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         direction = _source_prop_direction(sp)
         is_basket = sport in ("NBA", "WNBA")
         is_mlb = sport == "MLB"
+        is_nhl = sport == "NHL"
         is_hits = ("hit" in market.lower()) and not is_hr
+
+        # NHL rescue/fill-up must be backed by real recent history.  A sportsbook
+        # price alone is not enough to publish a fallback pick when our NHL L15
+        # database is available. Require a meaningful sample and the L15-derived
+        # fair-prob feature so rescue cannot bypass the main selection quality gate.
+        if is_nhl:
+            try:
+                nhl_n = int((feats or {}).get("gamelog_n") or 0)
+            except Exception:
+                nhl_n = 0
+            nhl_rate = (feats or {}).get("gamelog_l15_rate")
+            if nhl_n < 10 or nhl_rate is None:
+                rejected["nhl_l15_sample"] += 1
+                continue
 
         if is_basket:
             if point is None:
