@@ -1032,7 +1032,7 @@ def learning_multiplier(p) -> float:
 
 def enrich_gamelogs_fairprob(props: list) -> list:
     """
-    Nutzt prop_hunter_player_gamelogs (5k+ rows): L10-Über-Linie-Rate → fair_prob Blend.
+    Nutzt prop_hunter_player_gamelogs: L15-Über-Linie-Rate → fair_prob Blend.
     Macht Edges aus EIGENER Datenbank statt nur implied Odds.
     """
     c = _sb_read()
@@ -1182,7 +1182,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 res = (c.table("prop_hunter_player_gamelogs").select(cols)
                        .in_("normalized_name", names_chunk)
                        .not_.is_("game_date", "null")
-                       .order("game_date", desc=True).limit(max(200, len(names_chunk) * 15)).execute())
+                       .order("game_date", desc=True).limit(max(300, len(names_chunk) * 20)).execute())
                 for row in (res.data or []):
                     nk = row.get("normalized_name")
                     if nk:
@@ -1191,7 +1191,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 pass
         for nk, rows0 in _prefetched_rows.items():
             rows0.sort(key=lambda r: str(r.get("game_date") or ""), reverse=True)
-            _prefetched_rows[nk] = rows0[:10]
+            _prefetched_rows[nk] = rows0[:15]
         if _prefetched_rows:
             log.info("Gamelog prefetch: %d players in batch", len(_prefetched_rows))
     except Exception:
@@ -1245,7 +1245,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                     res = c.table("prop_hunter_player_gamelogs").select(
                         ",".join(cols2) + ",game_date").eq(
                         "normalized_name", key).not_.is_("game_date", "null").order(
-                        "game_date", desc=True).limit(10).execute()
+                        "game_date", desc=True).limit(15).execute()
                     combo_vals = []
                     for r in (res.data or []):
                         parts = [r.get(col) for col in cols2]
@@ -1256,7 +1256,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                     res = c.table("prop_hunter_player_gamelogs").select(
                         "points,rebounds,assists,game_date").eq(
                         "normalized_name", key).not_.is_("game_date", "null").order(
-                        "game_date", desc=True).limit(10).execute()
+                        "game_date", desc=True).limit(15).execute()
                     dd_vals = []
                     need = 2 if stat == "double_double" else 3
                     for r in (res.data or []):
@@ -1268,7 +1268,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 else:
                     res = c.table("prop_hunter_player_gamelogs").select(stat).eq(
                         "normalized_name", key).not_.is_(stat, "null").not_.is_("game_date", "null").order(
-                        "game_date", desc=True).limit(10).execute()
+                        "game_date", desc=True).limit(15).execute()
                     _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
             vals = _GAMELOG_CACHE[cache_k]
             n = len(vals)
@@ -1346,14 +1346,15 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 pass
             old = feats.get("fair_prob")
             # Blend: no-vig Marktwahrscheinlichkeit (old) + eigene L-Rate.
-            # Gewicht der DB-Rate steigt mit Sample-Größe (6 Spiele→0.35, 10+→0.5).
+            # Gewicht der DB-Rate steigt mit Sample-Größe (6 Spiele→0.30, 10+→0.5; L15 bleibt gecappt).
             if old:
                 db_weight = min(0.5, 0.05 * n)  # n=6→0.30, n=10→0.50, capped 0.5
                 blended = float(old) * (1 - db_weight) + rate * db_weight
                 feats["fair_prob"] = round(blended, 4)
             else:
                 feats["fair_prob"] = round(rate, 4)
-            feats["gamelog_l10_rate"] = round(rate, 3)
+            feats["gamelog_l15_rate"] = round(rate, 3)
+            feats["gamelog_l10_rate"] = round(rate, 3)  # compatibility for older scoring code
             feats["gamelog_n"] = n
             p.features = feats
             avg = sum(vals)/n
