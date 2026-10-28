@@ -29,3 +29,14 @@ The four previously unmatched canonical NFL picks are now verified closed from o
 | Dameon Pierce | Rushing yards Under 19.5 | 47 | Loss |
 
 These four observations describe the repaired cohort, not overall strategy profitability.
+
+
+## Pending evidence audit, Results #229
+
+Commit `10e477a79fe16e3b0635583f83dbc677c8d6314c` adds explicit non-player scope classification and per-pick diagnostic context (quoted game/kickoff/ID, loaded player-row count, loaded official game dates). The diagnostics describe the loaded audit window, not an exhaustive external schedule. They do not relax settlement matching or infer a loss/void from missing observations.
+
+Explicit `GAME`, `Total Goals`, and `Total Goals by ...` selections now have the unsupported team/game reason. Standings in the selection name are classified alongside season/fantasy markets, even when their market label only says points. A behavioral test verifies league-scoped evidence and that a player with nearby but unmatched dates remains unresolved.
+
+[Results #229](https://github.com/forfexes/prop-hunter/actions/runs/40785688368) completed successfully. Total unresolved stays 158: 86 awaiting completion, 57 no unique official game, seven season/fantasy/standings, three team/game totals, five ambiguous lines. The reduction from 61 to 57 in the no-unique-game category is reclassification of four existing cases, not four new settlements. Reporter `merged=0`, `cards_edited=0`; this replay produced no new source-pick grading.
+
+The loaded context confirms that remaining cases need individual evidence: some have other dates for the same player, while BYU and Mitchell Bratt have no loaded player rows. An unrelated nearby or later game is not substituted. Original legacy metadata can also be inconsistent (for example Sabrina Ionescu carries a Connecticut team hint in one migrated record); identity/team corrections need independent event evidence.
