@@ -12,6 +12,13 @@ from prop_hunter_pending_audit import classify
 
 
 def main():
+    first_page = MagicMock(status_code=200)
+    first_page.json.return_value = [{'result_id': str(i)} for i in range(1000)]
+    last_page = MagicMock(status_code=200)
+    last_page.json.return_value = [{'result_id': '1000'}, {'result_id': '1001'}]
+    with patch.object(reporter, 'SUPABASE_URL', 'https://fixture.invalid'), patch.object(reporter, 'SUPABASE_KEY', 'fixture'), patch.object(reporter.requests, 'get', side_effect=[first_page, last_page]) as get:
+        assert len(reporter._fetch_results()) == 1002
+        assert [call.kwargs['params']['offset'] for call in get.call_args_list] == ['0', '1000']
     quote = {'date': '2026-10-22', 'player': 'P', 'game': 'A @ B', 'commence_time': '2026-10-23T01:30:00Z'}
     duplicate_quote = dict(quote, market='Different threshold')
     leg = inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, duplicate_quote])

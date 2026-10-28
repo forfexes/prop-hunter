@@ -73,26 +73,29 @@ def _fetch_results() -> list:
         print("Supabase missing; cannot publish settlement")
         return []
     since = (datetime.now(timezone.utc) - timedelta(days=LOOKBACK_DAYS + 2)).isoformat()
-    try:
+    rows = []
+    offset = 0
+    page_size = 1000
+    while True:
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/prop_hunter_results",
             headers=_headers(),
             params={
-                "select": "*",
-                "settled_at": f"gte.{since}",
-                "order": "settled_at.desc",
-                "limit": "2500",
+                "select": "*", "settled_at": f"gte.{since}",
+                "order": "settled_at.desc,result_id.desc",
+                "limit": str(page_size), "offset": str(offset),
             },
             timeout=TIMEOUT,
         )
         if r.status_code != 200:
-            print(f"results fetch HTTP {r.status_code}: {r.text[:250]}")
-            return []
-        rows = r.json()
-        return rows if isinstance(rows, list) else []
-    except Exception as exc:
-        print(f"results fetch failed: {exc}")
-        return []
+            raise RuntimeError(f"results fetch HTTP {r.status_code}: {r.text[:250]}")
+        page = r.json()
+        if not isinstance(page, list):
+            raise RuntimeError("results fetch returned a non-list payload")
+        rows.extend(page)
+        if len(page) < page_size:
+            return rows
+        offset += page_size
 
 
 def _result_status(row: dict) -> str:
