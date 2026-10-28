@@ -338,3 +338,13 @@ print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
 # Binary DD/TD enrichment must run before numeric-line guard
 assert 'if point is None and stat not in ("double_double", "triple_double")' in core
 assert 'stat in ("double_double", "triple_double")' in core and 'gamelog_dd_rate' in core
+
+
+# Cross-game engine must retain several real alt-line choices per event and DD/TD.
+acca = (ROOT / "prop_hunter_acca_engine.py").read_text(encoding="utf-8")
+assert '"triple_double"' in acca
+assert 'event_options: Dict[str, List[Any]]' in acca
+assert 'len(event_options[game]) < 4' in acca
+assert 'Final ACCAs still enforce one leg per event via _compatible()' in acca
+# Ladder lane remains independent and fed from raw props.
+assert 'extras.extend(_real_ladders(props, PickCls, LadderLegCls, selected=selected))' in builder
