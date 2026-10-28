@@ -326,13 +326,13 @@ def _leg_rows(combo: dict) -> list:
     return details
 
 
-def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
+def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict, context_picks=None) -> bool:
     legs = _leg_rows(combo)
     if not legs:
         return False
     states = []
     profit = 0.0
-    for leg in legs:
+    for i, leg in enumerate(legs):
         # Combo/ladder legs are persisted without their own date/event context.
         # Inherit the parent context so the strict result matcher can safely
         # resolve the leg without falling back across dates or fixtures.
@@ -347,6 +347,9 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
         # to resolve against official result rows.
         if not leg.get("date") and leg.get("created_at"):
             leg["date"] = str(leg.get("created_at"))[:10]
+        from prop_hunter_shared_utils import inherit_leg_context
+        leg = inherit_leg_context(leg, context_picks)
+        legs[i] = leg
         if not _settlement_ready_time(leg):
             if str(combo.get("result") or "pending") in CLOSED:
                 combo["result"] = "pending"
@@ -673,7 +676,7 @@ def main() -> int:
                 merged += 1
                 _sync_pick_table(p)
         for combo in combos:
-            if _settle_combo(combo, by_dedup, by_signature):
+            if _settle_combo(combo, by_dedup, by_signature, context_picks=picks):
                 changed = True
 
         for card in entry.get("cards") or []:

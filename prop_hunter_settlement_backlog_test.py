@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 from datetime import datetime, timezone
 from prop_hunter_settler import detect_stat, stat_value, result_for_value, persist_settlements
-from prop_hunter_shared_utils import _normalise_pick_row, select_settlement_picks
+from prop_hunter_shared_utils import _normalise_pick_row, select_settlement_picks, inherit_leg_context
 import prop_hunter_results_mlb as mlb
 import prophunter_results as reporter
 from prop_hunter_learning_update import unique_results
@@ -12,6 +12,14 @@ from prop_hunter_pending_audit import classify
 
 
 def main():
+    quote = {'date': '2026-10-22', 'player': 'P', 'game': 'A @ B', 'commence_time': '2026-10-23T01:30:00Z'}
+    duplicate_quote = dict(quote, market='Different threshold')
+    leg = inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, duplicate_quote])
+    assert leg['commence_time'] == quote['commence_time']
+    ambiguous = dict(quote, commence_time='2026-10-23T07:30:00Z')
+    assert 'commence_time' not in inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, ambiguous])
+    different_game = dict(quote, game='C @ D', commence_time='2026-10-23T07:30:00Z')
+    assert inherit_leg_context({'date': '2026-10-22', 'player': 'P', 'game': 'A @ B'}, [quote, different_game])['commence_time'] == quote['commence_time']
     today = datetime.now(timezone.utc).date().isoformat()
     from prop_hunter_settler import _pick_ready_for_settlement
     assert not _pick_ready_for_settlement({'date': today})

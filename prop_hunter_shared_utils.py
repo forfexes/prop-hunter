@@ -357,6 +357,39 @@ def select_pick_rows(limit: int = 5000) -> List[Dict[str, Any]]:
     )[:limit]
 
 
+def inherit_leg_context(leg: Dict[str, Any], context_rows) -> Dict[str, Any]:
+    """Copy only a uniquely determined kickoff from matching retained quotes."""
+    out = dict(leg)
+    own_raw = out.get("raw") if isinstance(out.get("raw"), dict) else {}
+    if out.get("commence_time") or own_raw.get("commence_time"):
+        out.setdefault("commence_time", own_raw.get("commence_time"))
+        return out
+    day = str(out.get("sent_date") or out.get("date") or out.get("created_at") or "")[:10]
+    name = norm_name(out.get("player") or out.get("player_name"))
+    game = norm_name(out.get("game"))
+    candidates = []
+    for p in context_rows or []:
+        if str(p.get("sent_date") or p.get("date") or p.get("created_at") or "")[:10] != day:
+            continue
+        raw = p.get("raw") if isinstance(p.get("raw"), dict) else {}
+        same_player = name and norm_name(p.get("player") or p.get("player_name")) == name
+        same_game = game and norm_name(p.get("game") or raw.get("game")) == game
+        if same_player or same_game:
+            candidates.append((p, raw, bool(same_game)))
+    if any(exact for _, _, exact in candidates):
+        candidates = [c for c in candidates if c[2]]
+    starts = {str(p.get("commence_time") or raw.get("commence_time")) for p, raw, _ in candidates
+              if p.get("commence_time") or raw.get("commence_time")}
+    if len(starts) != 1:
+        return out
+    out["commence_time"] = starts.pop()
+    for key in ("event_id", "game_id"):
+        values = {str(p.get(key) or raw.get(key)) for p, raw, _ in candidates if p.get(key) or raw.get(key)}
+        if not out.get(key) and len(values) == 1:
+            out[key] = values.pop()
+    return out
+
+
 def select_settlement_picks(limit: int = 5000) -> List[Dict[str, Any]]:
     """Include retained combo legs so they can obtain their own official actuals."""
     rows = select_pick_rows(limit=limit)
@@ -379,15 +412,7 @@ def select_settlement_picks(limit: int = 5000) -> List[Dict[str, Any]]:
                         leg[key] = combo[key]
                 leg.setdefault("date", entry.get("date"))
                 leg.setdefault("league", leg.get("sport"))
-                candidates = [p for p in context_rows
-                              if norm_name(p.get("player") or p.get("player_name")) == norm_name(leg.get("player") or leg.get("player_name"))
-                              and str(p.get("sent_date") or p.get("date") or "")[:10] == str(leg.get("date") or "")[:10]]
-                if len(candidates) == 1:
-                    context = candidates[0]
-                    raw = context.get("raw") if isinstance(context.get("raw"), dict) else {}
-                    for key in ("commence_time", "event_id", "game_id"):
-                        if not leg.get(key) and (context.get(key) or raw.get(key)):
-                            leg[key] = context.get(key) or raw.get(key)
+                leg = inherit_leg_context(leg, context_rows)
                 # Virtual legs must never mirror their status onto a parent row.
                 leg = _normalise_pick_row(leg, "history_leg")
                 leg["_source_tables"] = []
