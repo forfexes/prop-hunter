@@ -98,6 +98,8 @@ def test_nba_wnba_nfl_nhl_guards():
     reporter = Path("prophunter_results.py").read_text(encoding="utf-8")
     check("_pick_ready_for_settlement" in settler and "start_dt.hour < 7" in settler,
           "settler can still grade future/wrong-date games")
+    check("oldest_pending = min(dates)" in settler and "start = oldest_pending - timedelta(days=1)" in settler,
+          "historical pending settlement is still clamped to recent lookback")
     check("_reset_premature_result" in reporter and "_settlement_ready_time" in reporter,
           "Telegram reporter cannot undo premature settlements")
 
