@@ -282,12 +282,13 @@ def sb_insert(row):
         "probability": probability,
         "prob": probability,
         "stake": src.get("stake"),
-        "pick_type": "single",
+        "pick_type": src.get("pick_type") or src.get("type") or "single",
+        "category": src.get("category"),
         "result": src.get("result") or "pending",
         "status": src.get("result") or "pending",
         "features": src.get("features") or {},
-        "legs": [],
-        "leg_details": [],
+        "legs": src.get("legs") or [],
+        "leg_details": src.get("leg_details") or src.get("ladder_legs") or [],
         "raw": src.get("raw") or {},
     }
     canonical={k:v for k,v in canonical.items() if v is not None}
@@ -380,6 +381,27 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
             combo["direction"]=p.direction or "over"
             combo["point"]=getattr(p,"point",None)
         entry["kombis"].append(combo)
+        # Persist every published combo/ladder canonically as well.  Previously
+        # only singles reached prop_hunter_picks, which made ladder ROI and
+        # rung-level settlement impossible to audit from Supabase.
+        _combo_legs = combo.get("ladder_legs") or combo.get("leg_details") or combo.get("legs") or []
+        _combo_key = hashlib.sha1(json.dumps({
+            "date": today, "type": combo.get("type"), "player": combo.get("player"),
+            "market": combo.get("market"), "legs": _combo_legs,
+        }, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        sb_insert({
+            "date": today, "created_at": combo.get("created_at"), "sport": combo.get("sport"),
+            "league": combo.get("sport"), "player": combo.get("player"),
+            "market": combo.get("market"), "direction": combo.get("direction"),
+            "line": combo.get("point"), "odds": combo.get("odds"), "stake": combo.get("stake"),
+            "probability": combo.get("probability"), "dedup_key": _combo_key,
+            "pick_type": combo.get("type"), "type": combo.get("type"),
+            "category": combo.get("category"), "legs": combo.get("legs") or [],
+            "leg_details": combo.get("leg_details") or [],
+            "ladder_legs": combo.get("ladder_legs") or [],
+            "features": getattr(p, "features", {}) or {},
+            "raw": combo,
+        })
     if telegram_message_id:
         cards = entry.setdefault("cards", [])
         pick_keys = [
