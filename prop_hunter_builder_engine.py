@@ -404,9 +404,18 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
         game = _game(p)
         if not player or not book or not base or _point(p) is None:
             continue
-        # Ladders are an extension of selected card ideas, not a second unbounded
-        # card built from every raw alternate line in the feed.
-        if selected_keys and (player, base, direction) not in selected_keys:
+        # NHL/NFL alternate lines are dedicated ladder lanes. A strong ladder
+        # must not disappear merely because another market won the player's Single slot.
+        sport = _sport(p)
+        dedicated_ladder = (
+            sport == "NHL" and any(x in base for x in ("shots on goal", "goalie saves", "points", "assists", "goals"))
+        ) or (
+            sport == "NFL" and any(x in base for x in (
+                "passing yards", "rushing yards", "receiving yards", "receptions",
+                "passing touchdowns", "rushing touchdowns", "receiving touchdowns", "touchdowns"
+            ))
+        )
+        if selected_keys and (player, base, direction) not in selected_keys and not dedicated_ladder:
             continue
         grouped.setdefault((player, base, direction, book, game), []).append(p)
 
