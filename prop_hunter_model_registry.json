@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28T04:28:42.948520+00:00",
+  "updated_at": "2026-10-28T04:31:03.282640+00:00",
   "groups": {
     "NBA|NBA|points": {
       "group_type": "market",
@@ -264,18 +264,18 @@
     },
     "NBA|NBA|rebounds": {
       "group_type": "market",
-      "samples": 141,
-      "roi": 0.68085,
-      "hit_rate": 0.44681,
+      "samples": 144,
+      "roi": 0.67594,
+      "hit_rate": 0.4375,
       "weight": 1.3,
       "status": "active",
       "min_active_samples": 60
     },
     "NBA|rebounds": {
       "group_type": "sport_market",
-      "samples": 141,
-      "roi": 0.68085,
-      "hit_rate": 0.44681,
+      "samples": 144,
+      "roi": 0.67594,
+      "hit_rate": 0.4375,
       "weight": 1.3,
       "status": "active",
       "min_active_samples": 60
@@ -487,33 +487,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NBA|NBA|steals": {
-      "group_type": "market",
-      "samples": 10,
-      "roi": 0.77919,
-      "hit_rate": 0.4,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NBA|steals": {
-      "group_type": "sport_market",
-      "samples": 10,
-      "roi": 0.77919,
-      "hit_rate": 0.4,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NHL|assists": {
-      "group_type": "sport_market",
-      "samples": 10,
-      "roi": -0.16791,
-      "hit_rate": 0.375,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "WNBA|WNBA|points assists": {
       "group_type": "market",
       "samples": 1,
@@ -546,6 +519,33 @@
       "samples": 1,
       "roi": -1.0,
       "hit_rate": 0,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NBA|NBA|steals": {
+      "group_type": "market",
+      "samples": 10,
+      "roi": 0.77919,
+      "hit_rate": 0.4,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NBA|steals": {
+      "group_type": "sport_market",
+      "samples": 10,
+      "roi": 0.77919,
+      "hit_rate": 0.4,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NHL|assists": {
+      "group_type": "sport_market",
+      "samples": 10,
+      "roi": -0.16791,
+      "hit_rate": 0.375,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
