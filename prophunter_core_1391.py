@@ -305,6 +305,7 @@ SPORTS:Dict[str,SportCfg]={
         Market("player_assists_alternate","Assists",5,1.9),
         Market("player_threes_alternate","3PM",2,2.0),
         Market("player_double_double","Double Double",None,2.5),
+        Market("player_triple_double","Triple Double",None,6.0),
     ]),
     "basketball_ncaab":SportCfg("🏀","NCAAB",[
         Market("player_points","Points",None,1.65),
@@ -4299,6 +4300,10 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         point = getattr(sp, "point", None)
         direction = _source_prop_direction(sp)
         is_basket = sport in ("NBA", "WNBA")
+        market_low = market.lower().replace("-", " ")
+        is_double_double = "double double" in market_low and "triple double" not in market_low
+        is_triple_double = "triple double" in market_low
+        is_ddtd = is_double_double or is_triple_double
         is_mlb = sport == "MLB"
         is_nhl = sport == "NHL"
         is_hits = ("hit" in market.lower()) and not is_hr
@@ -4318,23 +4323,46 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
                 continue
 
         if is_basket:
-            if point is None:
+            # Double-/Triple-Double sind echte Yes/No-Märkte und haben absichtlich
+            # keine Zahlenlinie. Sie werden ausschließlich aus realer L15-Historie
+            # plus beobachteter Bookmaker-Quote bewertet.
+            if is_ddtd:
+                try:
+                    dd_n = int((feats or {}).get("gamelog_n") or 0)
+                    dd_rate = float((feats or {}).get("gamelog_dd_rate"))
+                except Exception:
+                    dd_n, dd_rate = 0, -1.0
+                if dd_n < 10 or dd_rate < 0:
+                    rejected["ddtd_l15_sample"] += 1
+                    continue
+                prob = max(0.01, min(0.98, dd_rate))
+                edge = edge_pct(prob, odds) * 100
+                min_prob = 0.04 if is_triple_double else 0.28
+                min_edge = 4.0 if is_triple_double else 2.0
+                if prob < min_prob:
+                    rejected["ddtd_prob"] += 1
+                    continue
+                if edge < min_edge:
+                    rejected["ddtd_edge"] += 1
+                    continue
+            elif point is None:
                 rejected["basket_no_line"] += 1
                 continue
             # Sanity check für Basket Linien
             mkt_lower = market.lower()
-            if "point" in mkt_lower and direction == "under" and point < 8:
+            if not is_ddtd and "point" in mkt_lower and direction == "under" and point < 8:
                 rejected["bad_line"] += 1; continue
-            if "point" in mkt_lower and direction == "over" and point < 5:
+            if not is_ddtd and "point" in mkt_lower and direction == "over" and point < 5:
                 rejected["bad_line"] += 1; continue
-            if ("3-pt" in mkt_lower or "three" in mkt_lower) and point < 0.5:
+            if not is_ddtd and ("3-pt" in mkt_lower or "three" in mkt_lower) and point < 0.5:
                 rejected["bad_line"] += 1; continue
-            if prob < MIN_PROB_BASKET:
-                rejected["basket_prob"] += 1
-                continue
-            if edge < MIN_EDGE_BASKET:
-                rejected["basket_edge"] += 1
-                continue
+            if not is_ddtd:
+                if prob < MIN_PROB_BASKET:
+                    rejected["basket_prob"] += 1
+                    continue
+                if edge < MIN_EDGE_BASKET:
+                    rejected["basket_edge"] += 1
+                    continue
         elif is_mlb:
             # HR wird bereits weiter oben von der Verified HR-Lane behandelt (continue).
             if is_hits:
