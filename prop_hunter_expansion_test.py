@@ -333,3 +333,8 @@ assert 'return matched >= 2' in wnba_src
 print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
 
 # L15 guard
+
+
+# Binary DD/TD enrichment must run before numeric-line guard
+assert 'if point is None and stat not in ("double_double", "triple_double")' in core
+assert 'stat in ("double_double", "triple_double")' in core and 'gamelog_dd_rate' in core
