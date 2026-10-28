@@ -410,6 +410,33 @@ def _load_relevant_gamelogs(picks: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 def load_picks():
     return select_pick_rows(limit=int(os.getenv("SETTLE_PICK_LIMIT", "5000")))
 
+
+def mark_source_pick_settled(pick: Dict[str, Any], status: str) -> None:
+    """Mirror a verified settlement back to every source pick table.
+
+    Results remain the audit source of truth, but leaving the original row
+    pending makes backlog metrics and future collector work repeat forever.
+    Match by date + dedup_key so merged legacy/canonical rows are both updated
+    without relying on colliding numeric IDs.
+    """
+    if status not in {"win", "won", "loss", "lost", "push"}:
+        return
+    sb = supabase_client()
+    if sb is None:
+        return
+    dk = pick.get("dedup_key")
+    dt = pick.get("sent_date") or pick.get("date")
+    if not dk or not dt:
+        return
+    for table in (pick.get("_source_tables") or [pick.get("_source_table")]):
+        if table not in {"prop_hunter_picks", "prop_picks"}:
+            continue
+        payload = {"result": status, "status": status}
+        try:
+            sb.table(table).update(payload).eq("dedup_key", dk).eq("date", str(dt)[:10]).execute()
+        except Exception as e:
+            warn(f"{table} settlement mirror failed for {dk}: {e}")
+
 def main():
     picks = load_picks()
     pending_status = {"", "pending", "open", "none", "null", "unsettled"}
@@ -451,6 +478,7 @@ def main():
             "pick_raw": p,
             "result_raw": gl,
         })
+        mark_source_pick_settled(p, status)
     safe_json_write(OUT, settled)
     upsert_rows("prop_hunter_results", settled, "result_id")
     log(f"settler done: picks={len(picks)} logs={len(logs)} settled={len(settled)}")
