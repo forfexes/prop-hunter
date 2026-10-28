@@ -168,8 +168,11 @@ def main():
         for dd in (d - timedelta(days=1), d, d + timedelta(days=1)):
             by_date.setdefault(dd.strftime("%Y%m%d"), []).append(p)
     event_players = {}
-    max_dates = max(1, int(os.getenv("WNBA_RESULTS_MAX_DATES", "5")))
-    max_events = max(1, int(os.getenv("WNBA_RESULT_GAME_CAP", "20")))
+    # Historical debt can span months. Five scoreboard dates per run was too
+    # small and repeatedly revisited dates whose legacy picks did not correspond
+    # to an actual game. Process a bounded but useful backlog batch instead.
+    max_dates = max(1, int(os.getenv("WNBA_RESULTS_MAX_DATES", "18")))
+    max_events = max(1, int(os.getenv("WNBA_RESULT_GAME_CAP", "48")))
     today = datetime.now(timezone.utc).date()
     def _date_priority(item):
         ymd, _ = item
