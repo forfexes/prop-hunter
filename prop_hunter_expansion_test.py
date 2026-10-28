@@ -365,3 +365,9 @@ assert '"shots on goal", "goalie saves", "points", "assists", "goals"' in builde
 assert '"passing yards", "rushing yards", "receiving yards", "receptions"' in builder
 assert '"passing touchdowns", "rushing touchdowns", "receiving touchdowns", "touchdowns"' in builder
 assert 'and not dedicated_ladder' in builder
+
+# Normal card: strongest qualified Single per player; raw props stay intact for extras.
+assert 'def prioritize_best_single_per_player(picks):' in core
+assert 'return (observed,prob,l15,min(n,15),edge)' in core
+assert 'picks = prioritize_best_single_per_player(picks)' in core
+assert 'build_autonomous_extras(picks, props, Pick, LadderLeg)' in core
