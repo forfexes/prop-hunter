@@ -13,6 +13,9 @@ def main():
     event = {'competitions': [{'competitors': [
         {'team': {'displayName': 'Los Angeles Sparks', 'abbreviation': 'LAS'}},
         {'team': {'displayName': 'Phoenix Mercury', 'abbreviation': 'PHX'}}]}]}
+    assert wnba._event_matches(event, {})
+    assert wnba._event_matches(event, {'team': None, 'game': None, 'home_team': None, 'away_team': None})
+    assert wnba._event_matches(event, {'team': '   '})
     assert wnba._event_matches(event, {'team': 'Los Angeles Sparks'})
     assert not wnba._event_matches(event, {'team': 'Seattle Storm'})
     assert not wnba._event_matches(event, {'team': 'Los Angeles Sparks', 'raw': {'game': 'Los Angeles Sparks @ Seattle Storm'}})

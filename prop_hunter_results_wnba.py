@@ -65,7 +65,7 @@ def _game_text(row):
     return " ".join(str(x or "") for x in (
         row.get("game"), row.get("team"), row.get("home_team"), row.get("away_team"),
         raw.get("game"), raw.get("home_team"), raw.get("away_team")
-    )).lower()
+    )).lower().strip()
 
 def pending_picks(limit=5000):
     return [r for r in select_pick_rows(limit=limit) if _pending(r) and _is_wnba(r)]
