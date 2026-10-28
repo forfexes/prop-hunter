@@ -61,9 +61,9 @@ def _eligible(obj: Any) -> bool:
     allowed = {
         "NFL": {"touchdowns", "passing_touchdowns", "rushing_touchdowns", "receiving_touchdowns", "receptions", "receiving_yards", "rushing_yards", "passing_yards"},
         "MLB": {"home_runs", "rbi", "total_bases", "pitcher_strikeouts", "hits", "runs", "stolen_bases"},
-        "NBA": {"points", "rebounds", "assists", "threes", "double_double", "pra", "ra", "pa", "pr"},
-        "WNBA": {"points", "rebounds", "assists", "threes", "double_double", "pra", "ra", "pa", "pr"},
-        "EUROLEAGUE": {"points", "rebounds", "assists", "threes", "double_double", "pra", "ra", "pa", "pr"},
+        "NBA": {"points", "rebounds", "assists", "threes", "double_double", "triple_double", "pra", "ra", "pa", "pr"},
+        "WNBA": {"points", "rebounds", "assists", "threes", "double_double", "triple_double", "pra", "ra", "pa", "pr"},
+        "EUROLEAGUE": {"points", "rebounds", "assists", "threes", "double_double", "triple_double", "pra", "ra", "pa", "pr"},
         "NCAAB": {"points", "rebounds", "assists", "threes", "double_double"},
     }
     return fam in allowed.get(sport, set())
@@ -173,11 +173,18 @@ def cross_game_accas(picks: Sequence[Any], props: Iterable[Any], PickCls: Any) -
 
     best: Dict[str, Any] = {}
     for group in groups.values():
-        # One best candidate per event first; then bounded beam search.
-        event_best: Dict[str, Any] = {}
-        for c in sorted(group, key=lambda x: (base._prob(x) * base._odds(x) - 1.0, base._prob(x)), reverse=True):
-            event_best.setdefault(base._game(c), c)
-        ranked = [x for g, x in event_best.items() if g][:18]
+        # Keep several strong alternatives per event in the search pool.
+        # Final ACCAs still enforce one leg per event via _compatible().
+        event_options: Dict[str, List[Any]] = defaultdict(list)
+        for c in sorted(group, key=lambda x: (base._prob(x), base._prob(x) * base._odds(x) - 1.0), reverse=True):
+            game = base._game(c)
+            if game and len(event_options[game]) < 4:
+                event_options[game].append(c)
+        ranked = sorted(
+            [c for rows in event_options.values() for c in rows],
+            key=lambda x: (base._prob(x), base._prob(x) * base._odds(x) - 1.0),
+            reverse=True,
+        )[:28]
         beams = [(i,) for i in range(len(ranked))]
         for size in range(2, min(10, len(ranked)) + 1):
             expanded = []
