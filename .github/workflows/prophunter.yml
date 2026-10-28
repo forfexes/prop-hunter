@@ -24,6 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Acquire the shared writer slot before reading the latest runtime.
+          # A queued push SHA may predate the preceding writer's saved history.
+          ref: main
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
