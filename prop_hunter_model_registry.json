@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28T00:15:40.296798+00:00",
+  "updated_at": "2026-10-28T00:20:28.460051+00:00",
   "groups": {
     "NBA|NBA|points": {
       "group_type": "market",
@@ -76,6 +76,24 @@
     "NFL|rushing yards": {
       "group_type": "sport_market",
       "samples": 4,
+      "roi": -1.0,
+      "hit_rate": 0,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "WNBA|WNBA|rebounds assists": {
+      "group_type": "market",
+      "samples": 1,
+      "roi": -1.0,
+      "hit_rate": 0,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "WNBA|rebounds assists": {
+      "group_type": "sport_market",
+      "samples": 1,
       "roi": -1.0,
       "hit_rate": 0,
       "weight": 1.0,
@@ -341,24 +359,6 @@
       "hit_rate": 0.78125,
       "weight": 1.073,
       "status": "shadow",
-      "min_active_samples": 60
-    },
-    "WNBA|WNBA|rebounds assists": {
-      "group_type": "market",
-      "samples": 1,
-      "roi": -1.0,
-      "hit_rate": 0,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "WNBA|rebounds assists": {
-      "group_type": "sport_market",
-      "samples": 1,
-      "roi": -1.0,
-      "hit_rate": 0,
-      "weight": 1.0,
-      "status": "collecting",
       "min_active_samples": 60
     },
     "NFL|NFL|receiving yards": {
