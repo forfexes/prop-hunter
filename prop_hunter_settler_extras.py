@@ -174,7 +174,7 @@ def main() -> None:
         pid = pick_id(p)
         result_key_stat = legacy_detect_stat(market) or stat
         settled.append({
-            "result_id": hash_key(pid, result_key_stat, gl.get("game_id")),
+            "result_id": hash_key("pick", pid),
             "pick_id": pid,
             "sport": p.get("sport") or gl.get("sport"),
             "league": p.get("league") or gl.get("league"),
