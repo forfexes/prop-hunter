@@ -360,8 +360,15 @@ def _load_relevant_gamelogs(picks: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     today = datetime.now(timezone.utc).date()
     lookback = max(3, int(os.getenv("PH_SETTLE_LOOKBACK_DAYS", "14")))
     floor = today - timedelta(days=lookback)
-    start = max(min(dates) if dates else floor, floor) - timedelta(days=1)
-    end = min(max(dates) if dates else today, today + timedelta(days=2)) + timedelta(days=2)
+    # Pending debt can be months old (legacy WNBA/MLB).  Do not clamp the
+    # targeted read to the recent lookback window: collectors may have just
+    # backfilled exactly those historical player/date rows.  The query is
+    # already bounded by pending player names, so widening to the oldest
+    # pending date remains deterministic and avoids scanning unrelated players.
+    oldest_pending = min(dates) if dates else floor
+    newest_pending = max(dates) if dates else today
+    start = oldest_pending - timedelta(days=1)
+    end = min(newest_pending, today + timedelta(days=2)) + timedelta(days=2)
 
     rows: List[Dict[str, Any]] = []
     batch_size = max(20, min(100, int(os.getenv("PH_SETTLE_PLAYER_BATCH", "80"))))
