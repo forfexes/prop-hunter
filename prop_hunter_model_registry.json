@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28T04:31:03.282640+00:00",
+  "updated_at": "2026-10-28T04:32:28.443734+00:00",
   "groups": {
     "NBA|NBA|points": {
       "group_type": "market",
@@ -280,24 +280,6 @@
       "status": "active",
       "min_active_samples": 60
     },
-    "NBA|NBA|blocks": {
-      "group_type": "market",
-      "samples": 62,
-      "roi": 0.63646,
-      "hit_rate": 0.79032,
-      "weight": 1.173,
-      "status": "active",
-      "min_active_samples": 60
-    },
-    "NBA|blocks": {
-      "group_type": "sport_market",
-      "samples": 62,
-      "roi": 0.63646,
-      "hit_rate": 0.79032,
-      "weight": 1.173,
-      "status": "active",
-      "min_active_samples": 60
-    },
     "NBA|NBA|assists": {
       "group_type": "market",
       "samples": 75,
@@ -313,6 +295,24 @@
       "roi": -0.51428,
       "hit_rate": 0.18667,
       "weight": 0.785,
+      "status": "active",
+      "min_active_samples": 60
+    },
+    "NBA|NBA|blocks": {
+      "group_type": "market",
+      "samples": 62,
+      "roi": 0.63646,
+      "hit_rate": 0.79032,
+      "weight": 1.173,
+      "status": "active",
+      "min_active_samples": 60
+    },
+    "NBA|blocks": {
+      "group_type": "sport_market",
+      "samples": 62,
+      "roi": 0.63646,
+      "hit_rate": 0.79032,
+      "weight": 1.173,
       "status": "active",
       "min_active_samples": 60
     },
@@ -433,6 +433,33 @@
       "status": "shadow",
       "min_active_samples": 60
     },
+    "WNBA|rebounds": {
+      "group_type": "sport_market",
+      "samples": 10,
+      "roi": -0.60299,
+      "hit_rate": 0.3,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|to hit a triple": {
+      "group_type": "market",
+      "samples": 8,
+      "roi": 0.0,
+      "hit_rate": null,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "MLB|to hit a triple": {
+      "group_type": "sport_market",
+      "samples": 8,
+      "roi": 0.0,
+      "hit_rate": null,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
     "NBA|NBA|threes": {
       "group_type": "market",
       "samples": 58,
@@ -460,29 +487,20 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "WNBA|rebounds": {
+    "NBA|NBA|steals": {
+      "group_type": "market",
+      "samples": 10,
+      "roi": 0.77919,
+      "hit_rate": 0.4,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NBA|steals": {
       "group_type": "sport_market",
       "samples": 10,
-      "roi": -0.60299,
-      "hit_rate": 0.3,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "MLB|MLB|to hit a triple": {
-      "group_type": "market",
-      "samples": 8,
-      "roi": 0.0,
-      "hit_rate": null,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "MLB|to hit a triple": {
-      "group_type": "sport_market",
-      "samples": 8,
-      "roi": 0.0,
-      "hit_rate": null,
+      "roi": 0.77919,
+      "hit_rate": 0.4,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
@@ -519,24 +537,6 @@
       "samples": 1,
       "roi": -1.0,
       "hit_rate": 0,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NBA|NBA|steals": {
-      "group_type": "market",
-      "samples": 10,
-      "roi": 0.77919,
-      "hit_rate": 0.4,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NBA|steals": {
-      "group_type": "sport_market",
-      "samples": 10,
-      "roi": 0.77919,
-      "hit_rate": 0.4,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
@@ -622,24 +622,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "WNBA|points": {
-      "group_type": "sport_market",
-      "samples": 9,
-      "roi": 0.12691,
-      "hit_rate": 0.55556,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "WNBA|WNBA|rebounds": {
-      "group_type": "market",
-      "samples": 10,
-      "roi": -0.60299,
-      "hit_rate": 0.3,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "WNBA|WNBA|threes": {
       "group_type": "market",
       "samples": 10,
@@ -658,8 +640,8 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "WNBA|WNBA|points": {
-      "group_type": "market",
+    "WNBA|points": {
+      "group_type": "sport_market",
       "samples": 9,
       "roi": 0.12691,
       "hit_rate": 0.55556,
@@ -667,20 +649,11 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "WNBA|WNBA|ra": {
+    "WNBA|WNBA|rebounds": {
       "group_type": "market",
-      "samples": 1,
-      "roi": -1.0,
-      "hit_rate": 0,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "WNBA|ra": {
-      "group_type": "sport_market",
-      "samples": 1,
-      "roi": -1.0,
-      "hit_rate": 0,
+      "samples": 10,
+      "roi": -0.60299,
+      "hit_rate": 0.3,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
@@ -735,6 +708,33 @@
       "samples": 2,
       "roi": -0.07947,
       "hit_rate": 0.5,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "WNBA|WNBA|points": {
+      "group_type": "market",
+      "samples": 9,
+      "roi": 0.12691,
+      "hit_rate": 0.55556,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "WNBA|WNBA|ra": {
+      "group_type": "market",
+      "samples": 1,
+      "roi": -1.0,
+      "hit_rate": 0,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "WNBA|ra": {
+      "group_type": "sport_market",
+      "samples": 1,
+      "roi": -1.0,
+      "hit_rate": 0,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
