@@ -1863,13 +1863,7 @@ def extract_total(data):
                     if o.get("name")=="Over" and o.get("point"): tots.append(float(o["point"]))
     return round(sum(tots)/len(tots),1) if tots else None
 def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,away,ct_iso):
-    """Normalize The Odds API rows while preserving a real, placeable book price.
-
-    The old implementation averaged prices across books and then displayed that
-    average as if it were a bookmaker quote. This version keeps the best actually
-    observed Over/Yes price and its bookmaker. Pinnacle/sharp two-way prices are
-    still used only for fair-probability estimation.
-    """
+    """Normalize The Odds API and preserve both real sides with their own best observed book price."""
     agg={}
     for bm in data.get("bookmakers",[]):
         bk=str(bm.get("key","") or "").lower()
@@ -1878,8 +1872,7 @@ def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,awa
             for o in mkt.get("outcomes",[]):
                 desc=o.get("description","") or ""; nf=o.get("name","") or ""
                 pt=o.get("point"); price=o.get("price",0)
-                if nf in {"Over","Under","Yes","No",""}:
-                    pl,ot=desc,nf
+                if nf in {"Over","Under","Yes","No",""}: pl,ot=desc,nf
                 else: pl,ot=nf,desc
                 if not pl or pl in {"Over","Under","Yes","No",""}: continue
                 if min_pt and pt is not None and pt<min_pt: continue
@@ -1887,29 +1880,30 @@ def extract_props_from_data(data,mkey,label,min_pt,min_odds,sport,emoji,home,awa
                 except Exception: continue
                 if price<=1: continue
                 k=f"{pl}|{pt if pt is not None else ''}"
-                rec=agg.setdefault(k,{"player":pl,"point":pt,"prices":[],"po":None,"pu":None})
+                rec=agg.setdefault(k,{"player":pl,"point":pt,"side_prices":{"over":[],"under":[]},"po":None,"pu":None})
                 if bk==SHARP_BOOK:
                     if ot in ("Over","Yes"): rec["po"]=price
                     elif ot in ("Under","No"): rec["pu"]=price
-                if ot in ("Over","Yes") or ot=="": rec["prices"].append((price,bk))
-    out=[]
-    ct=None
+                side="over" if ot in ("Over","Yes","") else ("under" if ot in ("Under","No") else None)
+                if side: rec["side_prices"][side].append((price,bk))
+    out=[]; ct=None
     if ct_iso:
         try: ct=datetime.fromisoformat(ct_iso.replace("Z","+00:00"))
         except: pass
     for rec in agg.values():
-        prices=[x for x in rec["prices"] if x[0]>1 and x[1]]
-        if not prices: continue
-        best_price,best_book=max(prices,key=lambda x:x[0])
-        if best_price<min_odds: continue
-        fair=no_vig(rec["po"],rec["pu"]) if rec["po"] and rec["pu"] else None
-        feats={"odds_observed":True,"price_type":"bookmaker","bookmaker":best_book,"source":"the_odds_api"}
-        if fair is not None: feats["fair_prob"]=fair
-        out.append(Prop(player=rec["player"],market=label,odds=round(best_price,2),point=rec["point"],
-            sport=sport,emoji=emoji,game=f"{away} @ {home}",home=home,away=away,commence_time=ct,
-            pinnacle_odds=rec["po"],pinnacle_opp_odds=rec["pu"],features=feats))
+        fair_over=no_vig(rec["po"],rec["pu"]) if rec["po"] and rec["pu"] else None
+        for direction,prices in rec["side_prices"].items():
+            prices=[x for x in prices if x[0]>1 and x[1]]
+            if not prices: continue
+            best_price,best_book=max(prices,key=lambda x:x[0])
+            if best_price<min_odds: continue
+            fair=fair_over if direction=="over" else ((1.0-fair_over) if fair_over is not None else None)
+            feats={"odds_observed":True,"price_type":"bookmaker","bookmaker":best_book,"source":"the_odds_api"}
+            if fair is not None: feats["fair_prob"]=fair
+            out.append(Prop(player=rec["player"],market=label,odds=round(best_price,2),point=rec["point"],
+                sport=sport,emoji=emoji,game=f"{away} @ {home}",home=home,away=away,commence_time=ct,direction=direction,
+                pinnacle_odds=rec["po"],pinnacle_opp_odds=rec["pu"],features=feats))
     return out
-
 
 # ─────────────────────────────────────────────
 # WEATHER
