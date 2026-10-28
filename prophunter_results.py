@@ -121,7 +121,8 @@ def _commence_dt(p: dict):
 def _settlement_ready_time(p: dict) -> bool:
     start = _commence_dt(p)
     if start is None:
-        return True
+        day, _event = _result_context(p)
+        return bool(day and day < datetime.now(timezone.utc).date().isoformat())
     sport = str(p.get("sport") or p.get("league") or "").upper()
     hours = {
         "MLB": 4.0, "BASEBALL": 4.0, "NFL": 5.0, "NCAAF": 5.0,
@@ -202,6 +203,8 @@ def _index_results(rows: Iterable[dict]):
         if _result_status(row) not in CLOSED:
             continue
         raw = _result_pick(row)
+        if not _settlement_ready_time(raw or row):
+            continue
         d, event = _result_context(raw or row)
         dedup = str(raw.get("dedup_key") or "").strip()
         dkey = (dedup, d, event)
@@ -292,7 +295,7 @@ def _profit_for(pick: dict, status: str) -> float:
 
 def _merge_single(pick: dict, result_row: dict) -> bool:
     status = _result_status(result_row)
-    if status not in CLOSED:
+    if status not in CLOSED or not _settlement_ready_time(pick):
         return False
     actual = result_row.get("actual_value")
     profit = _profit_for(pick, status)
@@ -344,6 +347,13 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict) -> bool:
         # to resolve against official result rows.
         if not leg.get("date") and leg.get("created_at"):
             leg["date"] = str(leg.get("created_at"))[:10]
+        if not _settlement_ready_time(leg):
+            if str(combo.get("result") or "pending") in CLOSED:
+                combo["result"] = "pending"
+                combo["profit"] = None
+                combo.pop("settlement_legs", None)
+                return True
+            return False
         row = _match_result(leg, by_dedup, by_signature)
         status = _result_status(row) if row else ""
         if not row or status not in CLOSED:
@@ -521,7 +531,7 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
         edited += int(_decorate_single(lines, p, used))
     for c in selected_combos:
         edited += int(_decorate_combo(lines, c, used))
-    if not edited:
+    if not edited and not (card.get("settlement_text") and (selected_picks or selected_combos)):
         return None
 
     closed = [p for p in selected_picks if _status_icon(p.get("result"))]

@@ -360,6 +360,7 @@ def select_pick_rows(limit: int = 5000) -> List[Dict[str, Any]]:
 def select_settlement_picks(limit: int = 5000) -> List[Dict[str, Any]]:
     """Include retained combo legs so they can obtain their own official actuals."""
     rows = select_pick_rows(limit=limit)
+    context_rows = list(rows)
     history = safe_json_load("picks_history.json", [])
     for entry in history if isinstance(history, list) else []:
         for combo in entry.get("kombis") or []:
@@ -378,6 +379,15 @@ def select_settlement_picks(limit: int = 5000) -> List[Dict[str, Any]]:
                         leg[key] = combo[key]
                 leg.setdefault("date", entry.get("date"))
                 leg.setdefault("league", leg.get("sport"))
+                candidates = [p for p in context_rows
+                              if norm_name(p.get("player") or p.get("player_name")) == norm_name(leg.get("player") or leg.get("player_name"))
+                              and str(p.get("sent_date") or p.get("date") or "")[:10] == str(leg.get("date") or "")[:10]]
+                if len(candidates) == 1:
+                    context = candidates[0]
+                    raw = context.get("raw") if isinstance(context.get("raw"), dict) else {}
+                    for key in ("commence_time", "event_id", "game_id"):
+                        if not leg.get(key) and (context.get(key) or raw.get(key)):
+                            leg[key] = context.get(key) or raw.get(key)
                 # Virtual legs must never mirror their status onto a parent row.
                 leg = _normalise_pick_row(leg, "history_leg")
                 leg["_source_tables"] = []

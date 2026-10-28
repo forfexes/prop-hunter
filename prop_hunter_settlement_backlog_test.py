@@ -2,6 +2,7 @@
 """Offline regressions for historical debt, source mirroring and ladder grading."""
 from unittest.mock import patch, MagicMock
 from pathlib import Path
+from datetime import datetime, timezone
 from prop_hunter_settler import detect_stat, stat_value, result_for_value, persist_settlements
 from prop_hunter_shared_utils import _normalise_pick_row, select_settlement_picks
 import prop_hunter_results_mlb as mlb
@@ -11,6 +12,21 @@ from prop_hunter_pending_audit import classify
 
 
 def main():
+    today = datetime.now(timezone.utc).date().isoformat()
+    from prop_hunter_settler import _pick_ready_for_settlement
+    assert not _pick_ready_for_settlement({'date': today})
+    assert not reporter._settlement_ready_time({'date': today})
+    early = {'date': today, 'result': 'pending'}
+    assert not reporter._merge_single(early, {'result': 'win', 'actual_value': 0})
+    assert early['result'] == 'pending'
+    combo = {'type': 'ladder', 'date': today, 'result': 'win', 'profit': 2,
+             'leg_details': [{'player': 'P', 'market': 'points', 'line': 10.5, 'odds': 2, 'stake': .1}]}
+    assert reporter._settle_combo(combo, {}, {})
+    assert combo['result'] == 'pending' and combo['profit'] is None
+    card = {'text': 'Original tip', 'settlement_text': 'Old premature win', 'pick_keys': ['p']}
+    text = reporter._decorate_card(card, [{'dedup_key': 'p', 'result': 'pending'}], [])
+    assert text and '1⏳' in text and 'Old premature win' not in text
+    assert reporter._index_results([{'result': 'win', 'pick_raw': {'date': today}}]) == ({}, {})
     for market, expected in [('pa Over 18.5','pa'), ('PR Under 19.5','pr'),
                              ('passing_yards Over 200.5','passing_yards'), ('Pass Yds Over 229.5','passing_yards'),
                              ('Rebs+Asts Over 9.5','ra'), ('Rebounds+Assists Over 9.5','ra'),

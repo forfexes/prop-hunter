@@ -241,7 +241,8 @@ def _pick_ready_for_settlement(pick: Dict[str, Any]) -> bool:
     """Never grade a pick against an older gamelog before its event could be final."""
     start = _pick_commence_dt(pick)
     if start is None:
-        return True
+        target = _pick_target_date(pick)
+        return target is not None and target < datetime.now(timezone.utc).date()
     sport = str(pick.get("sport") or pick.get("league") or "").upper()
     hours = {
         "MLB": 4.0,
