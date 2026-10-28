@@ -121,3 +121,15 @@ assert context['loaded_game_dates'] == ['2026-08-12'] and context['loaded_player
 assert classify(context_pick,context_logs,build_log_index(context_logs)) == 'no_unique_official_game'
 assert evidence_context({'player':'Missing'},build_log_index(context_logs))['loaded_player_rows'] == 0
 print('PENDING AUDIT SCOPE / EVIDENCE TEST PASSED')
+
+# MLB search has two distinct real Max Muncy identities. Never pick the first.
+import prop_hunter_results_mlb as mlb
+with patch.object(mlb,'http_json',return_value={'people':[{'id':571970,'fullName':'Max Muncy'},{'id':691777,'fullName':'Max Muncy'}]}):
+    assert mlb.find_player('Max Muncy') is None
+with patch.object(mlb,'http_json',return_value={'people':[{'id':1,'fullName':'José Ramírez'},{'id':2,'fullName':'Other Player'}]}):
+    assert mlb.find_player('Jose Ramirez')['id'] == 1
+    assert mlb.find_player('Jose') is None
+assert mlb._row_date({'commence_time':'2026-08-16T01:00:00Z','sent_date':'2026-08-14'}).isoformat() == '2026-08-16'
+assert mlb._row_date({'raw':{'commence_time':'2026-08-16T01:00:00Z'},'date':'2026-08-14'}).isoformat() == '2026-08-16'
+assert mlb._row_date({'commence_time':'bad','sent_date':'2026-08-14'}).isoformat() == '2026-08-14'
+print('MLB UNIQUE IDENTITY / EVENT-DATE TEST PASSED')

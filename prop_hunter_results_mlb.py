@@ -55,8 +55,9 @@ def _is_mlb(row: Dict[str, Any]) -> bool:
 
 
 def _row_date(row: Dict[str, Any]):
-    for key in ("sent_date", "date", "created_at"):
-        raw = row.get(key)
+    metadata = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    values = [row.get("commence_time"), metadata.get("commence_time"), row.get("game_date"), row.get("sent_date"), row.get("date"), row.get("created_at")]
+    for raw in values:
         if not raw:
             continue
         try:
@@ -106,13 +107,12 @@ def find_player(name: str) -> Dict[str, Any] | None:
     def identity(value):
         return norm_name(unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode())
     wanted = identity(name)
-    for p in people:
-        if identity(p.get("fullName")) == wanted:
-            return p
-    for p in people:
-        candidate = identity(p.get("fullName"))
-        if candidate and (candidate in wanted or wanted in candidate):
-            return p
+    matches = {str(p['id']): p for p in people
+               if p.get('id') and identity(p.get('fullName')) == wanted}
+    if len(matches) == 1:
+        return next(iter(matches.values()))
+    if len(matches) > 1:
+        warn(f'MLB player identity ambiguous: {name} ids={sorted(matches)}')
     return None
 
 
