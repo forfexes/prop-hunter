@@ -349,3 +349,10 @@ assert 'if not scoped:\n            return None' in core_src
 wnba_src=Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
 assert 'return matched >= 2' in wnba_src
 print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
+
+
+# Odds API normalization must preserve both Over and Under observed sides.
+assert '"side_prices":{"over":[],"under":[]}' in core
+assert 'for direction,prices in rec["side_prices"].items()' in core
+assert 'direction=direction' in core
+assert '1.0-fair_over' in core
