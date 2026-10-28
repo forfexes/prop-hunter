@@ -4515,6 +4515,37 @@ def merge_unique_picks(primary, extra, max_singles=8, max_total=12):
         log.warning("merge unique skipped: %s", e)
         return primary or extra or []
 
+def prioritize_best_single_per_player(picks):
+    """For the normal card keep only the strongest qualified Single per player.
+
+    Probability is primary. L15 support/sample depth and EV break ties.
+    Raw props are untouched, so ladders/builders still see every verified line.
+    """
+    singles=[p for p in (picks or []) if getattr(p,"type",None)=="single"]
+    others=[p for p in (picks or []) if getattr(p,"type",None)!="single"]
+    best={}
+    def score(p):
+        prob=float(getattr(p,"probability",0) or 0)
+        edge=float(getattr(p,"edge_pct",0) or 0)
+        feats=getattr(p,"features",{}) or {}
+        try: n=int(feats.get("gamelog_n") or 0)
+        except Exception: n=0
+        try: l15=float(feats.get("gamelog_l15_rate")) if feats.get("gamelog_l15_rate") is not None else -1.0
+        except Exception: l15=-1.0
+        observed=1 if _has_observed_price(p) else 0
+        return (observed,prob,l15,min(n,15),edge)
+    for p in singles:
+        player=(getattr(p,"player",None) or "").strip().lower()
+        sport=(getattr(p,"sport",None) or getattr(p,"source_sport",None) or "").strip().upper()
+        game=(getattr(p,"game",None) or "").strip().lower()
+        if not player: continue
+        key=(sport,player,game)
+        if key not in best or score(p)>score(best[key]): best[key]=p
+    kept=sorted(best.values(),key=score,reverse=True)
+    if len(kept)!=len(singles):
+        log.info("best-single/player: %d -> %d; raw prop pool retained for ladders/builders",len(singles),len(kept))
+    return kept+others
+
 def build_hr_321(picks):
     """
     HR 3-2-1 Struktur aus den drei stärksten verifizierten HR-Singles:
@@ -4709,6 +4740,7 @@ def run(dry_run=False,sport_filter=None):
 
     # No arbitrary pick-count cap: every verified +EV single may survive.
     # Optional env PH_MAX_SINGLES can re-enable a hard cap if ever desired.
+    picks = prioritize_best_single_per_player(picks)
     picks = limit_singles_per_game(picks, max_per_game=0)
     picks = limit_total_singles(picks, max_singles=MAX_SINGLES_TOTAL)
     # Real-price builder only: no invented ladder lines/odds. Supports same-book
