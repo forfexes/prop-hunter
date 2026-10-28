@@ -173,8 +173,11 @@ def main():
             d = datetime.strptime(ymd, "%Y%m%d").date()
         except Exception:
             return (9, 9999, ymd)
-        # Completed recent games first; future windows are last.
-        return (0 if d <= today else 1, abs((today - d).days), -d.toordinal())
+        # Drain historical settlement debt deterministically: completed old
+        # pending dates first.  The previous "recent first" ordering starved old
+        # WNBA picks forever because every run was capped to only a few dates.
+        # Future windows remain last.
+        return (0 if d <= today else 1, d.toordinal() if d <= today else abs((d - today).days), d.toordinal())
 
     for ymd, ps in sorted(by_date.items(), key=_date_priority)[:max_dates]:
         for ev in espn_scoreboard(ymd):
