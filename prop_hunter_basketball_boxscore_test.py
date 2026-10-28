@@ -10,6 +10,13 @@ import prop_hunter_results_wnba as wnba
 
 
 def main():
+    event = {'competitions': [{'competitors': [
+        {'team': {'displayName': 'Los Angeles Sparks', 'abbreviation': 'LAS'}},
+        {'team': {'displayName': 'Phoenix Mercury', 'abbreviation': 'PHX'}}]}]}
+    assert wnba._event_matches(event, {'team': 'Los Angeles Sparks'})
+    assert not wnba._event_matches(event, {'team': 'Seattle Storm'})
+    assert not wnba._event_matches(event, {'team': 'Los Angeles Sparks', 'raw': {'game': 'Los Angeles Sparks @ Seattle Storm'}})
+    assert wnba._event_matches(event, {'raw': {'game': 'Los Angeles Sparks @ Phoenix Mercury'}})
     assert official_gameday('2026-08-12T02:00Z') == '2026-08-11'
     assert official_gameday('2026-12-12T02:00:00+00:00') == '2026-12-11'
     assert official_gameday('2026-08-11T18:00Z') == '2026-08-11'

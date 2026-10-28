@@ -113,6 +113,15 @@ def _event_matches(ev, pick):
             ok = any(t in game for t in toks)
         if ok:
             matched += 1
+    raw = pick.get("raw") if isinstance(pick.get("raw"), dict) else {}
+    explicit_game = pick.get("game") or raw.get("game")
+    home = pick.get("home_team") or raw.get("home_team")
+    away = pick.get("away_team") or raw.get("away_team")
+    if not explicit_game and not (home and away):
+        # A legacy team-only hint narrows candidate boxscores. The final
+        # boxscore must still contain the exact requested player; this never
+        # relaxes the two-team check for an explicitly quoted matchup.
+        return matched >= 1
     return matched >= 2
 
 def _made(v):
