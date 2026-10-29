@@ -549,6 +549,17 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
     selected_picks = [pick_by_key[k] for k in map(str, card.get("pick_keys") or []) if k in pick_by_key]
     selected_combos = [combo_by_id[k] for k in map(str, card.get("combo_ids") or []) if k in combo_by_id]
 
+    invalid = [x for x in selected_picks + selected_combos if x.get("quote_invalidated")]
+    if invalid:
+        # Preserve the original quote as evidence, but retract its recommendation
+        # and all associated EV/probability claims. No sporting loss or void.
+        names = "; ".join(str(x.get("player") or "") for x in invalid)
+        clean = [ln for ln in lines if not ln.strip().startswith("🏁 Auswertung:")
+                 and not ("EV" in ln or "Prob " in ln)]
+        warning = "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\n" + names
+        text = warning + "\n\n" + "\n".join(clean) + "\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen"
+        return text if len(text) <= 4096 else None
+
     edited = 0
     for p in selected_picks:
         edited += int(_decorate_single(lines, p, used))
@@ -811,6 +822,16 @@ def _sync_pick_table(pick: dict) -> None:
 
 def main() -> int:
     history = _load_history()
+    from prop_hunter_quote_incidents import invalidate
+    quote_repairs = 0
+    for entry in history:
+        for ticket in (entry.get("picks") or []) + (entry.get("kombis") or []):
+            if invalidate(ticket, entry.get("date")):
+                _sync_pick_table(dict(ticket, date=entry.get("date")))
+                quote_repairs += 1
+    if quote_repairs:
+        _save_history(history)
+    print(f"Verified quote withdrawals={quote_repairs}")
     rows = _fetch_results()
     print(f"Settlement reporter: history_days={len(history)} results={len(rows)} lookback={LOOKBACK_DAYS}d")
     if not history or not rows:
@@ -832,6 +853,8 @@ def main() -> int:
         picks = entry.get("picks") or []
         combos = entry.get("kombis") or []
         for p in picks:
+            if p.get("quote_invalidated"):
+                continue
             if _reset_premature_result(p):
                 changed = True
                 _sync_pick_table(p)
@@ -843,6 +866,8 @@ def main() -> int:
                 merged += 1
                 _sync_pick_table(p)
         for combo in combos:
+            if combo.get("quote_invalidated"):
+                continue
             # Preserve a stable canonical key BEFORE leg_details gets enriched
             # with settlement results. Historical pending combos predate this key.
             if str(combo.get("result") or "pending").lower() not in CLOSED:

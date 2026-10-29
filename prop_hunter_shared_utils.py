@@ -401,7 +401,7 @@ def select_settlement_picks(limit: int = 5000) -> List[Dict[str, Any]]:
     history = safe_json_load("picks_history.json", [])
     for entry in history if isinstance(history, list) else []:
         for combo in entry.get("kombis") or []:
-            if str(combo.get("result") or "pending").lower() in {"win", "loss", "push", "void"}:
+            if combo.get("quote_invalidated") or str(combo.get("result") or "pending").lower() in {"win", "loss", "push", "void", "withdrawn"}:
                 continue
             details = combo.get("leg_details") or combo.get("ladder_legs") or combo.get("legs") or []
             rungs = combo.get("ladder_legs") or []

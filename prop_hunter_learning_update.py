@@ -156,8 +156,14 @@ def _update_builder_learning() -> Dict[str, Any]:
 
 def unique_results(rows):
     """A migrated result_id must never count a pick twice in learning."""
+    from prop_hunter_quote_incidents import evidence_for
     newest = {}
     for row in sorted(rows, key=lambda r: str(r.get("settled_at") or ""), reverse=True):
+        pick = row.get("pick_raw") or {}
+        raw = pick.get("raw") if isinstance(pick.get("raw"), dict) else {}
+        quoted = dict(raw, **pick)
+        if evidence_for(quoted, pick.get("sent_date") or pick.get("date")):
+            continue
         if unobserved_log(row.get("result_raw") or {}):
             continue
         if str(row.get("result") or "").lower() not in {"win", "loss", "push"}:
