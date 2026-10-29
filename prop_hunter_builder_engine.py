@@ -312,6 +312,10 @@ def _joint_probability(legs: Sequence[Any], pairs: Dict[str, Any]) -> Tuple[floa
 
 
 def _valid_combo(legs: Sequence[Any]) -> bool:
+    # Temporary product rule: builders are OVER-only until explicitly re-enabled.
+    # Singles/ladders keep their normal observed-side logic.
+    if any(_direction(x) != "over" for x in legs):
+        return False
     players = [_player(x).lower() for x in legs]
     if len(set(players)) != len(players):
         return False
