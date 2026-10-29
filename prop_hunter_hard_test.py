@@ -39,6 +39,11 @@ def test_snapshot_consensus_and_bad_row_filter():
         def select(self,*a,**k): return self
         def gte(self,*a,**k): return self
         def limit(self,*a,**k): return self
+        def lte(self,*a,**k): return self
+        def order(self,*a,**k): return self
+        def range(self,start,end):
+            self.data=self.data[start:end+1]
+            return self
         def execute(self): return R(self.data)
     class SB:
         def table(self,*a,**k): return Q(rows)
