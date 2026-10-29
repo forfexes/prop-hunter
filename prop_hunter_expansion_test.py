@@ -417,3 +417,8 @@ def test_bet365_builder_requires_direct_observed_selection():
     assert 'bool(_features(x).get("bet_builder"))' in builder
     assert '{"bet365","browser_bet365","bet365_browser"}' in builder
     assert 'generic/API bet365' in builder
+
+def test_builders_are_temporarily_over_only():
+    builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
+    assert 'if any(_direction(x) != "over" for x in legs):' in builder
+    assert 'builders are OVER-only' in builder
