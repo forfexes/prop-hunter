@@ -2875,22 +2875,28 @@ def _render_ladder_card(p):
     team=_safe_display_team(p)
     head=f"{getattr(p,'emoji',None) or '🎯'} {team + ' — ' if team else ''}{getattr(p,'player','') or ''}".rstrip()
     legs=list(getattr(p,"picks",None) or [])
+    leg_details=list(getattr(p,"leg_details",None) or [])
     ladder_text=" ".join(str(getattr(x,"market","") or "") for x in legs).lower()
     title="🏈 PROP HUNTER TD LADDER" if ("touchdown" in ladder_text or re.search(r"\btd\b",ladder_text)) else "🪜 PROP HUNTER PLAYER LADDER"
     out=[f"{title} — {today}","",head]
     game=str(getattr(p,"game",None) or "").strip()
     if game and game.lower()!="verified ladder":out.append(f"🏟 {game}")
     out.append("")
-    for leg in legs:
+    for idx,leg in enumerate(legs):
         line=f"• {leg.market} @{float(leg.odds):.2f} → {leg.stake}u"
+        detail=leg_details[idx] if idx<len(leg_details) and isinstance(leg_details[idx],dict) else {}
+        audited=detail.get("probability_method")=="min(model,one_sided_90pct_wilson_l15)"
         meta=[]
         prob=getattr(leg,"probability",None)
         edge=getattr(leg,"edge_pct",None)
         if prob is not None:
-            try:meta.append(f"Prob {float(prob)*100:.0f}%")
+            try:meta.append(f"{'Prob konservativ' if audited else 'Prob'} {float(prob)*100:.0f}%")
             except Exception:pass
         if edge is not None:
-            try:meta.append(f"Edge {float(edge):+.1f}%")
+            try:meta.append(f"{'EV konservativ' if audited else 'Edge'} {float(edge):+.1f}%")
+            except Exception:pass
+        if audited:
+            try:meta.append(f"L15 {int(detail['gamelog_l15_hits'])}/{int(detail['gamelog_l15_n'])}")
             except Exception:pass
         out.append(line)
         if meta:out.append("  📈 "+" · ".join(meta))
