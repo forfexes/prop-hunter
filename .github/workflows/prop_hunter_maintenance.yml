@@ -36,6 +36,7 @@ jobs:
           PH_EXPECTED_RUNTIME_VERSION: 13.10.1-KEYLESS-HARDENED
         run: |
           python -m compileall -q .
+          python prop_hunter_ladder_l15_test.py
           python prop_hunter_runtime_guard.py
           python prop_hunter_hard_test.py
           python prop_hunter_market_regression_test.py
