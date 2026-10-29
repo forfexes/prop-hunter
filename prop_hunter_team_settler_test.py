@@ -20,3 +20,8 @@ wrong=deepcopy(e);wrong['competitions'][0]['competitors']=[{'team':{'displayName
 assert match_final_score(nba,wrong) is None
 assert eligible(dict(p,player='GAME')) and match_final_score(dict(p,player='GAME'),e)['actual_value']==27
 print('EXACT FINAL TEAM TOTAL TEST PASSED')
+
+for market in ('First Half points Under 27.5','points Under 27.5 (1st Half)','Regulation points Under 27.5','Handicap points Over 3.5','1st quarter points Over 7.5'):
+    assert not eligible(dict(p,market=market)),market
+assert eligible(dict(p,market='Team Total Points Under 27.5'))
+print('FULL-GAME SCORE SCOPE TEST PASSED')

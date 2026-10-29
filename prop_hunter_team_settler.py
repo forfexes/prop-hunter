@@ -32,6 +32,9 @@ def eligible(pick):
     market=str(pick.get('market') or '')
     if not ctx or league not in PATHS or any(x in market.lower() for x in ('season','standings','fantasy')):return False
     if detect_stat(market)!=STATS[league] or line_of_pick(pick) is None or line_of_pick(pick)<=0:return False
+    label=re.sub(r'\s+(?:over|under)\s+[+-]?\d+(?:\.\d+)?\s*$','',market.replace('_',' '),flags=re.I)
+    stat=STATS[league]
+    if norm(label) not in {stat,f'team {stat}',f'total {stat}',f'team total {stat}'}:return False
     name=selection(pick)
     return bool(name and (name in {'game','total goals','total points','total runs'} or f' {name} ' in f' {norm(ctx[0])} '))
 
