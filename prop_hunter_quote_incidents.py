@@ -11,6 +11,10 @@ _EVIDENCE = (
     ('Charlie Coyle', 'Columbus Blue Jackets @ Carolina Hurricanes', 1.5, 8.90, '1st Period 2+ Shots on Goal'),
     ('Nikita Kucherov', 'Winnipeg Jets @ Tampa Bay Lightning', .5, 1.53, '1st Period 1+ Shots on Goal'),
     ('Nikita Kucherov', 'Winnipeg Jets @ Tampa Bay Lightning', 2.5, 9.30, '1st Period 3+ Shots on Goal'),
+    ('Jack Hughes', 'New Jersey Devils @ Colorado Avalanche', .5, 3.75, '1st Period 1+ Points'),
+    ('Nathan MacKinnon', 'New Jersey Devils @ Colorado Avalanche', .5, 1.38, '1st Period 1+ Shots on Goal'),
+    ('Nazem Kadri', 'New Jersey Devils @ Colorado Avalanche', .5, 5.15, '1st Period 1+ Points'),
+    ('Matthew Knies', 'Columbus Blue Jackets @ Carolina Hurricanes', 1.5, 8.90, '1st Period 2+ Shots on Goal'),
 )
 
 def evidence_for(ticket, day):
@@ -24,7 +28,7 @@ def evidence_for(ticket, day):
         if str(leg.get('bookmaker') or ticket.get('bookmaker') or '').lower() != 'fanduel':
             continue
         market = re.sub(r'[^a-z0-9]+', ' ', str(leg.get('market') or '').lower()).strip()
-        if 'shots on goal' not in market or str(leg.get('direction') or ticket.get('direction') or '').lower() != 'over':
+        if str(leg.get('direction') or ticket.get('direction') or '').lower() != 'over':
             continue
         try:
             line = float(leg.get('point') if leg.get('point') is not None else leg.get('line'))
@@ -32,6 +36,9 @@ def evidence_for(ticket, day):
         except (TypeError, ValueError):
             continue
         for player, game, threshold, odds, original in _EVIDENCE:
+            expected_market = 'shots on goal' if 'Shots on Goal' in original else 'points'
+            if expected_market not in market:
+                continue
             if leg.get('player') == player and (leg.get('game') or ticket.get('game')) == game and line == threshold and price == odds:
                 found.append(dict(player=player, game=game, line=line, odds=odds, original_market=original))
     return found
