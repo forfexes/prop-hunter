@@ -1,16 +1,16 @@
 {
-  "updated_at": "2026-10-29T03:41:14.599250+00:00",
+  "updated_at": "2026-10-29T12:31:44.063586+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 480,
+      "rows": 167,
       "sources": [
         "betrivers_direct",
-        "draftkings_direct",
+        "bovada_direct",
         "fanduel_direct"
       ],
-      "market_count": 13,
-      "latest": "2026-10-29T01:52:23.102083+00:00",
+      "market_count": 10,
+      "latest": "2026-10-29T00:39:45.200674+00:00",
       "missing_core": [
         "home run",
         "total bases",
@@ -18,7 +18,7 @@
       ]
     },
     "NBA": {
-      "rows": 2734,
+      "rows": 2391,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -26,8 +26,8 @@
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 12,
-      "latest": "2026-10-29T00:39:48.374353+00:00",
+      "market_count": 9,
+      "latest": "2026-10-29T01:52:26.176119+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -43,28 +43,28 @@
       ]
     },
     "NFL": {
-      "rows": 449,
+      "rows": 97,
       "sources": [
-        "betrivers_direct",
         "bovada_direct",
         "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "fanduel_direct"
       ],
-      "market_count": 26,
-      "latest": "2026-10-29T01:52:52.360149+00:00",
-      "missing_core": []
+      "market_count": 9,
+      "latest": "2026-10-29T01:52:29.815817+00:00",
+      "missing_core": [
+        "touchdown"
+      ]
     },
     "NHL": {
-      "rows": 744,
+      "rows": 29,
       "sources": [
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "fanduel_direct"
       ],
-      "market_count": 5,
-      "latest": "2026-10-29T01:52:32.791183+00:00",
+      "market_count": 2,
+      "latest": "2026-10-29T00:39:58.408451+00:00",
       "missing_core": [
+        "shots",
+        "goals",
         "saves"
       ]
     }
@@ -97,10 +97,28 @@
       ]
     },
     {
+      "sport": "NFL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "touchdown"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "fanduel_direct"
+      ]
+    },
+    {
       "sport": "NHL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
+        "shots",
+        "goals",
         "saves"
       ]
     }

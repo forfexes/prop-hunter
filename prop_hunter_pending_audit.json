@@ -1,11 +1,10 @@
 {
-  "generated_at": "2026-10-29T03:40:51.974129+00:00",
-  "unresolved": 246,
+  "generated_at": "2026-10-29T12:31:23.297479+00:00",
+  "unresolved": 177,
   "counts": {
-    "awaiting_game_completion": 168,
-    "unmapped_market": 10,
-    "no_unique_official_game": 48,
-    "ready_to_settle": 5,
+    "awaiting_game_completion": 70,
+    "no_unique_official_game": 84,
+    "unmapped_market": 8,
     "unsupported_season_or_fantasy_market": 7,
     "unsupported_team_or_game_market": 3,
     "ambiguous_market_line": 5
@@ -112,16 +111,6 @@
       "evidence": null
     },
     {
-      "pick_id": "3832b2fe3ccb7790c14d1986179efaeb",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Austin Reaves",
-      "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "99d0aafc150acfc1735ca6d06a39f604",
       "source": "prop_hunter_picks",
       "date": "2026-10-29",
@@ -158,8 +147,20 @@
       "league": "NHL",
       "player": "Vinni Lettieri",
       "market": "shots_on_goal Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "34905961",
+        "quoted_kickoff": "2026-10-29T02:10:00+00:00",
+        "quoted_game": "TOR Maple Leafs @ SEA Kraken",
+        "loaded_player_rows": 5,
+        "loaded_game_dates": [
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "8e41899c02dc6d5aaf177203d5008c9f",
@@ -168,18 +169,29 @@
       "league": "NHL",
       "player": "Morgan Rielly",
       "market": "shots_on_goal Under 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "12a89d81ba840c9853f2fa10ce79db62",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Austin Reaves",
-      "market": "points Under 28.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "34905961",
+        "quoted_kickoff": "2026-10-29T02:10:00+00:00",
+        "quoted_game": "TOR Maple Leafs @ SEA Kraken",
+        "loaded_player_rows": 14,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "6cfbb472e568f2bc0c228a79c2423170",
@@ -222,62 +234,12 @@
       "evidence": null
     },
     {
-      "pick_id": "1b71006059de22b57b622c56b0f4d1f4",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Isaiah Jackson + Shai Gilgeous-Alexander + Devin Vassell",
-      "market": "3-Leg VALUE ACCA",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "b2380b29315dfebefc4552ae733d357d",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Isaiah Jackson + Devin Vassell",
-      "market": "2-Leg SAFE ACCA",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "84b793b1c407a39b41713a122d5552d4",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Bennett Stirtz",
-      "market": "2-Leg LONGSHOT SGP",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "9a4c960ededeb9d08f00442c49bb8290",
       "source": "prop_hunter_picks",
       "date": "2026-10-29",
       "league": "NBA",
       "player": "Victor Wembanyama + Stephon Castle + Keyonte George + De'Aaron Fox + Devin Vassell + Dylan Harper",
       "market": "6-Leg LONGSHOT SGP",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "b2dacc90434db80494f1cc8469ce4d6a",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Shai Gilgeous-Alexander + Max Christie + Ajay Mitchell",
-      "market": "3-Leg AGGRESSIVE SGP",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "9c139024776f10fa1332a15d7d39e521",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Victor Wembanyama + Dylan Harper",
-      "market": "2-Leg VALUE SGP",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
@@ -312,16 +274,6 @@
       "evidence": null
     },
     {
-      "pick_id": "656c9dbe080272d50799cd04e9ef128b",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Jared McCain",
-      "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "d2554be3067e2ab9223b2c6b0745de1b",
       "source": "prop_hunter_picks",
       "date": "2026-10-29",
@@ -338,46 +290,6 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "4603d4b32f9b5b5a41083e38fed584b8",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Jared McCain",
-      "market": "points Under 15.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "827657df270e3a230120e442ec955912",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Dylan Harper",
-      "market": "assists Under 4.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "84cab93412fbf8bc742b46e14ba6c385",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Quentin Grimes",
-      "market": "points Under 13.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "c5e0c05aa0711e59c310f392c7c24e47",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Kenrich Williams + Kobe Sanders + Devin Vassell",
-      "market": "3-Leg VALUE ACCA",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
@@ -472,26 +384,6 @@
       "evidence": null
     },
     {
-      "pick_id": "0ef8167f63e976707019c7a752fcfa5a",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "?",
-      "player": "Quentin Grimes + Darius Garland",
-      "market": "2-Leg VALUE",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "cf63bc7d396b1930467e6b2712abce6e",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Darius Garland",
-      "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "4e965d2b134333950357d269fe7a0b71",
       "source": "prop_hunter_picks",
       "date": "2026-10-29",
@@ -542,44 +434,33 @@
       "evidence": null
     },
     {
-      "pick_id": "f8549134912554ad47463afdf240d954",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Keyonte George",
-      "market": "assists Under 5.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "64c49261e98629ab142ad59c55e03b32",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Jake LaRavia",
-      "market": "rebounds Under 3.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "fcf929527a7394ba5f1cb404752ab38f",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Darius Garland",
-      "market": "points Under 22.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "227d1802594d512a3c2429d63c2c02c4",
       "source": "prop_hunter_picks",
       "date": "2026-10-29",
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "898b24df6647f218e5ea8194b9b316d5",
@@ -598,8 +479,27 @@
       "league": "NHL",
       "player": "Alex Formenton",
       "market": "shots_on_goal Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "34905959",
+        "quoted_kickoff": "2026-10-29T00:40:00+00:00",
+        "quoted_game": "CGY Flames @ EDM Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "a48e28d0392f5de1f42271f3f333c735",
@@ -608,8 +508,23 @@
       "league": "NBA",
       "player": "Stephon Castle",
       "market": "assists Under 5.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "32870964",
+        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
+        "quoted_game": "San Antonio Spurs @ Utah Jazz",
+        "loaded_player_rows": 9,
+        "loaded_game_dates": [
+          "2026-10-09",
+          "2026-10-11",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-21",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-28"
+        ]
+      }
     },
     {
       "pick_id": "c8d43e61c8156d765f25e2ee9d40abe0",
@@ -618,8 +533,14 @@
       "league": "NHL",
       "player": "Jani Nyman",
       "market": "shots_on_goal Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "34905961",
+        "quoted_kickoff": "2026-10-29T02:10:00+00:00",
+        "quoted_game": "TOR Maple Leafs @ SEA Kraken",
+        "loaded_player_rows": 0,
+        "loaded_game_dates": []
+      }
     },
     {
       "pick_id": "377108cbafc930dd94ad6522b8d381f7",
@@ -628,8 +549,26 @@
       "league": "NHL",
       "player": "Joel Farabee",
       "market": "assists Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230595",
+        "quoted_kickoff": "2026-10-29T00:40:00+00:00",
+        "quoted_game": "Calgary Flames @ Edmonton Oilers",
+        "loaded_player_rows": 11,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-04",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-18",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "bcf99d4a1cc6d72289909c40f8277bd2",
@@ -638,48 +577,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "054a89a4cc304c79fd943ef047eada83",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Kobe Sanders",
-      "market": "points Under 12.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "f63d9cdf4793a1ec40751cfda253bec9",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Isaiah Jackson",
-      "market": "rebounds Under 6.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "79d492527956aaf6acd32f1a00a632a9",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Kenrich Williams",
-      "market": "points Under 8.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "6df2f71cf23973bbc618ee5270c1ab2f",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Devin Vassell",
-      "market": "points Under 12.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "22fd4fd19a78ea19ff1674315d584aa1",
@@ -688,8 +606,27 @@
       "league": "NHL",
       "player": "Nazem Kadri",
       "market": "points Under 1",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "1028409792",
+        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "8c3a5488fbd0f0de2488884ca6bdc801",
@@ -698,28 +635,27 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "points Over 1",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "7d24fac020347bc80f53911edad50216",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Shai Gilgeous-Alexander",
-      "market": "points Under 35.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "27b2d0b86dfc0f9f83d95e4ddbd7562d",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Quentin Grimes",
-      "market": "points Under 12.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "1028409799",
+        "quoted_kickoff": "2026-10-29T00:30:00+00:00",
+        "quoted_game": "Calgary Flames @ Edmonton Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "6912bd2b1170f5aa34ea0fd8aa89aae7",
@@ -728,26 +664,6 @@
       "league": "NBA",
       "player": "Isaiah Jackson + Anfernee Simons + Clint Capela + Kenrich Williams + Ayo Dosunmu + Dennis Schroder",
       "market": "6-Leg AGGRESSIVE ACCA",
-      "reason": "unmapped_market",
-      "evidence": null
-    },
-    {
-      "pick_id": "7353e51a90d303d0af1320243a09bea6",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "NBA",
-      "player": "Saddiq Bey + Kenrich Williams + Jaylen Brown",
-      "market": "3-Leg VALUE ACCA",
-      "reason": "unmapped_market",
-      "evidence": null
-    },
-    {
-      "pick_id": "745f44f26fc693a037243bdcf3125973",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "NBA",
-      "player": "Saddiq Bey + Kenrich Williams",
-      "market": "2-Leg SAFE ACCA",
       "reason": "unmapped_market",
       "evidence": null
     },
@@ -802,22 +718,6 @@
       "evidence": null
     },
     {
-      "pick_id": "d778fda8f0dc0f485e376677eff5187e",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Victor Mesa Jr. + Christian Yelich + Jackson Chourio",
-      "market": "3-Leg HR Lottery",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": null,
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
-      }
-    },
-    {
       "pick_id": "bda515f065183e9c3ac6879bd8fcadd1",
       "source": "prop_hunter_picks",
       "date": "2026-10-28",
@@ -838,74 +738,32 @@
       "evidence": null
     },
     {
-      "pick_id": "5a4a2937ae4cc18febdecf03c109f2f6",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Jonny DeLuca",
-      "market": "Home Run",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "531dbd5c2b692f15b3823462e72ecf6c",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Victor Mesa Jr.",
-      "market": "Home Run",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "deb818febd1c41bbc3eb251c9ba520e8",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Cooper Pratt",
-      "market": "Home Run",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "c946c7858f97838b733ce703c54fb848",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Garrett Mitchell",
-      "market": "runs Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "0bafd675ff08132ffe85786ada3caead",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "NBA",
-      "player": "Saddiq Bey",
-      "market": "threes Over 1.5",
-      "reason": "ready_to_settle",
-      "evidence": null
-    },
-    {
       "pick_id": "925bfb35ac1a22ef3eb7009cb3aafff0",
       "source": "prop_hunter_picks",
       "date": "2026-10-28",
       "league": "NHL",
       "player": "Joel Farabee",
       "market": "assists Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "6b2a81661ba280e40e6f8a18699f5968",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Ben Williamson",
-      "market": "rbi Under 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230595",
+        "quoted_kickoff": "2026-10-29T00:40:00+00:00",
+        "quoted_game": "Calgary Flames @ Edmonton Oilers",
+        "loaded_player_rows": 11,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-04",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-18",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "122ab94e18647e554499f9215458d2dd",
@@ -914,8 +772,27 @@
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "a8b79569d6c65f3acd0357137882088a",
@@ -924,8 +801,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "f50bf1efb43f3252e1ba9766aa2e773d",
@@ -2251,74 +2147,33 @@
       }
     },
     {
-      "pick_id": "56f2d008618ed223f7dbe99475fac5e5",
-      "source": "history_leg",
-      "date": "2026-10-28",
-      "league": "NBA",
-      "player": "Saddiq Bey",
-      "market": "2+ Threes",
-      "reason": "ready_to_settle",
-      "evidence": null
-    },
-    {
-      "pick_id": "2a224967a0cd9c3e6ae5ca8a04ac420c",
-      "source": "history_leg",
-      "date": "2026-10-28",
-      "league": "NBA",
-      "player": "Saddiq Bey",
-      "market": "3+ Threes",
-      "reason": "ready_to_settle",
-      "evidence": null
-    },
-    {
-      "pick_id": "867984c16d322d80feb45714b03a959e",
-      "source": "history_leg",
-      "date": "2026-10-28",
-      "league": "NBA",
-      "player": "Saddiq Bey",
-      "market": "4+ Threes",
-      "reason": "ready_to_settle",
-      "evidence": null
-    },
-    {
-      "pick_id": "bfb161ba190d4777d5548e5fddbcd225",
-      "source": "history_leg",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Cooper Pratt",
-      "market": "Home Run",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "2f9a2ff9e4e2242b5f263a59bce9d0f8",
       "source": "history_leg",
       "date": "2026-10-28",
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "6b1f4b48fc7f12ca6b2574a61c66516b",
-      "source": "history_leg",
-      "date": "2026-10-28",
-      "league": "MLB",
-      "player": "Victor Mesa Jr.",
-      "market": "Home Run",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "e758f3c71f91288403079c40f10eb52e",
-      "source": "history_leg",
-      "date": "2026-10-28",
-      "league": "NBA",
-      "player": "Saddiq Bey",
-      "market": "threes Over 1.5",
-      "reason": "ready_to_settle",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "8d9475f4b0213944ac6f892b056ecc86",
@@ -2327,8 +2182,27 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "Points Over 1",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "1028409799",
+        "quoted_kickoff": "2026-10-29T00:30:00+00:00",
+        "quoted_game": "Calgary Flames @ Edmonton Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "f24b70b303a9245699acd0c897100495",
@@ -2337,8 +2211,27 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "Points Over 2",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "1028409799",
+        "quoted_kickoff": "2026-10-29T00:30:00+00:00",
+        "quoted_game": "Calgary Flames @ Edmonton Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "4798bed29d9477059c98dc46398ae01f",
@@ -2347,8 +2240,27 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "Points Over 4",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "1028409799",
+        "quoted_kickoff": "2026-10-29T00:30:00+00:00",
+        "quoted_game": "Calgary Flames @ Edmonton Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "79a408c6c86975a6e2b0bb8591c89d7c",
@@ -2387,8 +2299,27 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "Points Over 1",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "34905959",
+        "quoted_kickoff": "2026-10-29T00:40:00+00:00",
+        "quoted_game": "CGY Flames @ EDM Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "917a299c97f2ee431b20e03867e882ff",
@@ -2397,8 +2328,27 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "Points Over 2",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "34905959",
+        "quoted_kickoff": "2026-10-29T00:40:00+00:00",
+        "quoted_game": "CGY Flames @ EDM Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "5b97bf2657cce4690803663532ccd22e",
@@ -2407,8 +2357,27 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "Points Over 4",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "34905959",
+        "quoted_kickoff": "2026-10-29T00:40:00+00:00",
+        "quoted_game": "CGY Flames @ EDM Oilers",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-29",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "4d02fdeb1ca797f1eecc8b13bc4180d6",
@@ -2417,8 +2386,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "2+ Goals",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "0800e56d8ae46bd29a2b3467b5ec86f3",
@@ -2427,8 +2415,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "3+ Goals",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "722f3e18424c8563e677ecb085ada175",
@@ -2437,8 +2444,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "1+ Shots On Goal",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "30e1a31b39bea0b268be9a61147ba5d8",
@@ -2447,68 +2473,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "7+ Shots On Goal",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "ed7b97b159a4cc674dabda44cfd60294",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Darius Garland",
-      "market": "Points Under 29.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "9a7efb2cb6fc37eb43ba018422411e70",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Darius Garland",
-      "market": "Points Under 22.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "4766b089865855fe44942ae6de7bd336",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Darius Garland",
-      "market": "Points Under 21.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "ba1d0ef517e623e5a10b8b3cefc866c3",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Darius Garland",
-      "market": "Points Under 20.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "50a3325c6b8bbc50ea35dcd6158ef414",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Quentin Grimes",
-      "market": "points Under 12.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "9a76e3cb745b52b0a55c53e25ecdecf0",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Darius Garland",
-      "market": "points Under 22.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "9bc3e4bc5af0137acea49d87639d6b21",
@@ -2517,8 +2502,23 @@
       "league": "NBA",
       "player": "Stephon Castle",
       "market": "assists Under 5.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "32870964",
+        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
+        "quoted_game": "San Antonio Spurs @ Utah Jazz",
+        "loaded_player_rows": 9,
+        "loaded_game_dates": [
+          "2026-10-09",
+          "2026-10-11",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-21",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-28"
+        ]
+      }
     },
     {
       "pick_id": "9fd9adf4f1acf56cb35880fb95005e6c",
@@ -2527,8 +2527,27 @@
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "bfa85684d09461244985b2c467cbd1a6",
@@ -2537,8 +2556,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "02c2f958864246633ea4ea60971a0a08",
@@ -2557,8 +2595,26 @@
       "league": "NHL",
       "player": "Joel Farabee",
       "market": "assists Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230595",
+        "quoted_kickoff": "2026-10-29T00:40:00+00:00",
+        "quoted_game": "Calgary Flames @ Edmonton Oilers",
+        "loaded_player_rows": 11,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-04",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-18",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "4f571f402fa830c2c5ec10573934c8ba",
@@ -2567,8 +2623,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "Shots On Goal Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "b5a98ca57a6a91a2d2ef771d28a0d2dd",
@@ -2577,8 +2652,27 @@
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "Shots On Goal Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "96c1c4a3fab1a424be480488cf320e61",
@@ -2587,8 +2681,27 @@
       "league": "NHL",
       "player": "Nazem Kadri",
       "market": "Points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "1028409792",
+        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "4668b68ec4de185f5d90fee45c268679",
@@ -2597,18 +2710,27 @@
       "league": "NHL",
       "player": "Nathan MacKinnon",
       "market": "Shots On Goal Over 6.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "a869caa4305be0d3ba8bec2583b28477",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Shai Gilgeous-Alexander",
-      "market": "points Under 35.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-09-30",
+          "2026-10-03",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-16",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-23",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "3ebd5698c25034cb3907eb5342f70879",
@@ -2617,78 +2739,22 @@
       "league": "NBA",
       "player": "Lauri Markkanen",
       "market": "Points Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "18603c058dca43ab94a163fe65e57fb0",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Kenrich Williams",
-      "market": "points Under 8.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "4d581d877e006212bfda25e856f2a798",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Kobe Sanders",
-      "market": "points Under 12.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "ce02ec4b2fb02731681291361b0e4ad7",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Devin Vassell",
-      "market": "Points Under 12.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "06b219439424ff34d19c771ff08591a4",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Jared McCain",
-      "market": "Points Under 20.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "f75c5cf5e7c43ee2023677bc076a414a",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Jared McCain",
-      "market": "Points Under 15.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "a4a4d4ae5eb1731247d28561b139bbc3",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Jared McCain",
-      "market": "Points Under 14.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "03a107bd1d0dc095f36ec158342c8d8c",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Jared McCain",
-      "market": "Points Under 13.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "32870964",
+        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
+        "quoted_game": "San Antonio Spurs @ Utah Jazz",
+        "loaded_player_rows": 7,
+        "loaded_game_dates": [
+          "2026-10-04",
+          "2026-10-13",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "7a2e987cfc16f6c36beb48ca49b6d48f",
@@ -2697,8 +2763,27 @@
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "Points Under 2",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "1c0288d6d0f87e855ee8994aeb4ea231",
@@ -2707,8 +2792,27 @@
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "Points Under 1",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "3d37b6e8ea04598e4a444047221bc2d6",
@@ -2737,58 +2841,27 @@
       "league": "NHL",
       "player": "Jack Hughes",
       "market": "Points Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "8cddbb7710c9256a7adbe67885a6ffed",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Victor Wembanyama",
-      "market": "Points Over 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "6a3b9690973ff31b8d56f5449e413a83",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Dylan Harper",
-      "market": "assists Under 4.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "c4f6878af89dc047a07309509cddbacf",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Shai Gilgeous-Alexander",
-      "market": "Points Over 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "7c9367c422181ed7a9e2a30be1b683b9",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Max Christie",
-      "market": "Points Over 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "bc647690b285067805a8849b78c53544",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Ajay Mitchell",
-      "market": "Points Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "36230596",
+        "quoted_kickoff": "2026-10-29T01:10:00+00:00",
+        "quoted_game": "New Jersey Devils @ Colorado Avalanche",
+        "loaded_player_rows": 12,
+        "loaded_game_dates": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-10",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "afdc9533de3e66c7d609773bc9fc3863",
@@ -2797,88 +2870,23 @@
       "league": "NBA",
       "player": "Stephon Castle",
       "market": "Points Over 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "0cfeb0810b02ffc69fa4cc7884d66d34",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Keyonte George",
-      "market": "Points Over 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "490f952c3956b0b1bb8ad1ff5f581fdc",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "De'Aaron Fox",
-      "market": "Points Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "a6088962e53e670985c074b836737211",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Devin Vassell",
-      "market": "Points Over 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "49a2794fe1d746b577f082f2bf6a34c2",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Dylan Harper",
-      "market": "Points Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "923ce1540b085f9bd32c43e0f85a3f01",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Bennett Stirtz",
-      "market": "Points Over 14.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "eaf14e7c6875c558778328b66e509fe1",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Bennett Stirtz",
-      "market": "Threes Over 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "7ed89d5cd3428ad1c1efc2a7fb364c0b",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Isaiah Jackson",
-      "market": "Rebounds Under 7.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "c4d219fcad7f9a7afb49e3349643fbfc",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Shai Gilgeous-Alexander",
-      "market": "Rebounds Under 4.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "32870964",
+        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
+        "quoted_game": "San Antonio Spurs @ Utah Jazz",
+        "loaded_player_rows": 9,
+        "loaded_game_dates": [
+          "2026-10-09",
+          "2026-10-11",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-21",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-28"
+        ]
+      }
     },
     {
       "pick_id": "64c692d5f2d5e2933a43ee7d52648748",
@@ -2937,46 +2945,6 @@
       "league": "WNBA",
       "player": "Allisha Gray",
       "market": "20+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "e02c24f1813e103f8de61cbe77de9a35",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Austin Reaves",
-      "market": "Points Under 33.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "71eac1bbffc95586935768d190d90350",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Austin Reaves",
-      "market": "Points Under 27.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "303918f4c449a673d75ef6c73bde8b17",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Austin Reaves",
-      "market": "Points Under 25.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "14cab3194c8a6de98a025e04efd1e97f",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Austin Reaves",
-      "market": "Points Under 24.5",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
