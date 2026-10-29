@@ -1337,6 +1337,15 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 rate = (1 - over_rate) if direction == "under" else over_rate
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
+            # Store RAW, line-specific L15 observations separately from the
+            # smoothed/model probability. Neither the market price nor the
+            # bootstrap/clipping below may change these hit counts.
+            empirical_hits = over_hits if direction == "over" else sum(1 for v in vals if v < point)
+            feats["gamelog_l15_hits"] = empirical_hits
+            feats["gamelog_l15_n"] = n
+            feats["gamelog_l15_empirical_rate"] = round(empirical_hits / n, 6)
+            feats["gamelog_l15_line"] = float(point)
+            feats["gamelog_l15_direction"] = direction
             # Monte-Carlo bootstrap from the same real gamelogs. Cached per player/stat/line/side
             # by the normal Python module import and deterministic seed, so it adds little runtime.
             try:
