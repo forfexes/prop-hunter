@@ -152,6 +152,27 @@ def main():
     assert 'combo["dedup_key"] = _combo_key' in Path('prophunter_core_1392.py').read_text(encoding='utf-8')
     assert '_sync_pick_table(combo)' in Path('prophunter_results.py').read_text(encoding='utf-8')
 
+    # Full economic quote identity links an enriched closed ticket to its source.
+    from copy import deepcopy
+    quoted={'type':'betbuilder','sport':'NBA','player':'P + Q','market':'2-Leg SAFE ACCA',
+            'created_at':'2026-10-01T12:00:00Z','stake':.2,'odds':3.6,'leg_details':[
+            {'player':'P','sport':'NBA','market':'Points Over 10.5','direction':'over','point':10.5,'odds':1.8,'bookmaker':'book','game':'A @ B'},
+            {'player':'Q','sport':'NBA','market':'Rebounds Under 5.5','direction':'under','point':5.5,'odds':2,'bookmaker':'book','game':'C @ D'}]}
+    settled=deepcopy(quoted);settled.update(result='loss',profit=-.2)
+    settled['settlement_legs']=[dict(x,result='win' if i==0 else 'loss',actual_value=12) for i,x in enumerate(quoted['leg_details'])]
+    settled['leg_details']=deepcopy(settled['settlement_legs'])
+    history=[{'date':'2026-10-01','kombis':[settled]}]
+    source={'date':'2026-10-01','status':'pending','dedup_key':'real-source-key','raw':quoted}
+    assert reporter._combo_source_repairs(history,[source]) == [(settled,source)]
+    wrong=deepcopy(source);wrong['raw']['leg_details'][0]['game']='X @ Y'
+    assert reporter._combo_source_repairs(history,[wrong]) == []
+    wrong=deepcopy(source);wrong['raw']['stake']=.3
+    assert reporter._combo_source_repairs(history,[wrong]) == []
+    assert reporter._combo_source_repairs([{'date':'2026-10-01','kombis':[settled,deepcopy(settled)]}],[source]) == []
+    assert reporter._combo_source_repairs([{'date':'2026-10-01','kombis':[dict(settled,settlement_invalidated=True)]}],[source]) == []
+    assert reporter._combo_source_repairs(history,[dict(source,date='2026-10-02')]) == []
+    assert classify(dict(source,market=quoted['market']),[],{}) == 'awaiting_combo_legs'
+    assert classify({'date':'2026-10-01','market':'Unknown player stat'},[],{}) == 'unmapped_market'
     print('SETTLEMENT BACKLOG REGRESSIONS PASSED')
 
 

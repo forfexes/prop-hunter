@@ -48,6 +48,9 @@ def classify(pick, logs, index):
         return 'awaiting_game_completion'
     stat, extra = detect_stat(market), detect_extra_stat(market)
     if not stat and not extra:
+        raw = pick.get('raw') if isinstance(pick.get('raw'), dict) else {}
+        if raw.get('type') in {'betbuilder','ladder','acca','lottery'} and any(isinstance(x,dict) for x in raw.get('leg_details') or raw.get('ladder_legs') or []):
+            return 'awaiting_combo_legs'
         return 'unmapped_market'
     gl = find_gamelog(pick, logs, aliases={}, log_index=index)
     if not gl:

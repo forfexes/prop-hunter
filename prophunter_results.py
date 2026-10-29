@@ -731,6 +731,55 @@ def _combo_source_key(combo: dict, day: str) -> Optional[str]:
     return hashlib.sha1(json.dumps(payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()
 
 
+def _ticket_fingerprint(ticket: dict, day: str):
+    """Immutable quoted identity shared by source raw and enriched history."""
+    raw = ticket.get('raw') if isinstance(ticket.get('raw'), dict) else {}
+    quote = dict(raw) if raw.get('type') else dict(ticket)
+    date = str(day or _date_of_pick(ticket))[:10]
+    if not date or not quote.get('created_at'):
+        return None
+    def text(value): return str(value or '').strip().casefold()
+    def number(value):
+        n = _to_float(value)
+        return n if n is not None and n == n and abs(n) != float('inf') else None
+    stake, odds = number(quote.get('stake')), number(quote.get('odds'))
+    if stake is None or odds is None:
+        return None
+    rows = _leg_rows(quote)
+    if len(rows) < 2:
+        return None
+    legs=[]
+    for leg in rows:
+        fields=tuple(text(leg.get(k)) for k in ('player','sport','market','direction','bookmaker','game'))
+        point, price = number(leg.get('point') if leg.get('point') is not None else leg.get('line')), number(leg.get('odds'))
+        if not all(fields) or point is None or price is None:
+            return None
+        legs.append(fields+(point,price))
+    return (date,text(quote.get('created_at')),text(quote.get('type')),text(quote.get('sport')),
+            text(quote.get('player')),text(quote.get('market')),stake,odds,tuple(sorted(legs)))
+
+
+def _combo_source_repairs(history: list, sources: list) -> list:
+    candidates={}
+    for entry in history:
+        day=str(entry.get('date') or '')[:10]
+        for combo in entry.get('kombis') or []:
+            evidence=combo.get('settlement_legs') or []
+            if combo.get('settlement_invalidated') or str(combo.get('result') or '').lower() not in CLOSED:
+                continue
+            if not evidence or len(evidence)!=len(_leg_rows(combo)) or any(str(x.get('result') or '').lower() not in CLOSED for x in evidence):
+                continue
+            key=_ticket_fingerprint(combo,day)
+            if key: candidates.setdefault(key,[]).append(combo)
+    repairs=[]
+    for source in sources:
+        if str(source.get('status') or source.get('result') or 'pending').lower() in CLOSED or not source.get('dedup_key'):
+            continue
+        matches=candidates.get(_ticket_fingerprint(source,_date_of_pick(source)),[])
+        if len(matches)==1:
+            repairs.append((matches[0],source))
+    return repairs
+
 def _sync_pick_table(pick: dict) -> None:
     """Best-effort mirror status/profit to both historical pick tables."""
     if not SUPABASE_URL or not SUPABASE_KEY or not pick.get("dedup_key"):
@@ -824,6 +873,20 @@ def main() -> int:
             closed = [p for p in picks if _status_icon(p.get("result"))]
             if closed:
                 fallback_lines.append((day, closed))
+
+    # Repair legacy closed parents whose source key was absent or derived after
+    # leg enrichment. Use only a unique full quote match to a real source row.
+    combo_sources_synced = 0
+    if SUPABASE_URL and SUPABASE_KEY:
+        from prop_hunter_shared_utils import select_pick_rows
+        for combo, source in _combo_source_repairs(history, select_pick_rows(limit=20000)):
+            key, day = source['dedup_key'], _date_of_pick(source)
+            if combo.get('dedup_key') != key or combo.get('date') != day:
+                combo.update(dedup_key=key,date=day)
+                changed = True
+            _sync_pick_table(dict(combo, sent_date=day))
+            combo_sources_synced += 1
+    print(f"Combo source reconciliation requested={combo_sources_synced}")
 
     if changed:
         _save_history(history)
