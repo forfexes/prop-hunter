@@ -54,6 +54,9 @@ def _family(obj: Any) -> str:
 
 
 def _eligible(obj: Any) -> bool:
+    # Temporary product rule: no UNDER legs in cross-game builders/ACCAs.
+    if base._direction(obj) != "over":
+        return False
     if not base._real_price(obj) or base._odds(obj) <= 1.01 or base._prob(obj) <= 0:
         return False
     sport = base._sport(obj)
