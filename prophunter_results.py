@@ -754,7 +754,10 @@ def _ticket_fingerprint(ticket: dict, day: str):
         point, price = number(leg.get('point') if leg.get('point') is not None else leg.get('line')), number(leg.get('odds'))
         if not all(fields) or point is None or price is None:
             return None
-        legs.append(fields+(point,price))
+        rung_stake = number(leg.get('stake')) if quote.get('type') == 'ladder' else 0.0
+        if rung_stake is None:
+            return None
+        legs.append(fields+(point,price,rung_stake))
     return (date,text(quote.get('created_at')),text(quote.get('type')),text(quote.get('sport')),
             text(quote.get('player')),text(quote.get('market')),stake,odds,tuple(sorted(legs)))
 
@@ -765,7 +768,7 @@ def _combo_source_repairs(history: list, sources: list) -> list:
         day=str(entry.get('date') or '')[:10]
         for combo in entry.get('kombis') or []:
             evidence=combo.get('settlement_legs') or []
-            if combo.get('settlement_invalidated') or str(combo.get('result') or '').lower() not in CLOSED:
+            if combo.get('settlement_invalidated') or _to_float(combo.get('profit')) is None or str(combo.get('result') or '').lower() not in CLOSED:
                 continue
             if not evidence or len(evidence)!=len(_leg_rows(combo)) or any(str(x.get('result') or '').lower() not in CLOSED for x in evidence):
                 continue

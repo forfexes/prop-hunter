@@ -171,6 +171,11 @@ def main():
     assert reporter._combo_source_repairs([{'date':'2026-10-01','kombis':[settled,deepcopy(settled)]}],[source]) == []
     assert reporter._combo_source_repairs([{'date':'2026-10-01','kombis':[dict(settled,settlement_invalidated=True)]}],[source]) == []
     assert reporter._combo_source_repairs(history,[dict(source,date='2026-10-02')]) == []
+    assert reporter._combo_source_repairs([{'date':'2026-10-01','kombis':[dict(settled,profit=None)]}],[source]) == []
+    rung_quote=deepcopy(quoted);rung_quote['type']='ladder'
+    for leg in rung_quote['leg_details']: leg['stake']=.1
+    altered=deepcopy(rung_quote);altered['leg_details'][0]['stake']=.15;altered['leg_details'][1]['stake']=.05
+    assert reporter._ticket_fingerprint(rung_quote,'2026-10-01') != reporter._ticket_fingerprint(altered,'2026-10-01')
     assert classify(dict(source,market=quoted['market']),[],{}) == 'awaiting_combo_legs'
     assert classify({'date':'2026-10-01','market':'Unknown player stat'},[],{}) == 'unmapped_market'
     print('SETTLEMENT BACKLOG REGRESSIONS PASSED')
