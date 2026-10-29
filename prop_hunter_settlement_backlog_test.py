@@ -114,6 +114,36 @@ def main():
     assert unique_results([one, two]) == [two]
     workflow = Path('.github/workflows/prophunter_results.yml').read_text()
     assert workflow.index('PH_GAMELOG_KEEP_PER_PLAYER=15') > workflow.index('          python prop_hunter_settler_extras.py\n')
+    # The canonical combo identity must be reconstructed BEFORE settlement
+    # augments leg_details with results/actuals. Otherwise the SHA changes.
+    from hashlib import sha1
+    from json import dumps
+    original_combo = {
+        'date': '2026-10-28', 'type': 'ladder', 'player': 'Test Scorer',
+        'market': 'Goals Ladder', 'ladder_legs': [
+            {'market': '2+ Goals', 'point': 1.5, 'odds': 8.0, 'stake': .1},
+            {'market': '3+ Goals', 'point': 2.5, 'odds': 25.0, 'stake': .05}
+        ], 'leg_details': [{'market': '2+ Goals', 'point': 1.5}],
+        'result': 'pending',
+    }
+    payload = {
+        'date': '2026-10-28', 'type': original_combo['type'],
+        'player': original_combo['player'], 'market': original_combo['market'],
+        'legs': original_combo['ladder_legs'],
+    }
+    expected = sha1(dumps(payload, sort_keys=True, default=str).encode('utf-8')).hexdigest()
+    assert reporter._combo_source_key(original_combo, '2026-10-28') == expected
+    with patch.object(reporter, 'SUPABASE_URL', 'https://fixture.invalid'), patch.object(reporter, 'SUPABASE_KEY', 'fixture'), patch.object(reporter.requests, 'patch') as patch_req:
+        patch_req.return_value.status_code = 204
+        reporter._sync_pick_table(dict(original_combo, dedup_key=expected, result='win', profit=1.25))
+        assert any('/prop_hunter_picks' in call.args[0] and
+                   call.kwargs['params'].get('dedup_key') == f'eq.{expected}' and
+                   call.kwargs['json']['result'] == 'win' and
+                   call.kwargs['json']['profit_units'] == 1.25
+                   for call in patch_req.call_args_list), patch_req.call_args_list
+    assert 'combo["dedup_key"] = _combo_key' in Path('prophunter_core_1392.py').read_text(encoding='utf-8')
+    assert '_sync_pick_table(combo)' in Path('prophunter_results.py').read_text(encoding='utf-8')
+
     print('SETTLEMENT BACKLOG REGRESSIONS PASSED')
 
 
