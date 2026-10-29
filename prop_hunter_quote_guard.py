@@ -119,6 +119,10 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
     # Dropping the market text here let period TD props masquerade as full-game TDs.
     text = " ".join(x for x in (raw, cur) if x).strip()
 
+    # NHL period prices must never be compared with full-game L15 counts.
+    if re.search(r"\b(?:(?:1st|2nd|3rd|first|second|third) period|period [123]|[123]p)\b", text):
+        return "unsupported_period"
+
     if "triple double" in text:
         return "triple_double"
     if "double double" in text:

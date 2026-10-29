@@ -73,6 +73,18 @@ def main():
     check(not probability_sane(.92, 36.0), "92% @36 absurd probability accepted")
     check(probability_sane(.60, 1.90), "reasonable probability rejected")
 
+    for label in ("1st Period 2+ Shots on Goal", "2nd Period Player 2+ Shots on Goal",
+                  "3rd Period Player 3+ Shots on Goal", "First Period Player 1+ Points",
+                  "Period 2 Player 1+ Assists", "3P Player 1+ Points"):
+        row = _row("Nikita Kucherov", label, 2.5, 9.3)
+        row.update(sport="NHL", league="NHL")
+        check(sanitize_row(row) is None, f"period price leaked into full-game pool: {label}")
+    row = _row("Nikita Kucherov", "3+ Shots on Goal", 0, 1.5882)
+    row.update(sport="NHL", league="NHL")
+    clean = sanitize_row(row)
+    check(clean is not None and clean["line"] == 2.5 and clean["odds_decimal"] == 1.5882,
+          "valid full-game shot threshold rejected")
+
     print("MARKET REGRESSION OK: threshold lines + single/double/triple mapping + probability guard")
 
 if __name__ == "__main__":
