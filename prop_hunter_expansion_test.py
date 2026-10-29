@@ -375,3 +375,8 @@ assert 'build_autonomous_extras(picks, props, Pick, LadderLeg)' in core
 # NHL requests explicit alternate market keys so real ladder rungs can enter the raw pool.
 for key in ("player_shots_on_goal_alternate","player_goals_alternate","player_points_alternate","player_assists_alternate","player_goalie_saves_alternate"):
     assert key in core
+
+# Source quote identity includes direction: never cross-wire Over/Under fair probability.
+assert 'wanted_dir = str(getattr(pk, "direction", "") or "").lower().strip()' in core
+assert 'if not directional:' in core and 'return None' in core
+assert 'pk.direction = getattr(m, "direction", None) or pk.direction or "over"' in core
