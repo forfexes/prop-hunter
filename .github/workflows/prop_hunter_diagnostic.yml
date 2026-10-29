@@ -31,7 +31,8 @@ jobs:
           pip install -r requirements.txt
       - name: Offline regression
         run: |
-          python -m py_compile prophunter.py prophunter_core_1391.py prop_hunter_quote_guard.py prop_hunter_settler.py prop_hunter_settler_extras.py
+          python -m py_compile prophunter.py prophunter_core_1391.py prop_hunter_builder_engine.py prop_hunter_ladder_l15_test.py prop_hunter_quote_guard.py prop_hunter_settler.py prop_hunter_settler_extras.py
+          python prop_hunter_ladder_l15_test.py
           python prop_hunter_runtime_guard.py
           python prop_hunter_market_regression_test.py
           python prop_hunter_settler_fast_test.py
