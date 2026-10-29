@@ -37,7 +37,7 @@ def _require_commands(errors,text,commands,label):
   if cmd not in text:errors.append(f'{label} missing: {cmd}')
 def inspect_workflow(path,runtime):
  text=path.read_text(encoding='utf-8');errors=[]
- if any(m in text for m in _MERGE_MARKERS):errors.append('merge-conflict marker')
+ if any(re.match(r"^(<<<<<<< |=======\\s*$|>>>>>>> )", line) for line in text.splitlines()):errors.append('merge-conflict marker')
  for marker in ('name:','jobs:','runs-on:','timeout-minutes:'):
   if marker not in text:errors.append(f'missing {marker}')
  if not re.search(r'(?m)^\s*(?:"on"|on):\s*$',text):errors.append('missing on trigger')
