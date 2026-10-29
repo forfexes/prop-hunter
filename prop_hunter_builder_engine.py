@@ -525,6 +525,9 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
                 "source_market": getattr(row, "market", ""), "direction": direction,
                 "point": item["point"], "odds": item["odds"],
                 "probability": item["probability"], "edge_pct": round(item["edge"] * 100, 1),
+                "gamelog_l15_hits": item["gamelog_l15_hits"],
+                "gamelog_l15_n": item["gamelog_l15_n"],
+                "probability_method": "min(model,one_sided_90pct_wilson_l15)",
                 "bookmaker": book, "game": game,
             })
 
