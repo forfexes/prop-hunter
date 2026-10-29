@@ -3587,6 +3587,19 @@ def _find_source_prop(pk: Pick, props: list[Prop]) -> Optional[Prop]:
     market_matches = [p for p in candidates if _same_market(pk.market or "", p.market or "")]
     if market_matches:
         candidates = market_matches
+    # Direction is part of quote identity. Never attach an Over model/fair probability
+    # to an Under price (or vice versa) merely because the decimal odds are similar.
+    wanted_dir = str(getattr(pk, "direction", "") or "").lower().strip()
+    if wanted_dir in ("yes","higher"): wanted_dir = "over"
+    elif wanted_dir in ("no","lower"): wanted_dir = "under"
+    if wanted_dir in ("over","under"):
+        directional = [
+            p for p in candidates
+            if str(getattr(p, "direction", "") or "").lower().strip() == wanted_dir
+        ]
+        if not directional:
+            return None
+        candidates = directional
     # Wenn Odds ähnlich sind, diesen bevorzugen
     try:
         close = sorted(candidates, key=lambda p: abs(float(p.odds) - float(pk.odds)))
@@ -3625,7 +3638,8 @@ def analyse(props):
         # Originaldaten übernehmen: verhindert Basket ohne Linie und falsche Teams.
         pk.emoji = pk.emoji or m.emoji
         pk.team = pk.team or getattr(m, "team", None) or m.home or ""
-        pk.direction = pk.direction or getattr(m, "direction", None) or "over"
+        # Source quote owns the side. LLM direction must never override bookmaker identity.
+        pk.direction = getattr(m, "direction", None) or pk.direction or "over"
         # Linie IMMER von Source Prop nehmen — LLM darf Linie nicht erfinden
         source_point = getattr(m, "point", None)
         pk.point = source_point
