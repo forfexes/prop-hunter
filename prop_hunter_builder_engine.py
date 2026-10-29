@@ -329,8 +329,14 @@ def _valid_combo(legs: Sequence[Any]) -> bool:
     same_game = len(games) == 1
     book = next(iter(books))
     if same_game and book == "bet365":
-        # The green BB marker is required for every leg of a bet365 Bet Builder.
-        if not all(bool(_features(x).get("bet_builder")) for x in legs):
+        # Bet365 builders are strict observed-selection only. A generic/API bet365
+        # quote is not proof that the same side is selectable in Bet Builder.
+        # The public bet365 adapter marks an actually observed BB selection.
+        if not all(
+            bool(_features(x).get("bet_builder"))
+            and str(_features(x).get("source") or "").lower() in {"bet365","browser_bet365","bet365_browser"}
+            for x in legs
+        ):
             return False
     return True
 
