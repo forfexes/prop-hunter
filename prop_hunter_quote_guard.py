@@ -284,6 +284,11 @@ def sanitize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return None
 
     canon = canonical_market(market, original_market)
+    sport = str(out.get("sport") or out.get("league") or "").upper().strip()
+    # Basketball player-points lines of 1.5/2.5 are almost always mislabeled
+    # made-threes/alt props. Fail closed centrally; genuine threes remain valid.
+    if sport in {"NBA", "WNBA"} and canon == "points" and float(line) < 5.0:
+        return None
     # Combined passing+rushing yards is distinct from both pure yardage stats.
     # Until dedicated gamelog/settlement support exists, keep it off cards.
     if canon in {"passing_rushing_yards", "rushing_receiving_yards", "unsupported_longest", "unsupported_period_td", "unsupported_period"}:
