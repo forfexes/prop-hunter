@@ -1480,6 +1480,14 @@
       "observed_joint": 0.0,
       "expected_joint": 0.33402,
       "raw_ratio": 0.6
+    },
+    "MLB:home_runs:over|MLB:rbi:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.04855,
+      "raw_ratio": 0.6
     }
   },
   "profiles": {
@@ -1514,14 +1522,14 @@
       "roi": 0.72727
     },
     "longshot": {
-      "n": 19,
+      "n": 20,
       "wins": 2,
-      "losses": 17,
+      "losses": 18,
       "pushes": 0,
-      "stake": 0.95,
-      "profit": 4.58,
-      "hit_rate": 0.10526,
-      "roi": 4.82105
+      "stake": 1.0,
+      "profit": 4.53,
+      "hit_rate": 0.1,
+      "roi": 4.53
     },
     "lottery": {
       "n": 6,
@@ -1534,5 +1542,5 @@
       "roi": -1.0
     }
   },
-  "updated_at": "2026-10-29T01:04:15.108213+00:00"
+  "updated_at": "2026-10-29T01:10:35.580997+00:00"
 }

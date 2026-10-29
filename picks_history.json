@@ -49899,7 +49899,11 @@
             "odds": 8.5,
             "probability": 0.2372,
             "bookmaker": "fanduel",
-            "game": "Milwaukee Brewers @ Tampa Bay Rays"
+            "game": "Milwaukee Brewers @ Tampa Bay Rays",
+            "created_at": "2026-10-28T21:24:35.305259+00:00",
+            "date": "2026-10-28",
+            "result": "loss",
+            "actual_value": 0
           },
           {
             "player": "Jake Bauers",
@@ -49911,13 +49915,17 @@
             "odds": 9.3,
             "probability": 0.2047,
             "bookmaker": "fanduel",
-            "game": "Milwaukee Brewers @ Tampa Bay Rays"
+            "game": "Milwaukee Brewers @ Tampa Bay Rays",
+            "created_at": "2026-10-28T21:24:35.305259+00:00",
+            "date": "2026-10-28",
+            "result": "loss",
+            "actual_value": 0
           }
         ],
         "odds": 79.05,
         "stake": 0.05,
         "probability": 0.0442,
-        "result": "pending",
+        "result": "loss",
         "created_at": "2026-10-28T21:24:35.305259+00:00",
         "combo_id": "f56dae23f59c1754",
         "features": {
@@ -49939,7 +49947,42 @@
         "builder_odds_estimated_from_legs": true,
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
-        "same_player_multistat": true
+        "same_player_multistat": true,
+        "profit": -0.05,
+        "settlement_legs": [
+          {
+            "player": "Jake Bauers",
+            "sport": "MLB",
+            "market": "Rbi Over 1.5",
+            "market_family": "rbi",
+            "direction": "over",
+            "point": 1.5,
+            "odds": 8.5,
+            "probability": 0.2372,
+            "bookmaker": "fanduel",
+            "game": "Milwaukee Brewers @ Tampa Bay Rays",
+            "created_at": "2026-10-28T21:24:35.305259+00:00",
+            "date": "2026-10-28",
+            "result": "loss",
+            "actual_value": 0
+          },
+          {
+            "player": "Jake Bauers",
+            "sport": "MLB",
+            "market": "Home Run",
+            "market_family": "home run",
+            "direction": "over",
+            "point": 0.5,
+            "odds": 9.3,
+            "probability": 0.2047,
+            "bookmaker": "fanduel",
+            "game": "Milwaukee Brewers @ Tampa Bay Rays",
+            "created_at": "2026-10-28T21:24:35.305259+00:00",
+            "date": "2026-10-28",
+            "result": "loss",
+            "actual_value": 0
+          }
+        ]
       },
       {
         "type": "betbuilder",
