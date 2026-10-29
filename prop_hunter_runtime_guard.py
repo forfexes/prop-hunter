@@ -89,6 +89,8 @@ def safety_checks():
     if sanitize_row({"player_name":"Lakers","home_team":"Lakers","away_team":"Celtics","market":"points","direction":"over","line":100.5,"odds_decimal":1.9}): fail("team label accepted as player")
     if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")
     if sanitize_row({"player_name":"Total Points","home_team":"A","away_team":"B","market":"points","direction":"over","line":47.5,"odds_decimal":1.9}): fail("aggregate total accepted as player")
+    if sanitize_row({"player_name":"Victor Wembanyama","sport":"NBA","market":"points","direction":"over","line":2.5,"odds_decimal":2.85}): fail("mislabeled NBA Points 2.5 accepted")
+    if not sanitize_row({"player_name":"Victor Wembanyama","sport":"NBA","market":"threes","direction":"over","line":2.5,"odds_decimal":2.85}): fail("valid NBA Threes 2.5 rejected")
     if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")
     combo=sanitize_row({"player_name":"Cam Ward","market":"rushing_yards","market_original":"Total Passing & Rushing Yards O/U - Cam Ward (TEN)","direction":"under","line":198.5,"odds_decimal":1.87})
     if combo: fail(f"combined passing+rushing market accepted as pure rushing: {combo}")
