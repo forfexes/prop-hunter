@@ -431,3 +431,10 @@ def test_every_builder_engine_is_over_only():
     assert 'base._direction(p) != "over"' in profiles
     assert 'c is None or base._direction(c) != "over"' in profiles
     assert 'if base._direction(obj) != "over":' in acca
+
+def test_ladder_longshots_need_recent_empirical_support():
+    builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
+    assert 'l15_rate = to_float(feats.get("gamelog_l15_rate"))' in builder
+    assert 'empirical_hits = float(l15_rate) * min(sample, 15)' in builder
+    assert 'if empirical_hits < 1.5:' in builder
+    assert 'unsupported 25+/30+ tails are rejected' in builder
