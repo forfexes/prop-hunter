@@ -359,52 +359,69 @@ def _display_line(base: str, direction: str, point: float, original_market: str 
     return f"{base.title()} {direction.title()} {point:g}"
 
 
+def _wilson_l15_lower_bound(hits: int, games: int) -> float:
+    """One-sided 90% Wilson lower bound on observed line-specific hit probability."""
+    if games <= 0 or hits < 0 or hits > games:
+        return 0.0
+    z = 1.2815515655446004
+    rate = hits / games
+    z2 = z * z
+    denominator = 1.0 + z2 / games
+    center = rate + z2 / (2.0 * games)
+    margin = z * math.sqrt(rate * (1.0 - rate) / games + z2 / (4.0 * games * games))
+    return max(0.0, (center - margin) / denominator)
+
+
 def _ladder_leg_candidate(prop: Any) -> Optional[Dict[str, Any]]:
-    """Validate one independently observed alternate line as its own +EV leg."""
+    """Fail-closed ladder leg with independent exact-L15 evidence and conservative EV."""
     if not _real_price(prop) or not _plausible_ladder_line(prop):
         return None
     point, odds = _point(prop), _odds(prop)
-    if point is None or odds <= 1.01:
+    if point is None or odds <= 1.01 or _direction(prop) not in {"over", "under"}:
         return None
-    probability = _candidate_probability(prop)
-    if probability is None:
-        return None
-
-    # Long-tail ladder guard: bookmaker implied probability must never create a
-    # ladder rung that has no recent empirical support. Normal attainable rungs
-    # (e.g. Howard 15+/20+) survive; unsupported 25+/30+ tails are rejected.
     feats = _features(prop)
-    sample = int(to_float(feats.get("gamelog_n") or feats.get("sample_size"), 0) or 0)
-    l15_rate = to_float(feats.get("gamelog_l15_rate"))
-    if sample >= 10 and l15_rate is not None:
-        # Require at least 2 observed hits in the recent sample for a ladder rung.
-        # This prevents 0/15 or 1/15 longshots being promoted by the market price.
-        empirical_hits = float(l15_rate) * min(sample, 15)
-        if empirical_hits < 1.5:
-            return None
-
-    edge = probability * odds - 1.0
-    # Ladders are long-tail by nature, but every rung must still be positive EV.
-    # Keep the same verified-pool floor used for ordinary non-HR candidates.
-    if edge < 0.018:
+    if feats.get("gamelog_prob_rejected"):
         return None
+
+    # The old gamelog_l15_rate is smoothed/clipped, NOT a real hit count.
+    # Never use bookmaker implied probability as a substitute for missing games.
+    n_raw = to_float(feats.get("gamelog_l15_n"))
+    hits_raw = to_float(feats.get("gamelog_l15_hits"))
+    verified_line = to_float(feats.get("gamelog_l15_line"))
+    verified_side = str(feats.get("gamelog_l15_direction") or "").lower()
+    if any(x is None or not math.isfinite(x) for x in (n_raw, hits_raw, verified_line)):
+        return None
+    n, hits = int(n_raw), int(hits_raw)
+    if (n_raw != n or hits_raw != hits or n < 10 or n > 15
+            or hits < 2 or hits > n or abs(point - verified_line) > 1e-6
+            or verified_side != _direction(prop)):
+        return None
+
+    model_probability = _candidate_probability(prop)
+    if model_probability is None:
+        return None
+    # The model can mix bookmaker price and smoothed estimates. A price-independent
+    # confidence lower bound caps the estimate used for EV/staking.
+    conservative_probability = _wilson_l15_lower_bound(hits, n)
+    probability = min(model_probability, conservative_probability)
+    edge = probability * odds - 1.0
+    if edge < 0.03:
+        return None
+
     fraction = 0.15 if odds < 4 else 0.10 if odds < 8 else 0.06
     cap = 0.40 if odds < 3 else 0.25 if odds < 6 else 0.12
+    # No forced minimum stake: a marginal or longshot estimate is never
+    # upgraded into a large position just to make the Telegram ticket visible.
     stake = _kelly(probability, odds, fraction, cap)
-    # Explicit minimums make valuable longshots visible instead of rounding away.
-    if odds >= 10:
-        stake = max(0.05, stake)
-    elif odds >= 6:
-        stake = max(0.10, stake)
-    elif odds >= 3:
-        stake = max(0.15, stake)
-    else:
-        stake = max(0.25, stake)
+    if stake < 0.005:
+        return None
     return {
-        "prop": prop, "point": point, "odds": odds, "probability": probability,
-        "edge": edge, "stake": round(min(stake, 1.0), 2),
+        "prop": prop, "point": point, "odds": odds,
+        "probability": round(probability, 4),
+        "edge": round(edge, 6),
+        "stake": round(min(stake, 1.0), 2),
+        "gamelog_l15_hits": hits, "gamelog_l15_n": n,
     }
-
 
 def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selected: Sequence[Any] = ()) -> List[Any]:
     """Build every verified same-player/same-book ladder with >=2 +EV rungs.
