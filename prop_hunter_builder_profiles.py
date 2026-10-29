@@ -121,7 +121,7 @@ def _candidate_pool(picks: Sequence[Any], props: Iterable[Any], PickCls: Any) ->
     pool: List[Any] = []
     seen = set()
     for p in picks or []:
-        if getattr(p, "type", None) != "single" or not base._real_price(p):
+        if getattr(p, "type", None) != "single" or not base._real_price(p) or base._direction(p) != "over":
             continue
         key = base._candidate_key(p)
         if key not in seen and base._prob(p) > 0 and base._odds(p) > 1.01:
@@ -129,7 +129,7 @@ def _candidate_pool(picks: Sequence[Any], props: Iterable[Any], PickCls: Any) ->
             pool.append(p)
     for prop in props or []:
         c = base._candidate_from_prop(prop, PickCls)
-        if c is None:
+        if c is None or base._direction(c) != "over":
             continue
         key = base._candidate_key(c)
         if key in seen:
