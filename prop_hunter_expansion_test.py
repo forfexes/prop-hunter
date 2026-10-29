@@ -401,3 +401,12 @@ assert 'if not scoped:\n            return None' in core_src
 wnba_src=Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
 assert 'return matched >= 2' in wnba_src
 print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
+
+def test_performance_breakdown_contract():
+    reporter = Path("prophunter_results.py").read_text(encoding="utf-8")
+    assert "def build_performance_summary(history: list)" in reporter
+    assert 'row["_bucket"]="Ladders"' in reporter
+    assert '"Cross Game" if scope=="cross_game" else "Builder"' in reporter
+    assert 'for side in ("over","under")' in reporter
+    assert 'ROI {roi:+6.1f}%' in reporter
+    assert 'PH_PERFORMANCE_TELEGRAM' in reporter
