@@ -74,6 +74,7 @@ jobs:
           PH_EXPECTED_RUNTIME_VERSION: 13.10.1-KEYLESS-HARDENED
         run: |
           python -m compileall -q .
+          python prop_hunter_ladder_l15_test.py
           python prop_hunter_runtime_guard.py
 
       - name: Fast source/bookmaker collection
