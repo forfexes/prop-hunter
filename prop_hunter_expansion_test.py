@@ -329,6 +329,49 @@ def test_odds_api_observed_sides():
     assert '1.0-fair_over' in core
 
 
+def test_dedicated_ladders_and_single_selection():
+    core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+    builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
+    # NFL/NHL ladders are dedicated lanes and must not depend on winning the Single slot.
+    assert 'sport == "NHL"' in builder
+    assert 'sport == "NFL"' in builder
+    assert '"shots on goal", "goalie saves", "points", "assists", "goals"' in builder
+    assert '"passing yards", "rushing yards", "receiving yards", "receptions"' in builder
+    assert '"passing touchdowns", "rushing touchdowns", "receiving touchdowns", "touchdowns"' in builder
+    assert 'and not dedicated_ladder' in builder
+
+    # Normal card: strongest qualified Single per player; raw props stay intact for extras.
+    assert 'def prioritize_best_single_per_player(picks):' in core
+    assert 'return (observed,prob,l15,min(n,15),edge)' in core
+    assert 'picks = prioritize_best_single_per_player(picks)' in core
+    assert 'build_autonomous_extras(picks, props, Pick, LadderLeg)' in core
+
+    # NHL requests explicit alternate market keys so real ladder rungs can enter the raw pool.
+    for key in ("player_shots_on_goal_alternate","player_goals_alternate","player_points_alternate","player_assists_alternate","player_goalie_saves_alternate"):
+        assert key in core
+
+    # Source quote identity includes direction: never cross-wire Over/Under fair probability.
+    assert 'wanted_dir = str(getattr(pk, "direction", "") or "").lower().strip()' in core
+    assert 'if not directional:' in core and 'return None' in core
+    assert 'pk.direction = getattr(m, "direction", None) or pk.direction or "over"' in core
+    # Execute production single selection without importing live API/card code.
+    import ast, types
+    node = next(n for n in ast.parse(core).body if isinstance(n, ast.FunctionDef) and n.name == 'prioritize_best_single_per_player')
+    env = {'_has_observed_price': lambda p: p.observed, 'log': types.SimpleNamespace(info=lambda *args:None)}
+    exec(compile(ast.Module(body=[node],type_ignores=[]),'<production-single-selection>','exec'),env)
+    def pick(prob, observed=True, game='A @ B', kind='single', l15=.7):
+        return types.SimpleNamespace(type=kind,player='Same Player',sport='NHL',game=game,probability=prob,edge_pct=10,observed=observed,features={'gamelog_n':15,'gamelog_l15_rate':l15})
+    low, high, missing = pick(.6), pick(.8), pick(.99,observed=False)
+    other_game, combo = pick(.65,game='C @ D'), pick(.4,kind='ladder')
+    raw=[low,high,missing,other_game,combo]
+    result=env['prioritize_best_single_per_player'](raw)
+    check(high in result and other_game in result and combo in result,'qualified selection lost another event or ladder')
+    check(low not in result and missing not in result,'weaker/unobserved single displaced observed selection')
+    check(len(raw)==5 and raw[0] is low,'single selection mutated raw ladder input')
+    tie=pick(.8,l15=.9)
+    check(env['prioritize_best_single_per_player']([high,tie]) == [tie],'L15 did not break equal-probability tie')
+
+
 def main():
     tests=[
         test_ncaab,test_ncaaf,test_mlb_extra,test_nba_wnba_nfl_nhl_guards,
@@ -336,6 +379,7 @@ def main():
         test_keyless_extension_and_card_formatter,test_delivery_failure_and_team_identity_guards,
         test_supabase_select_rows_paginates,test_telegram_pro_tip_window_contract,test_builder_persistence_and_learning_loop,
         test_binary_enrichment_and_cross_game_pool,test_odds_api_observed_sides,
+        test_dedicated_ladders_and_single_selection,
     ]
     for t in tests:
         t(); print(f"EXPANSION TEST OK: {t.__name__}")
@@ -357,26 +401,3 @@ assert 'if not scoped:\n            return None' in core_src
 wnba_src=Path("prop_hunter_results_wnba.py").read_text(encoding="utf-8")
 assert 'return matched >= 2' in wnba_src
 print("EVENT SCOPE FAIL-CLOSED TEST PASSED")
-
-# NFL/NHL ladders are dedicated lanes and must not depend on winning the Single slot.
-assert 'sport == "NHL"' in builder
-assert 'sport == "NFL"' in builder
-assert '"shots on goal", "goalie saves", "points", "assists", "goals"' in builder
-assert '"passing yards", "rushing yards", "receiving yards", "receptions"' in builder
-assert '"passing touchdowns", "rushing touchdowns", "receiving touchdowns", "touchdowns"' in builder
-assert 'and not dedicated_ladder' in builder
-
-# Normal card: strongest qualified Single per player; raw props stay intact for extras.
-assert 'def prioritize_best_single_per_player(picks):' in core
-assert 'return (observed,prob,l15,min(n,15),edge)' in core
-assert 'picks = prioritize_best_single_per_player(picks)' in core
-assert 'build_autonomous_extras(picks, props, Pick, LadderLeg)' in core
-
-# NHL requests explicit alternate market keys so real ladder rungs can enter the raw pool.
-for key in ("player_shots_on_goal_alternate","player_goals_alternate","player_points_alternate","player_assists_alternate","player_goalie_saves_alternate"):
-    assert key in core
-
-# Source quote identity includes direction: never cross-wire Over/Under fair probability.
-assert 'wanted_dir = str(getattr(pk, "direction", "") or "").lower().strip()' in core
-assert 'if not directional:' in core and 'return None' in core
-assert 'pk.direction = getattr(m, "direction", None) or pk.direction or "over"' in core
