@@ -569,6 +569,12 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
                 for leg in (getattr(ladder, "picks", None) or [])
             ),
         )
+        # NHL feed aliases (e.g. CGY @ EDM versus Calgary @ Edmonton)
+        # must not create multiple exposure to the same player's ladder
+        # across two sportsbooks during one card-generation window.
+        # Never mix rung prices from different books within one ladder.
+        if _sport(ladder) == "NHL":
+            sig = ("nhl_player_ladder", sig[0], sig[1], sig[2])
         if sig in seen:
             continue
         seen.add(sig)
