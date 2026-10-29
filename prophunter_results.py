@@ -8,6 +8,7 @@ realised stat/profit appear directly inside the original tip.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -701,17 +702,36 @@ def _send_summary(text: str) -> None:
         print(f"Telegram send failed: {exc}")
 
 
+def _combo_source_key(combo: dict, day: str) -> Optional[str]:
+    """Reproduce the exact SHA-1 used by prophunter_core_1392.persist.
+
+    Compute BEFORE adding settlement statuses/actuals to leg_details. Only
+    source-derived, exact keys may be used for database updates.
+    """
+    if not day or not combo.get("type") or not combo.get("player") or not combo.get("market"):
+        return None
+    legs = combo.get("ladder_legs") or combo.get("leg_details") or combo.get("legs") or []
+    payload = {
+        "date": str(day)[:10], "type": combo.get("type"),
+        "player": combo.get("player"), "market": combo.get("market"),
+        "legs": legs,
+    }
+    return hashlib.sha1(json.dumps(payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+
 def _sync_pick_table(pick: dict) -> None:
     """Best-effort mirror status/profit to both historical pick tables."""
     if not SUPABASE_URL or not SUPABASE_KEY or not pick.get("dedup_key"):
         return
-    status = str(pick.get("result") or "pending")
-    profit = _to_float(pick.get("profit"), 0.0) or 0.0
+    status = str(pick.get("result") or "pending").lower()
+    profit = _to_float(pick.get("profit")) if status in CLOSED else None
     d = _date_of_pick(pick)
+    if not d:
+        return  # Never update the same key across multiple dates.
     headers = _headers({"Content-Type": "application/json", "Prefer": "return=minimal"})
     targets = [
         ("prop_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"result": status, "status": status, "profit": profit}),
-        ("prop_hunter_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"status": status, "result": status, "profit_units": profit}),
+        ("prop_hunter_picks", {"dedup_key": f"eq.{pick['dedup_key']}"}, {"status": status, "result": status, "profit": profit, "profit_units": profit}),
     ]
     if d:
         targets[0][1]["date"] = f"eq.{d}"
@@ -759,8 +779,20 @@ def main() -> int:
                 merged += 1
                 _sync_pick_table(p)
         for combo in combos:
+            # Preserve a stable canonical key BEFORE leg_details gets enriched
+            # with settlement results. Historical pending combos predate this key.
+            if str(combo.get("result") or "pending").lower() not in CLOSED:
+                if not combo.get("date"):
+                    combo["date"] = day
+                    changed = True
+                if not combo.get("dedup_key"):
+                    key = _combo_source_key(combo, day)
+                    if key:
+                        combo["dedup_key"] = key
+                        changed = True
             if _settle_combo(combo, by_dedup, by_signature, context_picks=picks):
                 changed = True
+                _sync_pick_table(combo)
 
         for card in entry.get("cards") or []:
             text = _decorate_card(card, picks, combos)
