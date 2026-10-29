@@ -410,3 +410,10 @@ def test_performance_breakdown_contract():
     assert 'for side in ("over","under")' in reporter
     assert 'ROI {roi:+6.1f}%' in reporter
     assert 'PH_PERFORMANCE_TELEGRAM' in reporter
+
+def test_bet365_builder_requires_direct_observed_selection():
+    builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
+    assert 'book == "bet365"' in builder
+    assert 'bool(_features(x).get("bet_builder"))' in builder
+    assert '{"bet365","browser_bet365","bet365_browser"}' in builder
+    assert 'generic/API bet365' in builder
