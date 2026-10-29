@@ -422,3 +422,12 @@ def test_builders_are_temporarily_over_only():
     builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
     assert 'if any(_direction(x) != "over" for x in legs):' in builder
     assert 'builders are OVER-only' in builder
+
+def test_every_builder_engine_is_over_only():
+    legacy = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
+    profiles = Path("prop_hunter_builder_profiles.py").read_text(encoding="utf-8")
+    acca = Path("prop_hunter_acca_engine.py").read_text(encoding="utf-8")
+    assert 'if any(_direction(x) != "over" for x in legs):' in legacy
+    assert 'base._direction(p) != "over"' in profiles
+    assert 'c is None or base._direction(c) != "over"' in profiles
+    assert 'if base._direction(obj) != "over":' in acca
