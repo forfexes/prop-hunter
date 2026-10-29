@@ -53176,14 +53176,28 @@
           "bookmaker": "fanduel",
           "source": "fanduel_direct"
         },
-        "result": "loss",
-        "profit": -0.33,
+        "result": "withdrawn",
+        "profit": null,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-29T00:24:59.593729+00:00",
-        "actual_value": 0,
+        "actual_value": null,
         "settled_at": "2026-10-29T13:24:33.991606+00:00",
-        "settlement_source": "prop_hunter_results"
+        "settlement_source": "prop_hunter_results",
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          }
+        ],
+        "status": "withdrawn"
       },
       {
         "date": "2026-10-29",
@@ -55374,7 +55388,7 @@
         "odds": 1.38,
         "stake": 0.35,
         "probability": 0.8409,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:25:02.872576+00:00",
         "ladder_legs": [
           {
@@ -55420,7 +55434,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "d2d8942c6c6a0633aa8704fa15cfbbce2c2ab6d0",
-        "profit": -0.01,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Nathan MacKinnon",
@@ -55464,7 +55478,22 @@
             "result": "loss",
             "actual_value": 2
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Nathan MacKinnon",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 1.38,
+            "original_market": "1st Period 1+ Shots on Goal"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "ladder",
@@ -56038,7 +56067,7 @@
         "odds": 11.44,
         "stake": 0.05,
         "probability": 0.3927,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:25:04.698062+00:00",
         "combo_id": "c88075f6fdb869cf",
         "features": {
@@ -56059,7 +56088,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "765c4e1e85f21be583e11dd0e62f58481334a722",
-        "profit": -0.05,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Jack Hughes",
@@ -56095,7 +56124,22 @@
             "result": "win",
             "actual_value": 1
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "big",
@@ -56154,7 +56198,7 @@
         "odds": 2189.14,
         "stake": 0.05,
         "probability": 0.0092,
-        "result": "pending",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:25:05.110498+00:00",
         "combo_id": "1bbca3b94a77df54",
         "features": {
@@ -56174,7 +56218,23 @@
         "combo_scope": null,
         "same_player_multistat": false,
         "date": "2026-10-29",
-        "dedup_key": "a9101990e98de0275d876566eacde5a3970af3eb"
+        "dedup_key": "a9101990e98de0275d876566eacde5a3970af3eb",
+        "quote_original_result": "pending",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          }
+        ],
+        "status": "withdrawn",
+        "profit": null,
+        "actual_value": null
       },
       {
         "type": "betbuilder",
@@ -56229,7 +56289,7 @@
         "odds": 2.04,
         "stake": 0.25,
         "probability": 0.6568,
-        "result": "win",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:25:05.500837+00:00",
         "combo_id": "e3532572b8edb565",
         "features": {
@@ -56254,7 +56314,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "8c370a49ce615fbfb6d2774dd4fee267e50448f4",
-        "profit": 0.26,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Nathan MacKinnon",
@@ -56294,7 +56354,22 @@
             "result": "win",
             "actual_value": 2
           }
-        ]
+        ],
+        "quote_original_result": "win",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Nathan MacKinnon",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 1.38,
+            "original_market": "1st Period 1+ Shots on Goal"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "betbuilder",
@@ -56349,7 +56424,7 @@
         "odds": 5.17,
         "stake": 0.15,
         "probability": 0.503,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:25:05.896029+00:00",
         "combo_id": "1c1e7ea73a73198b",
         "features": {
@@ -56374,7 +56449,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "f00e58099533256187f393fc00f3d803a2cae91d",
-        "profit": -0.15,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Jack Hughes",
@@ -56414,7 +56489,29 @@
             "result": "win",
             "actual_value": 2
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          },
+          {
+            "player": "Nathan MacKinnon",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 1.38,
+            "original_market": "1st Period 1+ Shots on Goal"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "betbuilder",
@@ -56489,7 +56586,7 @@
         "odds": 15.78,
         "stake": 0.08,
         "probability": 0.3005,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:25:06.291220+00:00",
         "combo_id": "a3b83f044e72de7b",
         "features": {
@@ -56514,7 +56611,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "20163a3c4b503dcd937dd8a48482a3bff3a66754",
-        "profit": -0.08,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Jack Hughes",
@@ -56573,7 +56670,29 @@
             "result": "win",
             "actual_value": 2
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          },
+          {
+            "player": "Nathan MacKinnon",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 1.38,
+            "original_market": "1st Period 1+ Shots on Goal"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "betbuilder",
@@ -56688,7 +56807,7 @@
         "odds": 120.3,
         "stake": 0.05,
         "probability": 0.0741,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:25:06.806774+00:00",
         "combo_id": "b9d6200aef02c19f",
         "features": {
@@ -56713,7 +56832,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "71c5138997c6f42c1dd3e82b4045aeaf146cc219",
-        "profit": -0.05,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Jack Hughes",
@@ -56810,7 +56929,36 @@
             "result": "win",
             "actual_value": 2
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          },
+          {
+            "player": "Nazem Kadri",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 5.15,
+            "original_market": "1st Period 1+ Points"
+          },
+          {
+            "player": "Nathan MacKinnon",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 1.38,
+            "original_market": "1st Period 1+ Shots on Goal"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "betbuilder",
@@ -57767,7 +57915,7 @@
         "odds": 1.38,
         "stake": 0.35,
         "probability": 0.8409,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:44:36.895440+00:00",
         "ladder_legs": [
           {
@@ -57813,7 +57961,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "d2d8942c6c6a0633aa8704fa15cfbbce2c2ab6d0",
-        "profit": -0.01,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Nathan MacKinnon",
@@ -57857,7 +58005,22 @@
             "result": "loss",
             "actual_value": 2
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Nathan MacKinnon",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 1.38,
+            "original_market": "1st Period 1+ Shots on Goal"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "ladder",
@@ -58290,7 +58453,7 @@
         "odds": 39.66,
         "stake": 0.05,
         "probability": 0.0906,
-        "result": "pending",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:44:37.883413+00:00",
         "combo_id": "24ce0678e108d1bf",
         "features": {
@@ -58310,7 +58473,23 @@
         "combo_scope": null,
         "same_player_multistat": false,
         "date": "2026-10-29",
-        "dedup_key": "a0ce405128c449068fa143c00a4203fc7cc03439"
+        "dedup_key": "a0ce405128c449068fa143c00a4203fc7cc03439",
+        "quote_original_result": "pending",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Nazem Kadri",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 5.15,
+            "original_market": "1st Period 1+ Points"
+          }
+        ],
+        "status": "withdrawn",
+        "profit": null,
+        "actual_value": null
       },
       {
         "type": "big",
@@ -58369,7 +58548,7 @@
         "odds": 1011.2,
         "stake": 0.05,
         "probability": 0.01,
-        "result": "pending",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:44:38.204423+00:00",
         "combo_id": "8fa379588214cffe",
         "features": {
@@ -58389,7 +58568,30 @@
         "combo_scope": null,
         "same_player_multistat": false,
         "date": "2026-10-29",
-        "dedup_key": "8c72f459f5169ea27a17ee3ef90289a84f46c26e"
+        "dedup_key": "8c72f459f5169ea27a17ee3ef90289a84f46c26e",
+        "quote_original_result": "pending",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Nazem Kadri",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 5.15,
+            "original_market": "1st Period 1+ Points"
+          },
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          }
+        ],
+        "status": "withdrawn",
+        "profit": null,
+        "actual_value": null
       },
       {
         "type": "betbuilder",
@@ -58444,7 +58646,7 @@
         "odds": 2.04,
         "stake": 0.25,
         "probability": 0.6568,
-        "result": "win",
+        "result": "withdrawn",
         "created_at": "2026-10-29T00:44:38.546668+00:00",
         "combo_id": "059d03e915c93227",
         "features": {
@@ -58469,7 +58671,7 @@
         "same_player_multistat": false,
         "date": "2026-10-29",
         "dedup_key": "8c370a49ce615fbfb6d2774dd4fee267e50448f4",
-        "profit": 0.26,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Nathan MacKinnon",
@@ -58509,7 +58711,22 @@
             "result": "win",
             "actual_value": 2
           }
-        ]
+        ],
+        "quote_original_result": "win",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Nathan MacKinnon",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 1.38,
+            "original_market": "1st Period 1+ Shots on Goal"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "betbuilder",
@@ -63610,8 +63827,8 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 29.10.2026\n\n🏒 Jack Hughes\n🏟 New Jersey Devils @ Colorado Avalanche\n\n   ❌ • points Over 0.5 @3.75 → 0.33u · Ergebnis 0 · -0.33u\n📈 Prob 60% · Edge +33.1% · Confidence 80/100\n💡 src:fanduel | DB L15 avg 0.9, 59% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-10-29T13:27:55.208768+00:00"
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nJack Hughes\n\n🎯 PROP HUNTER PRO TIP — SINGLE — 29.10.2026\n\n🏒 Jack Hughes\n🏟 New Jersey Devils @ Colorado Avalanche\n\n• points Over 0.5 @3.75 → 0.33u\n💡 src:fanduel | DB L15 avg 0.9, 59% über Linie\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:42.518413+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353380+00:00",
@@ -63712,8 +63929,8 @@
           "38624251e10b4241"
         ],
         "card_kind": "ladder",
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 29.10.2026\n\n🏒 Nathan MacKinnon\n🏟 New Jersey Devils @ Colorado Avalanche\n\n✅ 1+ Shots On Goal @1.38 → 0.25u · Ergebnis 2 · +0.09u\n  📈 Prob 84% · Edge +15.8%\n❌ 7+ Shots On Goal @7.50 → 0.1u · Ergebnis 2 · -0.10u\n  📈 Prob 18% · Edge +36.3%\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.01u\n@prophunter",
-        "settlement_updated_at": "2026-10-29T13:28:00.725618+00:00"
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nNathan MacKinnon\n\n🪜 PROP HUNTER PRO TIP — LADDER — 29.10.2026\n\n🏒 Nathan MacKinnon\n🏟 New Jersey Devils @ Colorado Avalanche\n\n• 1+ Shots On Goal @1.38 → 0.25u\n• 7+ Shots On Goal @7.50 → 0.1u\n\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:44.008595+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353412+00:00",
@@ -63775,8 +63992,8 @@
           "c88075f6fdb869cf"
         ],
         "card_kind": "big",
-        "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 29.10.2026\n\n🏟 New Jersey Devils @ Colorado Avalanche\n❌ 2-Leg RISK @11.44 → 0.05u · -0.05u\n  ├ Jack Hughes Points Over 0.5 @3.75\n  └ Nathan MacKinnon Points Over 0.5 @3.05\n📈 Prob 39.3% · EV +349.2%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
-        "settlement_updated_at": "2026-10-29T13:28:04.828632+00:00"
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nJack Hughes + Nathan MacKinnon\n\n💣 PROP HUNTER PRO TIP — LOTTERY — 29.10.2026\n\n🏟 New Jersey Devils @ Colorado Avalanche\n• 2-Leg RISK @11.44 → 0.05u\n  ├ Jack Hughes Points Over 0.5 @3.75\n  └ Nathan MacKinnon Points Over 0.5 @3.05\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:45.420139+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353431+00:00",
@@ -63787,7 +64004,9 @@
         "combo_ids": [
           "1bbca3b94a77df54"
         ],
-        "card_kind": "big"
+        "card_kind": "big",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nAlex Formenton + Jack Hughes + Nathan MacKinnon + Joel Farabee\n\n💣 PROP HUNTER PRO TIP — LOTTERY — 29.10.2026\n\n🏟 LOTTERY\n• 4-Leg LOTTERY @2189.14 → 0.05u\n  ├ Alex Formenton Goals Over 1.5 @66.00\n  ├ Jack Hughes Points Over 0.5 @3.75\n  ├ Nathan MacKinnon Points Over 0.5 @3.05\n  └ Joel Farabee Assists Over 0.5 @2.90\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:47.197627+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353435+00:00",
@@ -63798,7 +64017,9 @@
         "combo_ids": [
           "e3532572b8edb565"
         ],
-        "card_kind": "betbuilder"
+        "card_kind": "betbuilder",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nNathan MacKinnon + Jack Hughes\n\n🎯 PROP HUNTER PRO TIP — BUILDER — 29.10.2026\n\n🏟 New Jersey Devils @ Colorado Avalanche\n• 2-Leg SAFE SGP — finale Book-Quote prüfen\n  ├ Nathan MacKinnon Shots On Goal Over 0.5 @1.38\n  └ Jack Hughes Shots On Goal Over 0.5 @1.48\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:48.607506+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353438+00:00",
@@ -63809,7 +64030,9 @@
         "combo_ids": [
           "1c1e7ea73a73198b"
         ],
-        "card_kind": "betbuilder"
+        "card_kind": "betbuilder",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nJack Hughes + Nathan MacKinnon\n\n🎯 PROP HUNTER PRO TIP — BUILDER — 29.10.2026\n\n🏟 New Jersey Devils @ Colorado Avalanche\n• 2-Leg VALUE SGP — finale Book-Quote prüfen\n  ├ Jack Hughes Points Over 0.5 @3.75\n  └ Nathan MacKinnon Shots On Goal Over 0.5 @1.38\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:50.029355+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353442+00:00",
@@ -63820,7 +64043,9 @@
         "combo_ids": [
           "a3b83f044e72de7b"
         ],
-        "card_kind": "betbuilder"
+        "card_kind": "betbuilder",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nJack Hughes + Nathan MacKinnon\n\n🎯 PROP HUNTER PRO TIP — BUILDER — 29.10.2026\n\n🏟 New Jersey Devils @ Colorado Avalanche\n• 3-Leg AGGRESSIVE SGP — finale Book-Quote prüfen\n  ├ Jack Hughes Points Over 0.5 @3.75\n  ├ Nathan MacKinnon Points Over 0.5 @3.05\n  └ Nathan MacKinnon Shots On Goal Over 0.5 @1.38\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:51.451300+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353446+00:00",
@@ -63831,7 +64056,9 @@
         "combo_ids": [
           "b9d6200aef02c19f"
         ],
-        "card_kind": "betbuilder"
+        "card_kind": "betbuilder",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nJack Hughes + Nathan MacKinnon + Nazem Kadri\n\n🎯 PROP HUNTER PRO TIP — BUILDER — 29.10.2026\n\n🏟 New Jersey Devils @ Colorado Avalanche\n• 5-Leg LONGSHOT SGP — finale Book-Quote prüfen\n  ├ Jack Hughes Points Over 0.5 @3.75\n  ├ Nathan MacKinnon Points Over 0.5 @3.05\n  ├ Nazem Kadri Points Over 0.5 @5.15\n  ├ Nathan MacKinnon Shots On Goal Over 0.5 @1.38\n  └ Jack Hughes Shots On Goal Over 0.5 @1.48\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:52.852599+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353450+00:00",
@@ -63954,8 +64181,8 @@
           "ba1a89f8f68baeca"
         ],
         "card_kind": "ladder",
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 29.10.2026\n\n🏒 Nathan MacKinnon\n🏟 New Jersey Devils @ Colorado Avalanche\n\n✅ 1+ Shots On Goal @1.38 → 0.25u · Ergebnis 2 · +0.09u\n  📈 Prob 84% · Edge +15.8%\n❌ 7+ Shots On Goal @7.50 → 0.1u · Ergebnis 2 · -0.10u\n  📈 Prob 18% · Edge +36.3%\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.01u\n@prophunter",
-        "settlement_updated_at": "2026-10-29T13:28:31.911610+00:00"
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nNathan MacKinnon\n\n🪜 PROP HUNTER PRO TIP — LADDER — 29.10.2026\n\n🏒 Nathan MacKinnon\n🏟 New Jersey Devils @ Colorado Avalanche\n\n• 1+ Shots On Goal @1.38 → 0.25u\n• 7+ Shots On Goal @7.50 → 0.1u\n\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:54.265877+00:00"
       },
       {
         "created_at": "2026-10-29T00:44:41.156812+00:00",
@@ -63992,7 +64219,9 @@
         "combo_ids": [
           "24ce0678e108d1bf"
         ],
-        "card_kind": "big"
+        "card_kind": "big",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nRyan Strome + Nazem Kadri\n\n💣 PROP HUNTER PRO TIP — LOTTERY — 29.10.2026\n\n🏟 RISK\n• 2-Leg RISK @39.66 → 0.05u\n  ├ Ryan Strome Shots On Goal Over 1.5 @7.70\n  └ Nazem Kadri Points Over 0.5 @5.15\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:55.670044+00:00"
       },
       {
         "created_at": "2026-10-29T00:44:41.156821+00:00",
@@ -64003,7 +64232,9 @@
         "combo_ids": [
           "8fa379588214cffe"
         ],
-        "card_kind": "big"
+        "card_kind": "big",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nRyan Strome + Nazem Kadri + Veronica Burton + Jack Hughes\n\n💣 PROP HUNTER PRO TIP — LOTTERY — 29.10.2026\n\n🏟 LOTTERY\n• 4-Leg LOTTERY @1011.20 → 0.05u\n  ├ Ryan Strome Shots On Goal Over 1.5 @7.70\n  ├ Nazem Kadri Points Over 0.5 @5.15\n  ├ Veronica Burton Rebounds Over 5.5 @6.80\n  └ Jack Hughes Points Over 0.5 @3.75\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:57.089768+00:00"
       },
       {
         "created_at": "2026-10-29T00:44:41.156824+00:00",
@@ -64014,7 +64245,9 @@
         "combo_ids": [
           "059d03e915c93227"
         ],
-        "card_kind": "betbuilder"
+        "card_kind": "betbuilder",
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nNathan MacKinnon + Jack Hughes\n\n🎯 PROP HUNTER PRO TIP — BUILDER — 29.10.2026\n\n🏟 New Jersey Devils @ Colorado Avalanche\n• 2-Leg SAFE SGP — finale Book-Quote prüfen\n  ├ Nathan MacKinnon Shots On Goal Over 0.5 @1.38\n  └ Jack Hughes Shots On Goal Over 0.5 @1.48\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-29T23:50:58.492830+00:00"
       },
       {
         "created_at": "2026-10-29T00:44:41.156828+00:00",
