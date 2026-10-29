@@ -434,7 +434,12 @@ def test_every_builder_engine_is_over_only():
 
 def test_ladder_longshots_need_recent_empirical_support():
     builder = Path("prop_hunter_builder_engine.py").read_text(encoding="utf-8")
-    assert 'l15_rate = to_float(feats.get("gamelog_l15_rate"))' in builder
-    assert 'empirical_hits = float(l15_rate) * min(sample, 15)' in builder
-    assert 'if empirical_hits < 1.5:' in builder
-    assert 'unsupported 25+/30+ tails are rejected' in builder
+    core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+    assert 'feats["gamelog_l15_hits"] = empirical_hits' in core
+    assert 'feats["gamelog_l15_line"] = float(point)' in core
+    assert 'feats["gamelog_l15_direction"] = direction' in core
+    assert 'hits_raw = to_float(feats.get("gamelog_l15_hits"))' in builder
+    assert 'verified_line = to_float(feats.get("gamelog_l15_line"))' in builder
+    assert 'hits < 2' in builder and 'n < 10' in builder
+    assert 'probability = min(model_probability, conservative_probability)' in builder
+    assert 'if edge < 0.03:' in builder
