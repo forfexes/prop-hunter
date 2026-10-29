@@ -369,6 +369,20 @@ def _ladder_leg_candidate(prop: Any) -> Optional[Dict[str, Any]]:
     probability = _candidate_probability(prop)
     if probability is None:
         return None
+
+    # Long-tail ladder guard: bookmaker implied probability must never create a
+    # ladder rung that has no recent empirical support. Normal attainable rungs
+    # (e.g. Howard 15+/20+) survive; unsupported 25+/30+ tails are rejected.
+    feats = _features(prop)
+    sample = int(to_float(feats.get("gamelog_n") or feats.get("sample_size"), 0) or 0)
+    l15_rate = to_float(feats.get("gamelog_l15_rate"))
+    if sample >= 10 and l15_rate is not None:
+        # Require at least 2 observed hits in the recent sample for a ladder rung.
+        # This prevents 0/15 or 1/15 longshots being promoted by the market price.
+        empirical_hits = float(l15_rate) * min(sample, 15)
+        if empirical_hits < 1.5:
+            return None
+
     edge = probability * odds - 1.0
     # Ladders are long-tail by nature, but every rung must still be positive EV.
     # Keep the same verified-pool floor used for ordinary non-HR candidates.
