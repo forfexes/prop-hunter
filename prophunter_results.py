@@ -644,7 +644,19 @@ def _performance_rows(history: list) -> list:
             if c.get("type")=="ladder":
                 for leg in c.get("settlement_legs") or c.get("ladder_legs") or []:
                     if not leg.get("settlement_invalidated") and str(leg.get("result") or "").lower() in CLOSED:
-                        row=dict(leg); row["_bucket"]="Ladders"; rows.append(row)
+                        row=dict(leg)
+                        # Older settled rungs retain stake/price but not their P/L.
+                        # Derive each rung once; never add the ladder ticket again.
+                        if row.get("profit") is None:
+                            stake = _to_float(row.get("stake"))
+                            odds = _to_float(row.get("odds"))
+                            status = str(row.get("result") or "").lower()
+                            if stake is not None and (status not in {"win", "won"} or odds is not None and odds > 1):
+                                row["profit"] = _profit_for(row, status)
+                        for field in ("sport", "league", "source_sport"):
+                            if not row.get(field) and c.get(field):
+                                row[field] = c[field]
+                        row["_bucket"]="Ladders"; rows.append(row)
                 continue
             if str(c.get("result") or "").lower() not in CLOSED: continue
             row=dict(c)

@@ -2,6 +2,9 @@ name: Prop Hunter Daily Control
 
 "on":
   workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/daily-control-trigger'
   schedule:
     - cron: '45 4 * * *'
 

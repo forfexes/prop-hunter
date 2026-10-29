@@ -6,6 +6,8 @@ name: Prop Hunter Shadow Data
     - cron: '25 5 * * *'
   push:
     paths:
+      - 'prop_hunter_snapshot_retention.py'
+      - 'prop_hunter_snapshot_retention_test.py'
       - 'prop_hunter_shadow_leagues.py'
       - 'prop_hunter_shadow_leagues_test.py'
       - 'prop_hunter_sgo.py'

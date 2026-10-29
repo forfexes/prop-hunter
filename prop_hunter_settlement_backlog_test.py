@@ -107,6 +107,14 @@ def main():
     assert reporter._settle_combo(ladder, *indexes)
     assert ladder['result'] == 'win' and ladder['profit'] == .9, ladder
     assert not reporter._settle_combo(ladder, *indexes), 'second grading must be idempotent'
+    performance = reporter._performance_rows([{'kombis':[ladder]}])
+    assert len(performance)==2 and round(sum(r['profit'] for r in performance),2)==ladder['profit']
+    assert all('profit' not in leg for leg in ladder['settlement_legs']), 'report must not mutate evidence'
+    mixed={'type':'ladder','sport':'NHL','result':'win','profit':.54,'settlement_legs':[
+        {'result':'win','stake':.15,'odds':4.9},{'result':'loss','stake':.05,'odds':11.6}]}
+    rows=reporter._performance_rows([{'kombis':[mixed]}])
+    assert round(sum(r['profit'] for r in rows),2)==.54 and all(r['sport']=='NHL' for r in rows)
+    assert 'ROI +270.0%' in reporter._performance_line('Ladders',rows)
     wrong_day = dict(ladder, date='2026-10-23')
     assert not reporter._settle_combo(wrong_day, *indexes)
     one = {'pick_id': 'p', 'result': 'loss', 'settled_at': '2026-10-22'}

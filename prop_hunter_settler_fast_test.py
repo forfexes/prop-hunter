@@ -145,3 +145,17 @@ h=[{'picks':[valid,invalid],'kombis':[
 performance=_performance_rows(h)
 assert len(performance)==2 and [r['_bucket'] for r in performance] == ['Singles','Ladders']
 print('WITHDRAWN PERFORMANCE ACCOUNTING TEST PASSED')
+
+# Conflict scanner must reject real markers and allow literal grep protection.
+from tempfile import TemporaryDirectory
+from pathlib import Path
+from prop_hunter_daily_control import inspect_workflow
+with TemporaryDirectory() as tmp:
+    fixture=Path(tmp)/'fixture.yml'
+    base='name: fixture\n"on":\njobs:\n  x:\n    runs-on: ubuntu-latest\n    timeout-minutes: 1\n'
+    fixture.write_text(base+'    # grep -Eq "^(<<<<<<<|=======|>>>>>>>)" history.json\n')
+    assert 'merge-conflict marker' not in inspect_workflow(fixture,'fixture')
+    for marker in ('<<<<<<< HEAD','=======','=======   ','>>>>>>> branch'):
+        fixture.write_text(base+marker+'\n')
+        assert 'merge-conflict marker' in inspect_workflow(fixture,'fixture'),marker
+print('WORKFLOW CONFLICT MARKER TEST PASSED')
