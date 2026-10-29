@@ -1,16 +1,16 @@
 {
-  "updated_at": "2026-10-28T23:30:29.859124+00:00",
+  "updated_at": "2026-10-29T01:04:30.692628+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 128,
+      "rows": 676,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "fanduel_direct"
       ],
-      "market_count": 14,
-      "latest": "2026-10-28T14:13:59.725405+00:00",
+      "market_count": 17,
+      "latest": "2026-10-29T00:39:45.200674+00:00",
       "missing_core": [
         "home run",
         "total bases",
@@ -18,47 +18,50 @@
       ]
     },
     "NBA": {
-      "rows": 2722,
+      "rows": 4202,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "draftkings_direct",
         "fanduel_direct"
       ],
-      "market_count": 27,
-      "latest": "2026-10-28T21:16:10.239076+00:00",
+      "market_count": 29,
+      "latest": "2026-10-29T00:39:51.479259+00:00",
       "missing_core": []
     },
     "WNBA": {
-      "rows": 667,
+      "rows": 144,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "fanduel_direct"
       ],
-      "market_count": 12,
-      "latest": "2026-10-28T21:16:11.566021+00:00",
+      "market_count": 11,
+      "latest": "2026-10-29T00:39:53.583920+00:00",
       "missing_core": []
     },
     "NFL": {
-      "rows": 327,
+      "rows": 81,
       "sources": [
+        "betrivers_direct",
         "bovada_direct",
         "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
-      ],
-      "market_count": 11,
-      "latest": "2026-10-28T21:16:46.934864+00:00",
-      "missing_core": []
-    },
-    "NHL": {
-      "rows": 206,
-      "sources": [
         "fanduel_direct"
       ],
-      "market_count": 4,
-      "latest": "2026-10-28T21:16:19.173787+00:00",
+      "market_count": 12,
+      "latest": "2026-10-29T00:39:55.964911+00:00",
+      "missing_core": [
+        "touchdown"
+      ]
+    },
+    "NHL": {
+      "rows": 277,
+      "sources": [
+        "betrivers_direct",
+        "fanduel_direct"
+      ],
+      "market_count": 5,
+      "latest": "2026-10-29T00:39:58.407603+00:00",
       "missing_core": [
         "saves"
       ]
@@ -76,11 +79,11 @@
       ]
     },
     {
-      "sport": "NHL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "fanduel_direct"
+      "sport": "NFL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "touchdown"
       ]
     },
     {
