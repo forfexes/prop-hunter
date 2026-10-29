@@ -623,6 +623,66 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None) -> bool:
     return False
 
 
+def _performance_rows(history: list) -> list:
+    """Flatten settled selections for performance accounting.
+
+    Singles and combo tickets count once. Ladder rungs count individually because
+    each rung carries its own stake/price and therefore its own realised P/L.
+    """
+    rows=[]
+    for entry in history or []:
+        for p in entry.get("picks") or []:
+            if str(p.get("result") or "").lower() in CLOSED:
+                row=dict(p); row["_bucket"]="HR/Longshots" if "hr" in str(p.get("category") or "").lower() or "home run" in str(p.get("market") or "").lower() else "Singles"
+                rows.append(row)
+        for c in entry.get("kombis") or []:
+            if c.get("type")=="ladder":
+                for leg in c.get("settlement_legs") or c.get("ladder_legs") or []:
+                    if str(leg.get("result") or "").lower() in CLOSED:
+                        row=dict(leg); row["_bucket"]="Ladders"; rows.append(row)
+                continue
+            if str(c.get("result") or "").lower() not in CLOSED: continue
+            row=dict(c)
+            scope=str(c.get("combo_scope") or (c.get("features") or {}).get("combo_scope") or "").lower()
+            row["_bucket"]="Cross Game" if scope=="cross_game" else "Builder"
+            rows.append(row)
+    return rows
+
+def _performance_line(label: str, rows: list) -> str:
+    wins=sum(str(r.get("result") or "").lower() in {"win","won"} for r in rows)
+    losses=sum(str(r.get("result") or "").lower() in {"loss","lost"} for r in rows)
+    pushes=sum(str(r.get("result") or "").lower() in {"push","void"} for r in rows)
+    decided=wins+losses
+    hit=(wins/decided*100.0) if decided else 0.0
+    profit=sum(_to_float(r.get("profit"),0.0) or 0.0 for r in rows)
+    staked=sum((_to_float(r.get("stake"),0.0) or 0.0) for r in rows if str(r.get("result") or "").lower() not in {"void"})
+    roi=(profit/staked*100.0) if staked>0 else 0.0
+    tail=f"{wins}-{losses}"
+    if pushes: tail+=f"-{pushes}P"
+    return f"{label:<12} {tail:<10} {hit:5.1f}% {profit:+7.2f}u ROI {roi:+6.1f}%"
+
+def build_performance_summary(history: list) -> str:
+    rows=_performance_rows(history)
+    if not rows: return ""
+    lines=["📊 PROP HUNTER PERFORMANCE",""]
+    for bucket in ("Singles","Ladders","Builder","Cross Game","HR/Longshots"):
+        part=[r for r in rows if r.get("_bucket")==bucket]
+        if part: lines.append(_performance_line(bucket,part))
+    sports=sorted({str(r.get("sport") or r.get("league") or r.get("source_sport") or "").upper() for r in rows if r.get("sport") or r.get("league") or r.get("source_sport")})
+    if sports:
+        lines.append("")
+        for sport in sports:
+            part=[r for r in rows if str(r.get("sport") or r.get("league") or r.get("source_sport") or "").upper()==sport]
+            lines.append(_performance_line(sport,part))
+    sides=[]
+    for side in ("over","under"):
+        part=[r for r in rows if str(r.get("direction") or r.get("side") or "").lower()==side]
+        if part: sides.append(_performance_line(side.title(),part))
+    if sides:
+        lines+=[""]+sides
+    lines+=["",_performance_line("GESAMT",rows)]
+    return "\n".join(lines)
+
 def _send_summary(text: str) -> None:
     if not TG_TOKEN or not TG_CHAT:
         print(text)
@@ -726,6 +786,13 @@ def main() -> int:
             losses = sum(str(p.get("result")).lower() in {"loss", "lost"} for p in closed)
             profit = sum(_to_float(p.get("profit"), 0.0) or 0.0 for p in closed)
             _send_summary(f"📊 PROP HUNTER — Auswertung {day}\n\n{wins}✅ {losses}❌ · {profit:+.2f}u\n\n@prophunter")
+
+    performance = build_performance_summary(history)
+    if performance:
+        print(performance)
+        # Optional Telegram performance post; off by default to avoid duplicate messages.
+        if str(os.getenv("PH_PERFORMANCE_TELEGRAM","0")).lower() in {"1","true","yes","on"}:
+            _send_summary(performance + "\n\n@prophunter")
 
     print(f"Settlement reporter done: merged={merged} cards_ready={cards_ready} cards_edited={cards_edited}")
     if cards_ready == 0:
