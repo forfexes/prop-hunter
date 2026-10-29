@@ -13,6 +13,8 @@ name: Prop Hunter Results Autonomous
       - 'prop_hunter_results_wnba.py'
       - 'prop_hunter_results_nfl.py'
       - 'prop_hunter_results_nhl.py'
+      - 'prop_hunter_team_settler.py'
+      - 'prop_hunter_team_settler_test.py'
       - 'prop_hunter_results_euroleague.py'
       - '.github/results-trigger'
   schedule:
@@ -101,6 +103,7 @@ jobs:
           python prop_hunter_euroleague_test.py
           python prop_hunter_settler_fast_test.py
           python prop_hunter_settlement_backlog_test.py
+          python prop_hunter_team_settler_test.py
           python prop_hunter_snapshot_retention_test.py
           python prop_hunter_daily_control.py --check
           python prop_hunter_gamelog_retention_test.py
@@ -153,6 +156,7 @@ jobs:
         run: |
           python prop_hunter_settler.py
           python prop_hunter_settler_extras.py
+          python prop_hunter_team_settler.py
           # Preserve freshly backfilled historical games until both settlers finish.
           if [ "$PH_SETTLEMENT_REPLAY" != "1" ]; then
             PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
