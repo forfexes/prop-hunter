@@ -632,13 +632,17 @@ def _performance_rows(history: list) -> list:
     rows=[]
     for entry in history or []:
         for p in entry.get("picks") or []:
+            if p.get("settlement_invalidated"):
+                continue
             if str(p.get("result") or "").lower() in CLOSED:
                 row=dict(p); row["_bucket"]="HR/Longshots" if "hr" in str(p.get("category") or "").lower() or "home run" in str(p.get("market") or "").lower() else "Singles"
                 rows.append(row)
         for c in entry.get("kombis") or []:
+            if c.get("settlement_invalidated"):
+                continue
             if c.get("type")=="ladder":
                 for leg in c.get("settlement_legs") or c.get("ladder_legs") or []:
-                    if str(leg.get("result") or "").lower() in CLOSED:
+                    if not leg.get("settlement_invalidated") and str(leg.get("result") or "").lower() in CLOSED:
                         row=dict(leg); row["_bucket"]="Ladders"; rows.append(row)
                 continue
             if str(c.get("result") or "").lower() not in CLOSED: continue
@@ -790,7 +794,6 @@ def main() -> int:
     performance = build_performance_summary(history)
     if performance:
         print(performance)
-        # Optional Telegram performance post; off by default to avoid duplicate messages.
         if str(os.getenv("PH_PERFORMANCE_TELEGRAM","0")).lower() in {"1","true","yes","on"}:
             _send_summary(performance + "\n\n@prophunter")
 

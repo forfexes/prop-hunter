@@ -133,3 +133,15 @@ assert mlb._row_date({'commence_time':'2026-08-16T01:00:00Z','sent_date':'2026-0
 assert mlb._row_date({'raw':{'commence_time':'2026-08-16T01:00:00Z'},'date':'2026-08-14'}).isoformat() == '2026-08-16'
 assert mlb._row_date({'commence_time':'bad','sent_date':'2026-08-14'}).isoformat() == '2026-08-14'
 print('MLB UNIQUE IDENTITY / EVENT-DATE TEST PASSED')
+
+# Withdrawn DNP/early settlements must not reappear in performance accounting.
+from prophunter_results import _performance_rows
+valid={'result':'win','stake':.1,'profit':.1,'sport':'NBA'}
+invalid=dict(valid,settlement_invalidated=True)
+h=[{'picks':[valid,invalid],'kombis':[
+    {'type':'ladder','settlement_invalidated':True,'ladder_legs':[valid]},
+    {'type':'ladder','result':'pending','settlement_legs':[valid,invalid]},
+    {'type':'betbuilder',**invalid}]}]
+performance=_performance_rows(h)
+assert len(performance)==2 and [r['_bucket'] for r in performance] == ['Singles','Ladders']
+print('WITHDRAWN PERFORMANCE ACCOUNTING TEST PASSED')
