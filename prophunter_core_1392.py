@@ -389,6 +389,9 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
             "date": today, "type": combo.get("type"), "player": combo.get("player"),
             "market": combo.get("market"), "legs": _combo_legs,
         }, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        # Carry the exact canonical database identity into picks_history.json
+        # so later ladder/builder settlements can mirror their status/profit.
+        combo["dedup_key"] = _combo_key
         sb_insert({
             "date": today, "created_at": combo.get("created_at"), "sport": combo.get("sport"),
             "league": combo.get("sport"), "player": combo.get("player"),
