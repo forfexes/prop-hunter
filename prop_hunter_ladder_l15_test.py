@@ -91,6 +91,21 @@ class TestLadderL15(unittest.TestCase):
         b = prop("Nathan MacKinnon", "shots_on_goal", 6.5, 7.5, 12, 3, .1817)
         self.assertEqual(_real_ladders([a, b], DummyPick, DummyPick), [])
 
+    def test_same_nhl_ladder_bookmaker_aliases_not_duplicated(self):
+        props = [
+            prop("Connor McDavid", "points", .5, 1.40, 12, 12, .91,
+                 game="Calgary Flames @ Edmonton Oilers", book="kambi_ub"),
+            prop("Connor McDavid", "points", 1.5, 2.70, 12, 10, .72,
+                 game="Calgary Flames @ Edmonton Oilers", book="kambi_ub"),
+            prop("Connor McDavid", "points", .5, 1.39, 12, 12, .91,
+                 game="CGY Flames @ EDM Oilers", book="betrivers"),
+            prop("Connor McDavid", "points", 1.5, 2.65, 12, 10, .72,
+                 game="CGY Flames @ EDM Oilers", book="betrivers"),
+        ]
+        ladders = _real_ladders(props, DummyPick, DummyPick)
+        self.assertEqual(len(ladders), 1)
+        self.assertEqual(len(ladders[0].picks), 2)
+
     def test_under_push_not_counted_as_win(self):
         p = prop("Test Player", "points", 1, 2.5, 15, 10, .7, side="under")
         self.assertIsNotNone(_ladder_leg_candidate(p))
