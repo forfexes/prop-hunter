@@ -556,7 +556,8 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
         names = "; ".join(str(x.get("player") or "") for x in invalid)
         clean = [ln for ln in lines if not ln.strip().startswith("🏁 Auswertung:")
                  and not ("EV" in ln or "Prob " in ln)]
-        warning = "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\n" + names
+        reasons = "; ".join(dict.fromkeys(str(x.get("quote_invalidation_reason") or "Quote/EV ungültig") for x in invalid))
+        warning = "⚠️ TIPP ZURÜCKGEZOGEN\n" + reasons + "\n" + names
         text = warning + "\n\n" + "\n".join(clean) + "\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen"
         return text if len(text) <= 4096 else None
 
@@ -641,6 +642,7 @@ def _performance_rows(history: list) -> list:
     Singles and combo tickets count once. Ladder rungs count individually because
     each rung carries its own stake/price and therefore its own realised P/L.
     """
+    from prop_hunter_combo_prices import unpriced_sgp
     rows=[]
     for entry in history or []:
         for p in entry.get("picks") or []:
@@ -650,7 +652,7 @@ def _performance_rows(history: list) -> list:
                 row=dict(p); row["_bucket"]="HR/Longshots" if "hr" in str(p.get("category") or "").lower() or "home run" in str(p.get("market") or "").lower() else "Singles"
                 rows.append(row)
         for c in entry.get("kombis") or []:
-            if c.get("settlement_invalidated"):
+            if c.get("settlement_invalidated") or unpriced_sgp(c):
                 continue
             if c.get("type")=="ladder":
                 for leg in c.get("settlement_legs") or c.get("ladder_legs") or []:
@@ -823,10 +825,11 @@ def _sync_pick_table(pick: dict) -> None:
 def main() -> int:
     history = _load_history()
     from prop_hunter_quote_incidents import invalidate
+    from prop_hunter_combo_prices import invalidate_unpriced_combo
     quote_repairs = 0
     for entry in history:
         for ticket in (entry.get("picks") or []) + (entry.get("kombis") or []):
-            if invalidate(ticket, entry.get("date")):
+            if invalidate(ticket, entry.get("date")) or invalidate_unpriced_combo(ticket):
                 _sync_pick_table(dict(ticket, date=entry.get("date")))
                 quote_repairs += 1
     if quote_repairs:

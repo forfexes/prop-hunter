@@ -302,7 +302,11 @@ def test_builder_persistence_and_learning_loop():
 
     module.history[0]["kombis"]=[dict(row) for _ in range(24)]
     learned=learn_builder_correlations(module.history)
-    check(learned["profiles"]["safe"]["n"]==24, "builder profile performance missing")
+    check("safe" not in learned["profiles"], "synthetic SGP profit entered profile performance")
+    for item in module.history[0]["kombis"]:
+        item["features"] = dict(item.get("features") or {}, combined_odds_observed=True, combined_quote_id="fixture-ticket")
+    quoted_learning=learn_builder_correlations(module.history)
+    check(quoted_learning["profiles"]["safe"]["n"]==24, "confirmed ticket profile performance missing")
     check(len(learned["pairs"])==1, "builder pair learning missing")
     pair=next(iter(learned["pairs"].values()))
     check(pair["n"]==24 and .85 <= pair["factor"] <= 1.12, "builder pair factor not bounded")

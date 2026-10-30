@@ -100,6 +100,7 @@ jobs:
           python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py prop_hunter_results_euroleague.py
           python -m py_compile prop_hunter_learning_update.py prop_hunter_source_manager.py prop_hunter_model_registry.py
           python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py prop_hunter_expansion_test.py prop_hunter_euroleague_test.py
+          python prop_hunter_combo_prices_test.py
           python prop_hunter_quote_incidents_test.py
           python prop_hunter_market_regression_test.py
           python prop_hunter_expansion_test.py

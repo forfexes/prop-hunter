@@ -4782,6 +4782,8 @@ def run(dry_run=False,sport_filter=None):
     try:
         from prop_hunter_builder_engine import build_autonomous_extras
         extras = build_autonomous_extras(picks, props, Pick, LadderLeg)
+        from prop_hunter_combo_prices import publishable_extra
+        extras = [p for p in extras if publishable_extra(p)]
         picks = picks + extras
         log.info("verified builder extras: +%d", len(extras))
     except Exception as exc:

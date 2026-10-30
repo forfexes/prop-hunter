@@ -70,6 +70,7 @@ def _builder_leg_probability(leg: Dict[str, Any]):
 
 def learn_builder_correlations(history: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
     """Learn bounded pair factors plus profile performance from settled SGPs."""
+    from prop_hunter_combo_prices import unpriced_sgp
     closed = {"win", "won", "loss", "lost", "push"}
     pair_stats = defaultdict(lambda: {"n": 0, "both_wins": 0, "expected_sum": 0.0})
     profiles = defaultdict(lambda: {"n": 0, "wins": 0, "losses": 0, "pushes": 0, "stake": 0.0, "profit": 0.0})
@@ -83,7 +84,7 @@ def learn_builder_correlations(history: Iterable[Dict[str, Any]]) -> Dict[str, A
             status = str(combo.get("result") or "").lower()
             features = combo.get("features") if isinstance(combo.get("features"), dict) else {}
             profile = str(combo.get("builder_profile") or features.get("builder_profile") or "").lower()
-            if profile and status in closed:
+            if profile and status in closed and not unpriced_sgp(combo):
                 p = profiles[profile]
                 p["n"] += 1
                 if status in {"win", "won"}: p["wins"] += 1

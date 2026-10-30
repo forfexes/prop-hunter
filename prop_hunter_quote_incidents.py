@@ -60,12 +60,13 @@ def invalidate(ticket, day):
     return True
 
 if __name__ == '__main__':
+    from prop_hunter_combo_prices import invalidate_unpriced_combo
     from prophunter_results import _load_history, _save_history, _sync_pick_table
     history = _load_history()
     changed = 0
     for entry in history:
         for ticket in (entry.get('picks') or []) + (entry.get('kombis') or []):
-            if invalidate(ticket, entry.get('date')):
+            if invalidate(ticket, entry.get('date')) or invalidate_unpriced_combo(ticket):
                 changed += 1
             if ticket.get('quote_invalidated'):
                 _sync_pick_table(dict(ticket, date=entry.get('date')))
