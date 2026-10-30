@@ -57,3 +57,23 @@ ns=dict(picks=[invalid,single],publishable_extra=publishable_extra)
 exec(compile(ast.fix_missing_locations(ast.Module(body=[fence],type_ignores=[])),'production-final-fence','exec'),ns)
 assert ns['picks']==[single]
 print('PRODUCTION FINAL PRICE FENCE PASSED')
+
+# Real incident: two different games were given the generic Same-Game reason.
+wrong=dict(type='betbuilder',odds=3.94,result='withdrawn',status='withdrawn',profit=None,
+    quote_invalidated=True,quote_original_result='loss',quote_original_profit=-.1,
+    quote_invalidation_reason='Same-Game-Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote',
+    features=dict(combo_scope='cross_game',price_type='derived_acca',builder_odds_estimated_from_legs=True),
+    leg_details=[dict(player='Both Teams Total',odds=1.95,game='MEM Grizzlies @ POR Trail Blazers'),
+                 dict(player='CJ McCollum',odds=2.02,game='CLE Cavaliers @ ATL Hawks')])
+assert invalidate_unpriced_combo(wrong)
+assert wrong['quote_invalidation_reason'].startswith('Cross-Game-')
+assert wrong['result']=='withdrawn' and wrong['profit'] is None
+assert wrong['quote_original_result']=='loss' and wrong['quote_original_profit']==-.1
+assert not invalidate_unpriced_combo(wrong), 'reason migration must be idempotent'
+other=deepcopy(wrong);other['quote_invalidation_reason']='Drittelquote wurde als Gesamtspielquote ausgegeben'
+assert not invalidate_unpriced_combo(other)
+unknown=deepcopy(wrong);unknown.pop('quote_invalidated');unknown['leg_details'][0]['game']=''
+assert invalidate_unpriced_combo(unknown) and unknown['quote_invalidation_reason'].startswith('Kombi-')
+rendered=_decorate_card(dict(text='CROSS\nEV +100%\n🏁 Auswertung: offen',combo_ids=['cross-reason']),[],[dict(wrong,combo_id='cross-reason')])
+assert 'Cross-Game-Gesamtquote' in rendered and 'Same-Game-Gesamtquote' not in rendered
+print('CROSS-GAME WITHDRAWAL REASON / HISTORY MIGRATION PASSED')

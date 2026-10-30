@@ -43,12 +43,31 @@ def publishable_extra(obj):
     games=[re.sub(r'\s+',' ',str(value(x,'game','') or '').strip().lower()) for x in legs]
     return len(games)>=2 and all(games) and len(set(games))==len(games)
 
+def quote_withdrawal_reason(ticket):
+    legs=value(ticket,'leg_details',[]) or []
+    games=[re.sub(r'\s+',' ',str(value(x,'game','') or '').strip().lower()) for x in legs]
+    if len(games)>=2 and all(games):
+        scope='Cross-Game-' if len(set(games))==len(games) else 'Same-Game-'
+    else:
+        scope='Kombi-'
+    return scope+'Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote'
+
 def invalidate_unpriced_combo(ticket):
-    if ticket.get('quote_invalidated') or not unpriced_sgp(ticket):
+    if ticket.get('quote_invalidated'):
+        # Migrate only our old generic reason; preserve other incident evidence
+        # and original result/profit. This does not reinstate withdrawn tips.
+        old='Same-Game-Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote'
+        if ticket.get('quote_invalidation_reason')==old and unpriced_sgp(ticket):
+            reason=quote_withdrawal_reason(ticket)
+            if reason!=old:
+                ticket['quote_invalidation_reason']=reason
+                return True
+        return False
+    if not unpriced_sgp(ticket):
         return False
     ticket['quote_original_result']=ticket.get('result')
     ticket['quote_original_profit']=ticket.get('profit')
     ticket.update(quote_invalidated=True,settlement_invalidated=True,
-        quote_invalidation_reason='Same-Game-Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote',
+        quote_invalidation_reason=quote_withdrawal_reason(ticket),
         result='withdrawn',status='withdrawn',profit=None,actual_value=None)
     return True
