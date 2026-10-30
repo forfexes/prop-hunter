@@ -1,10 +1,13 @@
 {
-  "generated_at": "2026-10-29T23:51:07.446099+00:00",
-  "unresolved": 225,
+  "generated_at": "2026-10-30T00:04:31.710483+00:00",
+  "unresolved": 221,
   "counts": {
-    "awaiting_game_completion": 123,
+    "awaiting_combo_legs": 20,
+    "no_unique_official_game": 114,
+    "awaiting_game_completion": 70,
     "ambiguous_league": 1,
-    "no_unique_official_game": 88,
+    "unmapped_market": 2,
+    "ready_to_settle": 1,
     "unsupported_season_or_fantasy_market": 7,
     "unsupported_team_or_game_market": 1,
     "ambiguous_market_line": 5
@@ -17,7 +20,7 @@
       "league": "NBA",
       "player": "CJ McCollum + Jrue Holiday + Jeremiah Fears",
       "market": "3-Leg AGGRESSIVE ACCA",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -27,7 +30,7 @@
       "league": "NBA",
       "player": "Peyton Watson + Jrue Holiday + Precious Achiuwa",
       "market": "3-Leg VALUE ACCA",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -37,7 +40,7 @@
       "league": "NBA",
       "player": "Both Teams Total + CJ McCollum",
       "market": "2-Leg SAFE ACCA",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -47,7 +50,7 @@
       "league": "NBA",
       "player": "Cam Spencer + Scoot Henderson + Robert Williams III",
       "market": "3-Leg AGGRESSIVE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -57,7 +60,7 @@
       "league": "NBA",
       "player": "Cam Spencer + Robert Williams III",
       "market": "2-Leg VALUE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -67,7 +70,7 @@
       "league": "NFL",
       "player": "MarShawn Lloyd + John Metchie III",
       "market": "2-Leg SAFE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -77,8 +80,17 @@
       "league": "NFL",
       "player": "Trevor Etienne",
       "market": "Rushing Yards Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 2,
+        "loaded_game_dates": [
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "095a838110a376de6c890ced5598bfbc",
@@ -87,8 +99,21 @@
       "league": "NFL",
       "player": "Chuba Hubbard",
       "market": "Rushing Yards Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "c6a5de2c1c47467f70912b2ab08cf3f4",
@@ -97,8 +122,24 @@
       "league": "NBA",
       "player": "Precious Achiuwa",
       "market": "Blocks Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 9,
+        "loaded_game_dates": [
+          "2026-10-06",
+          "2026-10-09",
+          "2026-10-11",
+          "2026-10-14",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26",
+          "2026-10-28"
+        ]
+      }
     },
     {
       "pick_id": "3034b13d83e307a77deb2671f691ec4c",
@@ -107,8 +148,22 @@
       "league": "NBA",
       "player": "Cam Spencer",
       "market": "Threes Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 7,
+        "loaded_game_dates": [
+          "2026-10-05",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "0961d67c029b62988ac55e981912c13c",
@@ -117,8 +172,22 @@
       "league": "NBA",
       "player": "Cam Spencer",
       "market": "Threes Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 7,
+        "loaded_game_dates": [
+          "2026-10-05",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "813e708d531c46c5850e3d6c4a4c0d27",
@@ -247,7 +316,7 @@
       "league": "NBA",
       "player": "CJ McCollum + Jrue Holiday + Jeremiah Fears",
       "market": "3-Leg AGGRESSIVE ACCA",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -257,7 +326,7 @@
       "league": "NBA",
       "player": "Jeremiah Fears + Jrue Holiday + James Harden",
       "market": "3-Leg VALUE ACCA",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -267,7 +336,7 @@
       "league": "NBA",
       "player": "Robert Williams III + Jeremiah Fears + Evan Mobley",
       "market": "3-Leg SAFE ACCA",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -277,7 +346,7 @@
       "league": "NBA",
       "player": "Jeremiah Fears",
       "market": "2-Leg LONGSHOT SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -287,7 +356,7 @@
       "league": "WNBA",
       "player": "Jordin Canada + Allisha Gray + Angel Reese + Rhyne Howard",
       "market": "4-Leg LONGSHOT SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -297,7 +366,7 @@
       "league": "NBA",
       "player": "Jeremiah Fears + Precious Achiuwa",
       "market": "3-Leg AGGRESSIVE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -307,7 +376,7 @@
       "league": "NBA",
       "player": "Precious Achiuwa + Jeremiah Fears + Dejounte Murray",
       "market": "3-Leg VALUE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -317,7 +386,7 @@
       "league": "NBA",
       "player": "Robert Williams III + Damian Lillard + Toumani Camara",
       "market": "3-Leg SAFE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -327,8 +396,21 @@
       "league": "NFL",
       "player": "Darren Waller",
       "market": "Receiving Yards Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "6740011a8240a1dfc063f797b8d30d44",
@@ -337,8 +419,20 @@
       "league": "NBA",
       "player": "Peyton Watson",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 5,
+        "loaded_game_dates": [
+          "2026-10-08",
+          "2026-10-11",
+          "2026-10-13",
+          "2026-10-22",
+          "2026-10-24"
+        ]
+      }
     },
     {
       "pick_id": "f13f85f1bff2dfbf0553c80172db3f90",
@@ -347,8 +441,21 @@
       "league": "NFL",
       "player": "Chuba Hubbard",
       "market": "Rushing Yards Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "573c5ce891b5fb87598237edd827950b",
@@ -357,8 +464,22 @@
       "league": "NBA",
       "player": "Jeremiah Fears",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 7,
+        "loaded_game_dates": [
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "8447ce9a060829db91a9203d4ce8e209",
@@ -367,8 +488,21 @@
       "league": "NBA",
       "player": "Jrue Holiday",
       "market": "Rebounds Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-10-08",
+          "2026-10-12",
+          "2026-10-14",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-27"
+        ]
+      }
     },
     {
       "pick_id": "6edca6fb5f40f07cc3e0ff3dea2f419f",
@@ -377,8 +511,23 @@
       "league": "NBA",
       "player": "De'Andre Hunter",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 8,
+        "loaded_game_dates": [
+          "2026-10-06",
+          "2026-10-09",
+          "2026-10-11",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26",
+          "2026-10-28"
+        ]
+      }
     },
     {
       "pick_id": "33915d63f0f7fe520754f50ee18c98b7",
@@ -557,7 +706,7 @@
       "league": "WNBA",
       "player": "Allisha Gray",
       "market": "2-Leg LONGSHOT SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -567,7 +716,7 @@
       "league": "WNBA",
       "player": "Veronica Burton + Allisha Gray + Angel Reese",
       "market": "3-Leg LONGSHOT SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -577,7 +726,7 @@
       "league": "WNBA",
       "player": "Allisha Gray + Rhyne Howard + Gabby Williams + Kaila Charles + Angel Reese",
       "market": "5-Leg AGGRESSIVE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -587,7 +736,7 @@
       "league": "WNBA",
       "player": "Jordin Canada + Gabby Williams + Kaila Charles",
       "market": "3-Leg VALUE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -597,7 +746,7 @@
       "league": "WNBA",
       "player": "Gabby Williams + Jordin Canada",
       "market": "2-Leg SAFE SGP",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -607,7 +756,7 @@
       "league": "?",
       "player": "Veronica Burton + Allisha Gray + Angel Reese + Jordin Canada",
       "market": "4-Leg LOTTERY",
-      "reason": "awaiting_game_completion",
+      "reason": "unmapped_market",
       "evidence": null
     },
     {
@@ -617,7 +766,7 @@
       "league": "?",
       "player": "Cecilia Zandalasini + Jordin Canada",
       "market": "2-Leg RISK",
-      "reason": "awaiting_game_completion",
+      "reason": "unmapped_market",
       "evidence": null
     },
     {
@@ -627,8 +776,30 @@
       "league": "WNBA",
       "player": "Kaila Charles",
       "market": "Rebounds Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 15,
+        "loaded_game_dates": [
+          "2026-08-30",
+          "2026-09-19",
+          "2026-09-20",
+          "2026-09-23",
+          "2026-09-25",
+          "2026-09-28",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-04",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24"
+        ]
+      }
     },
     {
       "pick_id": "fbac36de5e955f26e848c81824dbadc0",
@@ -637,8 +808,30 @@
       "league": "WNBA",
       "player": "Rhyne Howard",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 15,
+        "loaded_game_dates": [
+          "2026-08-28",
+          "2026-08-30",
+          "2026-09-17",
+          "2026-09-19",
+          "2026-09-22",
+          "2026-09-24",
+          "2026-09-27",
+          "2026-09-30",
+          "2026-10-04",
+          "2026-10-07",
+          "2026-10-09",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24"
+        ]
+      }
     },
     {
       "pick_id": "fd724696038e87e7347098ae8939ac9d",
@@ -647,8 +840,30 @@
       "league": "WNBA",
       "player": "Allisha Gray",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 15,
+        "loaded_game_dates": [
+          "2026-08-16",
+          "2026-08-18",
+          "2026-08-28",
+          "2026-08-30",
+          "2026-09-17",
+          "2026-09-19",
+          "2026-09-22",
+          "2026-09-24",
+          "2026-09-27",
+          "2026-09-30",
+          "2026-10-04",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24"
+        ]
+      }
     },
     {
       "pick_id": "99d0aafc150acfc1735ca6d06a39f604",
@@ -657,8 +872,30 @@
       "league": "WNBA",
       "player": "Allisha Gray",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 15,
+        "loaded_game_dates": [
+          "2026-08-16",
+          "2026-08-18",
+          "2026-08-28",
+          "2026-08-30",
+          "2026-09-17",
+          "2026-09-19",
+          "2026-09-22",
+          "2026-09-24",
+          "2026-09-27",
+          "2026-09-30",
+          "2026-10-04",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24"
+        ]
+      }
     },
     {
       "pick_id": "07895add2dfe0aa0ab9fd4e98eeeb15a",
@@ -667,8 +904,30 @@
       "league": "WNBA",
       "player": "Kaila Charles",
       "market": "Rebounds Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 15,
+        "loaded_game_dates": [
+          "2026-08-30",
+          "2026-09-19",
+          "2026-09-20",
+          "2026-09-23",
+          "2026-09-25",
+          "2026-09-28",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-04",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24"
+        ]
+      }
     },
     {
       "pick_id": "394e5effa015930886e23d6263b0573a",
@@ -831,33 +1090,13 @@
       }
     },
     {
-      "pick_id": "9a4c960ededeb9d08f00442c49bb8290",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Victor Wembanyama + Stephon Castle + Keyonte George + De'Aaron Fox + Devin Vassell + Dylan Harper",
-      "market": "6-Leg LONGSHOT SGP",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "2faa60add2ce3f552d7606d0145fdf3a",
       "source": "prop_hunter_picks",
       "date": "2026-10-29",
       "league": "NBA",
       "player": "Quentin Grimes + Shai Gilgeous-Alexander + Lauri Markkanen",
       "market": "3-Leg SAFE ACCA",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "3195e1d1806cd245b028a1279e7cf5c9",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "?",
-      "player": "Stephon Castle + Quentin Grimes",
-      "market": "2-Leg SAFE",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -867,8 +1106,30 @@
       "league": "WNBA",
       "player": "Jordin Canada",
       "market": "Assists Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": null,
+        "loaded_player_rows": 15,
+        "loaded_game_dates": [
+          "2026-08-28",
+          "2026-08-30",
+          "2026-09-17",
+          "2026-09-19",
+          "2026-09-22",
+          "2026-09-24",
+          "2026-09-27",
+          "2026-09-30",
+          "2026-10-04",
+          "2026-10-07",
+          "2026-10-09",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-24"
+        ]
+      }
     },
     {
       "pick_id": "898b24df6647f218e5ea8194b9b316d5",
@@ -903,29 +1164,14 @@
       }
     },
     {
-      "pick_id": "a48e28d0392f5de1f42271f3f333c735",
+      "pick_id": "122ab94e18647e554499f9215458d2dd",
       "source": "prop_hunter_picks",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Stephon Castle",
-      "market": "assists Under 5.5",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": "32870964",
-        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
-        "quoted_game": "San Antonio Spurs @ Utah Jazz",
-        "loaded_player_rows": 9,
-        "loaded_game_dates": [
-          "2026-10-09",
-          "2026-10-11",
-          "2026-10-15",
-          "2026-10-17",
-          "2026-10-21",
-          "2026-10-24",
-          "2026-10-25",
-          "2026-10-28"
-        ]
-      }
+      "date": "2026-10-28",
+      "league": "NHL",
+      "player": "Jack Hughes",
+      "market": "points Over 0.5",
+      "reason": "ready_to_settle",
+      "evidence": null
     },
     {
       "pick_id": "f50bf1efb43f3252e1ba9766aa2e773d",
@@ -2311,31 +2557,6 @@
       }
     },
     {
-      "pick_id": "9bc3e4bc5af0137acea49d87639d6b21",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Stephon Castle",
-      "market": "assists Under 5.5",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": "32870964",
-        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
-        "quoted_game": "San Antonio Spurs @ Utah Jazz",
-        "loaded_player_rows": 9,
-        "loaded_game_dates": [
-          "2026-10-09",
-          "2026-10-11",
-          "2026-10-15",
-          "2026-10-17",
-          "2026-10-21",
-          "2026-10-24",
-          "2026-10-25",
-          "2026-10-28"
-        ]
-      }
-    },
-    {
       "pick_id": "3ebd5698c25034cb3907eb5342f70879",
       "source": "history_leg",
       "date": "2026-10-29",
@@ -2356,31 +2577,6 @@
           "2026-10-24",
           "2026-10-25",
           "2026-10-27"
-        ]
-      }
-    },
-    {
-      "pick_id": "afdc9533de3e66c7d609773bc9fc3863",
-      "source": "history_leg",
-      "date": "2026-10-29",
-      "league": "NBA",
-      "player": "Stephon Castle",
-      "market": "Points Over 2.5",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": "32870964",
-        "quoted_kickoff": "2026-10-29T01:00:00+00:00",
-        "quoted_game": "San Antonio Spurs @ Utah Jazz",
-        "loaded_player_rows": 9,
-        "loaded_game_dates": [
-          "2026-10-09",
-          "2026-10-11",
-          "2026-10-15",
-          "2026-10-17",
-          "2026-10-21",
-          "2026-10-24",
-          "2026-10-25",
-          "2026-10-28"
         ]
       }
     },
@@ -3335,8 +3531,21 @@
       "league": "NFL",
       "player": "Chuba Hubbard",
       "market": "Rushing Yards Under 66.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "fabf862f66e991388da72b7d5dc203dd",
@@ -3345,8 +3554,21 @@
       "league": "NFL",
       "player": "Chuba Hubbard",
       "market": "Rushing Yards Under 56.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "3cd6124f169049a3d6cc3436e6fa25c3",
@@ -3355,8 +3577,21 @@
       "league": "NFL",
       "player": "Chuba Hubbard",
       "market": "Rushing Yards Under 46.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "6d40731700d52534c29f3520122b6886",
@@ -3395,8 +3630,21 @@
       "league": "NFL",
       "player": "Darren Waller",
       "market": "30+ Receiving Yards",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "0c631ef09fb5df9631a4691844f1517f",
@@ -3405,8 +3653,21 @@
       "league": "NFL",
       "player": "Darren Waller",
       "market": "40+ Receiving Yards",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "73d6a65301fd9490cdd07ccbe801a49c",
@@ -3679,8 +3940,22 @@
       "league": "NBA",
       "player": "Cam Spencer",
       "market": "1+ Threes",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "MEM Grizzlies @ POR Trail Blazers",
+        "loaded_player_rows": 7,
+        "loaded_game_dates": [
+          "2026-10-05",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "20cb5f5d87f6b1129793ec2a82e1ba91",
@@ -3689,8 +3964,22 @@
       "league": "NBA",
       "player": "Cam Spencer",
       "market": "2+ Threes",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "MEM Grizzlies @ POR Trail Blazers",
+        "loaded_player_rows": 7,
+        "loaded_game_dates": [
+          "2026-10-05",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "92417f1ea20699cf7ce21ebf2c9dc643",
@@ -3699,8 +3988,22 @@
       "league": "NBA",
       "player": "Cam Spencer",
       "market": "3+ Threes",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "MEM Grizzlies @ POR Trail Blazers",
+        "loaded_player_rows": 7,
+        "loaded_game_dates": [
+          "2026-10-05",
+          "2026-10-08",
+          "2026-10-10",
+          "2026-10-17",
+          "2026-10-22",
+          "2026-10-24",
+          "2026-10-26"
+        ]
+      }
     },
     {
       "pick_id": "9c192e9a23040e5ad5823086eaf57afe",
@@ -3729,8 +4032,21 @@
       "league": "NFL",
       "player": "Chuba Hubbard",
       "market": "Rushing Yards Under 57.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "c4ae651128de32317b34545fbf8a0bba",
@@ -3739,8 +4055,21 @@
       "league": "NFL",
       "player": "Chuba Hubbard",
       "market": "Rushing Yards Under 47.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 6,
+        "loaded_game_dates": [
+          "2026-09-13",
+          "2026-09-20",
+          "2026-09-27",
+          "2026-10-04",
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "4ae3f6a84941878c5b5746a9cd648f74",
@@ -3749,8 +4078,17 @@
       "league": "NFL",
       "player": "Trevor Etienne",
       "market": "Rushing Yards Under 8.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 2,
+        "loaded_game_dates": [
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "bf02943713a6dfb8e9e2d3fdf96b8b38",
@@ -3759,8 +4097,17 @@
       "league": "NFL",
       "player": "Trevor Etienne",
       "market": "Rushing Yards Under 7.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Carolina Panthers @ Green Bay Packers",
+        "loaded_player_rows": 2,
+        "loaded_game_dates": [
+          "2026-10-18",
+          "2026-10-25"
+        ]
+      }
     },
     {
       "pick_id": "9a50a38c77e3ebf5e169a1ee5a36bab1",

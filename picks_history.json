@@ -46378,14 +46378,15 @@
           "bookmaker": "fanduel",
           "source": "fanduel_direct"
         },
-        "result": "loss",
-        "profit": -0.33,
+        "result": "pending",
+        "profit": null,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-28T21:24:22.713078+00:00",
-        "actual_value": 0,
-        "settled_at": "2026-10-29T13:24:33.991606+00:00",
-        "settlement_source": "prop_hunter_results"
+        "actual_value": null,
+        "settlement_source": "prop_hunter_results",
+        "status": "pending",
+        "settlement_invalidated": true
       },
       {
         "date": "2026-10-28",
@@ -52219,8 +52220,8 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 28.10.2026\n\n🏒 Jack Hughes\n🏟 New Jersey Devils @ Colorado Avalanche\n\n   ❌ • points Over 0.5 @3.75 → 0.33u · Ergebnis 0 · -0.33u\n📈 Prob 59% · Edge +32.6% · Confidence 79/100\n💡 src:fanduel | DB L15 avg 0.9, 59% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-10-29T13:27:30.381241+00:00"
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 28.10.2026\n\n🏒 Jack Hughes\n🏟 New Jersey Devils @ Colorado Avalanche\n\n• points Over 0.5 @3.75 → 0.33u\n📈 Prob 59% · Edge +32.6% · Confidence 79/100\n💡 src:fanduel | DB L15 avg 0.9, 59% über Linie\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
+        "settlement_updated_at": "2026-10-30T00:04:20.393144+00:00"
       },
       {
         "created_at": "2026-10-28T21:24:36.824603+00:00",
@@ -53077,11 +53078,14 @@
           "bookmaker": "bovada",
           "source": "bovada_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "loss",
+        "profit": -0.33,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-29T00:24:58.434530+00:00"
+        "created_at": "2026-10-29T00:24:58.434530+00:00",
+        "actual_value": 8,
+        "settled_at": "2026-10-30T00:04:08.243775+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-29",
@@ -55872,7 +55876,14 @@
             "point": 5.5,
             "odds": 2.5,
             "bookmaker": "bovada",
-            "game": "San Antonio Spurs @ Utah Jazz"
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:25:04.130171+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "loss",
+            "actual_value": 8
           },
           {
             "player": "Quentin Grimes",
@@ -55882,13 +55893,20 @@
             "point": 12.5,
             "odds": 1.77,
             "bookmaker": "bovada",
-            "game": "Los Angeles Lakers @ L.A. Clippers"
+            "game": "Los Angeles Lakers @ L.A. Clippers",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:25:04.130171+00:00",
+            "commence_time": "2026-10-29T02:30:00+00:00",
+            "event_id": "32601818",
+            "game_id": "32601818",
+            "result": "loss",
+            "actual_value": 23
           }
         ],
         "odds": 4.42,
         "stake": 0.1,
         "probability": 0.5271,
-        "result": "pending",
+        "result": "loss",
         "created_at": "2026-10-29T00:25:04.130171+00:00",
         "combo_id": "0c060e8fa901d007",
         "features": {
@@ -55908,7 +55926,44 @@
         "combo_scope": null,
         "same_player_multistat": false,
         "date": "2026-10-29",
-        "dedup_key": "bafe34b379e14b9aae1620ed5a64cb88a951ed76"
+        "dedup_key": "bafe34b379e14b9aae1620ed5a64cb88a951ed76",
+        "profit": -0.1,
+        "settlement_legs": [
+          {
+            "player": "Stephon Castle",
+            "sport": "NBA",
+            "market": "assists Under 5.5",
+            "direction": "under",
+            "point": 5.5,
+            "odds": 2.5,
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:25:04.130171+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "loss",
+            "actual_value": 8
+          },
+          {
+            "player": "Quentin Grimes",
+            "sport": "NBA",
+            "market": "points Under 12.5",
+            "direction": "under",
+            "point": 12.5,
+            "odds": 1.77,
+            "bookmaker": "bovada",
+            "game": "Los Angeles Lakers @ L.A. Clippers",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:25:04.130171+00:00",
+            "commence_time": "2026-10-29T02:30:00+00:00",
+            "event_id": "32601818",
+            "game_id": "32601818",
+            "result": "loss",
+            "actual_value": 23
+          }
+        ]
       },
       {
         "type": "betbuilder",
@@ -59032,7 +59087,14 @@
             "odds": 2.85,
             "probability": 0.5045,
             "bookmaker": "bovada",
-            "game": "San Antonio Spurs @ Utah Jazz"
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 36
           },
           {
             "player": "Stephon Castle",
@@ -59044,7 +59106,14 @@
             "odds": 2.5,
             "probability": 0.5428,
             "bookmaker": "bovada",
-            "game": "San Antonio Spurs @ Utah Jazz"
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 14
           },
           {
             "player": "Keyonte George",
@@ -59056,7 +59125,14 @@
             "odds": 2.4,
             "probability": 0.5567,
             "bookmaker": "bovada",
-            "game": "San Antonio Spurs @ Utah Jazz"
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 31
           },
           {
             "player": "De'Aaron Fox",
@@ -59068,7 +59144,14 @@
             "odds": 2.35,
             "probability": 0.5558,
             "bookmaker": "bovada",
-            "game": "San Antonio Spurs @ Utah Jazz"
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 14
           },
           {
             "player": "Devin Vassell",
@@ -59080,7 +59163,14 @@
             "odds": 2.3,
             "probability": 0.5664,
             "bookmaker": "bovada",
-            "game": "San Antonio Spurs @ Utah Jazz"
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 21
           },
           {
             "player": "Dylan Harper",
@@ -59092,13 +59182,20 @@
             "odds": 2.25,
             "probability": 0.5725,
             "bookmaker": "bovada",
-            "game": "San Antonio Spurs @ Utah Jazz"
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 13
           }
         ],
         "odds": 207.96,
         "stake": 0.05,
         "probability": 0.036,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-10-29T00:44:39.373250+00:00",
         "combo_id": "539aa71b2a5cb751",
         "features": {
@@ -59122,7 +59219,124 @@
         "combo_scope": null,
         "same_player_multistat": false,
         "date": "2026-10-29",
-        "dedup_key": "aae1b5a41b36c3503eaaded39e6985af6d90d2a3"
+        "dedup_key": "aae1b5a41b36c3503eaaded39e6985af6d90d2a3",
+        "profit": 10.35,
+        "settlement_legs": [
+          {
+            "player": "Victor Wembanyama",
+            "sport": "NBA",
+            "market": "Points Over 2.5",
+            "market_family": "points",
+            "direction": "over",
+            "point": 2.5,
+            "odds": 2.85,
+            "probability": 0.5045,
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 36
+          },
+          {
+            "player": "Stephon Castle",
+            "sport": "NBA",
+            "market": "Points Over 2.5",
+            "market_family": "points",
+            "direction": "over",
+            "point": 2.5,
+            "odds": 2.5,
+            "probability": 0.5428,
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 14
+          },
+          {
+            "player": "Keyonte George",
+            "sport": "NBA",
+            "market": "Points Over 2.5",
+            "market_family": "points",
+            "direction": "over",
+            "point": 2.5,
+            "odds": 2.4,
+            "probability": 0.5567,
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 31
+          },
+          {
+            "player": "De'Aaron Fox",
+            "sport": "NBA",
+            "market": "Points Over 1.5",
+            "market_family": "points",
+            "direction": "over",
+            "point": 1.5,
+            "odds": 2.35,
+            "probability": 0.5558,
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 14
+          },
+          {
+            "player": "Devin Vassell",
+            "sport": "NBA",
+            "market": "Points Over 2.5",
+            "market_family": "points",
+            "direction": "over",
+            "point": 2.5,
+            "odds": 2.3,
+            "probability": 0.5664,
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 21
+          },
+          {
+            "player": "Dylan Harper",
+            "sport": "NBA",
+            "market": "Points Over 1.5",
+            "market_family": "points",
+            "direction": "over",
+            "point": 1.5,
+            "odds": 2.25,
+            "probability": 0.5725,
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Utah Jazz",
+            "date": "2026-10-29",
+            "created_at": "2026-10-29T00:44:39.373250+00:00",
+            "commence_time": "2026-10-29T01:00:00+00:00",
+            "event_id": "32870964",
+            "game_id": "32870964",
+            "result": "win",
+            "actual_value": 13
+          }
+        ]
       },
       {
         "type": "betbuilder",
@@ -63791,7 +64005,9 @@
           "stephon castle|assists under 5.5|5.5|under"
         ],
         "combo_ids": [],
-        "card_kind": "single"
+        "card_kind": "single",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 29.10.2026\n\n🏀 Stephon Castle\n🏟 San Antonio Spurs @ Utah Jazz\n\n   ❌ • assists Under 5.5 @2.50 → 0.33u · Ergebnis 8 · -0.33u\n📈 Prob 62% · Edge +21.8% · Confidence 84/100\n💡 src:bovada | DB L14 avg 4.4, 85% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
+        "settlement_updated_at": "2026-10-30T00:04:23.550848+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353370+00:00",
@@ -63967,7 +64183,9 @@
         "combo_ids": [
           "0c060e8fa901d007"
         ],
-        "card_kind": "kombi2"
+        "card_kind": "kombi2",
+        "settlement_text": "🔥 PROP HUNTER PRO TIP — 2-LEG — 29.10.2026\n\n🏟 SAFE\n❌ 2-Leg SAFE @4.42 → 0.1u · -0.10u\n  ├ Stephon Castle Assists Under 5.5 @2.50\n  └ Quentin Grimes Points Under 12.5 @1.77\n📈 Prob 52.7% · EV +133.2%\n\n🏁 Auswertung: 0✅ 1❌ · -0.10u\n@prophunter",
+        "settlement_updated_at": "2026-10-30T00:04:24.885625+00:00"
       },
       {
         "created_at": "2026-10-29T00:25:08.353423+00:00",

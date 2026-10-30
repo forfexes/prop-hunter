@@ -1,13 +1,14 @@
 {
-  "updated_at": "2026-10-29T23:51:26.262572+00:00",
+  "updated_at": "2026-10-30T00:04:52.014827+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 100,
+      "rows": 108,
       "sources": [
+        "fanduel_direct",
         "kambi"
       ],
-      "market_count": 4,
+      "market_count": 7,
       "latest": "2026-10-29T01:52:40.918370+00:00",
       "missing_core": [
         "home run",
@@ -16,20 +17,19 @@
       ]
     },
     "NBA": {
-      "rows": 2275,
+      "rows": 2491,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
-        "draftkings_direct",
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 25,
-      "latest": "2026-10-29T21:22:34.902483+00:00",
+      "market_count": 19,
+      "latest": "2026-10-29T21:22:34.901568+00:00",
       "missing_core": []
     },
     "WNBA": {
-      "rows": 603,
+      "rows": 383,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -37,24 +37,23 @@
         "kambi"
       ],
       "market_count": 12,
-      "latest": "2026-10-29T14:34:07.994527+00:00",
+      "latest": "2026-10-29T14:33:34.083433+00:00",
       "missing_core": []
     },
     "NFL": {
-      "rows": 1116,
+      "rows": 1634,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "draftkings_direct",
-        "fanduel_direct",
         "kambi"
       ],
-      "market_count": 33,
-      "latest": "2026-10-29T21:22:44.280903+00:00",
+      "market_count": 27,
+      "latest": "2026-10-29T21:22:44.276264+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 1095,
+      "rows": 1160,
       "sources": [
         "betrivers_direct",
         "draftkings_direct",
@@ -62,21 +61,13 @@
         "kambi"
       ],
       "market_count": 5,
-      "latest": "2026-10-29T21:22:50.520804+00:00",
+      "latest": "2026-10-29T21:22:50.515150+00:00",
       "missing_core": [
         "saves"
       ]
     }
   },
   "issues": [
-    {
-      "sport": "MLB",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "kambi"
-      ]
-    },
     {
       "sport": "MLB",
       "severity": "low",
