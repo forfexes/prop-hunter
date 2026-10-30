@@ -245,7 +245,8 @@ def espn_pending_logs(picks):
     max_dates = max(1, int(os.getenv("NBA_ESPN_MAX_DATES", "5")))
     max_events = max(1, int(os.getenv("NBA_ESPN_MAX_EVENTS", "16")))
     event_players = {}
-    for ymd, ps in list(by_date.items())[:max_dates]:
+    from prop_hunter_scan_dates import select_scan_dates
+    for ymd, ps in select_scan_dates(by_date, max_dates, datetime.now(timezone.utc).date()):
         for ev in espn_scoreboard(ymd):
             eid = str(ev.get("id") or "")
             if not eid:

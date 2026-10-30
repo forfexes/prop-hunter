@@ -106,6 +106,7 @@ jobs:
           python prop_hunter_settler_fast_test.py
           python prop_hunter_settlement_backlog_test.py
           python prop_hunter_nba_api_test.py
+          python prop_hunter_scan_dates_test.py
           python prop_hunter_team_settler_test.py
           python prop_hunter_snapshot_retention_test.py
           python prop_hunter_daily_control.py --check
@@ -145,6 +146,13 @@ jobs:
           python prop_hunter_results_ncaa.py || true
           python prop_hunter_results_euroleague.py || true
           if [ -f espn_multisport_results.py ]; then python espn_multisport_results.py || true; fi
+
+      - name: Refresh completed WNBA games for targeted repair
+        if: contains(github.event.head_commit.message, '[wnba-refresh]')
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python prop_hunter_results_wnba.py
 
       - name: Settle and publish evaluation
         env:

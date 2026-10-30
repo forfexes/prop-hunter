@@ -185,19 +185,8 @@ def main():
     max_dates = max(1, int(os.getenv("WNBA_RESULTS_MAX_DATES", "18")))
     max_events = max(1, int(os.getenv("WNBA_RESULT_GAME_CAP", "48")))
     today = datetime.now(timezone.utc).date()
-    def _date_priority(item):
-        ymd, _ = item
-        try:
-            d = datetime.strptime(ymd, "%Y%m%d").date()
-        except Exception:
-            return (9, 9999, ymd)
-        # Drain historical settlement debt deterministically: completed old
-        # pending dates first.  The previous "recent first" ordering starved old
-        # WNBA picks forever because every run was capped to only a few dates.
-        # Future windows remain last.
-        return (0 if d <= today else 1, d.toordinal() if d <= today else abs((d - today).days), d.toordinal())
-
-    for ymd, ps in sorted(by_date.items(), key=_date_priority)[:max_dates]:
+    from prop_hunter_scan_dates import select_scan_dates
+    for ymd, ps in select_scan_dates(by_date, max_dates, today):
         for ev in espn_scoreboard(ymd):
             eid = str(ev.get("id") or "")
             if not eid or not _event_final(ev):

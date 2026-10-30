@@ -90,7 +90,11 @@ def test_nba_wnba_nfl_nhl_guards():
     check("pending_picks" in nba and "espn_pending_logs" in nba, "NBA pending-pick fallback missing")
     check("pending_picks" in wnba and "event_players" in wnba, "WNBA pending-pick path missing")
     check("def _event_final" in wnba and "not _event_final(ev)" in wnba, "WNBA final-game guard missing")
-    check("sorted(by_date.items(), key=_date_priority)" in wnba, "WNBA recent-result prioritization missing")
+    from prop_hunter_scan_dates import select_scan_dates
+    from datetime import date
+    scans = select_scan_dates({'20260711': [], '20260816': [], '20261029': []}, 2, date(2026,10,30))
+    check('20261029' in [day for day,_ in scans] and len(scans)==2,
+          "current scoreboard date starved by historical debt")
     check("/api/v1/search/player" in nhl and "'type':'player'" not in nhl, "NHL current player-search endpoint missing")
     check("PH_MLB_RESULTS_LOOKBACK_DAYS" in mlb and "rows.sort(" in mlb, "MLB unresolved-card prioritization missing")
     check('"gameType": game_type' in mlb and 'for game_type in ("R", "P")' in mlb, "MLB postseason gamelog fetch missing")
