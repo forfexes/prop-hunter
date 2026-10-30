@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: prop-hunter-history-writer
+  group: prop-hunter-euroleague-data
   cancel-in-progress: false
 
 jobs:
@@ -46,6 +46,7 @@ jobs:
           PH_EUROLEAGUE_INCREMENTAL_DAYS: '7'
           PH_EUROLEAGUE_INCREMENTAL_MAX_EVENTS: '40'
           PH_GAMELOG_KEEP_PER_PLAYER: '40'
+          PH_FEATURE_LEAGUE: 'EUROLEAGUE'
           PH_FEATURE_WRITE_BATCH: '400'
         run: |
           python prop_hunter_backfill_euroleague.py

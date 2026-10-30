@@ -89,3 +89,10 @@ assert saved[0]['features']['retained_games_total']==15
 assert saved[0]['features']['last_15']['rebounds_avg']==round(sum(x['rebounds'] for x in current)/7,4)
 assert 'historical_last_15' in saved[0]['features']
 print('CURRENT SEASON FORM / NO FABRICATED EDGE REGRESSIONS PASSED')
+
+saved=[]
+with patch.object(fw,'datetime',Clock),patch.dict(os.environ,{'PH_FEATURE_LEAGUE':'NBA'}),patch.object(fb,'select_rows',return_value=current+other) as read,patch.object(fb,'safe_json_write'),patch.object(fb,'upsert_rows',side_effect=lambda table,batch,key:saved.extend(batch)):
+    fb.main()
+assert read.call_args.kwargs['filters']=={'league':'NBA'}
+assert len(saved)==1 and saved[0]['league']=='NBA'
+print('LEAGUE-SCOPED FEATURE WRITE GUARD PASSED')

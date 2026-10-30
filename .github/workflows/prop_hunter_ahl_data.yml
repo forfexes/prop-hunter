@@ -46,6 +46,7 @@ jobs:
           PH_AHL_COOLDOWN: '0.52'
           PH_AHL_TIMEOUT: '10'
           PH_GAMELOG_KEEP_PER_PLAYER: '40'
+          PH_FEATURE_LEAGUE: 'AHL'
           PH_FEATURE_WRITE_BATCH: '400'
         run: |
           python prop_hunter_backfill_ahl.py
