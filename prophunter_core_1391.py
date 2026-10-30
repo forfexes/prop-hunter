@@ -4788,6 +4788,11 @@ def run(dry_run=False,sport_filter=None):
         log.info("verified builder extras: +%d", len(extras))
     except Exception as exc:
         log.warning("verified builder skipped: %s", exc)
+    from prop_hunter_combo_prices import publishable_extra
+    picks = [p for p in picks if publishable_extra(p)]
+    if not picks:
+        log.warning("no picks with verified quote scope")
+        return
     body=build_post(picks)
     print("\n"+body+"\n")
     telegram_message_id = send_telegram(body,dry_run=dry_run,picks=picks)

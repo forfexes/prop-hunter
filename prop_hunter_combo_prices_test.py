@@ -49,3 +49,11 @@ ns=dict(picks=[],props=[],Pick=object,LadderLeg=object,log=SimpleNamespace(info=
 with patch.dict(sys.modules,{'prop_hunter_builder_engine':fake}):exec(code,ns)
 assert ns['picks']==[single], 'unpriced SGP reached production delivery'
 print('PRODUCTION DELIVERY PRICE GATE PASSED')
+
+# The final fence also covers combos returned by analysis/rescue, not only extras.
+main=next(n for n in ast.parse(Path('prophunter_core_1391.py').read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='run')
+fence=next(n for n in main.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='picks' for t in n.targets) and isinstance(n.value,ast.ListComp) and 'publishable_extra' in ast.unparse(n))
+ns=dict(picks=[invalid,single],publishable_extra=publishable_extra)
+exec(compile(ast.fix_missing_locations(ast.Module(body=[fence],type_ignores=[])),'production-final-fence','exec'),ns)
+assert ns['picks']==[single]
+print('PRODUCTION FINAL PRICE FENCE PASSED')

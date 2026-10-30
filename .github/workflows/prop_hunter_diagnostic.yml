@@ -35,8 +35,10 @@ jobs:
           python prop_hunter_ladder_l15_test.py
           python prop_hunter_runtime_guard.py
           python prop_hunter_market_regression_test.py
+          python prop_hunter_combo_prices_test.py
           python prop_hunter_settler_fast_test.py
       - name: Full card dry run
+        if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
