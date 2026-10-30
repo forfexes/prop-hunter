@@ -1,7 +1,7 @@
 from collections import defaultdict
 from statistics import mean
 from prop_hunter_form_windows import select_form_rows, form_context
-from prop_hunter_shared_utils import select_rows, upsert_rows, safe_json_write, log, norm_name, to_float, hash_key, now_iso
+from prop_hunter_shared_utils import select_rows, upsert_rows, safe_json_write, log, norm_name, to_float, hash_key, now_iso, supabase_client
 
 OUT="prop_hunter_player_features.json"
 FEATURE_WRITE_BATCH=max(100,int(__import__("os").getenv("PH_FEATURE_WRITE_BATCH","500")))
@@ -50,12 +50,33 @@ def hit(rs,k,line):
     vs=[val(r,k) for r in rs if val(r,k) is not None]
     return round(sum(v>line for v in vs)/len(vs),4) if vs else None
 
+def load_feature_logs(scope="", page_size=1000):
+    """Read by immutable id, so concurrent pruning cannot shift row offsets."""
+    client=supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase required for feature rebuild")
+    rows=[]
+    last_id=None
+    while True:
+        query=client.table("prop_hunter_player_gamelogs").select("*").order("id").limit(page_size)
+        if scope:query=query.eq("league",scope)
+        if last_id is not None:query=query.gt("id",last_id)
+        batch=list(query.execute().data or [])
+        if not batch:break
+        next_id=max(int(row["id"]) for row in batch)
+        if last_id is not None and next_id<=last_id:
+            raise RuntimeError("Feature pagination did not advance")
+        rows.extend(batch)
+        last_id=next_id
+        if len(batch)<page_size:break
+    return rows
+
+
 def main():
     # Read the full retained history with deterministic paging. The retention job
     # caps each sport/league/player at 15 games, so L5/L10/L15 stay complete.
     scope = str(__import__("os").getenv("PH_FEATURE_LEAGUE", "")).strip().upper()
-    logs=select_rows("prop_hunter_player_gamelogs",limit=None,order_by="id",
-                     filters={"league":scope} if scope else None)
+    logs=load_feature_logs(scope)
     g=defaultdict(list)
     for r in logs:
         if scope and str(r.get("league") or "").upper() != scope:

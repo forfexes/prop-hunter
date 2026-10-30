@@ -82,7 +82,7 @@ class Clock(datetime):
     @classmethod
     def now(cls,tz=None):return datetime(2026,10,30,tzinfo=timezone.utc)
 saved=[]
-with patch.object(fw,'datetime',Clock),patch.object(fb,'select_rows',return_value=current+old),patch.object(fb,'safe_json_write'),patch.object(fb,'upsert_rows',side_effect=lambda table,batch,key:saved.extend(batch)):
+with patch.object(fw,'datetime',Clock),patch.object(fb,'load_feature_logs',return_value=current+old),patch.object(fb,'safe_json_write'),patch.object(fb,'upsert_rows',side_effect=lambda table,batch,key:saved.extend(batch)):
     fb.main()
 assert saved[0]['games_total']==7
 assert saved[0]['features']['retained_games_total']==15
@@ -91,8 +91,34 @@ assert 'historical_last_15' in saved[0]['features']
 print('CURRENT SEASON FORM / NO FABRICATED EDGE REGRESSIONS PASSED')
 
 saved=[]
-with patch.object(fw,'datetime',Clock),patch.dict(os.environ,{'PH_FEATURE_LEAGUE':'NBA'}),patch.object(fb,'select_rows',return_value=current+other) as read,patch.object(fb,'safe_json_write'),patch.object(fb,'upsert_rows',side_effect=lambda table,batch,key:saved.extend(batch)):
+with patch.object(fw,'datetime',Clock),patch.dict(os.environ,{'PH_FEATURE_LEAGUE':'NBA'}),patch.object(fb,'load_feature_logs',return_value=current+other) as read,patch.object(fb,'safe_json_write'),patch.object(fb,'upsert_rows',side_effect=lambda table,batch,key:saved.extend(batch)):
     fb.main()
-assert read.call_args.kwargs['filters']=={'league':'NBA'}
+read.assert_called_once_with('NBA')
 assert len(saved)==1 and saved[0]['league']=='NBA'
 print('LEAGUE-SCOPED FEATURE WRITE GUARD PASSED')
+
+# A row deleted behind the reader must not shift the next page and lose id 3.
+state={'rows':[{'id':i,'league':'NBA'} for i in range(1,6)],'calls':0}
+class Page:
+    def __init__(self):self.last=None;self.scope=None
+    def table(self,*a):return self
+    def select(self,*a):return self
+    def order(self,*a):return self
+    def limit(self,n):self.size=n;return self
+    def eq(self,k,v):self.scope=v;return self
+    def gt(self,k,v):self.last=v;return self
+    def execute(self):
+        batch=[r for r in state['rows'] if (self.last is None or r['id']>self.last) and (not self.scope or r['league']==self.scope)][:self.size]
+        state['calls']+=1
+        if state['calls']==1:state['rows']=state['rows'][1:]
+        return SimpleNamespace(data=batch)
+class Client:
+    def table(self,*a):return Page()
+with patch.object(fb,'supabase_client',return_value=Client()):
+    got=fb.load_feature_logs('NBA',page_size=2)
+assert [r['id'] for r in got]==[1,2,3,4,5],got
+with patch.object(fb,'supabase_client',return_value=None):
+    try:fb.load_feature_logs()
+    except RuntimeError:pass
+    else:raise AssertionError('missing DB silently accepted')
+print('FEATURE KEYSET PAGINATION / CONCURRENT PRUNING REGRESSION PASSED')
