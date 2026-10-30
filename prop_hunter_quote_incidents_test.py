@@ -36,3 +36,7 @@ bad=ticket();bad["date"]="2026-10-29"
 assert not unique_results([dict(pick_id="bad",result="win",pick_raw=bad)])
 good=dict(bad,odds=1.96)
 assert len(unique_results([dict(pick_id="good",result="win",pick_raw=good)]))==1
+
+old=dict(ticket(),player="Jack Hughes",game="New Jersey Devils @ Colorado Avalanche",market="points Over 0.5",point=.5,odds=3.75)
+assert invalidate(old,"2026-10-28")
+assert not invalidate(ticket(),"2026-10-28")

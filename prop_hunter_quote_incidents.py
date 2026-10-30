@@ -18,7 +18,8 @@ _EVIDENCE = (
 )
 
 def evidence_for(ticket, day):
-    if str(day)[:10] != '2026-10-29':
+    incident_day = str(day)[:10]
+    if incident_day not in {'2026-10-28', '2026-10-29'}:
         return []
     details = ticket.get('leg_details') or [ticket]
     found = []
@@ -36,6 +37,10 @@ def evidence_for(ticket, day):
         except (TypeError, ValueError):
             continue
         for player, game, threshold, odds, original in _EVIDENCE:
+            # Overnight NJD/COL quotes were also persisted under the preceding
+            # sent_date. Both dates refer to the same quoted October 29 event.
+            if incident_day == '2026-10-28' and game != 'New Jersey Devils @ Colorado Avalanche':
+                continue
             expected_market = 'shots on goal' if 'Shots on Goal' in original else 'points'
             if expected_market not in market:
                 continue
