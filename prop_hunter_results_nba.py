@@ -157,6 +157,13 @@ def espn_scoreboard(ymd):
     url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
     return (http_json(url, params={"dates": ymd}, retries=1) or {}).get("events", []) or []
 
+def _event_final(ev):
+    typ = (ev.get("status") or {}).get("type") or {}
+    if typ.get("completed") is True:
+        return True
+    return typ.get("completed") is not False and str(typ.get("state") or "").lower() == "post"
+
+
 def _event_team_names(ev):
     comp = (ev.get("competitions") or [{}])[0]
     out = []
@@ -249,7 +256,7 @@ def espn_pending_logs(picks):
     for ymd, ps in select_scan_dates(by_date, max_dates, datetime.now(timezone.utc).date()):
         for ev in espn_scoreboard(ymd):
             eid = str(ev.get("id") or "")
-            if not eid:
+            if not eid or not _event_final(ev):
                 continue
             matched = [p for p in ps if _event_matches(ev, p)]
             if not matched:
