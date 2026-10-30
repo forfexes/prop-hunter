@@ -1,5 +1,6 @@
 from collections import defaultdict
 from statistics import mean
+from prop_hunter_form_windows import select_form_rows, form_context
 from prop_hunter_shared_utils import select_rows, upsert_rows, safe_json_write, log, norm_name, to_float, hash_key, now_iso
 
 OUT="prop_hunter_player_features.json"
@@ -60,7 +61,12 @@ def main():
     rows=[]
     for (sport,league,nk),items in g.items():
         items.sort(key=lambda x:str(x.get("game_date") or x.get("created_at") or ""), reverse=True)
-        feat={"games_total":len(items),"last_game_date":items[0].get("game_date")}
+        historical = items[:15]
+        items = select_form_rows(items, league)
+        feat={"games_total":len(items),"retained_games_total":len(historical),
+              "last_game_date":items[0].get("game_date") if items else None,
+              **form_context(historical,league)}
+        feat["historical_last_15"]={st+"_avg":avg(historical,st) for st in STATS if avg(historical,st) is not None}
         for n in [5,10,15]:
             sub=items[:n]; feat[f"last_{n}"]={}
             for st in STATS:
@@ -69,7 +75,7 @@ def main():
                 for line in LINES.get(st,[]):
                     h=hit(sub,st,line)
                     if h is not None: feat[f"last_{n}"][f"{st}_over_{str(line).replace('.','_')}_hit_rate"]=h
-        rows.append({"feature_id":hash_key(sport,league,nk),"sport":sport,"league":league,"player_name":items[0].get("player_name"),"normalized_name":nk,"games_total":len(items),"features":feat,"updated_at":now_iso()})
+        rows.append({"feature_id":hash_key(sport,league,nk),"sport":sport,"league":league,"player_name":historical[0].get("player_name"),"normalized_name":nk,"games_total":len(items),"features":feat,"updated_at":now_iso()})
     safe_json_write(OUT,rows)
     for start in range(0,len(rows),FEATURE_WRITE_BATCH):
         batch=rows[start:start+FEATURE_WRITE_BATCH]

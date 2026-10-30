@@ -29,6 +29,7 @@ jobs:
         run: |
           python -m py_compile prop_hunter_feature_builder.py prop_hunter_shared_utils.py prop_hunter_gamelog_retention.py
           python prop_hunter_gamelog_retention_test.py
+          python prop_hunter_form_windows_test.py
           python prop_hunter_expansion_test.py
       - name: Retain 15 games and rebuild all player features
         env:

@@ -1174,7 +1174,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
     _prefetched_rows = {}
     try:
         wanted_names = sorted({norm_name(getattr(p, "player", "")) for p in props if getattr(p, "player", None)})
-        cols = ("normalized_name,game_date,points,rebounds,assists,threes_made,"
+        cols = ("normalized_name,league,season,game_id,game_date,raw,points,rebounds,assists,threes_made,"
                 "double_double,triple_double,home_runs,pitcher_hits_allowed,"
                 "strikeouts_batter,pitcher_strikeouts,total_bases,rbi,walks_batter,"
                 "steals,blocks,stolen_bases,hits,runs,receptions,receiving_yards,targets,"
@@ -1197,7 +1197,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 pass
         for nk, rows0 in _prefetched_rows.items():
             rows0.sort(key=lambda r: str(r.get("game_date") or ""), reverse=True)
-            _prefetched_rows[nk] = rows0[:15]
+            _prefetched_rows[nk] = rows0
         if _prefetched_rows:
             log.info("Gamelog prefetch: %d players in batch", len(_prefetched_rows))
     except Exception:
@@ -1227,78 +1227,51 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 elif stat == "assists":
                     stat = "assists_hockey"
             key = norm_name(p.player)
-            cache_k = f"{key}|{stat}"
+            from prop_hunter_form_windows import select_form_rows, form_context
+            reference = getattr(p, "commence_time", None) or datetime.now(timezone.utc)
+            cache_k = f"{sport_label}|{key}|{stat}|{str(reference)[:10]}"
+            rows0 = _prefetched_rows.get(key)
+            if rows0 is None:
+                res = (c.table("prop_hunter_player_gamelogs").select(cols)
+                       .eq("normalized_name", key).not_.is_("game_date", "null")
+                       .order("game_date", desc=True).limit(100).execute())
+                rows0 = list(res.data or [])
+                _prefetched_rows[key] = rows0
+            fast_rows = select_form_rows(rows0, sport_label, reference)
+            feats = dict(getattr(p, "features", None) or {})
+            feats.update(form_context(rows0, sport_label, reference))
+            p.features = feats
             if cache_k not in _GAMELOG_CACHE:
-                fast_rows = _prefetched_rows.get(key)
-                if fast_rows is not None:
+                vals0 = []
+                for row in fast_rows:
                     if stat in COMBO_STATS:
-                        cols2 = COMBO_STATS[stat]
-                        vals0 = []
-                        for r in fast_rows:
-                            parts = [r.get(col) for col in cols2]
-                            if all(x is not None for x in parts):
-                                vals0.append(sum(float(x) for x in parts))
-                        _GAMELOG_CACHE[cache_k] = vals0
-                    elif stat in ("double_double", "triple_double"):
-                        need = 2 if stat == "double_double" else 3
-                        vals0 = []
-                        for r in fast_rows:
-                            cats = [r.get("points"), r.get("rebounds"), r.get("assists")]
-                            if all(x is not None for x in cats):
-                                vals0.append(1.0 if sum(1 for x in cats if float(x) >= 10) >= need else 0.0)
-                        _GAMELOG_CACHE[cache_k] = vals0
-                    else:
-                        _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in fast_rows if r.get(stat) is not None]
-                elif stat in COMBO_STATS:
-                    cols2 = COMBO_STATS[stat]
-                    res = c.table("prop_hunter_player_gamelogs").select(
-                        ",".join(cols2) + ",game_date").eq(
-                        "normalized_name", key).not_.is_("game_date", "null").order(
-                        "game_date", desc=True).limit(15).execute()
-                    combo_vals = []
-                    for r in (res.data or []):
-                        parts = [r.get(col) for col in cols2]
+                        parts = [row.get(col) for col in COMBO_STATS[stat]]
                         if all(x is not None for x in parts):
-                            combo_vals.append(sum(float(x) for x in parts))
-                    _GAMELOG_CACHE[cache_k] = combo_vals
-                elif stat in ("double_double", "triple_double"):
-                    res = c.table("prop_hunter_player_gamelogs").select(
-                        "points,rebounds,assists,game_date").eq(
-                        "normalized_name", key).not_.is_("game_date", "null").order(
-                        "game_date", desc=True).limit(15).execute()
-                    dd_vals = []
-                    need = 2 if stat == "double_double" else 3
-                    for r in (res.data or []):
-                        cats = [r.get("points"), r.get("rebounds"), r.get("assists")]
-                        if all(x is not None for x in cats):
-                            dbl = sum(1 for x in cats if float(x) >= 10)
-                            dd_vals.append(1.0 if dbl >= need else 0.0)
-                    _GAMELOG_CACHE[cache_k] = dd_vals
-                else:
-                    res = c.table("prop_hunter_player_gamelogs").select(stat).eq(
-                        "normalized_name", key).not_.is_(stat, "null").not_.is_("game_date", "null").order(
-                        "game_date", desc=True).limit(15).execute()
-                    _GAMELOG_CACHE[cache_k] = [float(r[stat]) for r in (res.data or []) if r.get(stat) is not None]
+                            vals0.append(sum(float(x) for x in parts))
+                    elif stat in ("double_double", "triple_double"):
+                        value = row.get(stat)
+                        if value is not None:
+                            vals0.append(float(value))
+                        else:
+                            cats = [row.get(k) for k in ("points","rebounds","assists","steals","blocks")]
+                            need = 2 if stat == "double_double" else 3
+                            hits = sum(x is not None and float(x)>=10 for x in cats)
+                            if hits>=need or all(x is not None for x in cats):
+                                vals0.append(float(hits>=need))
+                    elif row.get(stat) is not None:
+                        vals0.append(float(row[stat]))
+                _GAMELOG_CACHE[cache_k] = vals0
             vals = _GAMELOG_CACHE[cache_k]
             n = len(vals)
             if n < 6:
-                # Zu wenig DB-Historie. ABER: hat der Prop eine ECHTE Buchmacher-Quote
-                # (nicht synthetisch 1.85/1.80/1.83), ist die no-vig-Quote selbst die Bewertung.
-                src = (getattr(p, "enrichment", "") or "").lower()
-                real_book = any(b in src for b in ("draftkings", "bovada", "fanduel", "dk", "src:draft", "src:bov", "src:fan"))
-                p_odds = float(getattr(p, "odds", 0) or 0)
-                is_synthetic = abs(p_odds - 1.85) < 0.001 or abs(p_odds - 1.83) < 0.001 or abs(p_odds - 1.80) < 0.001
-                if real_book and not is_synthetic and p_odds > 1.01:
-                    # no-vig Näherung: faire Prob leicht über implied (Marge ~4% rausrechnen)
-                    implied = 1.0 / p_odds
-                    fair = min(0.92, implied * 1.04)
-                    feats = getattr(p, "features", None) or {}
-                    if not feats.get("fair_prob"):
-                        feats["fair_prob"] = round(fair, 4)
-                        feats["fair_from"] = "novig_realbook"
-                        p.features = feats
-                        boosted += 1
-                continue  # unter 6 Spielen keine DB-Rate, aber echte Quote gesetzt
+                feats = dict(getattr(p, "features", None) or {})
+                feats["gamelog_n"] = n
+                feats["gamelog_l15_n"] = n
+                feats["gamelog_skip_reason"] = "fewer_than_6_current_season_games"
+                p.features = feats
+                # An unpaired bookmaker quote is not a no-vig fair probability.
+                # Preserve independent existing evidence; never manufacture +4% EV.
+                continue
             # Double/Triple-Double: Rate = Anteil Spiele mit DD (Linie ignoriert, ist ja Ja/Nein)
             if stat in ("double_double", "triple_double"):
                 dd_rate = sum(vals) / n
@@ -1334,7 +1307,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 # Feste Sicherheitsregel: niemals die Book-Seite drehen oder eine Gegenquote
                 # aus der beobachteten Quote ableiten. Gamelogs bewerten ausschließlich
                 # die tatsächlich angebotene Richtung zum tatsächlich beobachteten Preis.
-                rate = (1 - over_rate) if direction == "under" else over_rate
+                rate = (sum(1 for v in vals if v < point) / n) if direction == "under" else over_rate
             rate = max(0.05, min(0.95, rate))
             feats = getattr(p, "features", None) or {}
             # Store RAW, line-specific L15 observations separately from the
@@ -1371,13 +1344,18 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 feats["fair_prob"] = round(blended, 4)
             else:
                 feats["fair_prob"] = round(rate, 4)
-            feats["gamelog_l15_rate"] = round(rate, 3)
-            feats["gamelog_l10_rate"] = round(rate, 3)  # compatibility for older scoring code
+            feats["gamelog_model_rate"] = round(rate, 6)
+            feats["gamelog_l15_rate"] = round(empirical_hits / n, 3)
+            l10 = vals[:10]
+            l10_hits = sum(1 for v in l10 if (v < point if direction == "under" else v > point))
+            feats["gamelog_l10_n"] = len(l10)
+            feats["gamelog_l10_hits"] = l10_hits
+            feats["gamelog_l10_rate"] = round(l10_hits / len(l10), 3)
             feats["gamelog_n"] = n
             p.features = feats
             avg = sum(vals)/n
             side_label = "unter Linie" if direction == "under" else "über Linie"
-            extra = f"DB L{n} avg {avg:.1f}, {int(rate*100)}% {side_label}"
+            extra = f"DB L{n} avg {avg:.1f}, {int(empirical_hits/n*100)}% {side_label}"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue
