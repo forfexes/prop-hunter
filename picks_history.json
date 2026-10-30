@@ -46378,15 +46378,27 @@
           "bookmaker": "fanduel",
           "source": "fanduel_direct"
         },
-        "result": "pending",
+        "result": "withdrawn",
         "profit": null,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-28T21:24:22.713078+00:00",
         "actual_value": null,
         "settlement_source": "prop_hunter_results",
-        "status": "pending",
-        "settlement_invalidated": true
+        "status": "withdrawn",
+        "settlement_invalidated": true,
+        "quote_original_result": "pending",
+        "quote_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          }
+        ]
       },
       {
         "date": "2026-10-28",
@@ -50124,7 +50136,7 @@
         "odds": 63.75,
         "stake": 0.05,
         "probability": 0.0899,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-28T21:24:32.615322+00:00",
         "combo_id": "4e37ff6adf21d661",
         "features": {
@@ -50145,7 +50157,7 @@
         "same_player_multistat": false,
         "date": "2026-10-28",
         "dedup_key": "b37e37f25a229ea8f10c4ce9c786f0bc049fbf5c",
-        "profit": -0.05,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Cooper Pratt",
@@ -50181,7 +50193,22 @@
             "result": "loss",
             "actual_value": 0
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "big",
@@ -50250,7 +50277,7 @@
         "odds": 765.0,
         "stake": 0.05,
         "probability": 0.0187,
-        "result": "loss",
+        "result": "withdrawn",
         "created_at": "2026-10-28T21:24:32.996650+00:00",
         "combo_id": "312896385b1e8b2b",
         "features": {
@@ -50271,7 +50298,7 @@
         "same_player_multistat": false,
         "date": "2026-10-28",
         "dedup_key": "4f9cc6b2dffd721edb6696dba600be93a8967b4c",
-        "profit": -0.05,
+        "profit": null,
         "settlement_legs": [
           {
             "player": "Cooper Pratt",
@@ -50324,7 +50351,22 @@
             "result": "loss",
             "actual_value": 0
           }
-        ]
+        ],
+        "quote_original_result": "loss",
+        "quote_invalidated": true,
+        "settlement_invalidated": true,
+        "quote_invalidation_reason": "Drittelquote wurde als Gesamtspielquote ausgegeben",
+        "quote_invalidation_evidence": [
+          {
+            "player": "Jack Hughes",
+            "game": "New Jersey Devils @ Colorado Avalanche",
+            "line": 0.5,
+            "odds": 3.75,
+            "original_market": "1st Period 1+ Points"
+          }
+        ],
+        "status": "withdrawn",
+        "actual_value": null
       },
       {
         "type": "big",
@@ -52220,8 +52262,8 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 28.10.2026\n\n🏒 Jack Hughes\n🏟 New Jersey Devils @ Colorado Avalanche\n\n• points Over 0.5 @3.75 → 0.33u\n📈 Prob 59% · Edge +32.6% · Confidence 79/100\n💡 src:fanduel | DB L15 avg 0.9, 59% über Linie\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
-        "settlement_updated_at": "2026-10-30T00:04:20.393144+00:00"
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nJack Hughes\n\n🎯 PROP HUNTER PRO TIP — SINGLE — 28.10.2026\n\n🏒 Jack Hughes\n🏟 New Jersey Devils @ Colorado Avalanche\n\n• points Over 0.5 @3.75 → 0.33u\n💡 src:fanduel | DB L15 avg 0.9, 59% über Linie\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-30T00:06:38.686577+00:00"
       },
       {
         "created_at": "2026-10-28T21:24:36.824603+00:00",
@@ -52545,8 +52587,8 @@
           "4e37ff6adf21d661"
         ],
         "card_kind": "big",
-        "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 28.10.2026\n\n🏟 RISK\n❌ 2-Leg RISK @63.75 → 0.05u · -0.05u\n  ├ Cooper Pratt Home Run Over 0.5 @17.00\n  └ Jack Hughes Points Over 0.5 @3.75\n📈 Prob 9.0% · EV +473.3%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
-        "settlement_updated_at": "2026-10-29T13:27:33.398911+00:00"
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nCooper Pratt + Jack Hughes\n\n💣 PROP HUNTER PRO TIP — LOTTERY — 28.10.2026\n\n🏟 RISK\n• 2-Leg RISK @63.75 → 0.05u\n  ├ Cooper Pratt Home Run Over 0.5 @17.00\n  └ Jack Hughes Points Over 0.5 @3.75\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-30T00:06:40.157770+00:00"
       },
       {
         "created_at": "2026-10-28T21:24:36.824681+00:00",
@@ -52558,8 +52600,8 @@
           "312896385b1e8b2b"
         ],
         "card_kind": "big",
-        "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 28.10.2026\n\n🏟 LOTTERY\n❌ 3-Leg LOTTERY @765.00 → 0.05u · -0.05u\n  ├ Cooper Pratt Home Run Over 0.5 @17.00\n  ├ Victor Mesa Jr. Home Run Over 0.5 @12.00\n  └ Jack Hughes Points Over 0.5 @3.75\n📈 Prob 1.9% · EV +1326.8%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
-        "settlement_updated_at": "2026-10-29T13:27:34.995126+00:00"
+        "settlement_text": "⚠️ TIPP ZURÜCKGEZOGEN — falsche Marktzuordnung\nDrittelquote als Gesamtspielquote; Quote/EV ungültig.\nCooper Pratt + Victor Mesa Jr. + Jack Hughes\n\n💣 PROP HUNTER PRO TIP — LOTTERY — 28.10.2026\n\n🏟 LOTTERY\n• 3-Leg LOTTERY @765.00 → 0.05u\n  ├ Cooper Pratt Home Run Over 0.5 @17.00\n  ├ Victor Mesa Jr. Home Run Over 0.5 @12.00\n  └ Jack Hughes Points Over 0.5 @3.75\n\n@prophunter\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen",
+        "settlement_updated_at": "2026-10-30T00:06:41.697761+00:00"
       },
       {
         "created_at": "2026-10-28T21:24:36.824684+00:00",
