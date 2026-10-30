@@ -1003,11 +1003,11 @@
     },
     "WNBA:assists:over|WNBA:points:over": {
       "factor": 1.0,
-      "n": 1,
-      "both_wins": 1,
-      "observed_joint": 1.0,
-      "expected_joint": 0.57563,
-      "raw_ratio": 1.35
+      "n": 6,
+      "both_wins": 3,
+      "observed_joint": 0.5,
+      "expected_joint": 0.40016,
+      "raw_ratio": 1.2495
     },
     "NBA:assists:under|NBA:points:over": {
       "factor": 0.9778,
@@ -1521,6 +1521,30 @@
       "expected_joint": 0.12007,
       "raw_ratio": 0.6
     },
+    "WNBA:6+_assists:over|WNBA:8+_assists:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.36236,
+      "raw_ratio": 0.6
+    },
+    "WNBA:10+_assists:over|WNBA:6+_assists:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.19254,
+      "raw_ratio": 0.6
+    },
+    "WNBA:10+_assists:over|WNBA:8+_assists:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.13406,
+      "raw_ratio": 0.6
+    },
     "NHL:2+_goals:over|NHL:3+_goals:over": {
       "factor": 1.0,
       "n": 2,
@@ -1536,48 +1560,176 @@
       "observed_joint": 1.0,
       "expected_joint": 0.40969,
       "raw_ratio": 1.35
+    },
+    "WNBA:6+_rebounds:over|WNBA:8+_rebounds:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.05739,
+      "raw_ratio": 0.6
+    },
+    "WNBA:10+_rebounds:over|WNBA:6+_rebounds:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.03542,
+      "raw_ratio": 0.6
+    },
+    "WNBA:10+_rebounds:over|WNBA:8+_rebounds:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.01624,
+      "raw_ratio": 0.6
+    },
+    "WNBA:15+_points:over|WNBA:16+_points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.25245,
+      "raw_ratio": 1.35
+    },
+    "WNBA:15+_points:over|WNBA:20+_points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.17007,
+      "raw_ratio": 1.35
+    },
+    "WNBA:16+_points:over|WNBA:20+_points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.15554,
+      "raw_ratio": 1.35
+    },
+    "WNBA:14+_points:over|WNBA:16+_points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.32116,
+      "raw_ratio": 1.35
+    },
+    "WNBA:25+_points:over|WNBA:30+_points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.01,
+      "raw_ratio": 0.6
+    },
+    "WNBA:4+_rebounds:over|WNBA:5+_rebounds:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.41822,
+      "raw_ratio": 1.35
+    },
+    "WNBA:points:over|WNBA:points:over": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 2,
+      "observed_joint": 0.66667,
+      "expected_joint": 0.365,
+      "raw_ratio": 1.35
+    },
+    "WNBA:assists:over|WNBA:rebounds:over": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 1,
+      "observed_joint": 0.33333,
+      "expected_joint": 0.42077,
+      "raw_ratio": 0.7922
+    },
+    "WNBA:points:over|WNBA:rebounds:over": {
+      "factor": 1.0,
+      "n": 8,
+      "both_wins": 4,
+      "observed_joint": 0.5,
+      "expected_joint": 0.25718,
+      "raw_ratio": 1.35
+    },
+    "WNBA:points:over|WNBA:threes:over": {
+      "factor": 1.0,
+      "n": 2,
+      "both_wins": 2,
+      "observed_joint": 1.0,
+      "expected_joint": 0.30079,
+      "raw_ratio": 1.35
+    },
+    "WNBA:rebounds:over|WNBA:threes:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.35807,
+      "raw_ratio": 1.35
+    },
+    "WNBA:assists:over|WNBA:threes:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.39137,
+      "raw_ratio": 1.35
+    },
+    "WNBA:rebounds:over|WNBA:rebounds:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.05918,
+      "raw_ratio": 1.35
     }
   },
   "profiles": {
     "safe": {
-      "n": 24,
-      "wins": 8,
+      "n": 25,
+      "wins": 9,
       "losses": 16,
       "pushes": 0,
-      "stake": 5.35,
-      "profit": -0.58,
-      "hit_rate": 0.33333,
-      "roi": -0.10841
+      "stake": 5.6,
+      "profit": -0.25,
+      "hit_rate": 0.36,
+      "roi": -0.04464
     },
     "value": {
-      "n": 29,
+      "n": 30,
       "wins": 7,
-      "losses": 21,
+      "losses": 22,
       "pushes": 1,
-      "stake": 3.93,
-      "profit": 1.8,
-      "hit_rate": 0.25,
-      "roi": 0.45802
+      "stake": 4.08,
+      "profit": 1.65,
+      "hit_rate": 0.24138,
+      "roi": 0.40441
     },
     "aggressive": {
-      "n": 26,
-      "wins": 4,
+      "n": 27,
+      "wins": 5,
       "losses": 22,
       "pushes": 0,
-      "stake": 1.99,
-      "profit": 4.08,
-      "hit_rate": 0.15385,
-      "roi": 2.05025
+      "stake": 2.07,
+      "profit": 5.49,
+      "hit_rate": 0.18519,
+      "roi": 2.65217
     },
     "longshot": {
-      "n": 24,
-      "wins": 3,
-      "losses": 21,
+      "n": 27,
+      "wins": 4,
+      "losses": 23,
       "pushes": 0,
-      "stake": 1.2,
-      "profit": 14.73,
-      "hit_rate": 0.125,
-      "roi": 12.275
+      "stake": 1.35,
+      "profit": 16.12,
+      "hit_rate": 0.14815,
+      "roi": 11.94074
     },
     "lottery": {
       "n": 6,
@@ -1590,5 +1742,5 @@
       "roi": -1.0
     }
   },
-  "updated_at": "2026-10-30T00:06:55.742550+00:00"
+  "updated_at": "2026-10-30T00:20:39.733362+00:00"
 }

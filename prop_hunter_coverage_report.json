@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-10-30T00:07:09.497419+00:00",
+  "updated_at": "2026-10-30T00:20:50.468318+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
-      "rows": 110,
+      "rows": 34,
       "sources": [
-        "fanduel_direct",
-        "kambi"
+        "betrivers_direct",
+        "fanduel_direct"
       ],
       "market_count": 7,
-      "latest": "2026-10-29T01:52:40.918370+00:00",
+      "latest": "2026-10-29T01:52:24.156280+00:00",
       "missing_core": [
         "home run",
         "total bases",
@@ -17,30 +17,7 @@
       ]
     },
     "NBA": {
-      "rows": 2420,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "fanduel_direct",
-        "kambi"
-      ],
-      "market_count": 11,
-      "latest": "2026-10-29T21:22:34.901220+00:00",
-      "missing_core": []
-    },
-    "WNBA": {
-      "rows": 428,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "fanduel_direct"
-      ],
-      "market_count": 12,
-      "latest": "2026-10-29T14:33:34.083433+00:00",
-      "missing_core": []
-    },
-    "NFL": {
-      "rows": 1721,
+      "rows": 2680,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -48,12 +25,36 @@
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 34,
+      "market_count": 12,
+      "latest": "2026-10-29T21:22:34.900350+00:00",
+      "missing_core": []
+    },
+    "WNBA": {
+      "rows": 356,
+      "sources": [
+        "betrivers_direct",
+        "bovada_direct",
+        "fanduel_direct"
+      ],
+      "market_count": 12,
+      "latest": "2026-10-29T14:33:34.083082+00:00",
+      "missing_core": []
+    },
+    "NFL": {
+      "rows": 1707,
+      "sources": [
+        "betrivers_direct",
+        "bovada_direct",
+        "draftkings_direct",
+        "fanduel_direct",
+        "kambi"
+      ],
+      "market_count": 37,
       "latest": "2026-10-29T21:22:44.276264+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 1249,
+      "rows": 1317,
       "sources": [
         "betrivers_direct",
         "draftkings_direct",
@@ -61,7 +62,7 @@
         "kambi"
       ],
       "market_count": 5,
-      "latest": "2026-10-29T21:22:50.509878+00:00",
+      "latest": "2026-10-29T21:22:50.502145+00:00",
       "missing_core": [
         "saves"
       ]
