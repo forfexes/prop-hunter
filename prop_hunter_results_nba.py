@@ -76,6 +76,16 @@ def pending_players(picks):
             seen.setdefault(norm_name(n), n)
     return list(seen.values())[:max(1, int(os.getenv("NBA_RESULTS_PLAYER_CAP", "40")))]
 
+def nba_api_gameday(value):
+    text = str(value or "").strip()
+    for fmt in ("%b %d, %Y", "%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.strptime(text, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return None
+
+
 def nba_api_player_logs(players=None, season=None, last_n=20):
     try:
         from nba_api.stats.static import players as nba_players
@@ -110,14 +120,21 @@ def nba_api_player_logs(players=None, season=None, last_n=20):
             warn(f"NBA gamelog failed {full}: {e}")
             continue
         for _, r in df.head(last_n).iterrows():
-            pts = to_float(r.get("PTS"), 0) or 0
-            reb = to_float(r.get("REB"), 0) or 0
-            ast = to_float(r.get("AST"), 0) or 0
+            labels = ["MIN", "PTS", "REB", "AST", "STL", "BLK", "TO"]
+            observed = observed_stats({"labels": labels}, {"stats": [
+                r.get(key) for key in ("MIN", "PTS", "REB", "AST", "STL", "BLK", "TOV")
+            ]})
+            if not observed or not observed["minutes"] or observed["minutes"] <= 0:
+                continue
+            pts, reb, ast = (observed[key] for key in ("points", "rebounds", "assists"))
+            gameday = nba_api_gameday(r.get("GAME_DATE"))
+            if not gameday:
+                continue
             gid = str(r.get("Game_ID") or r.get("GAME_ID") or "")
             rows.append({
                 "sport": "BASKETBALL", "league": "NBA", "season": season, "source": "nba_api",
                 "source_game_id": gid, "game_id": gid,
-                "game_date": str(r.get("GAME_DATE"))[:10] if r.get("GAME_DATE") is not None else None,
+                "game_date": gameday,
                 "player_name": full, "normalized_name": norm_name(full), "opponent": str(r.get("MATCHUP") or ""),
                 "minutes": to_float(r.get("MIN")), "points": pts, "rebounds": reb, "assists": ast,
                 "pra": observed["pra"], "ra": observed["ra"], "threes_made": to_float(r.get("FG3M")),

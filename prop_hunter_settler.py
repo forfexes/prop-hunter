@@ -332,6 +332,7 @@ def find_gamelog(
         return None
 
     dated = []
+    quoted_start = _pick_commence_dt(pick)
     for gl in player_logs:
         gd = _date_only(gl.get("game_date") or gl.get("date"))
         if gd is None:
@@ -350,7 +351,20 @@ def find_gamelog(
         # calendar date. Never match a later gamelog (+1/+2 days): that can
         # grade a future card against a different game by the same player.
         if delta == 0 or (delta == -1 and allow_previous_day):
-            dated.append((abs(delta), 0 if delta == 0 else 1, gl))
+            # An observed official UTC start disambiguates duplicate/local-day
+            # rows. Never use a known different event just because dates match.
+            raw_log = gl.get("raw") if isinstance(gl.get("raw"), dict) else {}
+            official_start = raw_log.get("start_time_utc")
+            verified_start = False
+            if quoted_start and official_start:
+                try:
+                    actual_start = datetime.fromisoformat(str(official_start).replace("Z", "+00:00"))
+                    if actual_start.tzinfo is None or abs((actual_start - quoted_start).total_seconds()) > 900:
+                        continue
+                    verified_start = True
+                except (ValueError, TypeError):
+                    continue
+            dated.append((-1 if verified_start else abs(delta), 0 if delta == 0 else 1, gl))
     if not dated:
         return None
     dated.sort(key=lambda x: (x[0], x[1]))

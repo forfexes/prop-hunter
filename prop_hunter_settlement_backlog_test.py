@@ -178,6 +178,20 @@ def main():
     assert reporter._ticket_fingerprint(rung_quote,'2026-10-01') != reporter._ticket_fingerprint(altered,'2026-10-01')
     assert classify(dict(source,market=quoted['market']),[],{}) == 'awaiting_combo_legs'
     assert classify({'date':'2026-10-01','market':'Unknown player stat'},[],{}) == 'unmapped_market'
+    from prop_hunter_settler import find_gamelog
+    pick = dict(player='Stephon Castle', sport='NBA', date='2026-10-29',
+                commence_time='2026-10-29T01:00:00Z')
+    wanted = dict(player_name='Stephon Castle', league='NBA', game_date='2026-10-28',
+                  game_id='wanted', source='espn_summary', assists=8,
+                  raw={'stat_map':{'AST':'8'},'start_time_utc':'2026-10-29T01:00Z'})
+    unknown = dict(wanted, game_id='unknown', raw={'stat_map':{'AST':'5'}})
+    wrong = dict(wanted, game_id='wrong', raw={'stat_map':{'AST':'5'},'start_time_utc':'2026-10-28T23:00Z'})
+    assert find_gamelog(pick,[unknown,wanted]) == wanted
+    assert find_gamelog(pick,[wrong,wanted]) == wanted
+    assert find_gamelog(pick,[wrong]) is None
+    assert find_gamelog(pick,[wanted,dict(wanted,game_id='duplicate')]) is None
+    future = dict(wanted, game_date='2026-10-30')
+    assert find_gamelog(pick,[future]) is None
     print('SETTLEMENT BACKLOG REGRESSIONS PASSED')
 
 
