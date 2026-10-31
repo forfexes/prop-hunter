@@ -166,16 +166,18 @@ def _plausible_ladder_line(obj: Any) -> bool:
 
 
 def _candidate_probability(obj: Any) -> Optional[float]:
-    """Return a conservative calibrated probability for a real bookmaker row."""
+    """Return an independently evidenced probability; bookmaker price is not a model."""
     odds = _odds(obj)
     if odds <= 1.01 or not _real_price(obj):
         return None
 
     feats = _features(obj)
     raw_prob = None
+    # fair_prob is deliberately excluded: it may be derived from the same market
+    # price and must not be blended back into that price to manufacture EV.
     for key in (
-        "calibrated_prob", "fair_prob", "model_prob", "hit_prob",
-        "proj_prob", "probability", "gamelog_fair_prob",
+        "calibrated_prob", "model_prob", "hit_prob",
+        "proj_prob", "gamelog_fair_prob",
     ):
         value = feats.get(key)
         if value is not None:
@@ -184,18 +186,15 @@ def _candidate_probability(obj: Any) -> Optional[float]:
                 break
     if raw_prob is None:
         raw_prob = to_float(getattr(obj, "probability", None))
-    if raw_prob is None:
+    if raw_prob is None or not math.isfinite(raw_prob) or not (0.0 < raw_prob < 1.0):
         return None
 
-    raw_prob = max(0.01, min(0.99, raw_prob))
-    implied = max(0.01, min(0.99, 1.0 / odds))
     sample = int(to_float(feats.get("gamelog_n") or feats.get("sample_size"), 0) or 0)
-    consensus = int(to_float(feats.get("consensus_sources"), 0) or 0)
+    # Do not produce builder EV from a quote-only or tiny-sample estimate.
+    if sample < 6:
+        return None
 
-    weight = min(0.68, 0.30 + sample / 80.0 + min(consensus, 4) * 0.04)
-    probability = implied * (1.0 - weight) + raw_prob * weight
-    probability = min(0.40 if _is_hr(obj) else 0.86, probability)
-    return round(max(0.01, probability), 4)
+    return round(min(0.40 if _is_hr(obj) else 0.86, raw_prob), 4)
 
 
 def _candidate_key(obj: Any) -> Tuple[str, str, str, str, str]:
