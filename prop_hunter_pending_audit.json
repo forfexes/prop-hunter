@@ -1,8 +1,9 @@
 {
-  "generated_at": "2026-10-30T23:32:06.189984+00:00",
-  "unresolved": 69,
+  "generated_at": "2026-10-31T00:28:13.023136+00:00",
+  "unresolved": 64,
   "counts": {
-    "awaiting_game_completion": 25,
+    "unmapped_market": 1,
+    "awaiting_game_completion": 19,
     "no_unique_official_game": 31,
     "unsupported_season_or_fantasy_market": 7,
     "unsupported_team_or_game_market": 1,
@@ -16,7 +17,7 @@
       "league": "?",
       "player": "Neal Pionk + Collin Murray-Boyles + Ryan Kalkbrenner",
       "market": "3-Leg LOTTERY",
-      "reason": "awaiting_game_completion",
+      "reason": "unmapped_market",
       "evidence": null
     },
     {
@@ -186,16 +187,6 @@
       "league": "NBA",
       "player": "Ayo Dosunmu",
       "market": "assists Under 4.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "dd357da69c9a78a67e5c7438ee2d7e37",
-      "source": "prop_hunter_picks",
-      "date": "2026-10-30",
-      "league": "NBA",
-      "player": "Cam Spencer",
-      "market": "Threes Ladder",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
@@ -991,29 +982,6 @@
       }
     },
     {
-      "pick_id": "211846c51a4680745e3337e5a721d92a",
-      "source": "history_leg",
-      "date": "2026-10-22",
-      "league": "NBA",
-      "player": "DeMar DeRozan",
-      "market": "Points Over 24.5",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Denver Nuggets @ Oklahoma City Thunder",
-        "loaded_player_rows": 6,
-        "loaded_game_dates": [
-          "2026-10-04",
-          "2026-10-07",
-          "2026-10-12",
-          "2026-10-17",
-          "2026-10-23",
-          "2026-10-25"
-        ]
-      }
-    },
-    {
       "pick_id": "b2c8fe478e8d2e63a77e4686f5978513",
       "source": "history_leg",
       "date": "2026-10-23",
@@ -1124,44 +1092,34 @@
       }
     },
     {
-      "pick_id": "740c9f14a0ff63dc72a7bd9626144e93",
-      "source": "history_leg",
-      "date": "2026-10-30",
-      "league": "NBA",
-      "player": "Cam Spencer",
-      "market": "1+ Threes",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "8629b01df677657470fc1bb5655e9b61",
-      "source": "history_leg",
-      "date": "2026-10-30",
-      "league": "NBA",
-      "player": "Cam Spencer",
-      "market": "2+ Threes",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "8349874e30216d38cebc7e61db75e567",
-      "source": "history_leg",
-      "date": "2026-10-30",
-      "league": "NBA",
-      "player": "Cam Spencer",
-      "market": "3+ Threes",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "28fcf899a017274642e6fce93ae43c03",
       "source": "history_leg",
       "date": "2026-10-30",
       "league": "NHL",
       "player": "Neal Pionk",
       "market": "Goals Over 2",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Winnipeg Jets @ Florida Panthers",
+        "loaded_player_rows": 13,
+        "loaded_game_dates": [
+          "2026-10-02",
+          "2026-10-04",
+          "2026-10-05",
+          "2026-10-07",
+          "2026-10-09",
+          "2026-10-13",
+          "2026-10-15",
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-25",
+          "2026-10-27",
+          "2026-10-29"
+        ]
+      }
     },
     {
       "pick_id": "5d5e177864a9b5712017e7b8b3998b03",

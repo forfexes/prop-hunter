@@ -69,7 +69,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:08.125513+00:00",
         "actual_value": 3,
-        "settled_at": "2026-10-30T23:30:25.741112+00:00",
+        "settled_at": "2026-10-31T00:25:29.84188+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -2616,7 +2616,11 @@
             "point": 24.5,
             "odds": 13.0,
             "bookmaker": "fanduel",
-            "game": "Denver Nuggets @ Oklahoma City Thunder"
+            "game": "Denver Nuggets @ Oklahoma City Thunder",
+            "date": "2026-10-22",
+            "created_at": "2026-10-22T13:13:15.138063+00:00",
+            "result": "loss",
+            "actual_value": 13
           },
           {
             "player": "Kentavious Caldwell-Pope",
@@ -2626,13 +2630,20 @@
             "point": 9.5,
             "odds": 3.6,
             "bookmaker": "fanduel",
-            "game": "Cleveland Cavaliers @ Philadelphia 76ers"
+            "game": "Cleveland Cavaliers @ Philadelphia 76ers",
+            "date": "2026-10-22",
+            "created_at": "2026-10-22T13:13:15.138063+00:00",
+            "commence_time": "2026-10-22T23:10:00+00:00",
+            "event_id": "35937409",
+            "game_id": "35937409",
+            "result": "loss",
+            "actual_value": 3
           }
         ],
         "odds": 46.8,
         "stake": 0.05,
         "probability": 0.1066,
-        "result": "pending",
+        "result": "loss",
         "created_at": "2026-10-22T13:13:15.138063+00:00",
         "combo_id": "f7079370be655005",
         "features": {
@@ -2652,7 +2663,41 @@
         "combo_scope": null,
         "same_player_multistat": false,
         "date": "2026-10-22",
-        "dedup_key": "923d934980615660a6b320d6e6b7e406c0baa658"
+        "dedup_key": "923d934980615660a6b320d6e6b7e406c0baa658",
+        "profit": -0.05,
+        "settlement_legs": [
+          {
+            "player": "DeMar DeRozan",
+            "sport": "NBA",
+            "market": "Points Over 24.5",
+            "direction": "over",
+            "point": 24.5,
+            "odds": 13.0,
+            "bookmaker": "fanduel",
+            "game": "Denver Nuggets @ Oklahoma City Thunder",
+            "date": "2026-10-22",
+            "created_at": "2026-10-22T13:13:15.138063+00:00",
+            "result": "loss",
+            "actual_value": 13
+          },
+          {
+            "player": "Kentavious Caldwell-Pope",
+            "sport": "NBA",
+            "market": "points Over 9.5",
+            "direction": "over",
+            "point": 9.5,
+            "odds": 3.6,
+            "bookmaker": "fanduel",
+            "game": "Cleveland Cavaliers @ Philadelphia 76ers",
+            "date": "2026-10-22",
+            "created_at": "2026-10-22T13:13:15.138063+00:00",
+            "commence_time": "2026-10-22T23:10:00+00:00",
+            "event_id": "35937409",
+            "game_id": "35937409",
+            "result": "loss",
+            "actual_value": 3
+          }
+        ]
       },
       {
         "type": "big",
@@ -70383,7 +70428,12 @@
             "gamelog_l15_n": 10,
             "probability_method": "min(model,one_sided_90pct_wilson_l15)",
             "bookmaker": "betrivers",
-            "game": "MEM Grizzlies @ POR Trail Blazers"
+            "game": "MEM Grizzlies @ POR Trail Blazers",
+            "stake": 0.02,
+            "date": "2026-10-30",
+            "created_at": "2026-10-30T00:44:59.605866+00:00",
+            "result": "win",
+            "actual_value": 1
           },
           {
             "player": "Cam Spencer",
@@ -70399,7 +70449,12 @@
             "gamelog_l15_n": 10,
             "probability_method": "min(model,one_sided_90pct_wilson_l15)",
             "bookmaker": "betrivers",
-            "game": "MEM Grizzlies @ POR Trail Blazers"
+            "game": "MEM Grizzlies @ POR Trail Blazers",
+            "stake": 0.02,
+            "date": "2026-10-30",
+            "created_at": "2026-10-30T00:44:59.605866+00:00",
+            "result": "loss",
+            "actual_value": 1
           },
           {
             "player": "Cam Spencer",
@@ -70415,13 +70470,18 @@
             "gamelog_l15_n": 10,
             "probability_method": "min(model,one_sided_90pct_wilson_l15)",
             "bookmaker": "betrivers",
-            "game": "MEM Grizzlies @ POR Trail Blazers"
+            "game": "MEM Grizzlies @ POR Trail Blazers",
+            "stake": 0.01,
+            "date": "2026-10-30",
+            "created_at": "2026-10-30T00:44:59.605866+00:00",
+            "result": "loss",
+            "actual_value": 1
           }
         ],
         "odds": 1.49,
         "stake": 0.05,
         "probability": 0.7161,
-        "result": "pending",
+        "result": "loss",
         "created_at": "2026-10-30T00:44:59.605866+00:00",
         "ladder_legs": [
           {
@@ -70476,7 +70536,73 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
         "same_player_multistat": false,
-        "date": "2026-10-30"
+        "date": "2026-10-30",
+        "profit": -0.02,
+        "settlement_legs": [
+          {
+            "player": "Cam Spencer",
+            "sport": "NBA",
+            "market": "1+ Threes",
+            "source_market": "threes",
+            "direction": "over",
+            "point": 0.5,
+            "odds": 1.49,
+            "probability": 0.7161,
+            "edge_pct": 6.7,
+            "gamelog_l15_hits": 9,
+            "gamelog_l15_n": 10,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "betrivers",
+            "game": "MEM Grizzlies @ POR Trail Blazers",
+            "stake": 0.02,
+            "date": "2026-10-30",
+            "created_at": "2026-10-30T00:44:59.605866+00:00",
+            "result": "win",
+            "actual_value": 1
+          },
+          {
+            "player": "Cam Spencer",
+            "sport": "NBA",
+            "market": "2+ Threes",
+            "source_market": "threes",
+            "direction": "over",
+            "point": 1.5,
+            "odds": 3.0,
+            "probability": 0.4014,
+            "edge_pct": 20.4,
+            "gamelog_l15_hits": 6,
+            "gamelog_l15_n": 10,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "betrivers",
+            "game": "MEM Grizzlies @ POR Trail Blazers",
+            "stake": 0.02,
+            "date": "2026-10-30",
+            "created_at": "2026-10-30T00:44:59.605866+00:00",
+            "result": "loss",
+            "actual_value": 1
+          },
+          {
+            "player": "Cam Spencer",
+            "sport": "NBA",
+            "market": "3+ Threes",
+            "source_market": "threes",
+            "direction": "over",
+            "point": 2.5,
+            "odds": 6.4,
+            "probability": 0.2296,
+            "edge_pct": 46.9,
+            "gamelog_l15_hits": 4,
+            "gamelog_l15_n": 10,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "betrivers",
+            "game": "MEM Grizzlies @ POR Trail Blazers",
+            "stake": 0.01,
+            "date": "2026-10-30",
+            "created_at": "2026-10-30T00:44:59.605866+00:00",
+            "result": "loss",
+            "actual_value": 1
+          }
+        ]
       },
       {
         "type": "ladder",
@@ -71899,7 +72025,9 @@
         "combo_ids": [
           "8ccec6f1f02a69d8"
         ],
-        "card_kind": "ladder"
+        "card_kind": "ladder",
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 30.10.2026\n\n🏀 Cam Spencer\n🏟 MEM Grizzlies @ POR Trail Blazers\n\n✅ 1+ Threes @1.49 → 0.02u · Ergebnis 1 · +0.01u\n  📈 Prob konservativ 72% · EV konservativ +6.7% · L15 9/10\n❌ 2+ Threes @3.00 → 0.02u · Ergebnis 1 · -0.02u\n  📈 Prob konservativ 40% · EV konservativ +20.4% · L15 6/10\n❌ 3+ Threes @6.40 → 0.01u · Ergebnis 1 · -0.01u\n  📈 Prob konservativ 23% · EV konservativ +46.9% · L15 4/10\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.02u\n@prophunter",
+        "settlement_updated_at": "2026-10-31T00:28:05.866445+00:00"
       },
       {
         "created_at": "2026-10-30T00:45:03.315943+00:00",
