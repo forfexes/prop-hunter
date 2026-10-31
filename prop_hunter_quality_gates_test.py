@@ -30,6 +30,12 @@ assert engine._candidate_probability(prop({"model_prob": 0.80, "gamelog_n": 0}))
 core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
 assert "max(0.12" not in core, "synthetic HR probability floor returned"
 assert "hr_prob_unavailable" in core, "HR fail-closed rejection missing"
+prob_start = core.index("def _source_prop_probability(p):")
+prob_end = core.index("\\ndef _source_prop_team", prob_start)
+prob_fn = core[prob_start:prob_end]
+assert "implied = 1.0 / odds" not in prob_fn, "odds-derived probability fallback returned"
+assert "positive_markers" not in prob_fn, "narrative-based probability boost returned"
+assert "return None" in prob_fn, "missing probability must fail closed"
 
 workflow = Path(".github/workflows/prophunter_results.yml").read_text(encoding="utf-8")
 assert "python prop_hunter_results_mlb.py || true" not in workflow
