@@ -121,6 +121,7 @@ jobs:
           python prop_hunter_basketball_boxscore_test.py
           python prop_hunter_binary_enrichment_test.py
           python prop_hunter_form_windows_test.py
+          python prop_hunter_quality_gates_test.py
 
       - name: Fetch official results and gamelogs
         if: env.PH_SETTLEMENT_REPLAY != '1'
