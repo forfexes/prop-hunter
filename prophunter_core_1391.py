@@ -4283,9 +4283,14 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             strong_profile = (hr_rate is not None and float(hr_rate) >= 0.04) or hr_score >= 1.5
             if not strong_profile:
                 rejected["hr_profile"] += 1; continue
-            hr_prob = prob if prob and prob > 0.10 else min(0.30, max(0.12, float(hr_rate or 0.05) * 2.2))
-            # A "Value" HR pick must have genuinely positive edge at the observed
-            # sportsbook price. Never publish an HR with a fabricated 0.0% edge.
+            # Fail closed: season HR rate / DATA+ score are profile features, not a
+            # calibrated per-game probability. Never turn them into a synthetic floor.
+            # The probability must come from the upstream independent model.
+            if prob is None or not math.isfinite(float(prob)) or not (0.0 < float(prob) < 1.0):
+                rejected["hr_prob_unavailable"] += 1
+                continue
+            hr_prob = float(prob)
+            # Require positive edge at the actually observed bookmaker price.
             hr_edge = edge_pct(hr_prob, odds) * 100
             if hr_edge < MIN_EDGE_HR:
                 rejected["hr_edge"] += 1
