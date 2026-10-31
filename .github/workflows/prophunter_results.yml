@@ -7,6 +7,9 @@ name: Prop Hunter Results Autonomous
       - 'prop_hunter_settler.py'
       - 'prop_hunter_shared_utils.py'
       - 'prophunter_results.py'
+      - 'prophunter_core_1391.py'
+      - 'prop_hunter_builder_engine.py'
+      - 'prop_hunter_quality_gates_test.py'
       - 'prop_hunter_settler_fast_test.py'
       - 'prop_hunter_form_windows.py'
       - 'prop_hunter_form_windows_test.py'
@@ -142,15 +145,32 @@ jobs:
           PH_EUROLEAGUE_RESULTS_MAX_EVENTS: '20'
           HTTP_TIMEOUT: '8'
         run: |
-          python prop_hunter_results_mlb.py || true
-          python prop_hunter_results_mlb_extras.py || true
-          python prop_hunter_results_nba.py || true
-          python prop_hunter_results_wnba.py || true
-          python prop_hunter_results_nfl.py || true
-          python prop_hunter_results_nhl.py || true
-          python prop_hunter_results_ncaa.py || true
-          python prop_hunter_results_euroleague.py || true
-          if [ -f espn_multisport_results.py ]; then python espn_multisport_results.py || true; fi
+          failures=0
+          run_collector() {
+            name="$1"; shift
+            echo "::group::Collector: $name"
+            "$@"
+            rc=$?
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::warning::Collector $name failed with exit code $rc; continuing other sources"
+              failures=1
+            fi
+          }
+          run_collector MLB python prop_hunter_results_mlb.py
+          run_collector MLB-extras python prop_hunter_results_mlb_extras.py
+          run_collector NBA python prop_hunter_results_nba.py
+          run_collector WNBA python prop_hunter_results_wnba.py
+          run_collector NFL python prop_hunter_results_nfl.py
+          run_collector NHL python prop_hunter_results_nhl.py
+          run_collector NCAA python prop_hunter_results_ncaa.py
+          run_collector EuroLeague python prop_hunter_results_euroleague.py
+          if [ -f espn_multisport_results.py ]; then
+            run_collector ESPN-multisport python espn_multisport_results.py
+          fi
+          if [ "$failures" -ne 0 ]; then
+            echo "PH_COLLECTOR_FAILURE=1" >> "$GITHUB_ENV"
+          fi
 
       - name: Refresh completed WNBA games for targeted repair
         if: contains(github.event.head_commit.message, '[wnba-refresh]')
@@ -220,3 +240,11 @@ jobs:
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter results $(date -u +%F)"
           git push origin main
+
+      - name: Fail visibly when any results collector failed
+        if: always()
+        run: |
+          if [ "${PH_COLLECTOR_FAILURE:-0}" = "1" ]; then
+            echo "::error::One or more results collectors failed; inspect collector groups above."
+            exit 1
+          fi
