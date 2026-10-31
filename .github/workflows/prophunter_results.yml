@@ -210,8 +210,8 @@ jobs:
         run: |
           python prop_hunter_learning_update.py
           python prop_hunter_model_registry.py
-          python prop_hunter_coverage_watchdog.py || true
-          python prop_hunter_market_discovery.py || true
+          python prop_hunter_coverage_watchdog.py || echo "PH_COLLECTOR_FAILURE=1" >> "$GITHUB_ENV"
+          python prop_hunter_market_discovery.py || echo "PH_COLLECTOR_FAILURE=1" >> "$GITHUB_ENV"
 
       - name: Save results and learning
         run: |
@@ -237,7 +237,8 @@ jobs:
           fi
           python -m json.tool picks_history.json >/dev/null
           git add picks_history.json prop_hunter_model_registry.json prop_hunter_autolearn_report.json prop_hunter_builder_correlations.json prop_hunter_source_trust.json \
-            prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_identity_cache.json prop_hunter_pending_audit.json ml_model.pkl 2>/dev/null || true
+            prop_hunter_coverage_report.json prop_hunter_market_discovery.json prop_hunter_identity_cache.json prop_hunter_pending_audit.json
+          if [ -f ml_model.pkl ]; then git add ml_model.pkl; fi
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter results $(date -u +%F)"
           git push origin main
