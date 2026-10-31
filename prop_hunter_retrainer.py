@@ -25,7 +25,7 @@ def main():
             payload=prophunter.train_ml_model()
             if payload:
                 auc=float(payload.get("auc") or 0)
-                reg["global_model"]={"status":"active" if auc>=0.52 else "shadow","samples":payload.get("n_samples",len(y)),
+                reg["global_model"]={"status":payload.get("status","shadow"),"validated_for_live":payload.get("validated_for_live",False),"validation":{k:payload.get(k) for k in ("brier","baseline_brier","log_loss","baseline_log_loss","test_samples","folds")},"samples":payload.get("n_samples",len(y)),
                     "auc":round(auc,4),"trained_at":payload.get("trained_at")}
             else:
                 reg["global_model"]={"status":"skipped","samples":len(y)}

@@ -1,0 +1,28 @@
+name: Prop Hunter ML Validation
+on:
+  push:
+    paths:
+      - 'ml_validation.py'
+      - 'ml_validation_test.py'
+      - '.github/workflows/prop_hunter_ml_validation.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install 'scikit-learn==1.8.0'
+      - run: python -m py_compile ml_validation.py prophunter_core_1391.py prop_hunter_retrainer.py
+      - run: python ml_validation_test.py
+      - name: Evaluate stored history without posting tips
+        run: python ml_validation.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ml-validation
+          path: prop_hunter_ml_validation.json

@@ -3946,64 +3946,24 @@ def _pick_features(p: dict):
         return None
 
 def build_ml_dataset():
-    """Builds (X, y) from picks_history.json — only settled picks (win/loss)."""
-    X, y = [], []
-    for entry in load_history():
-        for p in entry.get("picks", []):
-            res = p.get("result")
-            if res not in ("win","loss"): continue
-            feats = _pick_features(p)
-            if feats is None: continue
-            X.append(feats); y.append(1 if res=="win" else 0)
+    from ml_validation import dataset
+    X, y, _ = dataset(load_history(), _pick_features)
     return X, y
 
 def train_ml_model():
-    """Trains a logistic regression on historical picks. Requires ML_MIN_SAMPLES settled picks."""
+    """Only persist models beating the bookmaker baseline out of sample."""
     if not SKLEARN_OK:
-        log.warning("sklearn nicht installiert — ML übersprungen")
         return None
-    X, y = build_ml_dataset()
-    n = len(y)
-    if n < ML_MIN_SAMPLES:
-        log.info("ML: nur %d/%d Picks — noch zu wenig Daten, training übersprungen", n, ML_MIN_SAMPLES)
-        return None
-    if len(set(y)) < 2:
-        log.info("ML: nur eine Klasse vorhanden (alle win oder alle loss) — kein Training möglich")
-        return None
-
-    import numpy as np
-    X = np.array(X); y = np.array(y)
-    scaler = StandardScaler()
-    Xs = scaler.fit_transform(X)
-
-    # Walk-forward validation (TimeSeriesSplit) statt random split — picks sind zeitlich geordnet
-    n_splits = min(5, max(2, n // 20))
-    tscv = TimeSeriesSplit(n_splits=n_splits)
-    aucs, briers = [], []
-    for train_idx, test_idx in tscv.split(Xs):
-        if len(set(y[train_idx])) < 2: continue
-        m = LogisticRegression(max_iter=500, C=0.5)
-        m.fit(Xs[train_idx], y[train_idx])
-        proba = m.predict_proba(Xs[test_idx])[:,1]
-        try:
-            aucs.append(roc_auc_score(y[test_idx], proba))
-            briers.append(brier_score_loss(y[test_idx], proba))
-        except Exception:
-            pass
-
-    # Final model trained on all data
-    model = LogisticRegression(max_iter=500, C=0.5)
-    model.fit(Xs, y)
-
-    avg_auc = sum(aucs)/len(aucs) if aucs else 0.5
-    avg_brier = sum(briers)/len(briers) if briers else 0.25
-    log.info("ML trainiert: n=%d | walk-forward AUC=%.3f | Brier=%.3f", n, avg_auc, avg_brier)
-
-    payload = {"model": model, "scaler": scaler, "n_samples": n, "auc": avg_auc, "trained_at": datetime.now(timezone.utc).isoformat()}
-    try:
-        with open(ML_MODEL_FILE, "wb") as f: pickle.dump(payload, f)
-    except Exception as e:
-        log.warning("ML model save failed: %s", e)
+    from ml_validation import dataset, evaluate
+    import json
+    X, y, days = dataset(load_history(), _pick_features)
+    report, model, scaler = evaluate(X, y, days)
+    report["trained_at"] = datetime.now(timezone.utc).isoformat()
+    log.info("ML validation: %s", json.dumps(report, sort_keys=True))
+    payload = dict(report, model=model, scaler=scaler)
+    if report["validated_for_live"]:
+        with open(ML_MODEL_FILE, "wb") as f:
+            pickle.dump(payload, f)
     return payload
 
 def load_ml_model():
@@ -4020,7 +3980,7 @@ def ml_predict_proba(pick: Pick, sport_label: str) -> float | None:
     """Returns ML win-probability for a Pick, or None if no model / not enough data."""
     payload = load_ml_model()
     if not payload: return None
-    if payload.get("auc", 0) < 0.52:
+    if payload.get("validated_for_live") is not True or payload.get("auc", 0) < 0.52:
         return None  # model not better than coinflip — don't trust it
     feats = _pick_features({
         "odds": pick.odds, "stake": pick.stake, "tier": "stabil" if (pick.tier or 1)==2 else "value",
