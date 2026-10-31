@@ -149,8 +149,8 @@ jobs:
           run_collector() {
             name="$1"; shift
             echo "::group::Collector: $name"
-            "$@"
-            rc=$?
+            rc=0
+            "$@" || rc=$?
             echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
               echo "::warning::Collector $name failed with exit code $rc; continuing other sources"
