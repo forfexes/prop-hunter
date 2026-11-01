@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-01T10:31:16.313664+00:00",
+  "updated_at": "2026-11-01T12:17:01.344004+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -40,28 +40,25 @@
       ]
     },
     "NFL": {
-      "rows": 5,
+      "rows": 162,
       "sources": [
-        "betrivers_direct"
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 4,
-      "latest": "2026-11-01T10:25:25.170230+00:00",
-      "missing_core": [
-        "touchdown",
-        "rushing",
-        "passing"
-      ]
+      "market_count": 25,
+      "latest": "2026-11-01T10:25:50.493554+00:00",
+      "missing_core": []
     },
     "NHL": {
-      "rows": 0,
-      "sources": [],
-      "market_count": 0,
-      "latest": null,
+      "rows": 584,
+      "sources": [
+        "betrivers_direct",
+        "draftkings_direct",
+        "fanduel_direct"
+      ],
+      "market_count": 5,
+      "latest": "2026-11-01T10:25:27.702789+00:00",
       "missing_core": [
-        "shots",
-        "goals",
-        "points",
-        "assists",
         "saves"
       ]
     }
@@ -117,37 +114,10 @@
       ]
     },
     {
-      "sport": "NFL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "betrivers_direct"
-      ]
-    },
-    {
-      "sport": "NFL",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "touchdown",
-        "rushing",
-        "passing"
-      ]
-    },
-    {
-      "sport": "NHL",
-      "severity": "high",
-      "issue": "no_recent_rows"
-    },
-    {
       "sport": "NHL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "shots",
-        "goals",
-        "points",
-        "assists",
         "saves"
       ]
     }
