@@ -85,6 +85,9 @@ def source_checks():
     if not all(fair_prob_for(x) and abs(fair_prob_for(x)-.5)<.001 for x in cons): fail("no-vig consensus")
 
 def safety_checks():
+    from types import SimpleNamespace
+    if ph._source_prop_probability(SimpleNamespace(features={"model_prob":.63})) != .63: fail("source model probability path failed")
+    if ph._source_prop_probability(SimpleNamespace(features={"model_prob":float("nan")})) is not None: fail("nonfinite source probability accepted")
     if sanitize_row({"player_name":"Over 0.5","market":"hits","direction":"over","line":.5,"odds_decimal":1.9}): fail("generic player label accepted")
     if sanitize_row({"player_name":"Lakers","home_team":"Lakers","away_team":"Celtics","market":"points","direction":"over","line":100.5,"odds_decimal":1.9}): fail("team label accepted as player")
     if sanitize_row({"player_name":"BYU","home_team":"TCU","away_team":"BYU (#10)","market":"points","direction":"under","line":27.5,"odds_decimal":1.77}): fail("ranked team label accepted as player")

@@ -4012,6 +4012,7 @@ def blend_with_ml(pick: Pick, llm_prob: float | None, sport_label: str) -> float
 # ─────────────────────────────────────────────
 def _source_prop_probability(p):
     """Return only an explicitly supplied probability; never infer it from odds/text."""
+    import math
     feats = getattr(p, "features", {}) or {}
     if isinstance(feats, dict):
         for key in ("calibrated_prob", "model_prob", "hit_prob", "proj_prob", "fair_prob"):
