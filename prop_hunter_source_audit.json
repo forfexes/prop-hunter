@@ -1,27 +1,66 @@
 {
-  "created_at": "2026-09-20T08:34:00.751288+00:00",
-  "files": {
+  "created_at": "2026-11-01T10:25:03.889789+00:00",
+  "runtime": "13.10.1-KEYLESS-HARDENED",
+  "critical_files": {
     "prophunter.py": true,
+    "prophunter_core_1392.py": true,
+    "prophunter_core_1391.py": true,
     "prophunter_results.py": true,
+    "prop_hunter_runtime_guard.py": true,
+    "prop_hunter_hard_test.py": true,
+    "prop_hunter_market_regression_test.py": true,
+    "prop_hunter_expansion_test.py": true,
+    "prop_hunter_euroleague_test.py": true,
+    "prop_hunter_daily_control.py": true,
+    "prop_hunter_shared_utils.py": true,
+    "prop_hunter_quote_guard.py": true,
+    "prop_hunter_keyless_books.py": true,
+    "prop_hunter_keyless_extensions.py": true,
     "prop_hunter_source_catalog.py": true,
+    "prop_hunter_source_catalog_core_1392.py": true,
     "prop_hunter_source_orchestrator.py": true,
+    "prop_hunter_source_orchestrator_core_1392.py": true,
     "prop_hunter_source_manager.py": true,
+    "prop_hunter_sgo.py": true,
+    "prop_hunter_opticodds.py": true,
+    "prop_hunter_oddsapi_io.py": true,
+    "prop_hunter_oddspapi.py": true,
+    "prop_hunter_kambi.py": true,
+    "prop_hunter_1xbet.py": true,
+    "prop_hunter_propline.py": true,
+    "prop_hunter_parlayapi.py": true,
+    "prop_hunter_market_consensus.py": true,
+    "prop_hunter_odds_pp_ud.py": true,
+    "prop_hunter_scraper.py": true,
+    "prop_hunter_scoring.py": true,
+    "prop_hunter_builder_engine.py": true,
+    "prop_hunter_builder_profiles.py": true,
+    "prop_hunter_builder_learning.py": true,
+    "prop_hunter_card_formatter.py": true,
+    "prop_hunter_identity_hub.py": true,
+    "prop_hunter_results_mlb.py": true,
+    "prop_hunter_results_mlb_extras.py": true,
+    "prop_hunter_results_nba.py": true,
+    "prop_hunter_results_wnba.py": true,
+    "prop_hunter_results_nfl.py": true,
+    "prop_hunter_results_nhl.py": true,
+    "prop_hunter_results_ncaa.py": true,
+    "prop_hunter_results_euroleague.py": true,
+    "prop_hunter_feature_builder.py": true,
+    "prop_hunter_settler.py": true,
+    "prop_hunter_settler_extras.py": true,
+    "prop_hunter_clv_engine.py": true,
     "prop_hunter_learning_update.py": true,
     "prop_hunter_model_registry.py": true,
     "prop_hunter_retrainer.py": true,
     "prop_hunter_coverage_watchdog.py": true,
     "prop_hunter_market_discovery.py": true,
-    "prop_hunter_identity_hub.py": true,
-    "prop_hunter_builder_engine.py": true,
-    "prop_hunter_odds_pp_ud.py": true,
-    "prop_hunter_scraper.py": true,
-    "prop_hunter_feature_builder.py": true,
-    "prop_hunter_github_watcher.py": true,
-    "prop_hunter_settler.py": true,
     ".github/workflows/prophunter.yml": true,
     ".github/workflows/prophunter_results.yml": true,
     ".github/workflows/prop_hunter_maintenance.yml": true,
-    "requirements.txt": true
+    ".github/workflows/prop_hunter_daily_control.yml": true,
+    "requirements.txt": true,
+    "requirements_results.txt": true
   },
   "required_secrets": {
     "TELEGRAM_BOT_TOKEN": false,
@@ -29,32 +68,66 @@
     "SUPABASE_URL": true,
     "SUPABASE_KEY": true
   },
-  "optional_secrets": {
-    "GEMINI_API_KEY": false,
-    "GEMINI_API_KEYS": false,
-    "GROQ_API_KEY": false,
-    "GROQ_API_KEYS": false,
-    "BALLDONTLIE_API_KEY": false,
-    "ODDSPAPI_KEY": false,
-    "ODDSPAPI": false,
-    "GITHUB_TOKEN": true
+  "odds_providers": {
+    "the_odds_api": {
+      "configured": false,
+      "aliases_present": []
+    },
+    "sportsgameodds": {
+      "configured": false,
+      "aliases_present": []
+    },
+    "opticodds": {
+      "configured": false,
+      "aliases_present": []
+    },
+    "parlayapi": {
+      "configured": false,
+      "aliases_present": []
+    },
+    "propline": {
+      "configured": false,
+      "aliases_present": []
+    },
+    "oddsapi_io": {
+      "configured": false,
+      "aliases_present": []
+    },
+    "oddspapi": {
+      "configured": true,
+      "aliases_present": [
+        "ODDSPAPI_KEY"
+      ]
+    }
   },
-  "packages": {
+  "keyless_fallbacks": {
+    "draftkings_direct": true,
+    "fanduel_direct": true,
+    "bovada_direct": true,
+    "betrivers_direct": true,
+    "kambi": true,
+    "1xbet": true
+  },
+  "required_packages": {
     "requests": true,
-    "pandas": true,
+    "pydantic": true,
+    "rapidfuzz": true,
     "supabase": true,
+    "pandas": true,
+    "pyarrow": true,
     "nba_api": true,
     "nflreadpy": true,
     "pybaseball": true,
-    "bs4": true,
-    "rapidfuzz": true,
-    "pydantic": true,
-    "playwright": true,
-    "sklearn": true
+    "statsapi": true,
+    "sklearn": true,
+    "curl_cffi": true
   },
-  "missing_files": [],
+  "live_odds_mode": "keyless_plus_keyed",
+  "missing_critical_files": [],
   "missing_required_secrets": [
     "TELEGRAM_BOT_TOKEN",
     "TELEGRAM_CHAT_ID"
-  ]
+  ],
+  "missing_required_packages": [],
+  "ready": false
 }
