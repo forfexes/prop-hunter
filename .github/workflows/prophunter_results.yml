@@ -17,6 +17,8 @@ name: Prop Hunter Results Autonomous
       - 'prop_hunter_results_mlb.py'
       - 'prop_hunter_results_wnba.py'
       - 'prop_hunter_results_nfl.py'
+      - 'prop_hunter_nfl_espn.py'
+      - 'prop_hunter_nfl_espn_test.py'
       - 'prop_hunter_results_nhl.py'
       - 'prop_hunter_team_settler.py'
       - 'prop_hunter_team_settler_test.py'
@@ -113,6 +115,7 @@ jobs:
           python prop_hunter_settler_fast_test.py
           python prop_hunter_settlement_backlog_test.py
           python prop_hunter_nba_api_test.py
+          python prop_hunter_nfl_espn_test.py
           python prop_hunter_scan_dates_test.py
           python prop_hunter_team_settler_test.py
           python prop_hunter_snapshot_retention_test.py

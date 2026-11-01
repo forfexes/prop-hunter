@@ -146,6 +146,11 @@ def main():
         if x.strip().isdigit()
     ]
     rows = nflreadpy_weekly(seasons, players)
+    from prop_hunter_nfl_espn import collect
+    picks = select_pick_rows(limit=int(os.getenv("NFL_PICK_SCAN_LIMIT", "5000")))
+    rows.extend(collect(picks, rows,
+        max_dates=max(1,int(os.getenv("NFL_ESPN_MAX_DATES","5"))),
+        max_events=max(1,int(os.getenv("NFL_ESPN_MAX_EVENTS","8")))))
     dated = sum(1 for r in rows if r.get("game_date"))
     safe_json_write(OUT, rows)
     if rows:
