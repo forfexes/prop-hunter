@@ -15,7 +15,7 @@ def prop(player, market, line, odds, n, hits, model_prob, *, side="over",
     }
     if with_history:
         features.update({
-            "gamelog_l15_n": n, "gamelog_l15_hits": hits,
+            "gamelog_n": n, "gamelog_l15_n": n, "gamelog_l15_hits": hits,
             "gamelog_l15_line": line, "gamelog_l15_direction": side,
             "gamelog_l15_empirical_rate": hits / n,
         })
