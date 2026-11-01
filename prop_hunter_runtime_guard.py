@@ -116,10 +116,16 @@ def safety_checks():
 
     synthetic=ph.Prop(player="Fake",market="Points",odds=1.85,point=20.5,sport="WNBA",emoji="🏀",game="A @ B",direction="over",features={"odds_observed":False,"price_type":"synthetic","bookmaker":"synthetic"})
     if ph._has_observed_price(synthetic): fail("synthetic odds accepted")
-    real=ph.Prop(player="Real",market="Points",odds=1.95,point=20.5,sport="WNBA",emoji="🏀",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.60})
+    real=ph.Prop(player="Real",market="Points",odds=1.95,point=20.5,sport="WNBA",emoji="🏀",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","model_prob":.60,"gamelog_n":12})
     if not ph._has_observed_price(real): fail("observed odds rejected")
     if _candidate_probability(real) is None: fail("reasonable observed candidate rejected")
-    absurd=ph.Prop(player="Wrong Match",market="Points",odds=5.0,point=20.5,sport="NBA",emoji="🏀",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.90})
+    from copy import deepcopy
+    quote_only=deepcopy(real)
+    quote_only.features={"odds_observed":True,"price_type":"bookmaker","fair_prob":.60,"gamelog_n":12}
+    if _candidate_probability(quote_only) is not None: fail("quote-only candidate accepted")
+    tiny=deepcopy(real);tiny.features=dict(real.features,gamelog_n=5)
+    if _candidate_probability(tiny) is not None: fail("tiny-sample candidate accepted")
+    absurd=ph.Prop(player="Wrong Match",market="Points",odds=5.0,point=20.5,sport="NBA",emoji="🏀",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","model_prob":.90,"gamelog_n":12})
     if _candidate_probability(absurd) is not None: fail("builder model-market gap guard failed")
     basket_no_model=ph.Prop(player="No Model",market="Points",odds=1.83,point=20.5,sport="WNBA",emoji="🏀",game="A @ B",direction="over",enrichment="DATA+: Basket Line vorhanden",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book"})
     if ph._source_prop_probability(basket_no_model) is not None: fail("basket rescue invented probability from line/odds")
@@ -129,12 +135,12 @@ def safety_checks():
 
     pick=ph.Pick(type="single",player="Real",market="Points Over 20.5",direction="over",odds=1.95,stake=.2,probability=.60,edge_pct=17,ev=.17,game="A @ B",emoji="🏀");pick.point=20.5;pick.sport="WNBA";pick.features=real.features
     if any(x.type=="ladder" for x in build_autonomous_extras([pick],[real],ph.Pick,ph.LadderLeg)): fail("invented ladder")
-    ladder_easy=ph.Prop(player="Ladder Check",market="Hits",odds=4.0,point=.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.50})
-    ladder_hard=ph.Prop(player="Ladder Check",market="Hits",odds=2.0,point=1.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.70})
+    ladder_easy=ph.Prop(player="Ladder Check",market="Hits",odds=4.0,point=.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","model_prob":.50,"gamelog_n":12})
+    ladder_hard=ph.Prop(player="Ladder Check",market="Hits",odds=2.0,point=1.5,sport="MLB",emoji="⚾",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","model_prob":.70,"gamelog_n":12})
     if any(x.type=="ladder" for x in build_autonomous_extras([], [ladder_easy,ladder_hard],ph.Pick,ph.LadderLeg)): fail("inverted ladder prices accepted")
-    ladder_a=ph.Prop(player="Garrett Wilson",market="Receptions",odds=1.55,point=3.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.76,"gamelog_n":12,"gamelog_l15_n":12,"gamelog_l15_hits":11,"gamelog_l15_line":3.5,"gamelog_l15_direction":"over"})
-    ladder_b=ph.Prop(player="Garrett Wilson",market="Receptions",odds=2.05,point=4.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.64,"gamelog_n":12,"gamelog_l15_n":12,"gamelog_l15_hits":9,"gamelog_l15_line":4.5,"gamelog_l15_direction":"over"})
-    ladder_c=ph.Prop(player="Garrett Wilson",market="Receptions",odds=3.10,point=5.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.50,"gamelog_n":12,"gamelog_l15_n":12,"gamelog_l15_hits":7,"gamelog_l15_line":5.5,"gamelog_l15_direction":"over"})
+    ladder_a=ph.Prop(player="Garrett Wilson",market="Receptions",odds=1.55,point=3.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","model_prob":.76,"gamelog_n":12,"gamelog_l15_n":12,"gamelog_l15_hits":11,"gamelog_l15_line":3.5,"gamelog_l15_direction":"over"})
+    ladder_b=ph.Prop(player="Garrett Wilson",market="Receptions",odds=2.05,point=4.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","model_prob":.64,"gamelog_n":12,"gamelog_l15_n":12,"gamelog_l15_hits":9,"gamelog_l15_line":4.5,"gamelog_l15_direction":"over"})
+    ladder_c=ph.Prop(player="Garrett Wilson",market="Receptions",odds=3.10,point=5.5,sport="NFL",emoji="🏈",game="NYJ @ LV",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","model_prob":.50,"gamelog_n":12,"gamelog_l15_n":12,"gamelog_l15_hits":7,"gamelog_l15_line":5.5,"gamelog_l15_direction":"over"})
     good_ladders=[x for x in build_autonomous_extras([], [ladder_a,ladder_b,ladder_c],ph.Pick,ph.LadderLeg) if x.type=="ladder"]
     if not good_ladders or len(good_ladders[0].picks)<2: fail("verified NFL ladder not built")
     core_text=Path("prophunter_core_1391.py").read_text(encoding="utf-8")
@@ -144,11 +150,11 @@ def safety_checks():
         if token not in core_text: fail(f"TD/extended prop lane missing: {token}")
     for token in ('market = str(r.get("market_key") or r.get("market") or "").strip()','direction = str(r.get("direction") or "").strip().lower()','if market == "passing_rushing_yards": continue','direction=direction'):
         if token not in core_text: fail(f"snapshot prop safety missing: {token}")
-    nfl_easy=ph.Prop(player="Josh Downs",market="Receptions",odds=1.70,point=2.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.75,"gamelog_n":10,"gamelog_l15_n":10,"gamelog_l15_hits":9,"gamelog_l15_line":2.5,"gamelog_l15_direction":"over"})
-    nfl_hard=ph.Prop(player="Josh Downs",market="Receptions",odds=2.10,point=3.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","fair_prob":.55,"gamelog_n":10,"gamelog_l15_n":10,"gamelog_l15_hits":8,"gamelog_l15_line":3.5,"gamelog_l15_direction":"over"})
+    nfl_easy=ph.Prop(player="Josh Downs",market="Receptions",odds=1.70,point=2.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","model_prob":.75,"gamelog_n":10,"gamelog_l15_n":10,"gamelog_l15_hits":9,"gamelog_l15_line":2.5,"gamelog_l15_direction":"over"})
+    nfl_hard=ph.Prop(player="Josh Downs",market="Receptions",odds=2.10,point=3.5,sport="NFL",emoji="🏈",game="IND @ WAS",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"betrivers","model_prob":.55,"gamelog_n":10,"gamelog_l15_n":10,"gamelog_l15_hits":8,"gamelog_l15_line":3.5,"gamelog_l15_direction":"over"})
     nfl_ladders=[x for x in build_autonomous_extras([], [nfl_easy,nfl_hard],ph.Pick,ph.LadderLeg) if x.type=="ladder"]
     if not nfl_ladders or len(nfl_ladders[0].picks)<2: fail("verified NFL alternate ladder missing")
-    bad_line=ph.Prop(player="QB",market="Rushing Yards",odds=5.0,point=299.5,sport="NFL",emoji="🏈",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","fair_prob":.25})
+    bad_line=ph.Prop(player="QB",market="Rushing Yards",odds=5.0,point=299.5,sport="NFL",emoji="🏈",game="A @ B",direction="over",features={"odds_observed":True,"price_type":"bookmaker","bookmaker":"book","model_prob":.25})
     if _plausible_ladder_line(bad_line): fail("implausible NFL ladder line accepted")
     if line_of_pick({"market":"Points Over 20.5"})!=20.5: fail("line fallback")
     if line_of_pick({"market":"Home Run"})!=0.5: fail("binary HR line fallback")
