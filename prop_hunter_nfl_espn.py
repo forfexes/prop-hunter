@@ -114,7 +114,12 @@ def collect(picks,primary,get=http_json,max_dates=5,max_events=8):
     requests={}
     for (name,_,_),ids in matches.items():
         if name and len(ids)==1:requests.setdefault(next(iter(ids)),set()).add(name)
-    if len(requests)>max_events:raise RuntimeError('NFL ESPN event budget exceeded')
+    if len(requests)>max_events:
+        # Voller NFL-Sonntag kann das Budget sprengen — nie komplett abbrechen,
+        # sonst bleiben ALLE NFL-Picks pending. Stattdessen auf die ersten
+        # max_events Spiele kappen und den Rest überspringen (besser teilweise als gar nicht).
+        log(f'NFL ESPN event budget {max_events} ueberschritten ({len(requests)} events) — kappe auf {max_events}')
+        requests=dict(list(requests.items())[:max_events])
     native={(norm_name(r.get('player_name') or ''),r.get('game_date')) for r in primary}
     rows=[]
     for eid,names in requests.items():
