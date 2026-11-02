@@ -25,7 +25,11 @@ name: Prop Hunter Results Autonomous
       - 'prop_hunter_results_euroleague.py'
       - '.github/results-trigger'
   schedule:
-    - cron: '15 10 * * *'
+    # Drei Läufe täglich: verpasster/gedrosselter Cron kostet keinen ganzen Tag Auswertung.
+    # Serialisiert über die concurrency-Gruppe 'prop-hunter-history-writer' — nie Doppelläufe.
+    - cron: '15 10 * * *'   # Haupt-Lauf (wie bisher)
+    - cron: '0 6 * * *'     # Früh: erfasst späte US-Nachtspiele vom Vortag
+    - cron: '0 18 * * *'    # Abend: früh-fertige Spiele am selben Tag
 
 permissions:
   contents: write
