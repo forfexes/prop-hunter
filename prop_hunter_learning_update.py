@@ -194,11 +194,19 @@ def main():
         stake = to_float(raw.get("stake"), 1.0) or 1.0
         profit = to_float(row.get("profit"), None)
         if profit is None: profit = _profit(result, odds, stake)
+        # Richtung (over/under) bestimmen — entscheidend, weil Over und Under je Markt
+        # stark unterschiedlich performen (z.B. NBA Under 64% vs NBA Over 42%).
+        _dir_raw = str(row.get("side") or raw.get("direction") or raw.get("side")
+                       or row.get("market") or raw.get("market") or "").lower()
+        direction = "under" if "under" in _dir_raw else "over"
         _accumulate(groups, ("market", f"{sport}|{sport}|{market}"), result, profit, stake)
         if league and league != sport:
             _accumulate(groups, ("league_market", f"{sport}|{league}|{market}"), result, profit, stake)
         _accumulate(groups, ("sport_market", f"{sport}|{market}"), result, profit, stake)
         _accumulate(groups, ("bookmaker", f"{sport}|{book}|{market}"), result, profit, stake)
+        # Richtungssensitive Gruppen — damit das Learning Over/Under getrennt gewichtet.
+        _accumulate(groups, ("market_dir", f"{sport}|{market}|{direction}"), result, profit, stake)
+        _accumulate(groups, ("sport_dir", f"{sport}|{direction}"), result, profit, stake)
         _accumulate(source_perf, (source, "all"), result, profit, stake)
 
     perf_rows=[]

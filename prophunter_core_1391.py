@@ -1030,10 +1030,24 @@ def learning_multiplier(p) -> float:
         return 1.0
     sport = (getattr(p, "sport", "") or getattr(p, "source_sport", "") or "").upper()
     market = getattr(p, "market", "") or ""
+    direction = "under" if "under" in str(getattr(p, "direction", "") or market).lower() else "over"
     gk = market_group_key(sport, market)
+    # Richtungssensitiv zuerst: Over und Under performen je Markt stark unterschiedlich.
+    # market_base aus market_group_key ist "SPORT|SPORT|<market>"; wir bauen den
+    # market_dir-Key "SPORT|<market>|<direction>" passend zu learning_update.
+    base = gk.split("|")[-1]
+    dir_entry = weights.get(f"market_dir:{sport}|{base}|{direction}")
+    if dir_entry and dir_entry.get("bets", 0) >= 15:
+        return dir_entry["weight"]
+    sport_dir = weights.get(f"sport_dir:{sport}|{direction}")
     entry = weights.get(f"market:{gk}")
     if entry:
+        # Markt-Gewicht mit Richtungs-Signal kombinieren, wenn genug Samples.
+        if sport_dir and sport_dir.get("bets", 0) >= 30:
+            return round(max(0.70, min(1.30, entry["weight"] * sport_dir["weight"])), 3)
         return entry["weight"]
+    if sport_dir and sport_dir.get("bets", 0) >= 30:
+        return sport_dir["weight"]
     return 1.0
 
 def enrich_gamelogs_fairprob(props: list) -> list:
