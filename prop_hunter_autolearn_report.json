@@ -15,7 +15,7 @@
     "hit_rate": 0.48252,
     "learning_weight": 1.291,
     "learned_weight": 1.291,
-    "updated_at": "2026-11-03T17:56:03.191216+00:00"
+    "updated_at": "2026-11-03T19:30:05.053245+00:00"
   },
   "sport_market:NBA|points": {
     "performance_id": "f7211dc38412e413de3accfc781075df",
@@ -33,7 +33,7 @@
     "hit_rate": 0.48252,
     "learning_weight": 1.291,
     "learned_weight": 1.291,
-    "updated_at": "2026-11-03T17:56:03.191244+00:00"
+    "updated_at": "2026-11-03T19:30:05.053281+00:00"
   },
   "bookmaker:NBA|betrivers|points": {
     "performance_id": "96e2e8114fd61e7fa35d8b59845f3fe2",
@@ -51,7 +51,43 @@
     "hit_rate": 0.35897,
     "learning_weight": 0.912,
     "learned_weight": 0.912,
-    "updated_at": "2026-11-03T17:56:03.191260+00:00"
+    "updated_at": "2026-11-03T19:30:05.053293+00:00"
+  },
+  "market_dir:NBA|points|over": {
+    "performance_id": "5559f287e14ea5ef6a36aa3c5ff3f35c",
+    "rule_id": "NBA|points|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|points|over",
+    "bets": 150,
+    "sample_size": 150,
+    "wins": 68,
+    "losses": 82,
+    "pushes": 0,
+    "profit": 64.2693,
+    "stake": 96.99,
+    "roi": 0.66264,
+    "hit_rate": 0.45333,
+    "learning_weight": 1.3,
+    "learned_weight": 1.3,
+    "updated_at": "2026-11-03T19:30:05.053302+00:00"
+  },
+  "sport_dir:NBA|over": {
+    "performance_id": "4c5f2e5b860a7f42fbd46c34bffb8602",
+    "rule_id": "NBA|over",
+    "group_type": "sport_dir",
+    "group_key": "NBA|over",
+    "bets": 442,
+    "sample_size": 442,
+    "wins": 165,
+    "losses": 277,
+    "pushes": 0,
+    "profit": 78.9564,
+    "stake": 215.48,
+    "roi": 0.36642,
+    "hit_rate": 0.3733,
+    "learning_weight": 1.29,
+    "learned_weight": 1.29,
+    "updated_at": "2026-11-03T19:30:05.053310+00:00"
   },
   "market:NBA|NBA|rebounds": {
     "performance_id": "03e65ee99cdf8c213566d68eb4196a9d",
@@ -69,7 +105,7 @@
     "hit_rate": 0.48241,
     "learning_weight": 1.299,
     "learned_weight": 1.299,
-    "updated_at": "2026-11-03T17:56:03.191269+00:00"
+    "updated_at": "2026-11-03T19:30:05.053318+00:00"
   },
   "sport_market:NBA|rebounds": {
     "performance_id": "90c33ff2af7f1bb89850c1eafa2d4790",
@@ -87,7 +123,7 @@
     "hit_rate": 0.48241,
     "learning_weight": 1.299,
     "learned_weight": 1.299,
-    "updated_at": "2026-11-03T17:56:03.191276+00:00"
+    "updated_at": "2026-11-03T19:30:05.053325+00:00"
   },
   "bookmaker:NBA|betrivers|rebounds": {
     "performance_id": "e0fc025d6ebfb2e749b1bd5c53809e49",
@@ -105,7 +141,25 @@
     "hit_rate": 0.4375,
     "learning_weight": 1.021,
     "learned_weight": 1.021,
-    "updated_at": "2026-11-03T17:56:03.191284+00:00"
+    "updated_at": "2026-11-03T19:30:05.053337+00:00"
+  },
+  "market_dir:NBA|rebounds|over": {
+    "performance_id": "901596749bf493471c285167140e0108",
+    "rule_id": "NBA|rebounds|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|rebounds|over",
+    "bets": 126,
+    "sample_size": 126,
+    "wins": 54,
+    "losses": 72,
+    "pushes": 0,
+    "profit": 42.3601,
+    "stake": 48.31,
+    "roi": 0.87684,
+    "hit_rate": 0.42857,
+    "learning_weight": 1.3,
+    "learned_weight": 1.3,
+    "updated_at": "2026-11-03T19:30:05.053351+00:00"
   },
   "market:NFL|NFL|receiving yards": {
     "performance_id": "8b5355029c55fa2bb3509aa75170858f",
@@ -123,7 +177,7 @@
     "hit_rate": 0.57143,
     "learning_weight": 1.007,
     "learned_weight": 1.007,
-    "updated_at": "2026-11-03T17:56:03.191292+00:00"
+    "updated_at": "2026-11-03T19:30:05.053360+00:00"
   },
   "sport_market:NFL|receiving yards": {
     "performance_id": "ba3df654b89f79ddf1286ac3a9d9518d",
@@ -141,7 +195,7 @@
     "hit_rate": 0.57143,
     "learning_weight": 1.007,
     "learned_weight": 1.007,
-    "updated_at": "2026-11-03T17:56:03.191302+00:00"
+    "updated_at": "2026-11-03T19:30:05.053367+00:00"
   },
   "bookmaker:NFL|betrivers|receiving yards": {
     "performance_id": "6f6419e904864975aad4fb7d0be92548",
@@ -159,7 +213,43 @@
     "hit_rate": 0.6,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191311+00:00"
+    "updated_at": "2026-11-03T19:30:05.053375+00:00"
+  },
+  "market_dir:NFL|receiving yards|over": {
+    "performance_id": "a24acaf439f98bce411b83a0cfa90416",
+    "rule_id": "NFL|receiving yards|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|receiving yards|over",
+    "bets": 22,
+    "sample_size": 22,
+    "wins": 10,
+    "losses": 12,
+    "pushes": 0,
+    "profit": -2.6156,
+    "stake": 8.7,
+    "roi": -0.30064,
+    "hit_rate": 0.45455,
+    "learning_weight": 0.963,
+    "learned_weight": 0.963,
+    "updated_at": "2026-11-03T19:30:05.053382+00:00"
+  },
+  "sport_dir:NFL|over": {
+    "performance_id": "06b7d8f309c5a24473d4c4cc464ffeb3",
+    "rule_id": "NFL|over",
+    "group_type": "sport_dir",
+    "group_key": "NFL|over",
+    "bets": 100,
+    "sample_size": 100,
+    "wins": 40,
+    "losses": 60,
+    "pushes": 0,
+    "profit": -3.8837,
+    "stake": 37.38,
+    "roi": -0.1039,
+    "hit_rate": 0.4,
+    "learning_weight": 0.844,
+    "learned_weight": 0.844,
+    "updated_at": "2026-11-03T19:30:05.053388+00:00"
   },
   "bookmaker:NFL|kambi_ub|receiving yards": {
     "performance_id": "a912364bd40ab609baa5a6283b6a884d",
@@ -177,7 +267,7 @@
     "hit_rate": 0.41176,
     "learning_weight": 0.978,
     "learned_weight": 0.978,
-    "updated_at": "2026-11-03T17:56:03.191319+00:00"
+    "updated_at": "2026-11-03T19:30:05.053397+00:00"
   },
   "market:NBA|NBA|blocks": {
     "performance_id": "486aefdaec8333434cc6219420e0c0dd",
@@ -195,7 +285,7 @@
     "hit_rate": 0.78899,
     "learning_weight": 1.299,
     "learned_weight": 1.299,
-    "updated_at": "2026-11-03T17:56:03.191329+00:00"
+    "updated_at": "2026-11-03T19:30:05.053405+00:00"
   },
   "sport_market:NBA|blocks": {
     "performance_id": "371e1029ce89a608761946760c380e84",
@@ -213,7 +303,7 @@
     "hit_rate": 0.78899,
     "learning_weight": 1.299,
     "learned_weight": 1.299,
-    "updated_at": "2026-11-03T17:56:03.191336+00:00"
+    "updated_at": "2026-11-03T19:30:05.053411+00:00"
   },
   "bookmaker:NBA|kambi_ub|blocks": {
     "performance_id": "9cdcecd5165ceea306b83ad20e58193a",
@@ -231,7 +321,43 @@
     "hit_rate": 0.81373,
     "learning_weight": 1.299,
     "learned_weight": 1.299,
-    "updated_at": "2026-11-03T17:56:03.191342+00:00"
+    "updated_at": "2026-11-03T19:30:05.053419+00:00"
+  },
+  "market_dir:NBA|blocks|under": {
+    "performance_id": "a1bff99b2eb41ba6480c4a7a97e2e478",
+    "rule_id": "NBA|blocks|under",
+    "group_type": "market_dir",
+    "group_key": "NBA|blocks|under",
+    "bets": 100,
+    "sample_size": 100,
+    "wins": 83,
+    "losses": 17,
+    "pushes": 0,
+    "profit": 32.5627,
+    "stake": 48.01,
+    "roi": 0.67825,
+    "hit_rate": 0.83,
+    "learning_weight": 1.3,
+    "learned_weight": 1.3,
+    "updated_at": "2026-11-03T19:30:05.053429+00:00"
+  },
+  "sport_dir:NBA|under": {
+    "performance_id": "02c850976f7cee5ee1620425559b2de1",
+    "rule_id": "NBA|under",
+    "group_type": "sport_dir",
+    "group_key": "NBA|under",
+    "bets": 362,
+    "sample_size": 362,
+    "wins": 217,
+    "losses": 145,
+    "pushes": 0,
+    "profit": 33.398,
+    "stake": 173.01,
+    "roi": 0.19304,
+    "hit_rate": 0.59945,
+    "learning_weight": 1.237,
+    "learned_weight": 1.237,
+    "updated_at": "2026-11-03T19:30:05.053436+00:00"
   },
   "market:NBA|NBA|threes": {
     "performance_id": "8f06e9aa05dbb0d6f1d197b446660395",
@@ -249,7 +375,7 @@
     "hit_rate": 0.2809,
     "learning_weight": 0.773,
     "learned_weight": 0.773,
-    "updated_at": "2026-11-03T17:56:03.191349+00:00"
+    "updated_at": "2026-11-03T19:30:05.053442+00:00"
   },
   "sport_market:NBA|threes": {
     "performance_id": "6c49fe2da151ce335907e5ef4c681373",
@@ -267,7 +393,7 @@
     "hit_rate": 0.2809,
     "learning_weight": 0.773,
     "learned_weight": 0.773,
-    "updated_at": "2026-11-03T17:56:03.191355+00:00"
+    "updated_at": "2026-11-03T19:30:05.053449+00:00"
   },
   "bookmaker:NBA|betrivers|threes": {
     "performance_id": "477ce3005763e1eb6a74adcb40f3c4b5",
@@ -285,7 +411,25 @@
     "hit_rate": 0.25,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191362+00:00"
+    "updated_at": "2026-11-03T19:30:05.053456+00:00"
+  },
+  "market_dir:NBA|threes|over": {
+    "performance_id": "782d40e30a073c7d45b01907da92b9d6",
+    "rule_id": "NBA|threes|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|threes|over",
+    "bets": 89,
+    "sample_size": 89,
+    "wins": 25,
+    "losses": 64,
+    "pushes": 0,
+    "profit": -8.5335,
+    "stake": 36.46,
+    "roi": -0.23405,
+    "hit_rate": 0.2809,
+    "learning_weight": 0.773,
+    "learned_weight": 0.773,
+    "updated_at": "2026-11-03T19:30:05.053462+00:00"
   },
   "market:NHL|NHL|points": {
     "performance_id": "4ef5a319d95fd3a42ffb70d8f962336b",
@@ -303,7 +447,7 @@
     "hit_rate": 0.72222,
     "learning_weight": 1.1,
     "learned_weight": 1.1,
-    "updated_at": "2026-11-03T17:56:03.191369+00:00"
+    "updated_at": "2026-11-03T19:30:05.053469+00:00"
   },
   "sport_market:NHL|points": {
     "performance_id": "2ad80e6f2cf8da9047267779f1091531",
@@ -321,7 +465,7 @@
     "hit_rate": 0.72222,
     "learning_weight": 1.1,
     "learned_weight": 1.1,
-    "updated_at": "2026-11-03T17:56:03.191375+00:00"
+    "updated_at": "2026-11-03T19:30:05.053475+00:00"
   },
   "bookmaker:NHL|betmgm|points": {
     "performance_id": "ab1676b7743150a6ada45cb533594028",
@@ -339,7 +483,43 @@
     "hit_rate": 0.8,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191384+00:00"
+    "updated_at": "2026-11-03T19:30:05.053482+00:00"
+  },
+  "market_dir:NHL|points|over": {
+    "performance_id": "57e547043ba7bf15fc56eefd7d5d0d88",
+    "rule_id": "NHL|points|over",
+    "group_type": "market_dir",
+    "group_key": "NHL|points|over",
+    "bets": 23,
+    "sample_size": 23,
+    "wins": 16,
+    "losses": 4,
+    "pushes": 3,
+    "profit": 11.692,
+    "stake": 8.45,
+    "roi": 1.38367,
+    "hit_rate": 0.8,
+    "learning_weight": 1.043,
+    "learned_weight": 1.043,
+    "updated_at": "2026-11-03T19:30:05.053491+00:00"
+  },
+  "sport_dir:NHL|over": {
+    "performance_id": "95f351c52f3a220c61a9bf8487027d06",
+    "rule_id": "NHL|over",
+    "group_type": "sport_dir",
+    "group_key": "NHL|over",
+    "bets": 88,
+    "sample_size": 88,
+    "wins": 46,
+    "losses": 39,
+    "pushes": 3,
+    "profit": 26.7934,
+    "stake": 44.16,
+    "roi": 0.60673,
+    "hit_rate": 0.54118,
+    "learning_weight": 1.259,
+    "learned_weight": 1.259,
+    "updated_at": "2026-11-03T19:30:05.053500+00:00"
   },
   "market:NBA|NBA|assists": {
     "performance_id": "207bc30d20971d1a59114cb1228be749",
@@ -357,7 +537,7 @@
     "hit_rate": 0.24468,
     "learning_weight": 0.723,
     "learned_weight": 0.723,
-    "updated_at": "2026-11-03T17:56:03.191393+00:00"
+    "updated_at": "2026-11-03T19:30:05.053506+00:00"
   },
   "sport_market:NBA|assists": {
     "performance_id": "6d71544a681cb27971833f57536f0679",
@@ -375,7 +555,7 @@
     "hit_rate": 0.24468,
     "learning_weight": 0.723,
     "learned_weight": 0.723,
-    "updated_at": "2026-11-03T17:56:03.191399+00:00"
+    "updated_at": "2026-11-03T19:30:05.053513+00:00"
   },
   "bookmaker:NBA|betrivers|assists": {
     "performance_id": "34dd791a5d561b0e91d56e6126b1da17",
@@ -393,7 +573,25 @@
     "hit_rate": 0.14286,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191407+00:00"
+    "updated_at": "2026-11-03T19:30:05.053519+00:00"
+  },
+  "market_dir:NBA|assists|over": {
+    "performance_id": "ad9679f0e5e9259efe060dbb24be6b7b",
+    "rule_id": "NBA|assists|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|assists|over",
+    "bets": 47,
+    "sample_size": 47,
+    "wins": 6,
+    "losses": 41,
+    "pushes": 0,
+    "profit": -18.373,
+    "stake": 22.5,
+    "roi": -0.81658,
+    "hit_rate": 0.12766,
+    "learning_weight": 0.877,
+    "learned_weight": 0.877,
+    "updated_at": "2026-11-03T19:30:05.053526+00:00"
   },
   "bookmaker:NBA|fanduel|threes": {
     "performance_id": "2090e95084de3b931f6a806e9a364830",
@@ -411,7 +609,7 @@
     "hit_rate": 0.30189,
     "learning_weight": 0.921,
     "learned_weight": 0.921,
-    "updated_at": "2026-11-03T17:56:03.191414+00:00"
+    "updated_at": "2026-11-03T19:30:05.053533+00:00"
   },
   "bookmaker:NBA|kambi_ub|rebounds": {
     "performance_id": "a98cffbff5abaa804c2ef905f2d5b000",
@@ -429,7 +627,7 @@
     "hit_rate": 0.44828,
     "learning_weight": 0.956,
     "learned_weight": 0.956,
-    "updated_at": "2026-11-03T17:56:03.191421+00:00"
+    "updated_at": "2026-11-03T19:30:05.053539+00:00"
   },
   "bookmaker:NBA|bovada|points": {
     "performance_id": "d29f6bd51876cffe95c2efdb6aa1f82a",
@@ -447,7 +645,25 @@
     "hit_rate": 0.59184,
     "learning_weight": 1.298,
     "learned_weight": 1.298,
-    "updated_at": "2026-11-03T17:56:03.191427+00:00"
+    "updated_at": "2026-11-03T19:30:05.053545+00:00"
+  },
+  "market_dir:NBA|points|under": {
+    "performance_id": "6f0ed8884278755b840e27fd47f496b1",
+    "rule_id": "NBA|points|under",
+    "group_type": "market_dir",
+    "group_key": "NBA|points|under",
+    "bets": 136,
+    "sample_size": 136,
+    "wins": 70,
+    "losses": 66,
+    "pushes": 0,
+    "profit": -4.3309,
+    "stake": 61.44,
+    "roi": -0.07049,
+    "hit_rate": 0.51471,
+    "learning_weight": 0.888,
+    "learned_weight": 0.888,
+    "updated_at": "2026-11-03T19:30:05.053551+00:00"
   },
   "bookmaker:NBA|bovada|assists": {
     "performance_id": "20f88b889fcbf9b06d1da37ca977c8de",
@@ -465,7 +681,25 @@
     "hit_rate": 0.36364,
     "learning_weight": 0.918,
     "learned_weight": 0.918,
-    "updated_at": "2026-11-03T17:56:03.191434+00:00"
+    "updated_at": "2026-11-03T19:30:05.053557+00:00"
+  },
+  "market_dir:NBA|assists|under": {
+    "performance_id": "86e3e0f9139e6896bdeec7fa03d0e5cb",
+    "rule_id": "NBA|assists|under",
+    "group_type": "market_dir",
+    "group_key": "NBA|assists|under",
+    "bets": 47,
+    "sample_size": 47,
+    "wins": 17,
+    "losses": 30,
+    "pushes": 0,
+    "profit": -3.8252,
+    "stake": 24.28,
+    "roi": -0.15755,
+    "hit_rate": 0.3617,
+    "learning_weight": 0.913,
+    "learned_weight": 0.913,
+    "updated_at": "2026-11-03T19:30:05.053566+00:00"
   },
   "bookmaker:NBA|bovada|rebounds": {
     "performance_id": "a46921c7435c5d4e06bfd5454cdf79b5",
@@ -483,7 +717,25 @@
     "hit_rate": 0.63158,
     "learning_weight": 1.143,
     "learned_weight": 1.143,
-    "updated_at": "2026-11-03T17:56:03.191440+00:00"
+    "updated_at": "2026-11-03T19:30:05.053572+00:00"
+  },
+  "market_dir:NBA|rebounds|under": {
+    "performance_id": "1eedc3cee1e814ab1e33bb86b11a3e52",
+    "rule_id": "NBA|rebounds|under",
+    "group_type": "market_dir",
+    "group_key": "NBA|rebounds|under",
+    "bets": 73,
+    "sample_size": 73,
+    "wins": 42,
+    "losses": 31,
+    "pushes": 0,
+    "profit": 7.7094,
+    "stake": 36.85,
+    "roi": 0.20921,
+    "hit_rate": 0.57534,
+    "learning_weight": 1.173,
+    "learned_weight": 1.173,
+    "updated_at": "2026-11-03T19:30:05.053582+00:00"
   },
   "bookmaker:NBA|draftkings|rebounds": {
     "performance_id": "5700d54f6ff069835724cf3b51ff3373",
@@ -501,7 +753,7 @@
     "hit_rate": 0.325,
     "learning_weight": 0.927,
     "learned_weight": 0.927,
-    "updated_at": "2026-11-03T17:56:03.191446+00:00"
+    "updated_at": "2026-11-03T19:30:05.053589+00:00"
   },
   "bookmaker:NBA|draftkings|points": {
     "performance_id": "2d5afed82471b691f698866a59b493c2",
@@ -519,7 +771,7 @@
     "hit_rate": 0.44444,
     "learning_weight": 0.951,
     "learned_weight": 0.951,
-    "updated_at": "2026-11-03T17:56:03.191455+00:00"
+    "updated_at": "2026-11-03T19:30:05.053596+00:00"
   },
   "bookmaker:NBA|fanduel|points": {
     "performance_id": "de0f4b8d0819b1b89e654455ec430001",
@@ -537,7 +789,7 @@
     "hit_rate": 0.32609,
     "learning_weight": 1.12,
     "learned_weight": 1.12,
-    "updated_at": "2026-11-03T17:56:03.191461+00:00"
+    "updated_at": "2026-11-03T19:30:05.053603+00:00"
   },
   "bookmaker:NBA|fanduel|rebounds": {
     "performance_id": "3324d27d2d095cd71b7f902a9b909695",
@@ -555,7 +807,7 @@
     "hit_rate": 0.52632,
     "learning_weight": 1.093,
     "learned_weight": 1.093,
-    "updated_at": "2026-11-03T17:56:03.191469+00:00"
+    "updated_at": "2026-11-03T19:30:05.053609+00:00"
   },
   "market:NFL|NFL|passing yards": {
     "performance_id": "827e689476f7c37b610ac345f36781e4",
@@ -573,7 +825,7 @@
     "hit_rate": 0.44444,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191476+00:00"
+    "updated_at": "2026-11-03T19:30:05.053616+00:00"
   },
   "sport_market:NFL|passing yards": {
     "performance_id": "69bbf072ddf019c49f01d6c8d90629bd",
@@ -591,7 +843,7 @@
     "hit_rate": 0.44444,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191482+00:00"
+    "updated_at": "2026-11-03T19:30:05.053622+00:00"
   },
   "bookmaker:NFL|draftkings|passing yards": {
     "performance_id": "beae804ab4b08da93b9a514130d7c044",
@@ -609,7 +861,25 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191489+00:00"
+    "updated_at": "2026-11-03T19:30:05.053631+00:00"
+  },
+  "market_dir:NFL|passing yards|over": {
+    "performance_id": "2468f92e19d59d3f9c83013a574796dc",
+    "rule_id": "NFL|passing yards|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|passing yards|over",
+    "bets": 8,
+    "sample_size": 8,
+    "wins": 4,
+    "losses": 4,
+    "pushes": 0,
+    "profit": 0.5637,
+    "stake": 4.04,
+    "roi": 0.13953,
+    "hit_rate": 0.5,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.053640+00:00"
   },
   "market:NHL|NHL|assists": {
     "performance_id": "7d54bb93e98ba50274b85badbebfa645",
@@ -627,7 +897,7 @@
     "hit_rate": 0.26667,
     "learning_weight": 0.977,
     "learned_weight": 0.977,
-    "updated_at": "2026-11-03T17:56:03.191496+00:00"
+    "updated_at": "2026-11-03T19:30:05.053646+00:00"
   },
   "sport_market:NHL|assists": {
     "performance_id": "30f65d30f9b19cdb0ba33ec4520470a9",
@@ -645,7 +915,7 @@
     "hit_rate": 0.26667,
     "learning_weight": 0.977,
     "learned_weight": 0.977,
-    "updated_at": "2026-11-03T17:56:03.191502+00:00"
+    "updated_at": "2026-11-03T19:30:05.053653+00:00"
   },
   "bookmaker:NHL|draftkings|assists": {
     "performance_id": "49f66b93cf2e07e14dabdbabab59c403",
@@ -663,7 +933,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191509+00:00"
+    "updated_at": "2026-11-03T19:30:05.053660+00:00"
+  },
+  "market_dir:NHL|assists|over": {
+    "performance_id": "d5404ed57825f515885cae1111eac6f8",
+    "rule_id": "NHL|assists|over",
+    "group_type": "market_dir",
+    "group_key": "NHL|assists|over",
+    "bets": 15,
+    "sample_size": 15,
+    "wins": 4,
+    "losses": 11,
+    "pushes": 0,
+    "profit": -3.8538,
+    "stake": 7.02,
+    "roi": -0.54897,
+    "hit_rate": 0.26667,
+    "learning_weight": 0.983,
+    "learned_weight": 0.983,
+    "updated_at": "2026-11-03T19:30:05.053666+00:00"
   },
   "market:NFL|NFL|receptions": {
     "performance_id": "a0cf1ce93c92b0489202e8a4e0a836c8",
@@ -681,7 +969,7 @@
     "hit_rate": 0.60526,
     "learning_weight": 1.088,
     "learned_weight": 1.088,
-    "updated_at": "2026-11-03T17:56:03.191515+00:00"
+    "updated_at": "2026-11-03T19:30:05.053673+00:00"
   },
   "sport_market:NFL|receptions": {
     "performance_id": "a722cce578d49ddcb000e2a90b95ad8f",
@@ -699,7 +987,7 @@
     "hit_rate": 0.60526,
     "learning_weight": 1.088,
     "learned_weight": 1.088,
-    "updated_at": "2026-11-03T17:56:03.191521+00:00"
+    "updated_at": "2026-11-03T19:30:05.053679+00:00"
   },
   "bookmaker:NFL|draftkings|receptions": {
     "performance_id": "e2df702c7dc9596331b22db84b409226",
@@ -717,7 +1005,25 @@
     "hit_rate": 0.86667,
     "learning_weight": 1.017,
     "learned_weight": 1.017,
-    "updated_at": "2026-11-03T17:56:03.191527+00:00"
+    "updated_at": "2026-11-03T19:30:05.053686+00:00"
+  },
+  "market_dir:NFL|receptions|over": {
+    "performance_id": "b937e66de14143ee96e59385c2cc49ca",
+    "rule_id": "NFL|receptions|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|receptions|over",
+    "bets": 31,
+    "sample_size": 31,
+    "wins": 19,
+    "losses": 12,
+    "pushes": 0,
+    "profit": 5.3813,
+    "stake": 12.29,
+    "roi": 0.43786,
+    "hit_rate": 0.6129,
+    "learning_weight": 1.069,
+    "learned_weight": 1.069,
+    "updated_at": "2026-11-03T19:30:05.053692+00:00"
   },
   "market:NFL|NFL|rushing yards": {
     "performance_id": "c71904ca3266cf5a8fadc21398f21143",
@@ -735,7 +1041,7 @@
     "hit_rate": 0.14815,
     "learning_weight": 0.943,
     "learned_weight": 0.943,
-    "updated_at": "2026-11-03T17:56:03.191537+00:00"
+    "updated_at": "2026-11-03T19:30:05.053698+00:00"
   },
   "sport_market:NFL|rushing yards": {
     "performance_id": "718f447427d38971b69f47db9d74a1c3",
@@ -753,7 +1059,7 @@
     "hit_rate": 0.14815,
     "learning_weight": 0.943,
     "learned_weight": 0.943,
-    "updated_at": "2026-11-03T17:56:03.191544+00:00"
+    "updated_at": "2026-11-03T19:30:05.053707+00:00"
   },
   "bookmaker:NFL|draftkings|rushing yards": {
     "performance_id": "7846b202c1efcdb0f159394efe7d8690",
@@ -771,7 +1077,25 @@
     "hit_rate": 0.0,
     "learning_weight": 0.997,
     "learned_weight": 0.997,
-    "updated_at": "2026-11-03T17:56:03.191550+00:00"
+    "updated_at": "2026-11-03T19:30:05.053715+00:00"
+  },
+  "market_dir:NFL|rushing yards|over": {
+    "performance_id": "1c193c0ddc16c03a863ee7c3f1e34f25",
+    "rule_id": "NFL|rushing yards|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|rushing yards|over",
+    "bets": 17,
+    "sample_size": 17,
+    "wins": 1,
+    "losses": 16,
+    "pushes": 0,
+    "profit": -3.8648,
+    "stake": 4.34,
+    "roi": -0.89051,
+    "hit_rate": 0.05882,
+    "learning_weight": 0.977,
+    "learned_weight": 0.977,
+    "updated_at": "2026-11-03T19:30:05.053722+00:00"
   },
   "market:NHL|NHL|shots on goal": {
     "performance_id": "0dac83e438b319dd0f939f57c94fcef0",
@@ -789,7 +1113,7 @@
     "hit_rate": 0.57143,
     "learning_weight": 1.13,
     "learned_weight": 1.13,
-    "updated_at": "2026-11-03T17:56:03.191558+00:00"
+    "updated_at": "2026-11-03T19:30:05.053728+00:00"
   },
   "sport_market:NHL|shots on goal": {
     "performance_id": "2eb10133eabf5c8f4409fe45057e730c",
@@ -807,7 +1131,7 @@
     "hit_rate": 0.57143,
     "learning_weight": 1.13,
     "learned_weight": 1.13,
-    "updated_at": "2026-11-03T17:56:03.191564+00:00"
+    "updated_at": "2026-11-03T19:30:05.053734+00:00"
   },
   "bookmaker:NHL|draftkings|shots on goal": {
     "performance_id": "361f1b65435f2f9c228e26aa7955a544",
@@ -825,7 +1149,25 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.006,
     "learned_weight": 1.006,
-    "updated_at": "2026-11-03T17:56:03.191570+00:00"
+    "updated_at": "2026-11-03T19:30:05.053741+00:00"
+  },
+  "market_dir:NHL|shots on goal|over": {
+    "performance_id": "504a736268477b62bbab28797d62abca",
+    "rule_id": "NHL|shots on goal|over",
+    "group_type": "market_dir",
+    "group_key": "NHL|shots on goal|over",
+    "bets": 43,
+    "sample_size": 43,
+    "wins": 23,
+    "losses": 20,
+    "pushes": 0,
+    "profit": 19.6596,
+    "stake": 25.54,
+    "roi": 0.76976,
+    "hit_rate": 0.53488,
+    "learning_weight": 1.11,
+    "learned_weight": 1.11,
+    "updated_at": "2026-11-03T19:30:05.053766+00:00"
   },
   "bookmaker:NFL|kambi_ub|receptions": {
     "performance_id": "f0d2b5690e721a18a04d13c5e185071f",
@@ -843,7 +1185,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191576+00:00"
+    "updated_at": "2026-11-03T19:30:05.053777+00:00"
   },
   "bookmaker:NFL|betrivers|receptions": {
     "performance_id": "eac4059c9ce04e82546b7f3afd568630",
@@ -861,7 +1203,7 @@
     "hit_rate": 0.4,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191582+00:00"
+    "updated_at": "2026-11-03T19:30:05.053787+00:00"
   },
   "market:NFL|NFL|rushing attempts": {
     "performance_id": "0911bb86290c9cd7bcbd0c7692b0fc90",
@@ -879,7 +1221,7 @@
     "hit_rate": 0.28571,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191588+00:00"
+    "updated_at": "2026-11-03T19:30:05.053794+00:00"
   },
   "sport_market:NFL|rushing attempts": {
     "performance_id": "bb06089bbad0ccf435d217fc935eee67",
@@ -897,7 +1239,7 @@
     "hit_rate": 0.28571,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191594+00:00"
+    "updated_at": "2026-11-03T19:30:05.053802+00:00"
   },
   "bookmaker:NFL|kambi_ub|rushing attempts": {
     "performance_id": "9251891585bc69c32e8501bd11aa0681",
@@ -915,7 +1257,25 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191605+00:00"
+    "updated_at": "2026-11-03T19:30:05.053809+00:00"
+  },
+  "market_dir:NFL|rushing attempts|over": {
+    "performance_id": "f98d059592714c9a9ac5f2b8d578fbf9",
+    "rule_id": "NFL|rushing attempts|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|rushing attempts|over",
+    "bets": 7,
+    "sample_size": 7,
+    "wins": 2,
+    "losses": 5,
+    "pushes": 0,
+    "profit": -1.163,
+    "stake": 2.49,
+    "roi": -0.46707,
+    "hit_rate": 0.28571,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.053815+00:00"
   },
   "bookmaker:NFL|kambi_ub|rushing yards": {
     "performance_id": "274defd8e8ca2712f6e0b206c4406211",
@@ -933,7 +1293,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191611+00:00"
+    "updated_at": "2026-11-03T19:30:05.053821+00:00"
   },
   "bookmaker:NFL|kambi_ub|passing yards": {
     "performance_id": "e8d536ed614bca9fef3d87d6d7158c8d",
@@ -951,7 +1311,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191618+00:00"
+    "updated_at": "2026-11-03T19:30:05.053827+00:00"
   },
   "market:NFL|NFL|passing touchdowns": {
     "performance_id": "9e9c24723215b68ca325bbccf043e6ff",
@@ -969,7 +1329,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191642+00:00"
+    "updated_at": "2026-11-03T19:30:05.053834+00:00"
   },
   "sport_market:NFL|passing touchdowns": {
     "performance_id": "54b08e777c9ade9fbbb16201cf243ad1",
@@ -987,7 +1347,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191651+00:00"
+    "updated_at": "2026-11-03T19:30:05.053843+00:00"
   },
   "bookmaker:NFL|bovada|passing touchdowns": {
     "performance_id": "b5402254fd3db62c725f98c11c477d29",
@@ -1005,7 +1365,25 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191658+00:00"
+    "updated_at": "2026-11-03T19:30:05.053849+00:00"
+  },
+  "market_dir:NFL|passing touchdowns|over": {
+    "performance_id": "738882c869dbda0d0125d0631a15c649",
+    "rule_id": "NFL|passing touchdowns|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|passing touchdowns|over",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 2,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.7722,
+    "stake": 0.69,
+    "roi": 1.11913,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.053855+00:00"
   },
   "bookmaker:NFL|betrivers|rushing attempts": {
     "performance_id": "5c048b7d96e5a0b35c2a8504591dc7a2",
@@ -1023,7 +1401,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191667+00:00"
+    "updated_at": "2026-11-03T19:30:05.053862+00:00"
   },
   "market:NFL|NFL|td": {
     "performance_id": "c4d6a7beca8fd7f292daf90f24e108f2",
@@ -1041,7 +1419,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191673+00:00"
+    "updated_at": "2026-11-03T19:30:05.053871+00:00"
   },
   "sport_market:NFL|td": {
     "performance_id": "ad338ce4f219a7c4af794cc866043876",
@@ -1059,7 +1437,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191679+00:00"
+    "updated_at": "2026-11-03T19:30:05.053877+00:00"
   },
   "bookmaker:NFL|fanduel|td": {
     "performance_id": "7fe6e96ebd27efb733a00caad87a0b0c",
@@ -1077,7 +1455,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191685+00:00"
+    "updated_at": "2026-11-03T19:30:05.053884+00:00"
+  },
+  "market_dir:NFL|td|over": {
+    "performance_id": "59ea5dbcc97c33d7cb108fecfe404ab9",
+    "rule_id": "NFL|td|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|td|over",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 0,
+    "losses": 2,
+    "pushes": 0,
+    "profit": -0.66,
+    "stake": 0.66,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.053890+00:00"
   },
   "bookmaker:NFL|fanduel|receptions": {
     "performance_id": "c076cfc50fecca2c83339bdb39318ada",
@@ -1095,7 +1491,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191694+00:00"
+    "updated_at": "2026-11-03T19:30:05.053896+00:00"
   },
   "bookmaker:NFL|fanduel|rushing yards": {
     "performance_id": "8b496d27953e257e49f2bcdd29a8c2b5",
@@ -1113,7 +1509,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191701+00:00"
+    "updated_at": "2026-11-03T19:30:05.053902+00:00"
   },
   "bookmaker:NFL|betmgm|passing touchdowns": {
     "performance_id": "409084e380b2141ce48255ae44a9aeac",
@@ -1131,7 +1527,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191707+00:00"
+    "updated_at": "2026-11-03T19:30:05.053908+00:00"
   },
   "bookmaker:NFL|fanduel|passing yards": {
     "performance_id": "cb60f880478fb51bf54ee8600150986c",
@@ -1149,7 +1545,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191713+00:00"
+    "updated_at": "2026-11-03T19:30:05.053914+00:00"
   },
   "bookmaker:NFL|bovada|receptions": {
     "performance_id": "b668eb61634d259303cac9919ff1bf20",
@@ -1167,7 +1563,43 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191719+00:00"
+    "updated_at": "2026-11-03T19:30:05.053922+00:00"
+  },
+  "market_dir:NFL|receptions|under": {
+    "performance_id": "597e1231121de1dfe19a568548fe56bb",
+    "rule_id": "NFL|receptions|under",
+    "group_type": "market_dir",
+    "group_key": "NFL|receptions|under",
+    "bets": 7,
+    "sample_size": 7,
+    "wins": 4,
+    "losses": 3,
+    "pushes": 0,
+    "profit": -0.393,
+    "stake": 3.03,
+    "roi": -0.1297,
+    "hit_rate": 0.57143,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.053929+00:00"
+  },
+  "sport_dir:NFL|under": {
+    "performance_id": "36fab3e86d861dc47d61075716f08a6d",
+    "rule_id": "NFL|under",
+    "group_type": "sport_dir",
+    "group_key": "NFL|under",
+    "bets": 27,
+    "sample_size": 27,
+    "wins": 14,
+    "losses": 13,
+    "pushes": 0,
+    "profit": 0.6606,
+    "stake": 10.01,
+    "roi": 0.06599,
+    "hit_rate": 0.51852,
+    "learning_weight": 1.02,
+    "learned_weight": 1.02,
+    "updated_at": "2026-11-03T19:30:05.053938+00:00"
   },
   "bookmaker:NHL|fanduel|shots on goal": {
     "performance_id": "fa75a434af513c8554934943a5c6874a",
@@ -1185,7 +1617,7 @@
     "hit_rate": 0.53125,
     "learning_weight": 1.073,
     "learned_weight": 1.073,
-    "updated_at": "2026-11-03T17:56:03.191726+00:00"
+    "updated_at": "2026-11-03T19:30:05.053945+00:00"
   },
   "bookmaker:NBA|fanduel|assists": {
     "performance_id": "50cc0741b823752abf138658ce248c57",
@@ -1203,7 +1635,7 @@
     "hit_rate": 0.0,
     "learning_weight": 0.97,
     "learned_weight": 0.97,
-    "updated_at": "2026-11-03T17:56:03.191733+00:00"
+    "updated_at": "2026-11-03T19:30:05.053953+00:00"
   },
   "bookmaker:NHL|fanduel|assists": {
     "performance_id": "f560b77d01e33509c7017e99568335ce",
@@ -1221,7 +1653,7 @@
     "hit_rate": 0.27273,
     "learning_weight": 0.997,
     "learned_weight": 0.997,
-    "updated_at": "2026-11-03T17:56:03.191739+00:00"
+    "updated_at": "2026-11-03T19:30:05.053962+00:00"
   },
   "bookmaker:NHL|fanduel|points": {
     "performance_id": "50cb19eeceff53dcdf8094f273058c3a",
@@ -1239,7 +1671,7 @@
     "hit_rate": 0.8,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191748+00:00"
+    "updated_at": "2026-11-03T19:30:05.053969+00:00"
   },
   "bookmaker:NBA|kambi_ub|threes": {
     "performance_id": "d2551ac17fd564674a9478e5fbfdbf53",
@@ -1257,7 +1689,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 0.965,
     "learned_weight": 0.965,
-    "updated_at": "2026-11-03T17:56:03.191754+00:00"
+    "updated_at": "2026-11-03T19:30:05.053976+00:00"
   },
   "market:NBA|NBA|steals": {
     "performance_id": "0934aa060b76989a0aa20474157949df",
@@ -1275,7 +1707,7 @@
     "hit_rate": 0.35714,
     "learning_weight": 1.013,
     "learned_weight": 1.013,
-    "updated_at": "2026-11-03T17:56:03.191762+00:00"
+    "updated_at": "2026-11-03T19:30:05.053982+00:00"
   },
   "sport_market:NBA|steals": {
     "performance_id": "e1f4f472d365b305d839e7b0cedc2544",
@@ -1293,7 +1725,7 @@
     "hit_rate": 0.35714,
     "learning_weight": 1.013,
     "learned_weight": 1.013,
-    "updated_at": "2026-11-03T17:56:03.191769+00:00"
+    "updated_at": "2026-11-03T19:30:05.053988+00:00"
   },
   "bookmaker:NBA|betrivers|steals": {
     "performance_id": "07e4fdfe12cabd250186b587da4b7c1d",
@@ -1311,7 +1743,25 @@
     "hit_rate": 0.4,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191775+00:00"
+    "updated_at": "2026-11-03T19:30:05.053995+00:00"
+  },
+  "market_dir:NBA|steals|over": {
+    "performance_id": "b532f0fe6decd45df6d940cd3429bb90",
+    "rule_id": "NBA|steals|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|steals|over",
+    "bets": 14,
+    "sample_size": 14,
+    "wins": 5,
+    "losses": 9,
+    "pushes": 0,
+    "profit": 1.9871,
+    "stake": 5.3,
+    "roi": 0.37492,
+    "hit_rate": 0.35714,
+    "learning_weight": 1.013,
+    "learned_weight": 1.013,
+    "updated_at": "2026-11-03T19:30:05.054001+00:00"
   },
   "bookmaker:NBA|kambi_ub|assists": {
     "performance_id": "5f79588cc853b09e27db63131841fc1e",
@@ -1329,7 +1779,25 @@
     "hit_rate": 0.46154,
     "learning_weight": 0.992,
     "learned_weight": 0.992,
-    "updated_at": "2026-11-03T17:56:03.191781+00:00"
+    "updated_at": "2026-11-03T19:30:05.054022+00:00"
+  },
+  "market_dir:NBA|blocks|over": {
+    "performance_id": "fa0d6f22b20a371730ea28e77b11ac17",
+    "rule_id": "NBA|blocks|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|blocks|over",
+    "bets": 9,
+    "sample_size": 9,
+    "wins": 3,
+    "losses": 6,
+    "pushes": 0,
+    "profit": -1.017,
+    "stake": 3.88,
+    "roi": -0.26211,
+    "hit_rate": 0.33333,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054030+00:00"
   },
   "market:NHL|NHL|goals": {
     "performance_id": "55c61a2ae180e0a7d1bd127a36cb07d0",
@@ -1347,7 +1815,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191789+00:00"
+    "updated_at": "2026-11-03T19:30:05.054036+00:00"
   },
   "sport_market:NHL|goals": {
     "performance_id": "1346a52bd6ee40ad4bd6fad050747a47",
@@ -1365,7 +1833,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191796+00:00"
+    "updated_at": "2026-11-03T19:30:05.054042+00:00"
   },
   "bookmaker:NHL|kambi_ub|goals": {
     "performance_id": "10354d29557c660503987b3c6ce7f45e",
@@ -1383,7 +1851,25 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191802+00:00"
+    "updated_at": "2026-11-03T19:30:05.054049+00:00"
+  },
+  "market_dir:NHL|goals|over": {
+    "performance_id": "45f1dfa729ee22e22956fb0de7324b05",
+    "rule_id": "NHL|goals|over",
+    "group_type": "market_dir",
+    "group_key": "NHL|goals|over",
+    "bets": 6,
+    "sample_size": 6,
+    "wins": 2,
+    "losses": 4,
+    "pushes": 0,
+    "profit": -0.9585,
+    "stake": 2.82,
+    "roi": -0.33989,
+    "hit_rate": 0.33333,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054055+00:00"
   },
   "bookmaker:NHL|kambi_ub|points": {
     "performance_id": "aea73b4953ffd410d015dd1c5bb11402",
@@ -1401,7 +1887,43 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.035,
     "learned_weight": 1.035,
-    "updated_at": "2026-11-03T17:56:03.191808+00:00"
+    "updated_at": "2026-11-03T19:30:05.054064+00:00"
+  },
+  "market_dir:NHL|points|under": {
+    "performance_id": "6ea1d4bd55c8d6a613c055b24bfe2956",
+    "rule_id": "NHL|points|under",
+    "group_type": "market_dir",
+    "group_key": "NHL|points|under",
+    "bets": 17,
+    "sample_size": 17,
+    "wins": 10,
+    "losses": 6,
+    "pushes": 1,
+    "profit": 0.2695,
+    "stake": 7.41,
+    "roi": 0.03637,
+    "hit_rate": 0.625,
+    "learning_weight": 1.005,
+    "learned_weight": 1.005,
+    "updated_at": "2026-11-03T19:30:05.054070+00:00"
+  },
+  "sport_dir:NHL|under": {
+    "performance_id": "2c1eec0810b9b1466a6997b43b084ec8",
+    "rule_id": "NHL|under",
+    "group_type": "sport_dir",
+    "group_key": "NHL|under",
+    "bets": 25,
+    "sample_size": 25,
+    "wins": 15,
+    "losses": 7,
+    "pushes": 3,
+    "profit": 1.2373,
+    "stake": 11.23,
+    "roi": 0.11018,
+    "hit_rate": 0.68182,
+    "learning_weight": 1.027,
+    "learned_weight": 1.027,
+    "updated_at": "2026-11-03T19:30:05.054077+00:00"
   },
   "bookmaker:NBA|betrivers|blocks": {
     "performance_id": "47abff2eedf55650a03fb387c6b3faee",
@@ -1419,7 +1941,7 @@
     "hit_rate": 0.4,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191815+00:00"
+    "updated_at": "2026-11-03T19:30:05.054083+00:00"
   },
   "market:MLB|MLB|home run": {
     "performance_id": "ffe78a6959de9c9d717b0f28c766d96d",
@@ -1437,7 +1959,7 @@
     "hit_rate": 0.14634,
     "learning_weight": 0.765,
     "learned_weight": 0.765,
-    "updated_at": "2026-11-03T17:56:03.191823+00:00"
+    "updated_at": "2026-11-03T19:30:05.054096+00:00"
   },
   "sport_market:MLB|home run": {
     "performance_id": "ade8c0ef29b77b98ff90c6ea2595e3a8",
@@ -1455,7 +1977,7 @@
     "hit_rate": 0.14634,
     "learning_weight": 0.765,
     "learned_weight": 0.765,
-    "updated_at": "2026-11-03T17:56:03.191831+00:00"
+    "updated_at": "2026-11-03T19:30:05.054103+00:00"
   },
   "bookmaker:MLB|pinnacle|home run": {
     "performance_id": "7760209afd5eb4060d9c8ee0ddb23224",
@@ -1473,7 +1995,61 @@
     "hit_rate": 0.0,
     "learning_weight": 0.993,
     "learned_weight": 0.993,
-    "updated_at": "2026-11-03T17:56:03.191840+00:00"
+    "updated_at": "2026-11-03T19:30:05.054110+00:00"
+  },
+  "market_dir:MLB|home run|over": {
+    "performance_id": "639e12843d81e371e4f2b2f0d4bed7cd",
+    "rule_id": "MLB|home run|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|home run|over",
+    "bets": 167,
+    "sample_size": 167,
+    "wins": 19,
+    "losses": 139,
+    "pushes": 9,
+    "profit": -8.2783,
+    "stake": 28.17,
+    "roi": -0.29387,
+    "hit_rate": 0.12025,
+    "learning_weight": 0.722,
+    "learned_weight": 0.722,
+    "updated_at": "2026-11-03T19:30:05.054119+00:00"
+  },
+  "sport_dir:MLB|over": {
+    "performance_id": "180a24acc6a05fa465cebda6f2720048",
+    "rule_id": "MLB|over",
+    "group_type": "sport_dir",
+    "group_key": "MLB|over",
+    "bets": 310,
+    "sample_size": 310,
+    "wins": 67,
+    "losses": 208,
+    "pushes": 35,
+    "profit": 66.4893,
+    "stake": 82.91,
+    "roi": 0.80195,
+    "hit_rate": 0.24364,
+    "learning_weight": 1.3,
+    "learned_weight": 1.3,
+    "updated_at": "2026-11-03T19:30:05.054129+00:00"
+  },
+  "market_dir:NFL|rushing yards|under": {
+    "performance_id": "a06d1032afe0f83c11755c5e2dff4a5e",
+    "rule_id": "NFL|rushing yards|under",
+    "group_type": "market_dir",
+    "group_key": "NFL|rushing yards|under",
+    "bets": 10,
+    "sample_size": 10,
+    "wins": 3,
+    "losses": 7,
+    "pushes": 0,
+    "profit": -1.1211,
+    "stake": 2.47,
+    "roi": -0.45389,
+    "hit_rate": 0.3,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054136+00:00"
   },
   "bookmaker:NFL|bovada|rushing yards": {
     "performance_id": "c6aec07d11c39f1bb197c9188d15e7fa",
@@ -1491,7 +2067,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191846+00:00"
+    "updated_at": "2026-11-03T19:30:05.054142+00:00"
   },
   "bookmaker:NFL|bovada|receiving yards": {
     "performance_id": "7f69cb3ede3f62f3f06257a02edbd69d",
@@ -1509,7 +2085,25 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191853+00:00"
+    "updated_at": "2026-11-03T19:30:05.054149+00:00"
+  },
+  "market_dir:NFL|receiving yards|under": {
+    "performance_id": "dcc34133378079e3fe1ec0fe2cdba4e7",
+    "rule_id": "NFL|receiving yards|under",
+    "group_type": "market_dir",
+    "group_key": "NFL|receiving yards|under",
+    "bets": 6,
+    "sample_size": 6,
+    "wins": 6,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 2.8802,
+    "stake": 3.71,
+    "roi": 0.77633,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054157+00:00"
   },
   "market:NBA|NBA|rebounds ladder": {
     "performance_id": "87da7725bb0222e72138d1463be71684",
@@ -1527,7 +2121,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191859+00:00"
+    "updated_at": "2026-11-03T19:30:05.054164+00:00"
   },
   "sport_market:NBA|rebounds ladder": {
     "performance_id": "06a80b8c6b6985ee1900743eb77e23d0",
@@ -1545,7 +2139,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191865+00:00"
+    "updated_at": "2026-11-03T19:30:05.054172+00:00"
   },
   "bookmaker:NBA|unknown|rebounds ladder": {
     "performance_id": "9edb28f82ef52ad70f2e1ac70a5e1f2d",
@@ -1563,7 +2157,25 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191873+00:00"
+    "updated_at": "2026-11-03T19:30:05.054179+00:00"
+  },
+  "market_dir:NBA|rebounds ladder|over": {
+    "performance_id": "d0d44307974a612b8ebdbac6d8c42d88",
+    "rule_id": "NBA|rebounds ladder|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|rebounds ladder|over",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 1,
+    "losses": 2,
+    "pushes": 0,
+    "profit": -1.3616,
+    "stake": 1.44,
+    "roi": -0.94556,
+    "hit_rate": 0.33333,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054185+00:00"
   },
   "market:NFL|NFL|rushing yards ladder": {
     "performance_id": "b1cb43f8e8d7530255a2dca50350d50d",
@@ -1581,7 +2193,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191879+00:00"
+    "updated_at": "2026-11-03T19:30:05.054191+00:00"
   },
   "sport_market:NFL|rushing yards ladder": {
     "performance_id": "5c8e574edb72a4316e27fe1f95f94242",
@@ -1599,7 +2211,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191886+00:00"
+    "updated_at": "2026-11-03T19:30:05.054197+00:00"
   },
   "bookmaker:NFL|unknown|rushing yards ladder": {
     "performance_id": "947e0f2610fd7529cde3bc2b506ba983",
@@ -1617,7 +2229,25 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191892+00:00"
+    "updated_at": "2026-11-03T19:30:05.054203+00:00"
+  },
+  "market_dir:NFL|rushing yards ladder|under": {
+    "performance_id": "6a59ad0bd11569ebb4fdd7248ec3312c",
+    "rule_id": "NFL|rushing yards ladder|under",
+    "group_type": "market_dir",
+    "group_key": "NFL|rushing yards ladder|under",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 1,
+    "losses": 2,
+    "pushes": 0,
+    "profit": -0.0755,
+    "stake": 0.17,
+    "roi": -0.44412,
+    "hit_rate": 0.33333,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054209+00:00"
   },
   "market:NFL|NFL|receiving yards ladder": {
     "performance_id": "1963f1a5cecd17574a9dff3ce5666a83",
@@ -1635,7 +2265,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191900+00:00"
+    "updated_at": "2026-11-03T19:30:05.054216+00:00"
   },
   "sport_market:NFL|receiving yards ladder": {
     "performance_id": "c99ed5418805c2e5a65df2216c7d5084",
@@ -1653,7 +2283,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191908+00:00"
+    "updated_at": "2026-11-03T19:30:05.054222+00:00"
   },
   "bookmaker:NFL|unknown|receiving yards ladder": {
     "performance_id": "c535d6c0f76a4e0ff092135ff7d0e395",
@@ -1671,7 +2301,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191914+00:00"
+    "updated_at": "2026-11-03T19:30:05.054231+00:00"
+  },
+  "market_dir:NFL|receiving yards ladder|over": {
+    "performance_id": "d834069fb83eeeed4faca09b615df86d",
+    "rule_id": "NFL|receiving yards ladder|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|receiving yards ladder|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.02,
+    "stake": 0.02,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054239+00:00"
   },
   "market:NBA|NBA|threes ladder": {
     "performance_id": "cd598625308e3bf077eb068b0010fef5",
@@ -1689,7 +2337,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191921+00:00"
+    "updated_at": "2026-11-03T19:30:05.054246+00:00"
   },
   "sport_market:NBA|threes ladder": {
     "performance_id": "237e0cb8c3a0d75188a82942cfa32d65",
@@ -1707,7 +2355,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191927+00:00"
+    "updated_at": "2026-11-03T19:30:05.054252+00:00"
   },
   "bookmaker:NBA|unknown|threes ladder": {
     "performance_id": "41c130ce79673704f40e2bf6f4894b12",
@@ -1725,7 +2373,25 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191933+00:00"
+    "updated_at": "2026-11-03T19:30:05.054259+00:00"
+  },
+  "market_dir:NBA|threes ladder|over": {
+    "performance_id": "5c5543216487a2d10a1389d5a78c7f54",
+    "rule_id": "NBA|threes ladder|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|threes ladder|over",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 2,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.4015,
+    "stake": 0.55,
+    "roi": -0.73,
+    "hit_rate": 0.66667,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054265+00:00"
   },
   "bookmaker:NHL|bovada|shots on goal": {
     "performance_id": "4137219d00d98024dd842b0d0d7fb005",
@@ -1743,7 +2409,25 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191939+00:00"
+    "updated_at": "2026-11-03T19:30:05.054271+00:00"
+  },
+  "market_dir:NHL|shots on goal|under": {
+    "performance_id": "a60871b8e33eb6722c9f644a3bce4bfd",
+    "rule_id": "NHL|shots on goal|under",
+    "group_type": "market_dir",
+    "group_key": "NHL|shots on goal|under",
+    "bets": 6,
+    "sample_size": 6,
+    "wins": 5,
+    "losses": 1,
+    "pushes": 0,
+    "profit": 0.9678,
+    "stake": 2.49,
+    "roi": 0.38867,
+    "hit_rate": 0.83333,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054277+00:00"
   },
   "bookmaker:NHL|betrivers|assists": {
     "performance_id": "f17b2d553219bc6feb3b020120bab09a",
@@ -1761,7 +2445,25 @@
     "hit_rate": null,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191946+00:00"
+    "updated_at": "2026-11-03T19:30:05.054283+00:00"
+  },
+  "market_dir:NHL|assists|under": {
+    "performance_id": "790600cf1524379fd309bd668c763255",
+    "rule_id": "NHL|assists|under",
+    "group_type": "market_dir",
+    "group_key": "NHL|assists|under",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 0,
+    "losses": 0,
+    "pushes": 2,
+    "profit": 0.0,
+    "stake": 1.33,
+    "roi": 0.0,
+    "hit_rate": null,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054290+00:00"
   },
   "market:NBA|NBA|points ladder": {
     "performance_id": "6a0345df7fb2650b46f1cfed6350c6c5",
@@ -1779,7 +2481,7 @@
     "hit_rate": 0.75,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191952+00:00"
+    "updated_at": "2026-11-03T19:30:05.054297+00:00"
   },
   "sport_market:NBA|points ladder": {
     "performance_id": "608209084d9cdf6cda50d418718b316f",
@@ -1797,7 +2499,7 @@
     "hit_rate": 0.75,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191958+00:00"
+    "updated_at": "2026-11-03T19:30:05.054305+00:00"
   },
   "bookmaker:NBA|unknown|points ladder": {
     "performance_id": "f73f553c80278ee046455aacc1976a40",
@@ -1815,7 +2517,43 @@
     "hit_rate": 0.75,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191966+00:00"
+    "updated_at": "2026-11-03T19:30:05.054312+00:00"
+  },
+  "market_dir:NBA|points ladder|under": {
+    "performance_id": "b8c98d6c0b57ec4f5f2512a36d99c7a3",
+    "rule_id": "NBA|points ladder|under",
+    "group_type": "market_dir",
+    "group_key": "NBA|points ladder|under",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 2,
+    "losses": 1,
+    "pushes": 0,
+    "profit": 0.317,
+    "stake": 1.13,
+    "roi": 0.28053,
+    "hit_rate": 0.66667,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054318+00:00"
+  },
+  "market_dir:NBA|points ladder|over": {
+    "performance_id": "a60f190302ab25c831a276fe41e07dde",
+    "rule_id": "NBA|points ladder|over",
+    "group_type": "market_dir",
+    "group_key": "NBA|points ladder|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.0265,
+    "stake": 0.05,
+    "roi": 0.53,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054324+00:00"
   },
   "market:NBA|NBA|blocks ladder": {
     "performance_id": "f4df64f1ba1dee5c8ab05741a4c22520",
@@ -1833,7 +2571,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191973+00:00"
+    "updated_at": "2026-11-03T19:30:05.054333+00:00"
   },
   "sport_market:NBA|blocks ladder": {
     "performance_id": "8622e1f021fa2a6d85fc91607fc58e0d",
@@ -1851,7 +2589,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191978+00:00"
+    "updated_at": "2026-11-03T19:30:05.054341+00:00"
   },
   "bookmaker:NBA|unknown|blocks ladder": {
     "performance_id": "c558c1cf63af7aa1836578c527d980b4",
@@ -1869,7 +2607,25 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.191984+00:00"
+    "updated_at": "2026-11-03T19:30:05.054347+00:00"
+  },
+  "market_dir:NBA|blocks ladder|under": {
+    "performance_id": "bb0326f3197cd2bc9328e86eece5b7cf",
+    "rule_id": "NBA|blocks ladder|under",
+    "group_type": "market_dir",
+    "group_key": "NBA|blocks ladder|under",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 2,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.5675,
+    "stake": 0.55,
+    "roi": 1.03182,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054353+00:00"
   },
   "market:WNBA|WNBA|threes": {
     "performance_id": "4148d902056ef0a6292596f0581d0255",
@@ -1887,7 +2643,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.001,
     "learned_weight": 1.001,
-    "updated_at": "2026-11-03T17:56:03.191991+00:00"
+    "updated_at": "2026-11-03T19:30:05.054360+00:00"
   },
   "sport_market:WNBA|threes": {
     "performance_id": "ded813654118ff4540d1fd187de3bef4",
@@ -1905,7 +2661,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.001,
     "learned_weight": 1.001,
-    "updated_at": "2026-11-03T17:56:03.191999+00:00"
+    "updated_at": "2026-11-03T19:30:05.054366+00:00"
   },
   "bookmaker:WNBA|betrivers|threes": {
     "performance_id": "9d15130c573d2c625d763424efe04701",
@@ -1923,7 +2679,43 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192005+00:00"
+    "updated_at": "2026-11-03T19:30:05.054374+00:00"
+  },
+  "market_dir:WNBA|threes|over": {
+    "performance_id": "d76305a84a6839bcf8018871561513cc",
+    "rule_id": "WNBA|threes|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|threes|over",
+    "bets": 12,
+    "sample_size": 12,
+    "wins": 4,
+    "losses": 8,
+    "pushes": 0,
+    "profit": 0.1592,
+    "stake": 5.32,
+    "roi": 0.02992,
+    "hit_rate": 0.33333,
+    "learning_weight": 1.001,
+    "learned_weight": 1.001,
+    "updated_at": "2026-11-03T19:30:05.054381+00:00"
+  },
+  "sport_dir:WNBA|over": {
+    "performance_id": "a27da9292b59ea7e7cbc115b5fc3f967",
+    "rule_id": "WNBA|over",
+    "group_type": "sport_dir",
+    "group_key": "WNBA|over",
+    "bets": 268,
+    "sample_size": 268,
+    "wins": 139,
+    "losses": 129,
+    "pushes": 0,
+    "profit": 12.2942,
+    "stake": 111.31,
+    "roi": 0.11045,
+    "hit_rate": 0.51866,
+    "learning_weight": 1.164,
+    "learned_weight": 1.164,
+    "updated_at": "2026-11-03T19:30:05.054387+00:00"
   },
   "bookmaker:WNBA|fanduel|threes": {
     "performance_id": "1d3057632c7810041494af99360f24e9",
@@ -1941,7 +2733,7 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192011+00:00"
+    "updated_at": "2026-11-03T19:30:05.054394+00:00"
   },
   "market:WNBA|WNBA|rebounds": {
     "performance_id": "e0ea93a00768804af44c02e67e633d40",
@@ -1959,7 +2751,7 @@
     "hit_rate": 0.53846,
     "learning_weight": 1.053,
     "learned_weight": 1.053,
-    "updated_at": "2026-11-03T17:56:03.192017+00:00"
+    "updated_at": "2026-11-03T19:30:05.054400+00:00"
   },
   "sport_market:WNBA|rebounds": {
     "performance_id": "eacc23690fb33a687c17a4176516bb02",
@@ -1977,7 +2769,7 @@
     "hit_rate": 0.53846,
     "learning_weight": 1.053,
     "learned_weight": 1.053,
-    "updated_at": "2026-11-03T17:56:03.192024+00:00"
+    "updated_at": "2026-11-03T19:30:05.054406+00:00"
   },
   "bookmaker:WNBA|fanduel|rebounds": {
     "performance_id": "ec43d7de90c478dfb83864c1d2c2ad09",
@@ -1995,7 +2787,25 @@
     "hit_rate": 0.2,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192038+00:00"
+    "updated_at": "2026-11-03T19:30:05.054412+00:00"
+  },
+  "market_dir:WNBA|rebounds|over": {
+    "performance_id": "45cd4419f25eaa64d8b320e02fe50ba4",
+    "rule_id": "WNBA|rebounds|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|rebounds|over",
+    "bets": 25,
+    "sample_size": 25,
+    "wins": 14,
+    "losses": 11,
+    "pushes": 0,
+    "profit": 10.5347,
+    "stake": 11.74,
+    "roi": 0.89733,
+    "hit_rate": 0.56,
+    "learning_weight": 1.05,
+    "learned_weight": 1.05,
+    "updated_at": "2026-11-03T19:30:05.054418+00:00"
   },
   "market:WNBA|WNBA|assists": {
     "performance_id": "63f400e408cbd693cbd9031ca396100a",
@@ -2013,7 +2823,7 @@
     "hit_rate": 0.44444,
     "learning_weight": 0.976,
     "learned_weight": 0.976,
-    "updated_at": "2026-11-03T17:56:03.192044+00:00"
+    "updated_at": "2026-11-03T19:30:05.054425+00:00"
   },
   "sport_market:WNBA|assists": {
     "performance_id": "bf7700db025873bbfb748ba6f3116dd3",
@@ -2031,7 +2841,7 @@
     "hit_rate": 0.44444,
     "learning_weight": 0.976,
     "learned_weight": 0.976,
-    "updated_at": "2026-11-03T17:56:03.192050+00:00"
+    "updated_at": "2026-11-03T19:30:05.054431+00:00"
   },
   "bookmaker:WNBA|fanduel|assists": {
     "performance_id": "8e962722ed623314bf8a8a9a9fa65cf2",
@@ -2049,7 +2859,25 @@
     "hit_rate": 0.125,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192057+00:00"
+    "updated_at": "2026-11-03T19:30:05.054439+00:00"
+  },
+  "market_dir:WNBA|assists|over": {
+    "performance_id": "2bbe6c4953679625b1ca4d132e2d202c",
+    "rule_id": "WNBA|assists|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|assists|over",
+    "bets": 18,
+    "sample_size": 18,
+    "wins": 8,
+    "losses": 10,
+    "pushes": 0,
+    "profit": -2.5748,
+    "stake": 9.39,
+    "roi": -0.27421,
+    "hit_rate": 0.44444,
+    "learning_weight": 0.976,
+    "learned_weight": 0.976,
+    "updated_at": "2026-11-03T19:30:05.054445+00:00"
   },
   "market:WNBA|WNBA|points": {
     "performance_id": "5e1e4445ecfdfb67c2548e235c5119ac",
@@ -2067,7 +2895,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.056,
     "learned_weight": 1.056,
-    "updated_at": "2026-11-03T17:56:03.192065+00:00"
+    "updated_at": "2026-11-03T19:30:05.054451+00:00"
   },
   "sport_market:WNBA|points": {
     "performance_id": "439f5d93d4ff49f9a7a9f3dd8e503ada",
@@ -2085,7 +2913,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.056,
     "learned_weight": 1.056,
-    "updated_at": "2026-11-03T17:56:03.192071+00:00"
+    "updated_at": "2026-11-03T19:30:05.054458+00:00"
   },
   "bookmaker:WNBA|fanduel|points": {
     "performance_id": "af1f3ad41d9c87000b672987068f78c0",
@@ -2103,7 +2931,25 @@
     "hit_rate": 0.25,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192077+00:00"
+    "updated_at": "2026-11-03T19:30:05.054464+00:00"
+  },
+  "market_dir:WNBA|points|over": {
+    "performance_id": "9d1dbb8b4cdf82ed2527d0600aa5198d",
+    "rule_id": "WNBA|points|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|points|over",
+    "bets": 27,
+    "sample_size": 27,
+    "wins": 18,
+    "losses": 9,
+    "pushes": 0,
+    "profit": 7.3438,
+    "stake": 13.42,
+    "roi": 0.54723,
+    "hit_rate": 0.66667,
+    "learning_weight": 1.056,
+    "learned_weight": 1.056,
+    "updated_at": "2026-11-03T19:30:05.054473+00:00"
   },
   "bookmaker:WNBA|betrivers|assists": {
     "performance_id": "ae62b51a03891adb3eb1b93da718de84",
@@ -2121,7 +2967,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192083+00:00"
+    "updated_at": "2026-11-03T19:30:05.054479+00:00"
   },
   "bookmaker:WNBA|betrivers|rebounds": {
     "performance_id": "115d4f2600fb7bfe009a82ff9ec82d0f",
@@ -2139,7 +2985,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192089+00:00"
+    "updated_at": "2026-11-03T19:30:05.054486+00:00"
   },
   "bookmaker:WNBA|betrivers|points": {
     "performance_id": "a9c2eb1191edb2800f2e86c7fafedc66",
@@ -2157,7 +3003,7 @@
     "hit_rate": 0.72727,
     "learning_weight": 1.003,
     "learned_weight": 1.003,
-    "updated_at": "2026-11-03T17:56:03.192096+00:00"
+    "updated_at": "2026-11-03T19:30:05.054492+00:00"
   },
   "bookmaker:WNBA|kambi_ub|rebounds": {
     "performance_id": "83e4ca7e215fd31f79be697da69e53eb",
@@ -2175,7 +3021,7 @@
     "hit_rate": 0.85714,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192104+00:00"
+    "updated_at": "2026-11-03T19:30:05.054498+00:00"
   },
   "bookmaker:WNBA|kambi_ub|assists": {
     "performance_id": "3f87b7fcdf4d483e55d74e35fcf5a52d",
@@ -2193,7 +3039,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192110+00:00"
+    "updated_at": "2026-11-03T19:30:05.054508+00:00"
   },
   "bookmaker:WNBA|kambi_ub|points": {
     "performance_id": "3f0c9aead24bee270565fe0b961d4038",
@@ -2211,7 +3057,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192116+00:00"
+    "updated_at": "2026-11-03T19:30:05.054515+00:00"
   },
   "market:WNBA|WNBA|assists ladder": {
     "performance_id": "0a357162e4fc5026c85f50472c290c53",
@@ -2229,7 +3075,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192122+00:00"
+    "updated_at": "2026-11-03T19:30:05.054521+00:00"
   },
   "sport_market:WNBA|assists ladder": {
     "performance_id": "c600b3dc60c4248ab536744e7f1a03ff",
@@ -2247,7 +3093,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192129+00:00"
+    "updated_at": "2026-11-03T19:30:05.054529+00:00"
   },
   "bookmaker:WNBA|unknown|assists ladder": {
     "performance_id": "2f4620c4f4be0ee7af9783f08c04f802",
@@ -2265,7 +3111,61 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192135+00:00"
+    "updated_at": "2026-11-03T19:30:05.054535+00:00"
+  },
+  "market_dir:WNBA|assists ladder|over": {
+    "performance_id": "46420330b9a2a144e34ded46321d59d4",
+    "rule_id": "WNBA|assists ladder|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|assists ladder|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.65,
+    "stake": 0.65,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054541+00:00"
+  },
+  "market_dir:WNBA|rebounds|under": {
+    "performance_id": "b01fc94cd0b6da6207e524414eb5f459",
+    "rule_id": "WNBA|rebounds|under",
+    "group_type": "market_dir",
+    "group_key": "WNBA|rebounds|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.33,
+    "stake": 0.33,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054550+00:00"
+  },
+  "sport_dir:WNBA|under": {
+    "performance_id": "f7f547ec298726cb80c5537d72a1e3fe",
+    "rule_id": "WNBA|under",
+    "group_type": "sport_dir",
+    "group_key": "WNBA|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.33,
+    "stake": 0.33,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054556+00:00"
   },
   "market:WNBA|WNBA|rebounds ladder": {
     "performance_id": "d893425696eae470ad2343a369938608",
@@ -2283,7 +3183,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192142+00:00"
+    "updated_at": "2026-11-03T19:30:05.054562+00:00"
   },
   "sport_market:WNBA|rebounds ladder": {
     "performance_id": "14e950fc54ea65430ccfc6a3a3211003",
@@ -2301,7 +3201,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192148+00:00"
+    "updated_at": "2026-11-03T19:30:05.054568+00:00"
   },
   "bookmaker:WNBA|unknown|rebounds ladder": {
     "performance_id": "bfc574638d22d2905c96803ed2cf08bf",
@@ -2319,7 +3219,25 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192156+00:00"
+    "updated_at": "2026-11-03T19:30:05.054576+00:00"
+  },
+  "market_dir:WNBA|rebounds ladder|over": {
+    "performance_id": "83e497b9127d055af607102de6948bb6",
+    "rule_id": "WNBA|rebounds ladder|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|rebounds ladder|over",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 1,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.165,
+    "stake": 0.9,
+    "roi": -0.18333,
+    "hit_rate": 0.5,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054583+00:00"
   },
   "market:WNBA|WNBA|points ladder": {
     "performance_id": "2d3f34de057794b3e1663391b15f8e33",
@@ -2337,7 +3255,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192163+00:00"
+    "updated_at": "2026-11-03T19:30:05.054591+00:00"
   },
   "sport_market:WNBA|points ladder": {
     "performance_id": "fad6df2a0428556d13da16b47de617bb",
@@ -2355,7 +3273,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192173+00:00"
+    "updated_at": "2026-11-03T19:30:05.054597+00:00"
   },
   "bookmaker:WNBA|unknown|points ladder": {
     "performance_id": "7a529aae773073fbd9f188ea1d3692c2",
@@ -2373,7 +3291,25 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192180+00:00"
+    "updated_at": "2026-11-03T19:30:05.054603+00:00"
+  },
+  "market_dir:WNBA|points ladder|over": {
+    "performance_id": "95a5aea883808f4e5bc2bada009f0ba4",
+    "rule_id": "WNBA|points ladder|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|points ladder|over",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 2,
+    "losses": 1,
+    "pushes": 0,
+    "profit": 0.8825,
+    "stake": 1.25,
+    "roi": 0.706,
+    "hit_rate": 0.66667,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054610+00:00"
   },
   "market:NBA/WNBA|NBA/WNBA|rebounds": {
     "performance_id": "4d673f87471cf1f3070eb5b502bc11bc",
@@ -2391,7 +3327,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192187+00:00"
+    "updated_at": "2026-11-03T19:30:05.054616+00:00"
   },
   "sport_market:NBA/WNBA|rebounds": {
     "performance_id": "5c6b3b96d6e295c0473dfb0401a01051",
@@ -2409,7 +3345,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192193+00:00"
+    "updated_at": "2026-11-03T19:30:05.054622+00:00"
   },
   "bookmaker:NBA/WNBA|kambi_ub|rebounds": {
     "performance_id": "890c533a7051eb3b0d17b8d2bed7eedb",
@@ -2427,7 +3363,43 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192199+00:00"
+    "updated_at": "2026-11-03T19:30:05.054628+00:00"
+  },
+  "market_dir:NBA/WNBA|rebounds|under": {
+    "performance_id": "3207d8b12c4723fe0b82670eb08a87da",
+    "rule_id": "NBA/WNBA|rebounds|under",
+    "group_type": "market_dir",
+    "group_key": "NBA/WNBA|rebounds|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.69,
+    "stake": 0.69,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054634+00:00"
+  },
+  "sport_dir:NBA/WNBA|under": {
+    "performance_id": "566d4fa3cdb9c483ac0cbe34bf8d3321",
+    "rule_id": "NBA/WNBA|under",
+    "group_type": "sport_dir",
+    "group_key": "NBA/WNBA|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.69,
+    "stake": 0.69,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054642+00:00"
   },
   "market:NCAAF|NCAAF|points": {
     "performance_id": "cf51dcd82ba0f530d379a8cfc989ece5",
@@ -2445,7 +3417,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192205+00:00"
+    "updated_at": "2026-11-03T19:30:05.054648+00:00"
   },
   "sport_market:NCAAF|points": {
     "performance_id": "0ca39360b44ae32e4234d83bee9b6822",
@@ -2463,7 +3435,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192211+00:00"
+    "updated_at": "2026-11-03T19:30:05.054655+00:00"
   },
   "bookmaker:NCAAF|bovada|points": {
     "performance_id": "31cfce85a91f71c8d1d952afd2623a5b",
@@ -2481,7 +3453,43 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192217+00:00"
+    "updated_at": "2026-11-03T19:30:05.054661+00:00"
+  },
+  "market_dir:NCAAF|points|under": {
+    "performance_id": "f38628464c295784d09136718e4c71dd",
+    "rule_id": "NCAAF|points|under",
+    "group_type": "market_dir",
+    "group_key": "NCAAF|points|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.2541,
+    "stake": 0.33,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054667+00:00"
+  },
+  "sport_dir:NCAAF|under": {
+    "performance_id": "2e3d4498accd0dd0ab4dae1a4d51f52c",
+    "rule_id": "NCAAF|under",
+    "group_type": "sport_dir",
+    "group_key": "NCAAF|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.2541,
+    "stake": 0.33,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054673+00:00"
   },
   "bookmaker:NHL|fanduel|goals": {
     "performance_id": "800f58169614ae311acf56f8dabf1a7c",
@@ -2499,7 +3507,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192223+00:00"
+    "updated_at": "2026-11-03T19:30:05.054682+00:00"
   },
   "bookmaker:NHL|betrivers|points": {
     "performance_id": "22a6fbb17d210418f9624cc9b23a78fb",
@@ -2517,7 +3525,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192229+00:00"
+    "updated_at": "2026-11-03T19:30:05.054692+00:00"
   },
   "bookmaker:MLB|fanduel|home run": {
     "performance_id": "94336d5cc3e75e9696943c392c438a24",
@@ -2535,7 +3543,7 @@
     "hit_rate": 0.05128,
     "learning_weight": 0.874,
     "learned_weight": 0.874,
-    "updated_at": "2026-11-03T17:56:03.192238+00:00"
+    "updated_at": "2026-11-03T19:30:05.054699+00:00"
   },
   "market:MLB|MLB|rbi": {
     "performance_id": "9b0c976e4d30087e8b4677c8b48a9028",
@@ -2553,7 +3561,7 @@
     "hit_rate": 0.60156,
     "learning_weight": 1.283,
     "learned_weight": 1.283,
-    "updated_at": "2026-11-03T17:56:03.192245+00:00"
+    "updated_at": "2026-11-03T19:30:05.054707+00:00"
   },
   "sport_market:MLB|rbi": {
     "performance_id": "235d409d25877499f91dc35ee88e697d",
@@ -2571,7 +3579,7 @@
     "hit_rate": 0.60156,
     "learning_weight": 1.283,
     "learned_weight": 1.283,
-    "updated_at": "2026-11-03T17:56:03.192252+00:00"
+    "updated_at": "2026-11-03T19:30:05.054715+00:00"
   },
   "bookmaker:MLB|bovada|rbi": {
     "performance_id": "4cbacf7490780a4dbf38316e1078097d",
@@ -2589,7 +3597,43 @@
     "hit_rate": 0.8,
     "learning_weight": 1.1,
     "learned_weight": 1.1,
-    "updated_at": "2026-11-03T17:56:03.192258+00:00"
+    "updated_at": "2026-11-03T19:30:05.054724+00:00"
+  },
+  "market_dir:MLB|rbi|under": {
+    "performance_id": "2585b5337f96f002ae12561ca27dc349",
+    "rule_id": "MLB|rbi|under",
+    "group_type": "market_dir",
+    "group_key": "MLB|rbi|under",
+    "bets": 86,
+    "sample_size": 86,
+    "wins": 67,
+    "losses": 19,
+    "pushes": 0,
+    "profit": 15.1391,
+    "stake": 32.71,
+    "roi": 0.46283,
+    "hit_rate": 0.77907,
+    "learning_weight": 1.25,
+    "learned_weight": 1.25,
+    "updated_at": "2026-11-03T19:30:05.054731+00:00"
+  },
+  "sport_dir:MLB|under": {
+    "performance_id": "896589ea03f79a8c4e01a5884483230e",
+    "rule_id": "MLB|under",
+    "group_type": "sport_dir",
+    "group_key": "MLB|under",
+    "bets": 142,
+    "sample_size": 142,
+    "wins": 104,
+    "losses": 38,
+    "pushes": 0,
+    "profit": 41.8316,
+    "stake": 52.51,
+    "roi": 0.79664,
+    "hit_rate": 0.73239,
+    "learning_weight": 1.3,
+    "learned_weight": 1.3,
+    "updated_at": "2026-11-03T19:30:05.054737+00:00"
   },
   "market:MLB|MLB|runs": {
     "performance_id": "322c41b2756623db160cc5e4374fedc0",
@@ -2607,7 +3651,7 @@
     "hit_rate": 0.58824,
     "learning_weight": 1.085,
     "learned_weight": 1.085,
-    "updated_at": "2026-11-03T17:56:03.192264+00:00"
+    "updated_at": "2026-11-03T19:30:05.054743+00:00"
   },
   "sport_market:MLB|runs": {
     "performance_id": "fc4db43c7028af923b43343450004c6e",
@@ -2625,7 +3669,7 @@
     "hit_rate": 0.58824,
     "learning_weight": 1.085,
     "learned_weight": 1.085,
-    "updated_at": "2026-11-03T17:56:03.192270+00:00"
+    "updated_at": "2026-11-03T19:30:05.054762+00:00"
   },
   "bookmaker:MLB|kambi_ub|runs": {
     "performance_id": "b5bf8f3da6983f467d43f04bdc19a421",
@@ -2643,7 +3687,25 @@
     "hit_rate": 0.28571,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192281+00:00"
+    "updated_at": "2026-11-03T19:30:05.054770+00:00"
+  },
+  "market_dir:MLB|runs|over": {
+    "performance_id": "2b96ce782c1678f96ba1c17092fbacb3",
+    "rule_id": "MLB|runs|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|runs|over",
+    "bets": 20,
+    "sample_size": 20,
+    "wins": 6,
+    "losses": 12,
+    "pushes": 2,
+    "profit": 4.4473,
+    "stake": 7.08,
+    "roi": 0.62815,
+    "hit_rate": 0.33333,
+    "learning_weight": 1.033,
+    "learned_weight": 1.033,
+    "updated_at": "2026-11-03T19:30:05.054776+00:00"
   },
   "bookmaker:NBA|kambi_ub|points": {
     "performance_id": "ddb6ab2f4d946e6a0bdf6a2e8c498183",
@@ -2661,7 +3723,7 @@
     "hit_rate": 0.37037,
     "learning_weight": 0.951,
     "learned_weight": 0.951,
-    "updated_at": "2026-11-03T17:56:03.192289+00:00"
+    "updated_at": "2026-11-03T19:30:05.054782+00:00"
   },
   "bookmaker:NHL|betrivers|shots on goal": {
     "performance_id": "5c13c7a979b865dbaee96aa38b804af5",
@@ -2679,7 +3741,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192296+00:00"
+    "updated_at": "2026-11-03T19:30:05.054789+00:00"
   },
   "bookmaker:MLB|fanduel|rbi": {
     "performance_id": "2ac285fe9d89d4ca998e32b18d08f7fd",
@@ -2697,7 +3759,43 @@
     "hit_rate": 0.41176,
     "learning_weight": 1.023,
     "learned_weight": 1.023,
-    "updated_at": "2026-11-03T17:56:03.192302+00:00"
+    "updated_at": "2026-11-03T19:30:05.054797+00:00"
+  },
+  "market_dir:MLB|rbi|over": {
+    "performance_id": "e88897048c8bf3a7bf01a2d765716990",
+    "rule_id": "MLB|rbi|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|rbi|over",
+    "bets": 42,
+    "sample_size": 42,
+    "wins": 10,
+    "losses": 32,
+    "pushes": 0,
+    "profit": -0.1028,
+    "stake": 14.67,
+    "roi": -0.00701,
+    "hit_rate": 0.2381,
+    "learning_weight": 0.996,
+    "learned_weight": 0.996,
+    "updated_at": "2026-11-03T19:30:05.054804+00:00"
+  },
+  "market_dir:NBA|rebounds ladder|under": {
+    "performance_id": "9456c645a49d3fd7c9f9ac3e7da6e53d",
+    "rule_id": "NBA|rebounds ladder|under",
+    "group_type": "market_dir",
+    "group_key": "NBA|rebounds ladder|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.3975,
+    "stake": 0.75,
+    "roi": 0.53,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054810+00:00"
   },
   "market:WNBA|WNBA|pt made": {
     "performance_id": "94ea9d0523317825c4778e2b959dc719",
@@ -2715,7 +3813,7 @@
     "hit_rate": 0.55556,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192311+00:00"
+    "updated_at": "2026-11-03T19:30:05.054817+00:00"
   },
   "sport_market:WNBA|pt made": {
     "performance_id": "b122f3f9fd9d3e4f1060fb87b076a5d1",
@@ -2733,7 +3831,7 @@
     "hit_rate": 0.55556,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192317+00:00"
+    "updated_at": "2026-11-03T19:30:05.054823+00:00"
   },
   "bookmaker:WNBA|unknown|pt made": {
     "performance_id": "e1d4ea89ce12f42c64867c1d24bfca55",
@@ -2751,7 +3849,25 @@
     "hit_rate": 0.55556,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192323+00:00"
+    "updated_at": "2026-11-03T19:30:05.054829+00:00"
+  },
+  "market_dir:WNBA|pt made|over": {
+    "performance_id": "b600aa0a8154c303f4eb2629613f96dd",
+    "rule_id": "WNBA|pt made|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|pt made|over",
+    "bets": 9,
+    "sample_size": 9,
+    "wins": 5,
+    "losses": 4,
+    "pushes": 0,
+    "profit": -0.2453,
+    "stake": 4.07,
+    "roi": -0.06027,
+    "hit_rate": 0.55556,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054835+00:00"
   },
   "market:WNBA|WNBA|pts rebs asts": {
     "performance_id": "92beda83ef40df923f3c2e30f33df3f0",
@@ -2769,7 +3885,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192329+00:00"
+    "updated_at": "2026-11-03T19:30:05.054841+00:00"
   },
   "sport_market:WNBA|pts rebs asts": {
     "performance_id": "a72deef847168895747a31a126026359",
@@ -2787,7 +3903,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192335+00:00"
+    "updated_at": "2026-11-03T19:30:05.054847+00:00"
   },
   "bookmaker:WNBA|unknown|pts rebs asts": {
     "performance_id": "089d8d685cc9d4e368fa47e61e9b5a45",
@@ -2805,7 +3921,25 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192341+00:00"
+    "updated_at": "2026-11-03T19:30:05.054853+00:00"
+  },
+  "market_dir:WNBA|pts rebs asts|over": {
+    "performance_id": "d3e506248dcf2978d696c7683c640d37",
+    "rule_id": "WNBA|pts rebs asts|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|pts rebs asts|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.4565,
+    "stake": 0.55,
+    "roi": 0.83,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054863+00:00"
   },
   "bookmaker:WNBA|unknown|assists": {
     "performance_id": "3dfffa42c11ed8aa2d26ea090462cb2f",
@@ -2823,7 +3957,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192349+00:00"
+    "updated_at": "2026-11-03T19:30:05.054871+00:00"
   },
   "bookmaker:WNBA|unknown|points": {
     "performance_id": "2659ca1659a22d9f0bdf581f4339a49f",
@@ -2841,7 +3975,7 @@
     "hit_rate": 0.25,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192356+00:00"
+    "updated_at": "2026-11-03T19:30:05.054878+00:00"
   },
   "market:WNBA|WNBA|rebs asts": {
     "performance_id": "5dbc67ccd54aa44b246e374d393a83de",
@@ -2859,7 +3993,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192362+00:00"
+    "updated_at": "2026-11-03T19:30:05.054884+00:00"
   },
   "sport_market:WNBA|rebs asts": {
     "performance_id": "2c7b349d472102f1c980773bae0b2c5a",
@@ -2877,7 +4011,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192368+00:00"
+    "updated_at": "2026-11-03T19:30:05.054890+00:00"
   },
   "bookmaker:WNBA|unknown|rebs asts": {
     "performance_id": "fbaa2993179511d2b1c9adb229260784",
@@ -2895,7 +4029,25 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192376+00:00"
+    "updated_at": "2026-11-03T19:30:05.054896+00:00"
+  },
+  "market_dir:WNBA|rebs asts|over": {
+    "performance_id": "13bdd9159dcffe20fa2f3e375f4d5e2b",
+    "rule_id": "WNBA|rebs asts|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|rebs asts|over",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 1,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.0561,
+    "stake": 0.66,
+    "roi": -0.085,
+    "hit_rate": 0.5,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054902+00:00"
   },
   "bookmaker:WNBA|unknown|rebounds": {
     "performance_id": "72938237e7bb3ad8e509e663e6d949a2",
@@ -2913,7 +4065,7 @@
     "hit_rate": 0.8,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192382+00:00"
+    "updated_at": "2026-11-03T19:30:05.054908+00:00"
   },
   "market:NFL|NFL|points": {
     "performance_id": "e13af690cdb39bb71f85321c185ee0b4",
@@ -2931,7 +4083,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192389+00:00"
+    "updated_at": "2026-11-03T19:30:05.054915+00:00"
   },
   "sport_market:NFL|points": {
     "performance_id": "bbd51143071973e1517b1da4346a3131",
@@ -2949,7 +4101,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192395+00:00"
+    "updated_at": "2026-11-03T19:30:05.054921+00:00"
   },
   "bookmaker:NFL|bovada|points": {
     "performance_id": "0ccf59d5bdbf59574cfe0ac6cd94602f",
@@ -2967,7 +4119,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192401+00:00"
+    "updated_at": "2026-11-03T19:30:05.054929+00:00"
+  },
+  "market_dir:NFL|points|over": {
+    "performance_id": "22121d987bfb995003fb1e67244ff140",
+    "rule_id": "NFL|points|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|points|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.33,
+    "stake": 0.33,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054935+00:00"
   },
   "market:NHL|NHL|total saves": {
     "performance_id": "e665ef668d5a3d84f83fe58d5e90fa13",
@@ -2985,7 +4155,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192407+00:00"
+    "updated_at": "2026-11-03T19:30:05.054942+00:00"
   },
   "sport_market:NHL|total saves": {
     "performance_id": "f659d619720f960ec6c8dcce8f1f123c",
@@ -3003,7 +4173,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192415+00:00"
+    "updated_at": "2026-11-03T19:30:05.054948+00:00"
   },
   "bookmaker:NHL|bovada|total saves": {
     "performance_id": "479a90766c9cf8a22507465e9ea1aec6",
@@ -3021,7 +4191,25 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192421+00:00"
+    "updated_at": "2026-11-03T19:30:05.054954+00:00"
+  },
+  "market_dir:NHL|total saves|over": {
+    "performance_id": "37024d92e9abe24cbcef3aad35617e41",
+    "rule_id": "NHL|total saves|over",
+    "group_type": "market_dir",
+    "group_key": "NHL|total saves|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.2541,
+    "stake": 0.33,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.054960+00:00"
   },
   "market:WNBA|WNBA|rebounds assists": {
     "performance_id": "c4320583423e2c04828aac16b61fbab3",
@@ -3039,7 +4227,7 @@
     "hit_rate": 0.44118,
     "learning_weight": 0.952,
     "learned_weight": 0.952,
-    "updated_at": "2026-11-03T17:56:03.192428+00:00"
+    "updated_at": "2026-11-03T19:30:05.054966+00:00"
   },
   "sport_market:WNBA|rebounds assists": {
     "performance_id": "d337b807f3d19a015114b476fd3a3223",
@@ -3057,7 +4245,7 @@
     "hit_rate": 0.44118,
     "learning_weight": 0.952,
     "learned_weight": 0.952,
-    "updated_at": "2026-11-03T17:56:03.192434+00:00"
+    "updated_at": "2026-11-03T19:30:05.054973+00:00"
   },
   "bookmaker:WNBA|unknown|rebounds assists": {
     "performance_id": "c83d6e8abfd2160f23fb4fac67d0cd0d",
@@ -3075,7 +4263,25 @@
     "hit_rate": 0.44118,
     "learning_weight": 0.952,
     "learned_weight": 0.952,
-    "updated_at": "2026-11-03T17:56:03.192443+00:00"
+    "updated_at": "2026-11-03T19:30:05.054981+00:00"
+  },
+  "market_dir:WNBA|rebounds assists|over": {
+    "performance_id": "8350d61fd2401fa721964260fb65c2d8",
+    "rule_id": "WNBA|rebounds assists|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|rebounds assists|over",
+    "bets": 34,
+    "sample_size": 34,
+    "wins": 15,
+    "losses": 19,
+    "pushes": 0,
+    "profit": -1.7919,
+    "stake": 14.52,
+    "roi": -0.12341,
+    "hit_rate": 0.44118,
+    "learning_weight": 0.952,
+    "learned_weight": 0.952,
+    "updated_at": "2026-11-03T19:30:05.054987+00:00"
   },
   "market:WNBA|WNBA|pr": {
     "performance_id": "0f6d10ce1509b8144391ba2c3db4a7bd",
@@ -3093,7 +4299,7 @@
     "hit_rate": 0.52632,
     "learning_weight": 0.979,
     "learned_weight": 0.979,
-    "updated_at": "2026-11-03T17:56:03.192451+00:00"
+    "updated_at": "2026-11-03T19:30:05.054997+00:00"
   },
   "sport_market:WNBA|pr": {
     "performance_id": "a93aea4ceea5dd9a5f1cc9199847999b",
@@ -3111,7 +4317,7 @@
     "hit_rate": 0.52632,
     "learning_weight": 0.979,
     "learned_weight": 0.979,
-    "updated_at": "2026-11-03T17:56:03.192457+00:00"
+    "updated_at": "2026-11-03T19:30:05.055004+00:00"
   },
   "bookmaker:WNBA|unknown|pr": {
     "performance_id": "e86d34ee32fce0e4c4f3171db464957d",
@@ -3129,7 +4335,25 @@
     "hit_rate": 0.48485,
     "learning_weight": 0.958,
     "learned_weight": 0.958,
-    "updated_at": "2026-11-03T17:56:03.192463+00:00"
+    "updated_at": "2026-11-03T19:30:05.055010+00:00"
+  },
+  "market_dir:WNBA|pr|over": {
+    "performance_id": "0508e9832f8e19d52cd0613f405b8949",
+    "rule_id": "WNBA|pr|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|pr|over",
+    "bets": 38,
+    "sample_size": 38,
+    "wins": 20,
+    "losses": 18,
+    "pushes": 0,
+    "profit": -0.5324,
+    "stake": 12.98,
+    "roi": -0.04102,
+    "hit_rate": 0.52632,
+    "learning_weight": 0.979,
+    "learned_weight": 0.979,
+    "updated_at": "2026-11-03T19:30:05.055016+00:00"
   },
   "market:WNBA|WNBA|pa": {
     "performance_id": "486408b7b1a889666e0ae8be75b0ee5c",
@@ -3147,7 +4371,7 @@
     "hit_rate": 0.54286,
     "learning_weight": 1.004,
     "learned_weight": 1.004,
-    "updated_at": "2026-11-03T17:56:03.192469+00:00"
+    "updated_at": "2026-11-03T19:30:05.055022+00:00"
   },
   "sport_market:WNBA|pa": {
     "performance_id": "f8e1bcca5f36b0a6a5c04a17e30d2559",
@@ -3165,7 +4389,7 @@
     "hit_rate": 0.54286,
     "learning_weight": 1.004,
     "learned_weight": 1.004,
-    "updated_at": "2026-11-03T17:56:03.192475+00:00"
+    "updated_at": "2026-11-03T19:30:05.055028+00:00"
   },
   "bookmaker:WNBA|unknown|pa": {
     "performance_id": "40052c9ba50a64e97b4934c0f8808f94",
@@ -3183,7 +4407,25 @@
     "hit_rate": 0.53333,
     "learning_weight": 0.998,
     "learned_weight": 0.998,
-    "updated_at": "2026-11-03T17:56:03.192482+00:00"
+    "updated_at": "2026-11-03T19:30:05.055040+00:00"
+  },
+  "market_dir:WNBA|pa|over": {
+    "performance_id": "2529f30a524f324c738a658c175fd712",
+    "rule_id": "WNBA|pa|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|pa|over",
+    "bets": 35,
+    "sample_size": 35,
+    "wins": 19,
+    "losses": 16,
+    "pushes": 0,
+    "profit": 0.1034,
+    "stake": 12.21,
+    "roi": 0.00847,
+    "hit_rate": 0.54286,
+    "learning_weight": 1.004,
+    "learned_weight": 1.004,
+    "updated_at": "2026-11-03T19:30:05.055046+00:00"
   },
   "market:WNBA|WNBA|pra": {
     "performance_id": "079746cd1622eb8170ff60520e59c06a",
@@ -3201,7 +4443,7 @@
     "hit_rate": 0.52542,
     "learning_weight": 0.988,
     "learned_weight": 0.988,
-    "updated_at": "2026-11-03T17:56:03.192488+00:00"
+    "updated_at": "2026-11-03T19:30:05.055052+00:00"
   },
   "sport_market:WNBA|pra": {
     "performance_id": "2bf199b33d7e77bfff220836812822af",
@@ -3219,7 +4461,7 @@
     "hit_rate": 0.52542,
     "learning_weight": 0.988,
     "learned_weight": 0.988,
-    "updated_at": "2026-11-03T17:56:03.192497+00:00"
+    "updated_at": "2026-11-03T19:30:05.055058+00:00"
   },
   "bookmaker:WNBA|unknown|pra": {
     "performance_id": "a63a819e26919216acdaad09a96e9b42",
@@ -3237,7 +4479,25 @@
     "hit_rate": 0.51786,
     "learning_weight": 0.98,
     "learned_weight": 0.98,
-    "updated_at": "2026-11-03T17:56:03.192503+00:00"
+    "updated_at": "2026-11-03T19:30:05.055066+00:00"
+  },
+  "market_dir:WNBA|pra|over": {
+    "performance_id": "365d117c753b78577065e71f826f7943",
+    "rule_id": "WNBA|pra|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|pra|over",
+    "bets": 59,
+    "sample_size": 59,
+    "wins": 31,
+    "losses": 28,
+    "pushes": 0,
+    "profit": -0.2904,
+    "stake": 22.77,
+    "roi": -0.01275,
+    "hit_rate": 0.52542,
+    "learning_weight": 0.988,
+    "learned_weight": 0.988,
+    "updated_at": "2026-11-03T19:30:05.055072+00:00"
   },
   "market:EUROLEAGUE|EUROLEAGUE|points": {
     "performance_id": "0e8b23af1c401d0fe3e1e238f777fd22",
@@ -3255,7 +4515,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192512+00:00"
+    "updated_at": "2026-11-03T19:30:05.055078+00:00"
   },
   "sport_market:EUROLEAGUE|points": {
     "performance_id": "beae118ab2f6b8e0458dd6cb48a41859",
@@ -3273,7 +4533,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192520+00:00"
+    "updated_at": "2026-11-03T19:30:05.055084+00:00"
   },
   "bookmaker:EUROLEAGUE|bovada|points": {
     "performance_id": "3354032ab79f6d6e7ba3366374f877a2",
@@ -3291,7 +4551,43 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192526+00:00"
+    "updated_at": "2026-11-03T19:30:05.055090+00:00"
+  },
+  "market_dir:EUROLEAGUE|points|over": {
+    "performance_id": "3dba20f05781f93ce4013a3dadfc40f4",
+    "rule_id": "EUROLEAGUE|points|over",
+    "group_type": "market_dir",
+    "group_key": "EUROLEAGUE|points|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.2739,
+    "stake": 0.33,
+    "roi": 0.83,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055096+00:00"
+  },
+  "sport_dir:EUROLEAGUE|over": {
+    "performance_id": "4735ce8478d748794ac6d77d6c64109f",
+    "rule_id": "EUROLEAGUE|over",
+    "group_type": "sport_dir",
+    "group_key": "EUROLEAGUE|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.2739,
+    "stake": 0.33,
+    "roi": 0.83,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055103+00:00"
   },
   "market:BASKETBALL|BASKETBALL|rebounds": {
     "performance_id": "8b3559b3edf473711c2bf69d56dc077b",
@@ -3309,7 +4605,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192532+00:00"
+    "updated_at": "2026-11-03T19:30:05.055112+00:00"
   },
   "league_market:BASKETBALL|EUROLEAGUE|rebounds": {
     "performance_id": "04fe1e3d817d9e0c2b0b8df2ef349fc8",
@@ -3327,7 +4623,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192540+00:00"
+    "updated_at": "2026-11-03T19:30:05.055118+00:00"
   },
   "sport_market:BASKETBALL|rebounds": {
     "performance_id": "b216aad7b13ec52995e1b57f178eabd0",
@@ -3345,7 +4641,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192546+00:00"
+    "updated_at": "2026-11-03T19:30:05.055124+00:00"
   },
   "bookmaker:BASKETBALL|bovada|rebounds": {
     "performance_id": "92a5185cc7fa7c1ac3e34a70bdd4f3b1",
@@ -3363,7 +4659,79 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192552+00:00"
+    "updated_at": "2026-11-03T19:30:05.055132+00:00"
+  },
+  "market_dir:BASKETBALL|rebounds|over": {
+    "performance_id": "856554192cffaf736d5000f00f1e9897",
+    "rule_id": "BASKETBALL|rebounds|over",
+    "group_type": "market_dir",
+    "group_key": "BASKETBALL|rebounds|over",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 3,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.7623,
+    "stake": 0.99,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055139+00:00"
+  },
+  "sport_dir:BASKETBALL|over": {
+    "performance_id": "821753e660823cf80b198b46bf565fd8",
+    "rule_id": "BASKETBALL|over",
+    "group_type": "sport_dir",
+    "group_key": "BASKETBALL|over",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 3,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.7623,
+    "stake": 0.99,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055145+00:00"
+  },
+  "market_dir:BASKETBALL|rebounds|under": {
+    "performance_id": "8e2e850aa2fb1bc69cbe3b951ea42163",
+    "rule_id": "BASKETBALL|rebounds|under",
+    "group_type": "market_dir",
+    "group_key": "BASKETBALL|rebounds|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.2541,
+    "stake": 0.33,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055151+00:00"
+  },
+  "sport_dir:BASKETBALL|under": {
+    "performance_id": "3d34d7e657e188fbb06102cef1b783ac",
+    "rule_id": "BASKETBALL|under",
+    "group_type": "sport_dir",
+    "group_key": "BASKETBALL|under",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 2,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.5082,
+    "stake": 0.66,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055157+00:00"
   },
   "market:BASKETBALL|BASKETBALL|assists": {
     "performance_id": "28a981742ec97046913dde50adff4c94",
@@ -3381,7 +4749,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192558+00:00"
+    "updated_at": "2026-11-03T19:30:05.055163+00:00"
   },
   "league_market:BASKETBALL|EUROLEAGUE|assists": {
     "performance_id": "374c0fa0752f99b63ad3ed716d77d4ca",
@@ -3399,7 +4767,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192564+00:00"
+    "updated_at": "2026-11-03T19:30:05.055172+00:00"
   },
   "sport_market:BASKETBALL|assists": {
     "performance_id": "25f1bb5590f81763e43b48a354af70ca",
@@ -3417,7 +4785,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192570+00:00"
+    "updated_at": "2026-11-03T19:30:05.055178+00:00"
   },
   "bookmaker:BASKETBALL|bovada|assists": {
     "performance_id": "afa4622977bb8fb09f3d637d48c42578",
@@ -3435,7 +4803,25 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192578+00:00"
+    "updated_at": "2026-11-03T19:30:05.055184+00:00"
+  },
+  "market_dir:BASKETBALL|assists|under": {
+    "performance_id": "c40384329ef827379de9aecbe78b502d",
+    "rule_id": "BASKETBALL|assists|under",
+    "group_type": "market_dir",
+    "group_key": "BASKETBALL|assists|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.2541,
+    "stake": 0.33,
+    "roi": 0.77,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055190+00:00"
   },
   "market:WNBA|WNBA|pts rebs": {
     "performance_id": "a6b3e44d76955261dfac16516051b949",
@@ -3453,7 +4839,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192584+00:00"
+    "updated_at": "2026-11-03T19:30:05.055198+00:00"
   },
   "sport_market:WNBA|pts rebs": {
     "performance_id": "3c8f6952bd618874a1f54fdd90bd449b",
@@ -3471,7 +4857,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192590+00:00"
+    "updated_at": "2026-11-03T19:30:05.055205+00:00"
   },
   "bookmaker:WNBA|unknown|pts rebs": {
     "performance_id": "609b6aa18c24a4b974be862ace943311",
@@ -3489,7 +4875,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192596+00:00"
+    "updated_at": "2026-11-03T19:30:05.055213+00:00"
+  },
+  "market_dir:WNBA|pts rebs|over": {
+    "performance_id": "1618e3c0c27b20dbf3255b71fd7d33cb",
+    "rule_id": "WNBA|pts rebs|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|pts rebs|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.55,
+    "stake": 0.55,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055219+00:00"
   },
   "bookmaker:NHL|betmgm|assists": {
     "performance_id": "ff18d92e3d3b3c81e3f5b6b4c94f3f16",
@@ -3507,7 +4911,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192603+00:00"
+    "updated_at": "2026-11-03T19:30:05.055228+00:00"
   },
   "bookmaker:NBA|draftkings|steals": {
     "performance_id": "85d79226b79110b8c6c67283f3d2e0bc",
@@ -3525,7 +4929,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192609+00:00"
+    "updated_at": "2026-11-03T19:30:05.055234+00:00"
   },
   "bookmaker:NBA|draftkings|assists": {
     "performance_id": "b1639e7730cbc90976fdc68db4fa5a30",
@@ -3543,7 +4947,7 @@
     "hit_rate": 0.0,
     "learning_weight": 0.997,
     "learned_weight": 0.997,
-    "updated_at": "2026-11-03T17:56:03.192615+00:00"
+    "updated_at": "2026-11-03T19:30:05.055240+00:00"
   },
   "bookmaker:NBA|kambi_ub|steals": {
     "performance_id": "657a4a09470670ef1aa4c174b6a6022d",
@@ -3561,7 +4965,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192621+00:00"
+    "updated_at": "2026-11-03T19:30:05.055246+00:00"
   },
   "bookmaker:NBA|betmgm|threes": {
     "performance_id": "b002000cfb471884827b7a1b1b052e5a",
@@ -3579,7 +4983,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192642+00:00"
+    "updated_at": "2026-11-03T19:30:05.055252+00:00"
   },
   "bookmaker:NBA|draftkings|threes": {
     "performance_id": "e7f8b6d888fa608fdf516bd3bb3534b0",
@@ -3597,7 +5001,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192649+00:00"
+    "updated_at": "2026-11-03T19:30:05.055259+00:00"
   },
   "bookmaker:MLB|betrivers|home run": {
     "performance_id": "768cc1e4127b4a8c1c87500ec1090336",
@@ -3615,7 +5019,7 @@
     "hit_rate": 0.11111,
     "learning_weight": 0.973,
     "learned_weight": 0.973,
-    "updated_at": "2026-11-03T17:56:03.192658+00:00"
+    "updated_at": "2026-11-03T19:30:05.055267+00:00"
   },
   "bookmaker:MLB|betrivers|rbi": {
     "performance_id": "add573181454039f5ce6873a1cf93ff1",
@@ -3633,7 +5037,7 @@
     "hit_rate": 0.28571,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192664+00:00"
+    "updated_at": "2026-11-03T19:30:05.055274+00:00"
   },
   "bookmaker:NBA|fanduel|blocks": {
     "performance_id": "33b3833d72b17cbc5cf68f17f3185d61",
@@ -3651,7 +5055,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192673+00:00"
+    "updated_at": "2026-11-03T19:30:05.055280+00:00"
   },
   "bookmaker:MLB|kambi_ub|rbi": {
     "performance_id": "9b0a22e87f89aeba3b2744fae8788b94",
@@ -3669,7 +5073,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192679+00:00"
+    "updated_at": "2026-11-03T19:30:05.055286+00:00"
   },
   "bookmaker:NBA|betmgm|rebounds": {
     "performance_id": "f64872f0900b50f1f71ecdcd4472effa",
@@ -3687,7 +5091,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192685+00:00"
+    "updated_at": "2026-11-03T19:30:05.055292+00:00"
   },
   "market:NFL|NFL|pass yds": {
     "performance_id": "c099f9bf287a3db632f5848b1c140223",
@@ -3705,7 +5109,7 @@
     "hit_rate": 0.2,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192691+00:00"
+    "updated_at": "2026-11-03T19:30:05.055298+00:00"
   },
   "sport_market:NFL|pass yds": {
     "performance_id": "3ba3975445accf4c461f1b8a4a9141c7",
@@ -3723,7 +5127,7 @@
     "hit_rate": 0.2,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192697+00:00"
+    "updated_at": "2026-11-03T19:30:05.055304+00:00"
   },
   "bookmaker:NFL|unknown|pass yds": {
     "performance_id": "897f24792415ff7a42692a487326d110",
@@ -3741,7 +5145,25 @@
     "hit_rate": 0.2,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192706+00:00"
+    "updated_at": "2026-11-03T19:30:05.055310+00:00"
+  },
+  "market_dir:NFL|pass yds|over": {
+    "performance_id": "adf295d342696e17a6131bd72464a7ae",
+    "rule_id": "NFL|pass yds|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|pass yds|over",
+    "bets": 5,
+    "sample_size": 5,
+    "wins": 1,
+    "losses": 4,
+    "pushes": 0,
+    "profit": -1.7325,
+    "stake": 2.75,
+    "roi": -0.63,
+    "hit_rate": 0.2,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055316+00:00"
   },
   "bookmaker:MLB|unknown|runs": {
     "performance_id": "5c0bd9522cc88cc72f65735efdd3d107",
@@ -3759,7 +5181,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192712+00:00"
+    "updated_at": "2026-11-03T19:30:05.055322+00:00"
   },
   "market:MLB|MLB|hits": {
     "performance_id": "23dfb539782776766f1fd3de135d3cee",
@@ -3777,7 +5199,7 @@
     "hit_rate": 0.46667,
     "learning_weight": 1.15,
     "learned_weight": 1.15,
-    "updated_at": "2026-11-03T17:56:03.192718+00:00"
+    "updated_at": "2026-11-03T19:30:05.055331+00:00"
   },
   "sport_market:MLB|hits": {
     "performance_id": "2973be4e7c82e3c567d18f1966004a53",
@@ -3795,7 +5217,7 @@
     "hit_rate": 0.46667,
     "learning_weight": 1.15,
     "learned_weight": 1.15,
-    "updated_at": "2026-11-03T17:56:03.192727+00:00"
+    "updated_at": "2026-11-03T19:30:05.055337+00:00"
   },
   "bookmaker:MLB|unknown|hits": {
     "performance_id": "8608e49b93e810764251d8643a837977",
@@ -3813,7 +5235,25 @@
     "hit_rate": 0.16667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192733+00:00"
+    "updated_at": "2026-11-03T19:30:05.055344+00:00"
+  },
+  "market_dir:MLB|hits|over": {
+    "performance_id": "b80da96cc6c4d1305ad1c828683645c9",
+    "rule_id": "MLB|hits|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|hits|over",
+    "bets": 39,
+    "sample_size": 39,
+    "wins": 15,
+    "losses": 14,
+    "pushes": 10,
+    "profit": 68.7564,
+    "stake": 15.26,
+    "roi": 4.50566,
+    "hit_rate": 0.51724,
+    "learning_weight": 1.097,
+    "learned_weight": 1.097,
+    "updated_at": "2026-11-03T19:30:05.055350+00:00"
   },
   "market:MLB|MLB|pitcher strikeouts": {
     "performance_id": "9d3440fc9f511a010f89bc64101efd4c",
@@ -3831,7 +5271,7 @@
     "hit_rate": 0.57143,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192739+00:00"
+    "updated_at": "2026-11-03T19:30:05.055358+00:00"
   },
   "sport_market:MLB|pitcher strikeouts": {
     "performance_id": "e3a538e60c535a9de6068b784f632787",
@@ -3849,7 +5289,7 @@
     "hit_rate": 0.57143,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192745+00:00"
+    "updated_at": "2026-11-03T19:30:05.055365+00:00"
   },
   "bookmaker:MLB|unknown|pitcher strikeouts": {
     "performance_id": "fab2a09ea60ce7c64ec719eefb261fa1",
@@ -3867,7 +5307,25 @@
     "hit_rate": 0.57143,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192751+00:00"
+    "updated_at": "2026-11-03T19:30:05.055371+00:00"
+  },
+  "market_dir:MLB|pitcher strikeouts|over": {
+    "performance_id": "127196895d6265b4930404af7e9524f6",
+    "rule_id": "MLB|pitcher strikeouts|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|pitcher strikeouts|over",
+    "bets": 14,
+    "sample_size": 14,
+    "wins": 8,
+    "losses": 6,
+    "pushes": 0,
+    "profit": -0.0172,
+    "stake": 7.72,
+    "roi": -0.00223,
+    "hit_rate": 0.57143,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055377+00:00"
   },
   "bookmaker:MLB|unknown|home run": {
     "performance_id": "04612050f8cf98f0fd9ebdb4d290b118",
@@ -3885,7 +5343,7 @@
     "hit_rate": 0.22222,
     "learning_weight": 1.234,
     "learned_weight": 1.234,
-    "updated_at": "2026-11-03T17:56:03.192758+00:00"
+    "updated_at": "2026-11-03T19:30:05.055386+00:00"
   },
   "bookmaker:MLB|unknown|rbi": {
     "performance_id": "1587380c818c3a0e56f059debee1eea7",
@@ -3903,7 +5361,7 @@
     "hit_rate": 0.58621,
     "learning_weight": 1.117,
     "learned_weight": 1.117,
-    "updated_at": "2026-11-03T17:56:03.192764+00:00"
+    "updated_at": "2026-11-03T19:30:05.055392+00:00"
   },
   "market:MLB|MLB|total bases": {
     "performance_id": "b825a7148eb391f9d9182b6eab8b7b67",
@@ -3921,7 +5379,7 @@
     "hit_rate": 0.61905,
     "learning_weight": 1.033,
     "learned_weight": 1.033,
-    "updated_at": "2026-11-03T17:56:03.192770+00:00"
+    "updated_at": "2026-11-03T19:30:05.055400+00:00"
   },
   "sport_market:MLB|total bases": {
     "performance_id": "c218aecf49850c20948a3242c6771d32",
@@ -3939,7 +5397,7 @@
     "hit_rate": 0.61905,
     "learning_weight": 1.033,
     "learned_weight": 1.033,
-    "updated_at": "2026-11-03T17:56:03.192778+00:00"
+    "updated_at": "2026-11-03T19:30:05.055406+00:00"
   },
   "bookmaker:MLB|unknown|total bases": {
     "performance_id": "b79a3e13a8c0e5f5fb05ecadf6d3418b",
@@ -3957,7 +5415,25 @@
     "hit_rate": 0.61905,
     "learning_weight": 1.033,
     "learned_weight": 1.033,
-    "updated_at": "2026-11-03T17:56:03.192784+00:00"
+    "updated_at": "2026-11-03T19:30:05.055412+00:00"
+  },
+  "market_dir:MLB|total bases|under": {
+    "performance_id": "41bccdc0e3b2bba5890a283e0bc1f939",
+    "rule_id": "MLB|total bases|under",
+    "group_type": "market_dir",
+    "group_key": "MLB|total bases|under",
+    "bets": 9,
+    "sample_size": 9,
+    "wins": 5,
+    "losses": 4,
+    "pushes": 0,
+    "profit": 0.5373,
+    "stake": 3.15,
+    "roi": 0.17057,
+    "hit_rate": 0.55556,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055419+00:00"
   },
   "bookmaker:WNBA|fanduel|pr": {
     "performance_id": "342a59b853369dd6e3058299f2b2f648",
@@ -3975,7 +5451,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192792+00:00"
+    "updated_at": "2026-11-03T19:30:05.055427+00:00"
   },
   "bookmaker:WNBA|draftkings|pa": {
     "performance_id": "0e474fed7b5ec0161ae68614b793d993",
@@ -3993,7 +5469,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192801+00:00"
+    "updated_at": "2026-11-03T19:30:05.055433+00:00"
   },
   "bookmaker:WNBA|fanduel|pa": {
     "performance_id": "66c27756f1d0ed6e41671f18330c90df",
@@ -4011,7 +5487,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192807+00:00"
+    "updated_at": "2026-11-03T19:30:05.055440+00:00"
   },
   "bookmaker:WNBA|draftkings|pr": {
     "performance_id": "3559f5231a430d6d94c6016c88cbec93",
@@ -4029,7 +5505,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192813+00:00"
+    "updated_at": "2026-11-03T19:30:05.055446+00:00"
   },
   "bookmaker:MLB|fanduel|runs": {
     "performance_id": "a659b4fe4ed5826c141f40226487caeb",
@@ -4047,7 +5523,7 @@
     "hit_rate": 0.68182,
     "learning_weight": 1.047,
     "learned_weight": 1.047,
-    "updated_at": "2026-11-03T17:56:03.192820+00:00"
+    "updated_at": "2026-11-03T19:30:05.055452+00:00"
   },
   "bookmaker:MLB|betrivers|runs": {
     "performance_id": "96ac7f554c976711f0d07c442d70169d",
@@ -4065,7 +5541,25 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192828+00:00"
+    "updated_at": "2026-11-03T19:30:05.055458+00:00"
+  },
+  "market_dir:MLB|total bases|over": {
+    "performance_id": "6281ae179c3d71f379123d223b50533b",
+    "rule_id": "MLB|total bases|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|total bases|over",
+    "bets": 12,
+    "sample_size": 12,
+    "wins": 8,
+    "losses": 4,
+    "pushes": 0,
+    "profit": 1.3919,
+    "stake": 4.42,
+    "roi": 0.31491,
+    "hit_rate": 0.66667,
+    "learning_weight": 1.006,
+    "learned_weight": 1.006,
+    "updated_at": "2026-11-03T19:30:05.055466+00:00"
   },
   "market:NFL|NFL|anytime td": {
     "performance_id": "3ec4ff4e1d37ecffa86621b5fb50aaf4",
@@ -4083,7 +5577,7 @@
     "hit_rate": 0.25,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192834+00:00"
+    "updated_at": "2026-11-03T19:30:05.055473+00:00"
   },
   "sport_market:NFL|anytime td": {
     "performance_id": "4860db3ed4266344054ed4a5449c27f3",
@@ -4101,7 +5595,7 @@
     "hit_rate": 0.25,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192840+00:00"
+    "updated_at": "2026-11-03T19:30:05.055481+00:00"
   },
   "bookmaker:NFL|unknown|anytime td": {
     "performance_id": "59e870462fa9df0e152f6b518711b78e",
@@ -4119,7 +5613,25 @@
     "hit_rate": 0.25,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192847+00:00"
+    "updated_at": "2026-11-03T19:30:05.055488+00:00"
+  },
+  "market_dir:NFL|anytime td|over": {
+    "performance_id": "a8a19c30273a5568931b9ff3136d7cf5",
+    "rule_id": "NFL|anytime td|over",
+    "group_type": "market_dir",
+    "group_key": "NFL|anytime td|over",
+    "bets": 4,
+    "sample_size": 4,
+    "wins": 1,
+    "losses": 3,
+    "pushes": 0,
+    "profit": -0.215,
+    "stake": 1.07,
+    "roi": -0.20093,
+    "hit_rate": 0.25,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055494+00:00"
   },
   "bookmaker:MLB|kambi_ub|home run": {
     "performance_id": "b123a95dd406b224cd9017bd35d2de12",
@@ -4137,7 +5649,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192853+00:00"
+    "updated_at": "2026-11-03T19:30:05.055500+00:00"
   },
   "bookmaker:MLB|fanduel|hits": {
     "performance_id": "f46ee2df0244e84504b9cf4bbb4ced9a",
@@ -4155,7 +5667,7 @@
     "hit_rate": 0.7619,
     "learning_weight": 1.07,
     "learned_weight": 1.07,
-    "updated_at": "2026-11-03T17:56:03.192861+00:00"
+    "updated_at": "2026-11-03T19:30:05.055506+00:00"
   },
   "market:MLB|MLB|home runs": {
     "performance_id": "6d3499dcfba1f44a2459b618c58600ff",
@@ -4173,7 +5685,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192868+00:00"
+    "updated_at": "2026-11-03T19:30:05.055512+00:00"
   },
   "sport_market:MLB|home runs": {
     "performance_id": "4f0e94e41fbb1728d7aa729cc02120a4",
@@ -4191,7 +5703,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192876+00:00"
+    "updated_at": "2026-11-03T19:30:05.055519+00:00"
   },
   "bookmaker:MLB|fanduel|home runs": {
     "performance_id": "da6f6f9100f21bef0c1288fa00c08bd1",
@@ -4209,7 +5721,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192882+00:00"
+    "updated_at": "2026-11-03T19:30:05.055525+00:00"
+  },
+  "market_dir:MLB|home runs|over": {
+    "performance_id": "67d4daa17f29f96dc000e3c68689163d",
+    "rule_id": "MLB|home runs|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|home runs|over",
+    "bets": 3,
+    "sample_size": 3,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 2,
+    "profit": -0.05,
+    "stake": 0.77,
+    "roi": -0.06494,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055533+00:00"
   },
   "market:MLB|MLB|to hit a double": {
     "performance_id": "394f5e4852b66719d685412e313c5a66",
@@ -4227,7 +5757,7 @@
     "hit_rate": null,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192888+00:00"
+    "updated_at": "2026-11-03T19:30:05.055539+00:00"
   },
   "sport_market:MLB|to hit a double": {
     "performance_id": "9e521ecc99c5d789a7f57edb14f84a6f",
@@ -4245,7 +5775,7 @@
     "hit_rate": null,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192894+00:00"
+    "updated_at": "2026-11-03T19:30:05.055545+00:00"
   },
   "bookmaker:MLB|fanduel|to hit a double": {
     "performance_id": "f61861aeb0eb91503ef3e313de54ade0",
@@ -4263,7 +5793,25 @@
     "hit_rate": null,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192900+00:00"
+    "updated_at": "2026-11-03T19:30:05.055551+00:00"
+  },
+  "market_dir:MLB|to hit a double|over": {
+    "performance_id": "0a0a95993ef011db88739a14136e4d24",
+    "rule_id": "MLB|to hit a double|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|to hit a double|over",
+    "bets": 4,
+    "sample_size": 4,
+    "wins": 0,
+    "losses": 0,
+    "pushes": 4,
+    "profit": 0.0,
+    "stake": 1.46,
+    "roi": 0.0,
+    "hit_rate": null,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055559+00:00"
   },
   "market:MLB|MLB|to hit a triple": {
     "performance_id": "ae57773228f5060ad594fd534b184640",
@@ -4281,7 +5829,7 @@
     "hit_rate": null,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192905+00:00"
+    "updated_at": "2026-11-03T19:30:05.055564+00:00"
   },
   "sport_market:MLB|to hit a triple": {
     "performance_id": "76bf3e473b60fb5ffc78cbcc5adc6786",
@@ -4299,7 +5847,7 @@
     "hit_rate": null,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192911+00:00"
+    "updated_at": "2026-11-03T19:30:05.055570+00:00"
   },
   "bookmaker:MLB|fanduel|to hit a triple": {
     "performance_id": "0ad0e6c50b68da2642e0460b7cf6b82c",
@@ -4317,7 +5865,25 @@
     "hit_rate": null,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192922+00:00"
+    "updated_at": "2026-11-03T19:30:05.055576+00:00"
+  },
+  "market_dir:MLB|to hit a triple|over": {
+    "performance_id": "aac0c308476d678d906c5a3e29caea1d",
+    "rule_id": "MLB|to hit a triple|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|to hit a triple|over",
+    "bets": 8,
+    "sample_size": 8,
+    "wins": 0,
+    "losses": 0,
+    "pushes": 8,
+    "profit": 0.0,
+    "stake": 3.06,
+    "roi": 0.0,
+    "hit_rate": null,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055587+00:00"
   },
   "bookmaker:MLB|bovada|hits": {
     "performance_id": "c53dc72741fdbd390d501525481f28a7",
@@ -4335,7 +5901,43 @@
     "hit_rate": 0.33333,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192930+00:00"
+    "updated_at": "2026-11-03T19:30:05.055593+00:00"
+  },
+  "market_dir:MLB|hits|under": {
+    "performance_id": "37521d3bd124f61d12366212487ef84e",
+    "rule_id": "MLB|hits|under",
+    "group_type": "market_dir",
+    "group_key": "MLB|hits|under",
+    "bets": 16,
+    "sample_size": 16,
+    "wins": 6,
+    "losses": 10,
+    "pushes": 0,
+    "profit": -0.4006,
+    "stake": 5.46,
+    "roi": -0.07337,
+    "hit_rate": 0.375,
+    "learning_weight": 0.992,
+    "learned_weight": 0.992,
+    "updated_at": "2026-11-03T19:30:05.055604+00:00"
+  },
+  "market_dir:MLB|runs|under": {
+    "performance_id": "bb5b9059bb4091a23badb062af861f83",
+    "rule_id": "MLB|runs|under",
+    "group_type": "market_dir",
+    "group_key": "MLB|runs|under",
+    "bets": 16,
+    "sample_size": 16,
+    "wins": 14,
+    "losses": 2,
+    "pushes": 0,
+    "profit": 1.4742,
+    "stake": 6.9,
+    "roi": 0.21365,
+    "hit_rate": 0.875,
+    "learning_weight": 1.017,
+    "learned_weight": 1.017,
+    "updated_at": "2026-11-03T19:30:05.055610+00:00"
   },
   "bookmaker:MLB|draftkings|rbi": {
     "performance_id": "11466a7de6ba05249a43ef0380806884",
@@ -4353,7 +5955,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192937+00:00"
+    "updated_at": "2026-11-03T19:30:05.055617+00:00"
   },
   "bookmaker:MLB|draftkings|hits": {
     "performance_id": "1f4821f45a4364c5655ddfad1144d493",
@@ -4371,7 +5973,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192943+00:00"
+    "updated_at": "2026-11-03T19:30:05.055623+00:00"
   },
   "bookmaker:NHL|draftkings|points": {
     "performance_id": "aff4161e183f13cd5ce3927b95a452fa",
@@ -4389,7 +5991,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192949+00:00"
+    "updated_at": "2026-11-03T19:30:05.055629+00:00"
   },
   "bookmaker:WNBA|fanduel|pra": {
     "performance_id": "97373d1f94650a230a99bb9c3fc37cab",
@@ -4407,7 +6009,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192955+00:00"
+    "updated_at": "2026-11-03T19:30:05.055635+00:00"
   },
   "bookmaker:MLB|kambi_ub|hits": {
     "performance_id": "2282fa8a2ec458d1f80a51dab7b04115",
@@ -4425,7 +6027,7 @@
     "hit_rate": 0.66667,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192961+00:00"
+    "updated_at": "2026-11-03T19:30:05.055644+00:00"
   },
   "bookmaker:MLB|betmgm|hits": {
     "performance_id": "81eb43bea95b28fb91397cf3584a02bc",
@@ -4443,7 +6045,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192967+00:00"
+    "updated_at": "2026-11-03T19:30:05.055650+00:00"
+  },
+  "market_dir:NFL|passing yards|under": {
+    "performance_id": "2b1b5e8f5e6cd9ab9b8698f5a0a7c61c",
+    "rule_id": "NFL|passing yards|under",
+    "group_type": "market_dir",
+    "group_key": "NFL|passing yards|under",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.63,
+    "stake": 0.63,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055656+00:00"
   },
   "bookmaker:NFL|draftkings|receiving yards": {
     "performance_id": "f518f2d1d906355af16d4734bd3f4829",
@@ -4461,7 +6081,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192973+00:00"
+    "updated_at": "2026-11-03T19:30:05.055662+00:00"
   },
   "bookmaker:NHL|betmgm|shots on goal": {
     "performance_id": "c448371793fe6fc818a7463ffc4ac3d8",
@@ -4479,7 +6099,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192979+00:00"
+    "updated_at": "2026-11-03T19:30:05.055670+00:00"
   },
   "bookmaker:MLB|betrivers|hits": {
     "performance_id": "848bdd7d4d9adc435cf31d976e3e3656",
@@ -4497,7 +6117,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192985+00:00"
+    "updated_at": "2026-11-03T19:30:05.055676+00:00"
   },
   "bookmaker:MLB|draftkings|home run": {
     "performance_id": "e19e153f8811c2a4b24745cbe4619034",
@@ -4515,7 +6135,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192993+00:00"
+    "updated_at": "2026-11-03T19:30:05.055683+00:00"
   },
   "market:WNBA|WNBA|ra": {
     "performance_id": "765cf7eacebca3167800ba76fb922671",
@@ -4533,7 +6153,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.192999+00:00"
+    "updated_at": "2026-11-03T19:30:05.055689+00:00"
   },
   "sport_market:WNBA|ra": {
     "performance_id": "cc662ef80361f9ff5944d59ba4c7e380",
@@ -4551,7 +6171,7 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193005+00:00"
+    "updated_at": "2026-11-03T19:30:05.055697+00:00"
   },
   "bookmaker:WNBA|fanduel|ra": {
     "performance_id": "3af18c73c82eb33bea134cd7e94734e1",
@@ -4569,7 +6189,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193011+00:00"
+    "updated_at": "2026-11-03T19:30:05.055704+00:00"
+  },
+  "market_dir:WNBA|ra|over": {
+    "performance_id": "724243f37647728cab64734a127b7186",
+    "rule_id": "WNBA|ra|over",
+    "group_type": "market_dir",
+    "group_key": "WNBA|ra|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.33,
+    "stake": 0.33,
+    "roi": -1.0,
+    "hit_rate": 0.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055710+00:00"
   },
   "bookmaker:WNBA|draftkings|pra": {
     "performance_id": "b15f4bd60988c5a2ae8d7f31959a1048",
@@ -4587,7 +6225,25 @@
     "hit_rate": 0.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193017+00:00"
+    "updated_at": "2026-11-03T19:30:05.055715+00:00"
+  },
+  "market_dir:MLB|home run|under": {
+    "performance_id": "e75189e52edf8230bc8468288106aaa5",
+    "rule_id": "MLB|home run|under",
+    "group_type": "market_dir",
+    "group_key": "MLB|home run|under",
+    "bets": 6,
+    "sample_size": 6,
+    "wins": 5,
+    "losses": 1,
+    "pushes": 0,
+    "profit": 2.7457,
+    "stake": 1.06,
+    "roi": 2.59028,
+    "hit_rate": 0.83333,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055722+00:00"
   },
   "market:MLB|MLB|pitcher k": {
     "performance_id": "b0573f2c38ea540b40a2f97f6abe30bc",
@@ -4605,7 +6261,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193023+00:00"
+    "updated_at": "2026-11-03T19:30:05.055728+00:00"
   },
   "sport_market:MLB|pitcher k": {
     "performance_id": "9ed6020feff5f0650733a0acfe145718",
@@ -4623,7 +6279,7 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193029+00:00"
+    "updated_at": "2026-11-03T19:30:05.055740+00:00"
   },
   "bookmaker:MLB|unknown|pitcher k": {
     "performance_id": "7467ed3e342618ca5ef46e3faeb1c97e",
@@ -4641,7 +6297,25 @@
     "hit_rate": 1.0,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193035+00:00"
+    "updated_at": "2026-11-03T19:30:05.055757+00:00"
+  },
+  "market_dir:MLB|pitcher k|over": {
+    "performance_id": "c90836d4d99ecbfb427f5df3f36a1c20",
+    "rule_id": "MLB|pitcher k|over",
+    "group_type": "market_dir",
+    "group_key": "MLB|pitcher k|over",
+    "bets": 1,
+    "sample_size": 1,
+    "wins": 1,
+    "losses": 0,
+    "pushes": 0,
+    "profit": 0.342,
+    "stake": 0.3,
+    "roi": 1.14,
+    "hit_rate": 1.0,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055764+00:00"
   },
   "market:MLB|MLB|stolen base": {
     "performance_id": "5674a8857671e851b29a243752ad2c1b",
@@ -4659,7 +6333,7 @@
     "hit_rate": 0.85714,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193042+00:00"
+    "updated_at": "2026-11-03T19:30:05.055770+00:00"
   },
   "sport_market:MLB|stolen base": {
     "performance_id": "e7a38adee5d02f9d9b3f358be48da9d0",
@@ -4677,7 +6351,7 @@
     "hit_rate": 0.85714,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193052+00:00"
+    "updated_at": "2026-11-03T19:30:05.055777+00:00"
   },
   "bookmaker:MLB|unknown|stolen base": {
     "performance_id": "b96fada113245a19ab63198cfa28a527",
@@ -4695,7 +6369,25 @@
     "hit_rate": 0.85714,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193060+00:00"
+    "updated_at": "2026-11-03T19:30:05.055783+00:00"
+  },
+  "market_dir:MLB|stolen base|under": {
+    "performance_id": "d2e2a7e9d6149f360cbdcca44829286a",
+    "rule_id": "MLB|stolen base|under",
+    "group_type": "market_dir",
+    "group_key": "MLB|stolen base|under",
+    "bets": 7,
+    "sample_size": 7,
+    "wins": 6,
+    "losses": 1,
+    "pushes": 0,
+    "profit": 22.3963,
+    "stake": 2.47,
+    "roi": 9.06733,
+    "hit_rate": 0.85714,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055789+00:00"
   },
   "market:MLB|MLB|hits runs rbis": {
     "performance_id": "dfb50bc5516c21a5f8a8ef5ddf819411",
@@ -4713,7 +6405,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193066+00:00"
+    "updated_at": "2026-11-03T19:30:05.055795+00:00"
   },
   "sport_market:MLB|hits runs rbis": {
     "performance_id": "65269cd4dd422314b13b413a24297580",
@@ -4731,7 +6423,7 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193072+00:00"
+    "updated_at": "2026-11-03T19:30:05.055801+00:00"
   },
   "bookmaker:MLB|unknown|hits runs rbis": {
     "performance_id": "9cf02073dad1837f975d11614faa96dc",
@@ -4749,6 +6441,24 @@
     "hit_rate": 0.5,
     "learning_weight": 1.0,
     "learned_weight": 1.0,
-    "updated_at": "2026-11-03T17:56:03.193078+00:00"
+    "updated_at": "2026-11-03T19:30:05.055807+00:00"
+  },
+  "market_dir:MLB|hits runs rbis|under": {
+    "performance_id": "b992ef3c43a3ef5c61a0a8398bf197f3",
+    "rule_id": "MLB|hits runs rbis|under",
+    "group_type": "market_dir",
+    "group_key": "MLB|hits runs rbis|under",
+    "bets": 2,
+    "sample_size": 2,
+    "wins": 1,
+    "losses": 1,
+    "pushes": 0,
+    "profit": -0.0604,
+    "stake": 0.76,
+    "roi": -0.07947,
+    "hit_rate": 0.5,
+    "learning_weight": 1.0,
+    "learned_weight": 1.0,
+    "updated_at": "2026-11-03T19:30:05.055816+00:00"
   }
 }
