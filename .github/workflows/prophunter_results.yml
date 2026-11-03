@@ -211,8 +211,8 @@ jobs:
             PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
             python prop_hunter_feature_builder.py
           fi
-          python prophunter_results.py
           python prop_hunter_pending_audit.py
+          python prophunter_results.py
 
       - name: Learn from settled picks
         env:
