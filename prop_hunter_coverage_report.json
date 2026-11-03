@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-03T19:36:12.183584+00:00",
+  "updated_at": "2026-11-03T22:54:56.445910+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,16 +16,15 @@
       ]
     },
     "NBA": {
-      "rows": 4571,
+      "rows": 1947,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
         "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "fanduel_direct"
       ],
-      "market_count": 15,
-      "latest": "2026-11-03T02:47:53.937284+00:00",
+      "market_count": 10,
+      "latest": "2026-11-03T21:55:05.243986+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -41,27 +40,30 @@
       ]
     },
     "NFL": {
-      "rows": 256,
+      "rows": 134,
       "sources": [
         "draftkings_direct",
-        "kambi"
+        "fanduel_direct"
       ],
-      "market_count": 24,
-      "latest": "2026-11-03T02:47:55.607040+00:00",
-      "missing_core": []
+      "market_count": 4,
+      "latest": "2026-11-03T21:55:08.002500+00:00",
+      "missing_core": [
+        "rushing"
+      ]
     },
     "NHL": {
-      "rows": 986,
+      "rows": 95,
       "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "draftkings_direct"
       ],
-      "market_count": 6,
-      "latest": "2026-11-03T15:24:42.226477+00:00",
-      "missing_core": []
+      "market_count": 1,
+      "latest": "2026-11-03T02:47:59.598573+00:00",
+      "missing_core": [
+        "shots",
+        "points",
+        "assists",
+        "saves"
+      ]
     }
   },
   "issues": [
@@ -96,6 +98,33 @@
         "rebounds",
         "assists",
         "threes"
+      ]
+    },
+    {
+      "sport": "NFL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "rushing"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "draftkings_direct"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "shots",
+        "points",
+        "assists",
+        "saves"
       ]
     }
   ]
