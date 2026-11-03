@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+import prop_hunter_gamelog_retention as _ret
+# Test ist deterministisch für KEEP=15, unabhängig von der Job-Umgebung
+# (Daily-Control setzt z.B. PH_GAMELOG_KEEP_PER_PLAYER=40 global).
+_ret.KEEP = 15
 from prop_hunter_gamelog_retention import rank_delete_ids
 
 rows=[]
