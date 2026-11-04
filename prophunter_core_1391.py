@@ -3001,6 +3001,21 @@ def _telegram_payloads(text,picks=None):
     )
     return [x for x in payloads if str(x.get("text") or "").strip()]
 
+def _payload_card_image(payload,picks):
+    """PNG-Bildkarte fuer ein Telegram-Fenster (oder None -> reiner Text). Abschalten: PH_IMAGE_CARDS=0."""
+    try:
+        import prop_hunter_image_cards as cards
+        if not cards.ON or not picks:return None
+        all_picks=list(picks)
+        if payload.get("kind")=="single":
+            pool=[p for p in all_picks if getattr(p,"type",None)=="single"];idx=(payload.get("single_indices") or [None])[0]
+        else:
+            pool=[p for p in all_picks if getattr(p,"type",None) in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")];idx=(payload.get("combo_indices") or [None])[0]
+        if idx is None or idx>=len(pool):return None
+        return cards.build_for_pick(pool[idx])
+    except Exception:
+        return None
+
 def send_telegram(text,dry_run=False,picks=None):
     """Send one Telegram PRO TIP window per single/ladder/builder/cross/lottery."""
     global _LAST_TELEGRAM_CARDS
@@ -3028,8 +3043,17 @@ def send_telegram(text,dry_run=False,picks=None):
         delivered=False
         for attempt in range(max_retries+1):
             try:
-                r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
-                    json={"chat_id":TG_CHAT,"text":body,"disable_web_page_preview":True},timeout=TIMEOUT)
+                r=None
+                png=_payload_card_image(payload,picks) if len(body)<=950 and attempt==0 else None
+                if png:
+                    # Bildkarte: Text wird zur Bildunterschrift (gleiche message_id fuer die spaetere Auswertung).
+                    r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendPhoto",
+                        data={"chat_id":TG_CHAT,"caption":body},files={"photo":("card.png",png,"image/png")},timeout=max(TIMEOUT,30))
+                    if r.status_code not in (200,429):
+                        log.warning("sendPhoto %d kind=%s -> Text-Fallback: %s",r.status_code,payload.get("kind"),r.text[:120]);r=None
+                if r is None:
+                    r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
+                        json={"chat_id":TG_CHAT,"text":body,"disable_web_page_preview":True},timeout=TIMEOUT)
                 if r.status_code==429:
                     retry_after=1
                     try:

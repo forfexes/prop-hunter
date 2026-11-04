@@ -613,6 +613,16 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None) -> bool:
                 return True
             if r.status_code == 400 and "message is not modified" in r.text.lower():
                 return True
+            if r.status_code == 400 and "no text in the message" in r.text.lower() and len(text) <= 1024:
+                # Bildkarte (sendPhoto): Auswertung in die Bildunterschrift schreiben.
+                rc = requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/editMessageCaption",
+                                   json={"chat_id": target, "message_id": int(message_id), "caption": text}, timeout=TIMEOUT)
+                if rc.status_code == 200 or (rc.status_code == 400 and "message is not modified" in rc.text.lower()):
+                    if base_delay:
+                        time.sleep(base_delay)
+                    return True
+                print(f"Telegram caption edit {rc.status_code}: {rc.text[:200]}")
+                return False
             if r.status_code == 429:
                 retry_after=1
                 try:
