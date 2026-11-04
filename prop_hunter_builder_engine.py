@@ -173,12 +173,19 @@ def _candidate_probability(obj: Any) -> Optional[float]:
 
     feats = _features(obj)
     raw_prob = None
+    from prop_hunter_form_quality import rejection
+    if feats.get("recent_form") and rejection(feats, _point(obj), _direction(obj)):
+        return None
+    if feats.get("gamelog_model_rate") is not None:
+        if rejection(feats, _point(obj), _direction(obj)):
+            return None
+        raw_prob = to_float(feats["gamelog_model_rate"])
     # fair_prob is deliberately excluded: it may be derived from the same market
     # price and must not be blended back into that price to manufacture EV.
-    for key in (
+    for key in (() if raw_prob is not None else (
         "calibrated_prob", "model_prob", "hit_prob",
         "proj_prob", "gamelog_fair_prob",
-    ):
+    )):
         value = feats.get(key)
         if value is not None:
             raw_prob = to_float(value)
@@ -528,6 +535,8 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
                 "gamelog_l15_n": item["gamelog_l15_n"],
                 "probability_method": "min(model,one_sided_90pct_wilson_l15)",
                 "bookmaker": book, "game": game,
+                "features": __import__("prop_hunter_form_quality").evidence(_features(row)),
+                "commence_time": getattr(row,"commence_time",None),
             })
 
         first = legs[0]
@@ -638,6 +647,8 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
         "player": _player(x), "sport": _sport(x), "market": getattr(x, "market", ""),
         "direction": _direction(x), "point": _point(x), "odds": _odds(x),
         "bookmaker": _book(x), "game": _game(x),
+        "features": __import__("prop_hunter_form_quality").evidence(_features(x)),
+        "commence_time": getattr(x,"commence_time",None),
     } for x in legs]
     built.features = {"odds_observed": True, "price_type": "bookmaker", "bookmaker": _book(legs[0])}
     return built

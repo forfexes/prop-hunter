@@ -1293,6 +1293,12 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 old = feats.get("fair_prob")
                 feats["fair_prob"] = round((float(old)*0.5 + dd_rate*0.5) if old else dd_rate, 4)
                 feats["gamelog_dd_rate"] = round(dd_rate, 3)
+                from prop_hunter_form_quality import profile
+                dd_side = "under" if getattr(p,"direction","over") in {"under","no"} else "over"
+                feats["gamelog_l15_n"] = n
+                feats["gamelog_l15_line"] = 0.5
+                feats["gamelog_l15_direction"] = dd_side
+                feats["recent_form"] = profile(vals, 0.5, dd_side)
                 feats["gamelog_n"] = n
                 p.features = feats
                 p.enrichment = ((getattr(p, "enrichment", "") or "") + f" | DB {stat} {int(dd_rate*100)}% ({n}g)")[:240]
@@ -1333,6 +1339,8 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             feats["gamelog_l15_empirical_rate"] = round(empirical_hits / n, 6)
             feats["gamelog_l15_line"] = float(point)
             feats["gamelog_l15_direction"] = direction
+            from prop_hunter_form_quality import profile
+            feats["recent_form"] = profile(vals, point, direction)
             # Monte-Carlo bootstrap from the same real gamelogs. Cached per player/stat/line/side
             # by the normal Python module import and deterministic seed, so it adds little runtime.
             try:
@@ -1369,7 +1377,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             p.features = feats
             avg = sum(vals)/n
             side_label = "unter Linie" if direction == "under" else "über Linie"
-            extra = f"DB L{n} avg {avg:.1f}, {int(empirical_hits/n*100)}% {side_label}"
+            extra = f"Form L5 {feats['recent_form']['l5']['hits']}/{feats['recent_form']['l5']['n']} · L{n} avg {avg:.1f}, {int(empirical_hits/n*100)}% {side_label}"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue
@@ -2500,7 +2508,8 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
         hp=HistoricalPick(date=today,player=p.player or "",team=p.team or "",
             market=p.market or "",sport=real_sport,
             odds=p.odds,stake=p.stake,direction=p.direction,probability=p.probability,dedup_key=dk)
-        entry["picks"].append(hp.model_dump())
+        from prop_hunter_form_quality import evidence
+        entry["picks"].append(dict(hp.model_dump(), features=evidence(getattr(p,"features",{}) or {})))
         sb_insert({**hp.model_dump(),"league":real_sport,"features":getattr(p,"features",{}) or {}})
     for p in combos:
         combo = {"type":p.type,"category":getattr(p,"category",None),"player":p.player or "",
@@ -4670,6 +4679,9 @@ def run(dry_run=False,sport_filter=None):
 
     # No arbitrary pick-count cap: every verified +EV single may survive.
     # Optional env PH_MAX_SINGLES can re-enable a hard cap if ever desired.
+    from prop_hunter_form_quality import filter_singles
+    picks, form_rejected = filter_singles(picks)
+    log.info("recent-form singles filter: %s", form_rejected)
     picks = prioritize_best_single_per_player(picks)
     picks = limit_singles_per_game(picks, max_per_game=0)
     picks = limit_total_singles(picks, max_singles=MAX_SINGLES_TOTAL)
@@ -4686,6 +4698,9 @@ def run(dry_run=False,sport_filter=None):
         log.warning("verified builder skipped: %s", exc)
     from prop_hunter_combo_prices import publishable_extra
     picks = [p for p in picks if publishable_extra(p)]
+    from prop_hunter_form_quality import filter_tickets
+    picks, form_rejected = filter_tickets(picks)
+    log.info("final form evidence filter: %s", form_rejected)
     if not picks:
         log.warning("no picks with verified quote scope")
         return

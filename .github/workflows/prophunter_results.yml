@@ -12,6 +12,8 @@ name: Prop Hunter Results Autonomous
       - 'prop_hunter_quality_gates_test.py'
       - 'prop_hunter_settler_fast_test.py'
       - 'prop_hunter_form_windows.py'
+      - 'prop_hunter_form_quality.py'
+      - 'prop_hunter_form_quality_test.py'
       - 'prop_hunter_form_windows_test.py'
       - 'prop_hunter_results_nba.py'
       - 'prop_hunter_results_mlb.py'
@@ -128,6 +130,7 @@ jobs:
           python prop_hunter_basketball_boxscore_test.py
           python prop_hunter_binary_enrichment_test.py
           python prop_hunter_form_windows_test.py
+          python prop_hunter_form_quality_test.py
           python prop_hunter_quality_gates_test.py
 
       - name: Fetch official results and gamelogs
@@ -199,7 +202,7 @@ jobs:
           PH_RESULTS_LOOKBACK_DAYS: '4'
           PH_RESULTS_FALLBACK_SUMMARY: '0'
           PH_RESULTS_HTTP_TIMEOUT: '8'
-          PH_AUTO_VOID_STALE: '1'    # terminale Altlasten (DNP/Fantasy/Team/Doppellinie) nach Karenz voiden
+          PH_AUTO_VOID_STALE: '0'    # terminale Altlasten (DNP/Fantasy/Team/Doppellinie) nach Karenz voiden
           PH_AUTO_VOID_DAYS: '3'
         run: |
           python prop_hunter_quote_incidents.py
