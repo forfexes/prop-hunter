@@ -3046,9 +3046,9 @@ def send_telegram(text,dry_run=False,picks=None):
                 r=None
                 png=_payload_card_image(payload,picks) if len(body)<=950 and attempt==0 else None
                 if png:
-                    # Bildkarte: Text wird zur Bildunterschrift (gleiche message_id fuer die spaetere Auswertung).
+                    # Bildkarte ohne doppelte Caption; message_id bleibt fuer Settlement gespeichert.
                     r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendPhoto",
-                        data={"chat_id":TG_CHAT,"caption":body},files={"photo":("card.png",png,"image/png")},timeout=max(TIMEOUT,30))
+                        data={"chat_id":TG_CHAT},files={"photo":("card.png",png,"image/png")},timeout=max(TIMEOUT,30))
                     if r.status_code not in (200,429):
                         log.warning("sendPhoto %d kind=%s -> Text-Fallback: %s",r.status_code,payload.get("kind"),r.text[:120]);r=None
                 if r is None:
