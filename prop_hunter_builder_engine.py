@@ -595,6 +595,11 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
         return None
 
     odds = math.prod(_odds(x) for x in legs)
+    # The historical lottery cards included four-digit derived prices with
+    # unvalidated joint probabilities. Keep these out of production until
+    # out-of-sample calibration supports that range.
+    if not math.isfinite(odds) or (label == "LOTTERY" and odds > 300.0):
+        return None
     prob, corr, corr_n = _joint_probability(legs, pairs)
     edge = prob * odds - 1.0
 
