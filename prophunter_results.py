@@ -621,6 +621,19 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None) -> bool:
                     if base_delay:
                         time.sleep(base_delay)
                     return True
+                if rc.status_code == 429:
+                    retry_after=1
+                    try:
+                        retry_after=int(((rc.json().get("parameters") or {}).get("retry_after")) or 1)
+                    except Exception:
+                        pass
+                    if attempt >= retries:
+                        print(f"Telegram caption edit 429 exhausted: retry_after={retry_after}")
+                        return False
+                    wait_s=max(1,min(90,retry_after+1))
+                    print(f"Telegram caption edit 429: retrying after {wait_s}s ({attempt+1}/{retries})")
+                    time.sleep(wait_s)
+                    continue
                 print(f"Telegram caption edit {rc.status_code}: {rc.text[:200]}")
                 return False
             if r.status_code == 429:
