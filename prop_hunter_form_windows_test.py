@@ -133,3 +133,13 @@ assert fb.volume_profile([{'points':30}])=={}
 assert fb.volume_value({'minutes':float('nan')},'minutes') is None
 assert fb.volume_value({'usage_pct':150},'usage_pct') is None
 print('ROLE / SHOOTING VOLUME OPTIONAL L5-L10-L15 REGRESSIONS PASSED')
+
+# Actual ESPN raw.stat_map format: made-attempted pairs.
+espn={'raw':{'stat_map':{'FG':'5-10','FT':'2-2','3PT':'1-2'}}}
+assert fb.volume_value(espn,'fga')==10
+assert fb.volume_value(espn,'fta')==2
+assert fb.volume_value(espn,'three_pa')==2
+assert fb.volume_value(espn,'usage_pct') is None
+assert fb.volume_value({'raw':{'stat_map':{'FG':'11-8'}}},'fga') is None
+assert fb.volume_value({'raw':{'stat_map':{'FG':'unknown'}}},'fga') is None
+print('ESPN NESTED SHOOTING ATTEMPTS REGRESSION PASSED')
