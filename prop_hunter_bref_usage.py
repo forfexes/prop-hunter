@@ -12,7 +12,7 @@ import math
 def parse_bref_usage_csv(csv_text, nba_ids_by_bref_id):
     """Return season usage indexed by canonical NBA ID, rejecting ambiguous IDs."""
     rows = csv.DictReader(io.StringIO(csv_text))
-    if not rows.fieldnames or not {"Player", "USG%"}.issubset(rows.fieldnames):
+    if not rows.fieldnames or not {"Player", "USG%", "bref_id"}.issubset(rows.fieldnames):
         raise ValueError("Basketball-Reference CSV requires Player and USG% columns")
     out = {}
     for row in rows:
