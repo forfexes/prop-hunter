@@ -122,3 +122,14 @@ with patch.object(fb,'supabase_client',return_value=None):
     except RuntimeError:pass
     else:raise AssertionError('missing DB silently accepted')
 print('FEATURE KEYSET PAGINATION / CONCURRENT PRUNING REGRESSION PASSED')
+
+# Optional role/volume values must be evidence-backed and keep sample counts.
+vol=fb.volume_profile([{'minutes':28,'fga':14,'fta':5,'three_pa':6,'usage_pct':27},{'minutes':32,'fga':18,'fta':7,'three_pa':8,'usage_pct':31},{}])
+assert vol['last_5']['minutes_avg']==30
+assert vol['last_5']['fga_avg']==16
+assert vol['last_5']['fga_n']==2
+assert vol['last_10']['usage_pct_avg']==29
+assert fb.volume_profile([{'points':30}])=={}
+assert fb.volume_value({'minutes':float('nan')},'minutes') is None
+assert fb.volume_value({'usage_pct':150},'usage_pct') is None
+print('ROLE / SHOOTING VOLUME OPTIONAL L5-L10-L15 REGRESSIONS PASSED')
