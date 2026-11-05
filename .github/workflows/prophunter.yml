@@ -51,15 +51,26 @@ jobs:
               f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",
               headers={"apikey": key},
           )
-          try:
-              with urllib.request.urlopen(req, timeout=15) as response:
-                  if response.status != 200:
-                      raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
-          except urllib.error.HTTPError as exc:
-              body = exc.read().decode("utf-8", "ignore")[:300]
-              raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
-          except Exception as exc:
-              raise SystemExit(f"Supabase preflight failed: {exc}")
+          import time
+          # Retry transient database statement timeouts; do not bypass the
+          # preflight or proceed to Telegram if the database remains unhealthy.
+          for attempt in range(3):
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as response:
+                      if response.status != 200:
+                          raise SystemExit(f"Supabase preflight failed: HTTP {response.status}")
+                  break
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode("utf-8", "ignore")[:300]
+                  transient = exc.code in (429, 500, 502, 503, 504)
+                  if not transient or attempt == 2:
+                      raise SystemExit(f"Supabase preflight failed: HTTP {exc.code} {body}")
+                  print(f"Supabase preflight transient HTTP {exc.code}; retry {attempt + 1}/2")
+              except (TimeoutError, urllib.error.URLError) as exc:
+                  if attempt == 2:
+                      raise SystemExit(f"Supabase preflight failed: {exc}")
+                  print(f"Supabase preflight network error; retry {attempt + 1}/2")
+              time.sleep(3 * (attempt + 1))
           print("Supabase preflight OK")
           PY
 
