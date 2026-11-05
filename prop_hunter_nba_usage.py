@@ -93,3 +93,28 @@ def player_usage_windows(game_rows, player_id):
         result[f"usage_l{n}"] = round(sum(r["usage_pct"] for r in sample) / len(sample), 4) if len(sample) == n else None
         result[f"usage_l{n}_observed"] = len(sample)
     return result
+
+def fetch_game_usage(game_id, game_date, timeout=12):
+    """Official NBA BoxScoreUsageV3, explicitly tied to one real game."""
+    if not isinstance(game_id, str) or not game_id.isdigit() or len(game_id) != 10:
+        raise ValueError("NBA game_id must be a 10-digit string")
+    from datetime import date
+    date.fromisoformat(game_date)
+    from nba_api.stats.endpoints import boxscoreusagev3
+    response = boxscoreusagev3.BoxScoreUsageV3(game_id=game_id, timeout=timeout)
+    payload = response.get_dict()
+    box = payload.get("boxScoreUsage", {})
+    records = []
+    for side in ("homeTeam", "awayTeam"):
+        records.extend(box.get(side, {}).get("players", []))
+    return normalize_game_usage_rows(game_id, game_date, records)
+
+
+def safe_fetch_game_usage(game_id, game_date, timeout=12, logger=None):
+    """Keep blocked official endpoints from stopping existing settlement."""
+    try:
+        return fetch_game_usage(game_id, game_date, timeout=timeout)
+    except Exception as exc:
+        if logger is not None:
+            logger.warning("NBA official game usage unavailable (%s): %s", type(exc).__name__, exc)
+        return []
