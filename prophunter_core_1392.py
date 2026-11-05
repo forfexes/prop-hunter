@@ -367,13 +367,16 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
             raw={"game":getattr(p,"game",None),"commence_time":str(_commence) if _commence else None,
                  "source_event_id":_event_id,"bookmaker":_features.get("bookmaker"),"source":_features.get("source")}
         )
-        entry["picks"].append(hp.model_dump())
+        from prop_hunter_form_quality import evidence
+        entry["picks"].append(dict(hp.model_dump(), features=evidence(_features)))
         sb_insert({**hp.model_dump(),"league":real_sport,"features":_features})
     for p in combos:
         combo = {
             "type":p.type,"category":getattr(p,"category",None),"player":p.player or "",
             "market":p.market or "","sport":_clean_sport(p),"legs":p.legs or [],
             "leg_details":getattr(p,"leg_details",[]) or [],"odds":p.odds,"stake":p.stake,
+            "features":getattr(p,"features",{}) or {},"game":getattr(p,"game",None),
+            "commence_time":getattr(p,"commence_time",None),"event_id":getattr(p,"event_id",None),
             "probability":p.probability,"result":"pending","created_at":datetime.now(timezone.utc).isoformat()
         }
         if p.type == "ladder":
@@ -452,6 +455,8 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
                     "pick_keys": scoped_pick_keys,
                     "combo_ids": scoped_combo_ids,
                     "card_kind": sent.get("kind") or "main",
+                    "media_type": sent.get("media_type", "text"),
+                    "image_pick": sent.get("image_pick"),
                 })
             globals()["_LAST_TELEGRAM_CARDS"] = []
         else:
@@ -560,3 +565,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -36,6 +36,8 @@ jobs:
           python prop_hunter_runtime_guard.py
           python prop_hunter_market_regression_test.py
           python prop_hunter_combo_prices_test.py
+          python prop_hunter_media_settlement_test.py
+          python prop_hunter_mixed_builders_test.py
           python prop_hunter_settler_fast_test.py
       - name: Full card dry run
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
@@ -59,3 +61,12 @@ jobs:
           PH_AI_RETRY: '0'
           PH_RESCUE_MAX_PICKS: '20'
         run: python prophunter.py --dry-run -v
+
+
+      - name: Upload card previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prop-hunter-card-previews
+          path: output/card_previews/
+          if-no-files-found: ignore

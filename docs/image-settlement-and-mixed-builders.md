@@ -1,0 +1,7 @@
+# Telegram image settlement and mixed builders
+
+Photo messages retain a JSON presentation snapshot and the original Telegram message ID. Settlement redraws the same card and calls editMessageMedia with an empty caption. Official actuals and outcomes are drawn in player rows. Text cards keep editMessageText. Legacy individual photo cards can recover presentation from their uniquely scoped history object after Telegram confirms that the message contains media. Ambiguous aggregate cards are not reconstructed.
+
+Same-game team/player tickets support 2–5 legs, moneyline (including OT, tie push), team totals, game totals and both-team-over lines. Snapshot raw.confirmed_builder_quotes is the input contract: bookmaker, quote_id, event_id, sport, game, commence_time, observed_at, expires_at, odds_observed=true, observed combined odds and distinct selection IDs. Player legs must exactly match event, kickoff, bookmaker, player, market, line, side, observed price and existing form evidence. Team legs require an explicit full_game_including_ot scope. No combined price, probability or EV is manufactured. If a source supplies no confirmed combined quotes, this extension emits no mixed tickets.
+
+Photo resolution and the existing card theme remain in prop_hunter_image_cards.py. Missing verified photos/logos keep neutral placeholders. PH_IMAGE_CARDS=0 preserves text delivery. Tests cover image edits, empty captions, original IDs, legacy photo recovery, rate-limit retries, form/quote validation and final team-score grading.

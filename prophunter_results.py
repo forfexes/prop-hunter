@@ -592,7 +592,20 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
     return text if len(text) <= 4096 else None
 
 
-def _edit_message(message_id: Any, text: str, chat_id: Any = None) -> bool:
+def _card_pick(card,picks,combos):
+    """Recover presentation only from the exact scoped history object."""
+    sources=[dict(p,type="single") for p in picks if str(p.get("dedup_key")) in set(map(str,card.get("pick_keys") or []))]
+    sources += [c for c in combos if str(c.get("combo_id")) in set(map(str,card.get("combo_ids") or []))]
+    if len(sources)!=1:return None
+    obj=dict(sources[0])
+    obj["point"]=obj.get("point",obj.get("line"))
+    obj["direction"]=obj.get("direction") or obj.get("side") or "over"
+    obj["sport"]=obj.get("sport") or obj.get("league")
+    if obj.get("type")=="ladder":obj["picks"]=obj.get("ladder_legs") or []
+    return obj
+
+
+def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=None, fallback_pick=None) -> bool:
     if not TG_TOKEN or not message_id:
         return False
     target = str(chat_id or TG_CHAT or "").strip()
@@ -602,40 +615,33 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None) -> bool:
     base_delay=max(0.0,min(5.0,float(os.getenv("PH_TELEGRAM_EDIT_DELAY","1.0"))))
     for attempt in range(retries+1):
         try:
-            r = requests.post(
-                f"https://api.telegram.org/bot{TG_TOKEN}/editMessageText",
-                json={"chat_id": target, "message_id": int(message_id), "text": text, "disable_web_page_preview": True},
-                timeout=TIMEOUT,
-            )
+            if image_pick:
+                import json
+                from prop_hunter_image_cards import settled_image
+                png=settled_image(image_pick,text)
+                if not png:
+                    print("Telegram image settlement render failed; retry next run")
+                    return False
+                r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/editMessageMedia",
+                    data={"chat_id":target,"message_id":int(message_id),"media":json.dumps({"type":"photo","media":"attach://card","caption":""})},
+                    files={"card":("card.png",png,"image/png")},timeout=max(TIMEOUT,30))
+            else:
+                r = requests.post(
+                    f"https://api.telegram.org/bot{TG_TOKEN}/editMessageText",
+                    json={"chat_id": target, "message_id": int(message_id), "text": text, "disable_web_page_preview": True},
+                    timeout=TIMEOUT,
+                )
             if r.status_code == 200:
                 if base_delay:
                     time.sleep(base_delay)
                 return True
             if r.status_code == 400 and "message is not modified" in r.text.lower():
                 return True
-            if r.status_code == 400 and "no text in the message" in r.text.lower() and len(text) <= 1024:
-                # Bildkarte (sendPhoto): Auswertung in die Bildunterschrift schreiben.
-                rc = requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/editMessageCaption",
-                                   json={"chat_id": target, "message_id": int(message_id), "caption": text}, timeout=TIMEOUT)
-                if rc.status_code == 200 or (rc.status_code == 400 and "message is not modified" in rc.text.lower()):
-                    if base_delay:
-                        time.sleep(base_delay)
-                    return True
-                if rc.status_code == 429:
-                    retry_after=1
-                    try:
-                        retry_after=int(((rc.json().get("parameters") or {}).get("retry_after")) or 1)
-                    except Exception:
-                        pass
-                    if attempt >= retries:
-                        print(f"Telegram caption edit 429 exhausted: retry_after={retry_after}")
-                        return False
-                    wait_s=max(1,min(90,retry_after+1))
-                    print(f"Telegram caption edit 429: retrying after {wait_s}s ({attempt+1}/{retries})")
-                    time.sleep(wait_s)
-                    continue
-                print(f"Telegram caption edit {rc.status_code}: {rc.text[:200]}")
-                return False
+            if r.status_code == 400 and "no text in the message" in r.text.lower() and fallback_pick:
+                # Legacy photo cards have no media metadata. Upgrade only after
+                # Telegram confirms this original message has media, not text.
+                image_pick=fallback_pick
+                continue
             if r.status_code == 429:
                 retry_after=1
                 try:
@@ -915,9 +921,19 @@ def main() -> int:
                 continue
             cards_ready += 1
             # Skip network call when identical to the last successful in-place settlement.
-            if text == card.get("settlement_text"):
+            legacy_source = _card_pick(card,picks,combos)
+            if text == card.get("settlement_text") and (card.get("image_settlement_version")==1 or not legacy_source):
                 continue
-            if _edit_message(card.get("message_id"), text, card.get("chat_id")):
+            if card.get("image_pick") and legacy_source:
+                # Keep original presentation, overlay official settled values.
+                visual=dict(card["image_pick"])
+                for key in ("result","actual_value","profit","leg_details","ladder_legs"):
+                    if key in legacy_source:visual[key]=legacy_source[key]
+                if visual.get("type")=="ladder" and legacy_source.get("ladder_legs"):
+                    visual["leg_details"]=legacy_source["ladder_legs"]
+                card["image_pick"]=visual
+            if _edit_message(card.get("message_id"), text, card.get("chat_id"), **({"image_pick":card["image_pick"]} if card.get("media_type")=="photo" and card.get("image_pick") else {"fallback_pick":legacy_source} if legacy_source else {})):
+                card["image_settlement_version"] = 1
                 card["settlement_text"] = text
                 card["settlement_updated_at"] = datetime.now(timezone.utc).isoformat()
                 cards_edited += 1
@@ -970,3 +986,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

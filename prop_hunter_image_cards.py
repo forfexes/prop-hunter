@@ -123,7 +123,7 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
         _CACHE[tkey] = teams
     want = _norm(team)
     for t in _CACHE[tkey]:
-        if want in t["names"] or any(want and (want in n or n in want) and len(n) > 3 for n in t["names"]):
+        if want in t["names"]:
             return _get_image(t["logo"])
     return None
 
@@ -185,10 +185,10 @@ def _fit(draw, text: str, font, max_w: int) -> str:
 
 
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],
-           rows: List[Dict[str, Any]], footer: str = "") -> bytes:
+           rows: List[Dict[str, Any]], footer: str = "", settlement: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
-    row_h = 165
-    head_h = 330 if teams else 250
+    row_h = 195
+    head_h = 430 if teams else 280
     h = head_h + row_h * len(rows) + 190
     img = _background(sport, h)
     d = ImageDraw.Draw(img, "RGBA")
@@ -219,16 +219,25 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
             d.text((232, y + 134), r["form"], font=_font(24, False), fill=MUTED, anchor="lm")
         if r.get("odds"):
             d.text((W - 100, y + 62), r["odds"], font=_font(40), fill=CYAN, anchor="rm")
+        if r.get("result"):
+            d.text((232,y+164),_fit(d,r["result"],_font(23),640),font=_font(23),fill=CYAN,anchor="lm")
         y += row_h
     if footer:
         d.text((W // 2, h - 92), _fit(d, footer, _font(30), W - 160), font=_font(30), fill=WHITE, anchor="mm")
-    d.text((W // 2, h - 56), "Auswertung im Original-Tipp", font=_font(22, False), fill=MUTED, anchor="mm")
+    d.text((W // 2, h - 56), (_fit(d, settlement, _font(24), W - 150) if settlement else "Auswertung: offen"), font=_font(24, False), fill=MUTED, anchor="mm")
     buf = io.BytesIO()
     img.convert("RGB").save(buf, "PNG", optimize=True)
     return buf.getvalue()
 
 
 # ----------------------------------------------------------------------------------------------------- Pick -> Karte
+def _result_text(detail):
+    state=str(detail.get("result") or detail.get("status") or "").lower()
+    label={"win":"GEWONNEN","won":"GEWONNEN","loss":"VERLOREN","lost":"VERLOREN","push":"PUSH","void":"VOID","withdrawn":"ZURÜCKGEZOGEN"}.get(state,"")
+    actual=detail.get("actual_value")
+    return (f"Ist: {actual} · " if actual is not None else "")+label
+
+
 def _form_text(features: Dict[str, Any]) -> str:
     rf = (features or {}).get("recent_form") or {}
     parts = []
@@ -245,9 +254,9 @@ def _label(detail: Dict[str, Any]) -> str:
     market = re.sub(r"\s+", " ", str(detail.get("market") or "")).strip()
     if pt is None:
         return market
-    sign = "+" if d == "over" else "-"
+    sign = "Over" if d == "over" else "Under"
     rest = re.sub(r"(?i)^(over|under)\s+[\d.]+\s*", "", market)
-    return f"{pt:g}{sign} {rest}".strip()
+    return f"{sign} {pt:g} {rest}".strip()
 
 
 def build_for_pick(pick: Any) -> Optional[bytes]:
@@ -274,17 +283,17 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             photo = player_photo(name, league)
             for leg, det in zip(getattr(pick, "picks", None) or [], details or [{}] * len(getattr(pick, "picks", None) or [])):
                 rows.append({"name": name, "photo": photo, "label": str(getattr(leg, "market", "")),
-                             "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])}" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
+                             "result":_result_text(det), "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])}" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
                              "odds": f"@{float(leg.odds):.2f}"})
             title, subtitle = "PLAYER LADDER", "Ein Spieler · mehrere Stufen"
             if not teams and game and game.lower() != "verified ladder":
                 subtitle = game[:60]
         elif typ == "single":
             name = str(getattr(pick, "player", "") or "")
-            from prophunter_core_1391 import _market_with_line  # type: ignore
+            _market_with_line = lambda market, direction, point: f"{market} {direction} {point:g}" if point is not None else str(market)
             rows.append({"name": name, "photo": player_photo(name, league),
                          "label": _market_with_line(getattr(pick, "market", "") or "", getattr(pick, "direction", "over"), getattr(pick, "point", None)),
-                         "form": _form_text(feats), "odds": f"@{float(getattr(pick, 'odds', 0) or 0):.2f}"})
+                         "form": _form_text(feats), "result":_result_text(vars(pick)), "odds": f"@{float(getattr(pick, 'odds', 0) or 0):.2f}"})
             title, subtitle = "SINGLE", game[:60] or "Pro Tip"
         else:
             if not details:
@@ -292,7 +301,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             for det in details:
                 lg = league_of(det.get("sport")) or league
                 nm = str(det.get("player") or "")
-                rows.append({"name": nm, "photo": player_photo(nm, lg), "label": _label(det), "form": _form_text(det.get("features")),
+                rows.append({"name": nm, "photo": player_photo(nm, lg), "label": _label(det), "form": _form_text(det.get("features")), "result":_result_text(det),
                              "odds": f"@{float(det.get('odds') or 0):.2f}" if det.get("odds") else ""})
             title = "CROSS-GAME BUILDER" if cross else ("SAME-GAME BUILDER" if teams else "BUILDER")
             subtitle = f"{len(rows)} Legs" + (" · mehrere Spiele" if cross else (f" · {game[:40]}" if game else ""))
@@ -301,6 +310,33 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         odds = getattr(pick, "odds", None)
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
         footer = "Bestätigte Book-Quote prüfen" if est else (f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else "")
-        return render(typ, title, subtitle, sport, teams, rows[:7], footer)
+        return render(typ, title, subtitle, sport, teams, rows[:7], footer, getattr(pick,"settlement_summary", ""))
     except Exception:
         return None
+
+
+
+def snapshot(pick):
+    """JSON-safe presentation evidence for editing the original photo later."""
+    import json
+    from types import SimpleNamespace
+    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit")}
+    data["picks"]=[vars(x) if isinstance(x,SimpleNamespace) else (x.model_dump() if hasattr(x,"model_dump") else dict(x) if isinstance(x,dict) else {"market":getattr(x,"market", ""),"odds":getattr(x,"odds",None)}) for x in (getattr(pick,"picks",None) or [])]
+    return json.loads(json.dumps(data,default=str))
+
+
+def settled_image(data, text):
+    from types import SimpleNamespace
+    obj=dict(data)
+    obj["picks"]=[SimpleNamespace(**x) for x in obj.get("picks",[]) or []]
+    summary=next((ln for ln in text.splitlines() if "Auswertung:" in ln), "")
+    summary=re.sub(r"[^\w\s:.,+%/−-]", "", summary)
+    summary=summary.replace("Auswertung:","Ergebnis:")
+    # Emoji glyphs vary by host; explicit words keep the result readable.
+    counts=[]
+    for pattern,label in ((r"(\d+)✅","gewonnen"),(r"(\d+)❌","verloren"),(r"(\d+)↔","Push"),(r"(\d+)⏳","offen")):
+        match=re.search(pattern,text.split("Auswertung:")[-1])
+        if match and int(match[1]):counts.append(f"{match[1]} {label}")
+    profit=re.search(r"[+-]\d+\.\d+u",text.split("Auswertung:")[-1])
+    obj["settlement_summary"]=" · ".join(counts+([profit[0]] if profit else [])) or summary
+    return build_for_pick(SimpleNamespace(**obj))

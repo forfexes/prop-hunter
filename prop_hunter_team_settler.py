@@ -30,6 +30,10 @@ def eligible(pick):
     league=str(pick.get('league') or pick.get('sport') or '').upper()
     ctx=context(pick)
     market=str(pick.get('market') or '')
+    raw=pick.get('raw') or {}
+    if raw.get('team_builder_market'):
+        from prop_hunter_mixed_builders import team_leg_valid
+        return bool(ctx and league in PATHS and team_leg_valid(dict(pick,point=pick.get('point',pick.get('line')))))
     if not ctx or league not in PATHS or any(x in market.lower() for x in ('season','standings','fantasy')):return False
     if detect_stat(market)!=STATS[league] or line_of_pick(pick) is None or line_of_pick(pick)<=0:return False
     label=re.sub(r'\s+(?:over|under)\s+[+-]?\d+(?:\.\d+)?\s*$','',market.replace('_',' '),flags=re.I)
@@ -61,7 +65,14 @@ def match_final_score(pick,event):
         except (KeyError,ValueError,TypeError):return None
         scores.append(value)
         if selection(pick) in names:selected.append(value)
-    if selection(pick) in {'game','total goals','total points','total runs'}:value=sum(scores)
+    kind=(pick.get('raw') or {}).get('team_builder_market')
+    if kind=='moneyline':
+        if len(selected)!=1:return None
+        other=scores[1] if selected[0]==scores[0] else scores[0]
+        value=1.0 if selected[0]>other else 0.0 if selected[0]<other else .5
+    elif kind=='both_over':value=min(scores)
+    elif kind=='game_total':value=sum(scores)
+    elif selection(pick) in {'game','total goals','total points','total runs'}:value=sum(scores)
     elif len(selected)==1:value=selected[0]
     else:return None
     return {'source':'espn_final_team_score','scope':'team_or_game_total','game_id':str(event['id']),
@@ -99,3 +110,4 @@ def main():
     log(f'Exact team/game total settlement: settled={len(results)} scoreboard_dates={len(cache)}')
 
 if __name__=='__main__':main()
+

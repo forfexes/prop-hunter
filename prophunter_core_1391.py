@@ -3012,7 +3012,10 @@ def _payload_card_image(payload,picks):
         else:
             pool=[p for p in all_picks if getattr(p,"type",None) in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")];idx=(payload.get("combo_indices") or [None])[0]
         if idx is None or idx>=len(pool):return None
-        return cards.build_for_pick(pool[idx])
+        payload["image_pick"]=cards.snapshot(pool[idx])
+        png=cards.build_for_pick(pool[idx])
+        if png: payload["media_type"]="photo"
+        return png
     except Exception:
         return None
 
@@ -3025,6 +3028,14 @@ def send_telegram(text,dry_run=False,picks=None):
     # belongs in the sender/backoff layer instead.
     _LAST_TELEGRAM_CARDS=[]
     if dry_run:
+        from pathlib import Path
+        preview_dir=Path("output/card_previews");preview_dir.mkdir(parents=True,exist_ok=True)
+        rendered=0
+        for index,payload in enumerate(payloads):
+            png=_payload_card_image(payload,picks)
+            if png:
+                (preview_dir/f"card-{index+1:03}.png").write_bytes(png);rendered+=1
+        log.info("Image card dry run: rendered=%d/%d",rendered,len(payloads))
         log.info("DRY-RUN Telegram: %d messages (%s)",len(payloads),", ".join(x.get("kind","?") for x in payloads))
         return 0
     if not TG_TOKEN or not TG_CHAT:
@@ -3044,13 +3055,13 @@ def send_telegram(text,dry_run=False,picks=None):
         for attempt in range(max_retries+1):
             try:
                 r=None
-                png=_payload_card_image(payload,picks) if len(body)<=950 and attempt==0 else None
+                png=_payload_card_image(payload,picks)
                 if png:
                     # Bildkarte ohne doppelte Caption; message_id bleibt fuer Settlement gespeichert.
                     r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendPhoto",
                         data={"chat_id":TG_CHAT},files={"photo":("card.png",png,"image/png")},timeout=max(TIMEOUT,30))
                     if r.status_code not in (200,429):
-                        log.warning("sendPhoto %d kind=%s -> Text-Fallback: %s",r.status_code,payload.get("kind"),r.text[:120]);r=None
+                        log.warning("sendPhoto %d kind=%s -> Text-Fallback: %s",r.status_code,payload.get("kind"),r.text[:120]);r=None;payload.pop("media_type",None)
                 if r is None:
                     r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
                         json={"chat_id":TG_CHAT,"text":body,"disable_web_page_preview":True},timeout=TIMEOUT)
@@ -4729,6 +4740,8 @@ def run(dry_run=False,sport_filter=None):
     try:
         from prop_hunter_builder_engine import build_autonomous_extras
         extras = build_autonomous_extras(picks, props, Pick, LadderLeg)
+        from prop_hunter_mixed_builders import build as build_mixed
+        extras += build_mixed(props, Pick)
         from prop_hunter_combo_prices import publishable_extra
         extras = [p for p in extras if publishable_extra(p)]
         picks = picks + extras
@@ -5117,3 +5130,4 @@ if __name__=="__main__":
         raise SystemExit(0)
     if args.verbose: setup_logging(logging.DEBUG)
     run(dry_run=args.dry_run,sport_filter=args.sport)
+

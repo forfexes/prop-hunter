@@ -66,7 +66,12 @@ def filter_tickets(picks):
         reason='missing_leg_form' if len(legs)<2 else None
         for leg in legs:
             if reason:break
-            reason=rejection(leg.get('features'),leg.get('point'),str(leg.get('direction') or '').lower())
+            if leg.get('kind')=='team':
+                from prop_hunter_mixed_builders import team_leg_valid
+                reason=None if team_leg_valid(leg) else 'unverified_team_leg'
+            else:
+                reason=rejection(leg.get('features'),leg.get('point'),str(leg.get('direction') or '').lower())
         if reason:counts[reason]=counts.get(reason,0)+1
         else:kept.append(p)
     return kept,counts
+
