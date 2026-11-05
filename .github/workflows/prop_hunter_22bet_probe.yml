@@ -6,6 +6,8 @@ name: Prop Hunter 22bet Source Probe
       - 'prop_hunter_22bet_probe.py'
       - 'prop_hunter_22bet_points.py'
       - 'prop_hunter_22bet_points_test.py'
+      - 'prop_hunter_22bet.py'
+      - 'prop_hunter_source_orchestrator.py'
       - '.github/workflows/prop_hunter_22bet_probe.yml'
 permissions:
   contents: read
@@ -22,5 +24,7 @@ jobs:
         run: pip install requests
       - name: Verify 22bet points parser
         run: python prop_hunter_22bet_points_test.py
+      - name: Check collector disabled by default
+        run: python -c 'import prop_hunter_22bet as b; assert not b.configured(); assert b.fetch_22bet_nba_points()==[]'
       - name: Probe NBA NHL NFL
         run: python prop_hunter_22bet_probe.py
