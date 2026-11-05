@@ -119,6 +119,10 @@ def canonical_market(market: Any, original_market: Any = "") -> str:
     # Dropping the market text here let period TD props masquerade as full-game TDs.
     text = " ".join(x for x in (raw, cur) if x).strip()
 
+    # Short timed windows require play-by-play; full-game L15 is invalid here.
+    if re.search(r"\b(?:first|last|opening|final)\s+(?:\d+(?:\.\d+)?\s+)?(?:minutes?|mins?)\b", text):
+        return "unsupported_period"
+
     # NHL period prices must never be compared with full-game L15 counts.
     if re.search(r"\b(?:(?:1st|2nd|3rd|first|second|third) period|period [123]|[123]p)\b", text):
         return "unsupported_period"
@@ -361,3 +365,4 @@ try:
         _mod._ph_card_formatter_installed = True
 except Exception:
     pass
+

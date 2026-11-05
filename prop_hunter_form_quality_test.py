@@ -19,9 +19,9 @@ assert _candidate_probability(p)==.8, 'real gamelog estimate did not reach build
 p.features=bad;assert _candidate_probability(p) is None
 p.features=good;p.point=10.5;assert _candidate_probability(p) is None
 p.point=9.5
-single=Obj(type='single',point=9.5,direction='over',features=good)
-bad_single=Obj(type='single',point=9.5,direction='over',features=bad)
-leg=dict(point=9.5,direction='over',features=good)
+single=Obj(type='single',odds=2.2,point=9.5,direction='over',features=good)
+bad_single=Obj(type='single',odds=2.2,point=9.5,direction='over',features=bad)
+leg=dict(odds=2.2,point=9.5,direction='over',features=good)
 combo=Obj(type='big',leg_details=[leg,deepcopy(leg)])
 ladder=Obj(type='ladder',leg_details=[leg,deepcopy(leg)])
 bad_combo=Obj(type='big',leg_details=[leg,dict(leg,features=bad)])
@@ -35,3 +35,4 @@ print('RECENT FORM / EXACT LINE / BUILDER MODEL WIRING / ALL-TICKET DELIVERY GUA
 binary=feat([0]*5+[1]*10,line=.5);binary['gamelog_dd_rate']=2/3
 assert rejection(binary,None,'yes')=='recent_form_deterioration'
 print('BINARY DD/TD FORM GUARD PASSED')
+

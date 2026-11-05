@@ -40,12 +40,21 @@ def rejection(features,line,direction):
             if prev.get('hits',0)/prev['n']>=.6:return 'recent_form_deterioration'
     return None
 
+def price_sample_rejection(features,odds):
+    price=numeric(odds)
+    if price is None or price<=1:return 'invalid_price'
+    values=[numeric((features or {}).get(k)) for k in ('gamelog_n','gamelog_l15_n')]
+    available=[n for n in values if n is not None]
+    if price>=10 and (not available or min(available)<10):return 'longshot_insufficient_form'
+    return None
+
+
 def filter_singles(picks):
     kept=[];rejected={}
     for pick in picks:
         if getattr(pick,'type',None)!='single':kept.append(pick);continue
         f=getattr(pick,'features',{}) or {}
-        reason=rejection(f,getattr(pick,'point',None),str(getattr(pick,'direction','') or '').lower())
+        reason=price_sample_rejection(f,getattr(pick,'odds',None)) or rejection(f,getattr(pick,'point',None),str(getattr(pick,'direction','') or '').lower())
         if reason:rejected[reason]=rejected.get(reason,0)+1
         else:kept.append(pick)
     return kept,rejected
@@ -70,7 +79,7 @@ def filter_tickets(picks):
                 from prop_hunter_mixed_builders import team_leg_valid
                 reason=None if team_leg_valid(leg) else 'unverified_team_leg'
             else:
-                reason=rejection(leg.get('features'),leg.get('point'),str(leg.get('direction') or '').lower())
+                reason=price_sample_rejection(leg.get('features'),leg.get('odds')) or rejection(leg.get('features'),leg.get('point'),str(leg.get('direction') or '').lower())
         if reason:counts[reason]=counts.get(reason,0)+1
         else:kept.append(p)
     return kept,counts

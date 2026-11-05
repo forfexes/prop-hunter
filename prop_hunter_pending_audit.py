@@ -18,7 +18,7 @@ def explicit_nonplayer_scope(pick):
     market = str(pick.get('market') or pick.get('prop_type') or '').lower()
     if re.search(r"\bstandings\b", player) or any(word in market for word in ('season ', 'standings', 'fantasy')):
         return 'unsupported_season_or_fantasy_market'
-    if player in {'game', 'total goals'} or player.startswith('total goals by '):
+    if player in {'game', 'total goals', 'both teams total'} or player.startswith('total goals by '):
         return 'unsupported_team_or_game_market'
     return None
 
@@ -52,7 +52,7 @@ def classify(pick, logs, index):
     stat, extra = detect_stat(market), detect_extra_stat(market)
     if not stat and not extra:
         raw = pick.get('raw') if isinstance(pick.get('raw'), dict) else {}
-        if raw.get('type') in {'betbuilder','ladder','acca','lottery'} and any(isinstance(x,dict) for x in raw.get('leg_details') or raw.get('ladder_legs') or []):
+        if (pick.get('pick_type') or pick.get('type') or raw.get('type')) in {'betbuilder','ladder','acca','lottery','big','super','kombi2','kombi3'} and any(isinstance(x,dict) for x in pick.get('leg_details') or raw.get('leg_details') or raw.get('ladder_legs') or []):
             return 'awaiting_combo_legs'
         return 'unmapped_market'
     gl = find_gamelog(pick, logs, aliases={}, log_index=index)
@@ -147,3 +147,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

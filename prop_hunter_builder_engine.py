@@ -661,6 +661,7 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
 
 def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls: Any, LadderLegCls: Any) -> List[Any]:
     """Build HR singles and all risk buckets from the complete verified pool."""
+    props=list(props or [])
     selected = [
         p for p in picks
         if getattr(p, "type", None) == "single"
@@ -680,9 +681,7 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
         seen.add(key)
         pool.append(candidate)
 
-    if not pool:
-        return []
-
+    # Independently verified ladders must also run when the builder pool is empty.
     pool = sorted(
         pool,
         key=lambda x: ((_prob(x) * _odds(x) - 1.0), _prob(x)),
@@ -803,5 +802,9 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
         ):
             extras.append(best_hr)
 
+    qualified_rungs=sum(_ladder_leg_candidate(p) is not None for p in props)
+    sufficient_history=sum((to_float(_features(p).get("gamelog_l15_n"),0) or 0)>=10 for p in props)
+    print(f"Builder diagnostics: props={len(props)} pool={len(pool)} rows_ge10_games={sufficient_history} qualified_rungs={qualified_rungs} ladders={sum(getattr(p,'type',None)=='ladder' for p in extras)} raw_tickets={len(extras)}",flush=True)
     return extras
+
 

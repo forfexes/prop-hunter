@@ -118,14 +118,15 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
         for grp in ((data or {}).get("sports") or [{}])[0].get("leagues", [{}])[0].get("teams", []) if data else []:
             t = grp.get("team") or {}
             logos = t.get("logos") or []
-            teams.append({"names": {_norm(t.get(k)) for k in ("displayName", "shortDisplayName", "name", "abbreviation", "nickname", "location") if t.get(k)},
+            names={_norm(t.get(k)) for k in ("displayName", "shortDisplayName", "name", "abbreviation", "nickname") if t.get(k)}
+            for name in (t.get("name"),t.get("nickname")):
+                if name and t.get("abbreviation"):names.add(_norm(f"{t['abbreviation']} {name}"))
+            teams.append({"names": names,
                           "logo": logos[0].get("href") if logos else None})
         _CACHE[tkey] = teams
     want = _norm(team)
-    for t in _CACHE[tkey]:
-        if want in t["names"]:
-            return _get_image(t["logo"])
-    return None
+    matches=[t for t in _CACHE[tkey] if want in t["names"]]
+    return _get_image(matches[0]["logo"]) if len(matches)==1 else None
 
 
 # ----------------------------------------------------------------------------------------------------------------- Zeichnen
@@ -255,6 +256,7 @@ def _label(detail: Dict[str, Any]) -> str:
     if pt is None:
         return market
     sign = "Over" if d == "over" else "Under"
+    if re.search(r"\b2 plus td\b",market,re.I) and pt==1.5 and d=="over":return "2+ Touchdowns"
     kind=(detail.get("raw") or {}).get("team_builder_market")
     if kind=="moneyline":return "Sieg (inkl. OT)"
     if kind=="both_over":return f"Beide Teams Over {pt:g}"

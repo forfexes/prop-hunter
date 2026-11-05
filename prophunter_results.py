@@ -344,10 +344,45 @@ def _leg_rows(combo: dict) -> list:
     return details
 
 
+def _settle_proven_losing_accumulator(combo, legs, by_dedup, by_signature, context_picks):
+    """One officially lost leg decides an accumulator, but never a ladder."""
+    if combo.get("type")=="ladder" or combo.get("quote_invalidated"):
+        return None
+    from prop_hunter_shared_utils import inherit_leg_context
+    prepared=[];decisive=None
+    for source in legs:
+        leg=dict(source)
+        for key in ("date","sent_date","created_at","commence_time","event_id","game_id","source_game_id","game"):
+            if not leg.get(key) and combo.get(key):leg[key]=combo[key]
+        if not leg.get("date") and leg.get("created_at"):
+            leg["date"]=str(leg["created_at"])[:10]
+        leg=inherit_leg_context(leg,context_picks)
+        row=_match_result(leg,by_dedup,by_signature) if _settlement_ready_time(leg) else None
+        if row:
+            quoted_game=_norm(leg.get("game"));result_game=_norm(_result_pick(row).get("game"))
+            if quoted_game and result_game and quoted_game!=result_game:row=None
+        status=_result_status(row) if row else ""
+        if row and status in CLOSED and row.get("actual_value") is not None:
+            leg.update(result=status,actual_value=row["actual_value"])
+            if status in {"loss","lost"}:
+                decisive={"player":leg.get("player"),"market":leg.get("market"),"actual_value":row["actual_value"],
+                          "result_id":row.get("result_id"),"official_game_id":row.get("game_id")}
+        prepared.append(leg)
+    if decisive is None:return None
+    old=json.dumps({k:combo.get(k) for k in ("result","profit","settlement_legs","settlement_decisive_leg")},sort_keys=True,default=str)
+    combo.update(result="loss",profit=round(-(_to_float(combo.get("stake"),0.0) or 0.0),2),
+                 settlement_legs=prepared,settlement_decisive_leg=decisive)
+    if combo.get("leg_details"):combo["leg_details"]=prepared
+    new=json.dumps({k:combo.get(k) for k in ("result","profit","settlement_legs","settlement_decisive_leg")},sort_keys=True,default=str)
+    return old!=new
+
+
 def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict, context_picks=None) -> bool:
     legs = _leg_rows(combo)
     if not legs:
         return False
+    decided=_settle_proven_losing_accumulator(combo,legs,by_dedup,by_signature,context_picks)
+    if decided is not None:return decided
     states = []
     profit = 0.0
     for i, leg in enumerate(legs):
@@ -549,14 +584,14 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
     selected_picks = [pick_by_key[k] for k in map(str, card.get("pick_keys") or []) if k in pick_by_key]
     selected_combos = [combo_by_id[k] for k in map(str, card.get("combo_ids") or []) if k in combo_by_id]
 
-    invalid = [x for x in selected_picks + selected_combos if x.get("quote_invalidated")]
+    invalid = [x for x in selected_picks + selected_combos if x.get("quote_invalidated") or x.get("quality_invalidated")]
     if invalid:
         # Preserve the original quote as evidence, but retract its recommendation
         # and all associated EV/probability claims. No sporting loss or void.
         names = "; ".join(str(x.get("player") or "") for x in invalid)
         clean = [ln for ln in lines if not ln.strip().startswith("🏁 Auswertung:")
                  and not ("EV" in ln or "Prob " in ln)]
-        reasons = "; ".join(dict.fromkeys(str(x.get("quote_invalidation_reason") or "Quote/EV ungültig") for x in invalid))
+        reasons = "; ".join(dict.fromkeys(str(x.get("quality_invalidation_reason") or x.get("quote_invalidation_reason") or "Quote/EV ungültig") for x in invalid))
         warning = "⚠️ TIPP ZURÜCKGEZOGEN\n" + reasons + "\n" + names
         text = warning + "\n\n" + "\n".join(clean) + "\n🏁 Auswertung: zurückgezogen · von der Tippstatistik ausgeschlossen"
         return text if len(text) <= 4096 else None
@@ -895,7 +930,7 @@ def main() -> int:
         picks = entry.get("picks") or []
         combos = entry.get("kombis") or []
         for p in picks:
-            if p.get("quote_invalidated"):
+            if p.get("quote_invalidated") or p.get("quality_invalidated"):
                 continue
             if _reset_premature_result(p):
                 changed = True
@@ -998,4 +1033,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 

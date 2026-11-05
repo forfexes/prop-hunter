@@ -48,7 +48,23 @@ def evidence_for(ticket, day):
                 found.append(dict(player=player, game=game, line=line, odds=odds, original_market=original))
     return found
 
+def invalidate_short_sample_longshot(ticket,day):
+    # Correct today's issued recommendations against the existing >=10 games rule.
+    # This is a quality withdrawal, not an invented sporting result or void.
+    if str(day)[:10]<'2026-11-05' or ticket.get('leg_details') or ticket.get('quality_invalidated'):
+        return False
+    from prop_hunter_form_quality import price_sample_rejection
+    f=ticket.get('features') or {}
+    if not any(f.get(k) is not None for k in ('gamelog_n','gamelog_l15_n')):return False
+    if price_sample_rejection(f,ticket.get('odds'))!='longshot_insufficient_form':return False
+    ticket.update(quality_original_result=ticket.get('result'),quality_original_profit=ticket.get('profit'),
+        quality_invalidated=True,settlement_invalidated=True,result='withdrawn',status='withdrawn',profit=None,
+        quality_invalidation_reason='Longshot ab Quote 10 benötigt mindestens 10 aktuelle Spiele; Datenbasis zu klein')
+    return True
+
+
 def invalidate(ticket, day):
+    if invalidate_short_sample_longshot(ticket,day):return True
     proof = evidence_for(ticket, day)
     if not proof or ticket.get('quote_invalidated'):
         return False
@@ -68,8 +84,9 @@ if __name__ == '__main__':
         for ticket in (entry.get('picks') or []) + (entry.get('kombis') or []):
             if invalidate(ticket, entry.get('date')) or invalidate_unpriced_combo(ticket):
                 changed += 1
-            if ticket.get('quote_invalidated'):
+            if ticket.get('quote_invalidated') or ticket.get('quality_invalidated'):
                 _sync_pick_table(dict(ticket, date=entry.get('date')))
     if changed:
         _save_history(history)
     print(f'Verified quote withdrawals before settlement={changed}')
+
