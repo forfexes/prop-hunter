@@ -592,6 +592,14 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
     return text if len(text) <= 4096 else None
 
 
+def _image_upgrade_due(card, day):
+    if card.get("image_settlement_version")==1:return False
+    if card.get("media_type")=="photo" or card.get("image_pick"):return True
+    # Photo delivery was introduced on 2026-11-04. Older unmarked cards
+    # are text messages; don't probe hundreds of already settled messages.
+    return str(day)>=os.getenv("PH_LEGACY_PHOTO_SINCE","2026-11-04")
+
+
 def _card_pick(card,picks,combos):
     """Recover presentation only from the exact scoped history object."""
     sources=[dict(p,type="single") for p in picks if str(p.get("dedup_key")) in set(map(str,card.get("pick_keys") or []))]
@@ -874,6 +882,8 @@ def main() -> int:
     cutoff = (datetime.now(timezone.utc).date() - timedelta(days=LOOKBACK_DAYS)).isoformat()
     merged = 0
     cards_edited = 0
+    image_migrations = 0
+    migration_limit = max(0,min(100,int(os.getenv("PH_IMAGE_MIGRATION_LIMIT","30"))))
     cards_ready = 0
     changed = False
     fallback_lines = []
@@ -922,8 +932,10 @@ def main() -> int:
             cards_ready += 1
             # Skip network call when identical to the last successful in-place settlement.
             legacy_source = _card_pick(card,picks,combos)
-            if text == card.get("settlement_text") and (card.get("image_settlement_version")==1 or not legacy_source):
-                continue
+            if text == card.get("settlement_text"):
+                if not legacy_source or not _image_upgrade_due(card,day) or image_migrations>=migration_limit:
+                    continue
+                image_migrations += 1
             if card.get("image_pick") and legacy_source:
                 # Keep original presentation, overlay official settled values.
                 visual=dict(card["image_pick"])

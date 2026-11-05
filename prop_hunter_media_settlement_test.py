@@ -36,3 +36,9 @@ print('MEDIA SETTLEMENT TEST PASSED: render, original ID, no caption, legacy upg
 
 assert cards._label({'point':25.5,'direction':'over','market':'Points Over 25.5'})=='Over 25.5 Points'
 assert cards._label({'point':.5,'direction':'over','market':'Moneyline','raw':{'team_builder_market':'moneyline'}})=='Sieg (inkl. OT)'
+
+assert not results._image_upgrade_due({},'2026-10-30')
+assert results._image_upgrade_due({},'2026-11-04')
+assert results._image_upgrade_due({'media_type':'photo'},'2026-10-30')
+assert not results._image_upgrade_due({'media_type':'photo','image_settlement_version':1},'2026-11-05')
+print('BOUNDED LEGACY PHOTO MIGRATION TEST PASSED')
