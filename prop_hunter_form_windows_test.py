@@ -143,3 +143,17 @@ assert fb.volume_value(espn,'usage_pct') is None
 assert fb.volume_value({'raw':{'stat_map':{'FG':'11-8'}}},'fga') is None
 assert fb.volume_value({'raw':{'stat_map':{'FG':'unknown'}}},'fga') is None
 print('ESPN NESTED SHOOTING ATTEMPTS REGRESSION PASSED')
+
+# Exercise the production player-ML feature function without booting collectors.
+core_tree=ast.parse(Path('prophunter_core_1391.py').read_text())
+core_fn=next(x for x in core_tree.body if isinstance(x,ast.FunctionDef) and x.name=='compute_player_features')
+core_ns={}
+exec(compile(ast.Module(body=[core_fn],type_ignores=[]),'player-ml-feature-regression','exec'),core_ns)
+player_feats=core_ns['compute_player_features']
+ml_rows=[{'points':10} for _ in range(15)]+[{'points':100} for _ in range(5)]
+assert player_feats(ml_rows,20,'points')['hit_rate_l15']==0
+assert player_feats(ml_rows,20,'points')['hit_rate_l5']==0
+assert player_feats([{'points':None}]*5,20,'points') is None
+assert player_feats([{'points':float('nan')}]*5,20,'points') is None
+assert player_feats([{'points':10}]*5,20,'points')['hit_rate_l15']==0
+print('PRODUCTION PLAYER ML L15 / MISSING STATS REGRESSION PASSED')
