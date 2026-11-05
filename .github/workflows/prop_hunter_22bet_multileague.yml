@@ -1,0 +1,22 @@
+name: Prop Hunter 22bet Multi-League Probe
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'prop_hunter_22bet_multileague_probe.py'
+      - '.github/workflows/prop_hunter_22bet_multileague.yml'
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install requests
+      - name: Multi-league discovery (no publishing)
+        run: python prop_hunter_22bet_multileague_probe.py
