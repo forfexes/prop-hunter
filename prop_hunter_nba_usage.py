@@ -118,3 +118,24 @@ def safe_fetch_game_usage(game_id, game_date, timeout=12, logger=None):
         if logger is not None:
             logger.warning("NBA official game usage unavailable (%s): %s", type(exc).__name__, exc)
         return []
+
+def calculate_boxscore_usage(fga, fta, turnovers, minutes, team_minutes,
+                             team_fga, team_fta, team_turnovers):
+    """Basketball-Reference style USG% boxscore estimate, NOT official NBA USG%.
+
+    Uses actual observed FGA, FTA, TOV, MIN and team totals. Do not label
+    as nba_official_boxscore_usage_v3. Returns None for missing/invalid inputs.
+    """
+    try:
+        values = [float(x) for x in (fga, fta, turnovers, minutes, team_minutes,
+                                     team_fga, team_fta, team_turnovers)]
+    except (TypeError, ValueError):
+        return None
+    if not all(math.isfinite(x) and x >= 0 for x in values):
+        return None
+    fga, fta, tov, minutes, team_minutes, tfga, tfta, ttov = values
+    denom = minutes * (tfga + 0.44 * tfta + ttov)
+    if minutes <= 0 or team_minutes <= 0 or denom <= 0:
+        return None
+    pct = 100 * (fga + 0.44 * fta + tov) * (team_minutes / 5) / denom
+    return round(pct, 4) if math.isfinite(pct) and 0 <= pct <= 100 else None
