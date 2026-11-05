@@ -8,3 +8,10 @@ for bad in ("2026","bad","2026/27"):
     except ValueError:pass
     else:raise AssertionError(bad)
 print("OFFICIAL NBA USAGE SOURCE NORMALIZATION / MISSING VALUE GUARDS PASSED")
+
+from prop_hunter_nba_usage import safe_fetch_season_usage
+with patch("prop_hunter_nba_usage.fetch_season_usage",side_effect=TimeoutError("NBA timeout")):
+    assert safe_fetch_season_usage("2026-27")=={}
+with patch("prop_hunter_nba_usage.fetch_season_usage",return_value={123:{"usage_pct":27.5}}):
+    assert safe_fetch_season_usage("2026-27")[123]["usage_pct"]==27.5
+print("NBA USAGE NETWORK FAILURE FALLBACK PASSED")
