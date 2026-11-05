@@ -9,6 +9,8 @@ name: Prop Hunter Diagnostic Dry Run
       - 'prop_hunter_feature_builder.py'
       - 'prop_hunter_form_windows_test.py'
       - 'prophunter_core_1391.py'
+      - 'prop_hunter_nba_usage.py'
+      - 'prop_hunter_nba_usage_test.py'
 
 permissions:
   contents: read
@@ -47,6 +49,7 @@ jobs:
           python prop_hunter_settler_fast_test.py
           python prop_hunter_settlement_backlog_test.py
           python ml_validation_test.py
+          python prop_hunter_nba_usage_test.py
       - name: Full card dry run
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
         env:
