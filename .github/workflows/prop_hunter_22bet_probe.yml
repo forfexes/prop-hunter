@@ -4,6 +4,8 @@ name: Prop Hunter 22bet Source Probe
   push:
     paths:
       - 'prop_hunter_22bet_probe.py'
+      - 'prop_hunter_22bet_points.py'
+      - 'prop_hunter_22bet_points_test.py'
       - '.github/workflows/prop_hunter_22bet_probe.yml'
 permissions:
   contents: read
@@ -18,5 +20,7 @@ jobs:
           python-version: '3.11'
       - name: Install
         run: pip install requests
+      - name: Verify 22bet points parser
+        run: python prop_hunter_22bet_points_test.py
       - name: Probe NBA NHL NFL
         run: python prop_hunter_22bet_probe.py
