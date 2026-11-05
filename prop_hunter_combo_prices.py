@@ -71,3 +71,20 @@ def invalidate_unpriced_combo(ticket):
         quote_invalidation_reason=quote_withdrawal_reason(ticket),
         result='withdrawn',status='withdrawn',profit=None,actual_value=None)
     return True
+
+
+def publishable_extra_reason(obj):
+    """Explain price-scope rejection without relaxing the safety gate."""
+    if publishable_extra(obj):
+        return "accepted"
+    if unpriced_sgp(obj):
+        return "same_game_unverified_combined_price"
+    legs=value(obj,"leg_details",[]) or []
+    if len(legs)<2:
+        return "missing_or_single_leg_details"
+    games=[re.sub(r"\\s+"," ",str(value(x,"game","") or "").strip().lower()) for x in legs]
+    if not all(games):
+        return "missing_event_identity"
+    if len(set(games))<len(games):
+        return "same_game_missing_confirmed_quote"
+    return "unknown_price_scope"
