@@ -5050,7 +5050,7 @@ def compute_player_features(games: list, line: float, stat_key: str) -> dict | N
         "hit_rate_l15": hit_rate_l15, "avg_l5": avg_l5, "avg_l10": avg_l10,
         "streak": streak, "home_hit_rate": home_hit_rate,
         "away_hit_rate": away_hit_rate,
-        "location_adj": home_hit_rate - away_hit_rate,
+        "location_adj": location_adj,
         "line_vs_avg": avg_l10 - line,
     }
 
@@ -5110,9 +5110,10 @@ def player_ml_probability(player: str, sport: str, market: str,
     prob += location_adj * 0.15
 
     # Bonus/Malus für Linie vs Durchschnitt
-    if feats["line_vs_avg"] > 3: prob -= 0.05   # Linie viel über Schnitt → Malus
-    if feats["line_vs_avg"] < -3: prob += 0.05  # Linie weit unter Schnitt → Bonus
+    if feats["line_vs_avg"] > 3: prob += 0.05   # Average above line: conservative bonus
+    if feats["line_vs_avg"] < -3: prob -= 0.05  # Average below line: conservative penalty
 
+    prob = max(0.0, min(1.0, prob))
     if direction == "under":
         prob = 1 - prob
 
