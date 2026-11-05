@@ -32,3 +32,17 @@ assert player_usage_windows(games[:4],123)["usage_l5"] is None
 assert player_usage_windows(games[:4],123)["usage_l5_observed"]==4
 assert player_usage_windows(games+games,123)["usage_l15_observed"]==15
 print("NBA OFFICIAL GAME USAGE WINDOWS PASSED")
+
+from prop_hunter_nba_usage import fetch_game_usage, safe_fetch_game_usage
+from types import ModuleType, SimpleNamespace
+import sys
+fake=ModuleType("nba_api")
+stats=ModuleType("nba_api.stats")
+endpoints=ModuleType("nba_api.stats.endpoints")
+endpoints.boxscoreusagev3=SimpleNamespace(BoxScoreUsageV3=lambda **kw: SimpleNamespace(get_dict=lambda:{"boxScoreUsage":{"homeTeam":{"players":[{"personId":123,"usagePercentage":0.31}]},"awayTeam":{"players":[{"personId":456,"usagePercentage":0.19}]}}}))
+with patch.dict(sys.modules,{"nba_api":fake,"nba_api.stats":stats,"nba_api.stats.endpoints":endpoints}):
+    got=fetch_game_usage("0022600001","2026-10-28")
+    assert {r["player_id"]:r["usage_pct"] for r in got}=={123:31.0,456:19.0},got
+with patch("prop_hunter_nba_usage.fetch_game_usage",side_effect=TimeoutError):
+    assert safe_fetch_game_usage("0022600001","2026-10-28")==[]
+print("NBA OFFICIAL BOXSCORE USAGE FETCH CONTRACT PASSED")
