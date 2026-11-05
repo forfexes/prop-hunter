@@ -42,3 +42,5 @@ assert results._image_upgrade_due({},'2026-11-04')
 assert results._image_upgrade_due({'media_type':'photo'},'2026-10-30')
 assert not results._image_upgrade_due({'media_type':'photo','image_settlement_version':1},'2026-11-05')
 print('BOUNDED LEGACY PHOTO MIGRATION TEST PASSED')
+
+assert cards._label({'market':'rushing_attempts Over 15.5','point':15.5,'direction':'over'})=='Over 15.5 rushing attempts'

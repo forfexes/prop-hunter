@@ -251,7 +251,7 @@ def _form_text(features: Dict[str, Any]) -> str:
 def _label(detail: Dict[str, Any]) -> str:
     pt = detail.get("point")
     d = str(detail.get("direction") or "over").lower()
-    market = re.sub(r"\s+", " ", str(detail.get("market") or "")).strip()
+    market = re.sub(r"\s+", " ", str(detail.get("market") or "").replace("_", " ")).strip()
     if pt is None:
         return market
     sign = "Over" if d == "over" else "Under"
@@ -285,7 +285,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             name = str(getattr(pick, "player", "") or "")
             photo = player_photo(name, league)
             for leg, det in zip(getattr(pick, "picks", None) or [], details or [{}] * len(getattr(pick, "picks", None) or [])):
-                rows.append({"name": name, "photo": photo, "label": str(getattr(leg, "market", "")),
+                rows.append({"name": name, "photo": photo, "label": str(getattr(leg, "market", "")).replace("_"," "),
                              "result":_result_text(det), "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])}" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
                              "odds": f"@{float(leg.odds):.2f}"})
             title, subtitle = "PLAYER LADDER", "Ein Spieler · mehrere Stufen"
