@@ -36,7 +36,7 @@ def probe(sports=("NBA","NHL","NFL")):
                         sub_value=(sub_payload or {}).get("Value") if isinstance(sub_payload,dict) else None
                         sub_rows=parse_game(sub_payload,sport,ev,HOST)
                         quotes.extend(sub_rows)
-                        subgame_details.append({"title":title[:50],"groups":len((sub_value or {}).get("GE") or []) if isinstance(sub_value,dict) else 0,"quotes":len(sub_rows)})
+                        subgame_details.append({"title":title[:50],"groups":len((sub_value or {}).get("GE") or []) if isinstance(sub_value,dict) else 0,"quotes":len(sub_rows),"sample_groups":[{"keys":sorted(g.keys())[:15],"name":str(g.get("GS") or g.get("Name") or g.get("GN") or "")[:70],"outcome_count":len(g.get("E") or [])} for g in ((sub_value or {}).get("GE") or [])[:3] if isinstance(g,dict)]})
                         if len(subgame_details)>=8: break
         out[sport]={"events":len(events),"matching":len(matching),"observed_player_quotes":len(quotes),"detail_shapes":detail_shapes,"subgame_details":subgame_details}
     return out
