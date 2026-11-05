@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-05T18:05:03.375454+00:00",
+  "updated_at": "2026-11-05T18:11:03.592552+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,15 +16,16 @@
       ]
     },
     "NBA": {
-      "rows": 1076,
+      "rows": 5578,
       "sources": [
+        "betrivers_direct",
         "bovada_direct",
         "draftkings_direct",
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 10,
-      "latest": "2026-11-05T15:44:53.612815+00:00",
+      "market_count": 21,
+      "latest": "2026-11-05T15:44:53.587956+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -40,7 +41,7 @@
       ]
     },
     "NFL": {
-      "rows": 979,
+      "rows": 785,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -48,22 +49,23 @@
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 24,
-      "latest": "2026-11-05T15:45:01.301191+00:00",
+      "market_count": 27,
+      "latest": "2026-11-05T15:45:01.267661+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 904,
+      "rows": 10,
       "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "draftkings_direct"
       ],
-      "market_count": 6,
-      "latest": "2026-11-05T15:45:08.460911+00:00",
-      "missing_core": []
+      "market_count": 1,
+      "latest": "2026-11-04T22:07:03.183750+00:00",
+      "missing_core": [
+        "goals",
+        "points",
+        "assists",
+        "saves"
+      ]
     }
   },
   "issues": [
@@ -98,6 +100,25 @@
         "rebounds",
         "assists",
         "threes"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "draftkings_direct"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "goals",
+        "points",
+        "assists",
+        "saves"
       ]
     }
   ]
