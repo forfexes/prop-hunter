@@ -36,6 +36,7 @@ def discover():
                 groups=(v or {}).get("GE") or [] if isinstance(v,dict) else []
                 types={}
                 player_fields=0
+                samples={}
                 for g in groups:
                     if not isinstance(g,dict):continue
                     for bucket in g.get("E") or []:
@@ -43,8 +44,11 @@ def discover():
                             if not isinstance(o,dict):continue
                             typ=str(o.get("T"))
                             types[typ]=types.get(typ,0)+1
+                            if typ not in samples and len(samples)<25:
+                                pl=o.get("PL")
+                                samples[typ]={"player":str(pl.get("N") or "")[:50] if isinstance(pl,dict) else "","line":o.get("P"),"price":o.get("C"),"group":o.get("G"),"player_team":pl.get("T") if isinstance(pl,dict) else None}
                             if isinstance(o.get("PL"),dict) and o["PL"].get("N"):player_fields+=1
-                subdata.append({"title":str(sub.get("TG") or sub.get("PN") or "")[:55],"groups":len(groups),"player_named_outcomes":player_fields,"outcome_types":dict(sorted(types.items(),key=lambda p:-p[1])[:12])})
+                subdata.append({"title":str(sub.get("TG") or sub.get("PN") or "")[:55],"groups":len(groups),"player_named_outcomes":player_fields,"outcome_types":dict(sorted(types.items(),key=lambda p:-p[1])[:12]),"type_samples":samples})
             details.append({"subgames":len(subs),"candidate_subgames":subdata})
         result[league]={"catalog_events":len(events),"matching_events":len(matches),"details":details,"status":"no_matching_events" if not matches else "inspected"}
     return result
