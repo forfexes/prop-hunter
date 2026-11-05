@@ -26,5 +26,16 @@ jobs:
         run: python prop_hunter_22bet_points_test.py
       - name: Check collector disabled by default
         run: python -c 'import prop_hunter_22bet as b; assert not b.configured(); assert b.fetch_22bet_nba_points()==[]'
+      - name: Test opt-in live NBA collector (no publishing)
+        env:
+          PH_22BET_ENABLED: '1'
+        run: |
+          python - <<'PY'
+          from prop_hunter_22bet import fetch_22bet_nba_points
+          rows=fetch_22bet_nba_points(max_events=1)
+          assert all(r['bookmaker']=='22bet' and r['sport']=='NBA' and r['market']=='points' and r['direction'] in ('over','under') and r['odds_decimal']>1 for r in rows)
+          print('22bet opt-in live collector quotes:',len(rows))
+          print('sample:',[(r['player_name'],r['line'],r['direction'],r['odds_decimal']) for r in rows[:5]])
+          PY
       - name: Probe NBA NHL NFL
         run: python prop_hunter_22bet_probe.py
