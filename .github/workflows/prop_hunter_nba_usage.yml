@@ -1,11 +1,21 @@
 name: Prop Hunter NBA Usage Source Check
 "on":
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      nba_game_id:
+        description: "Optional official NBA 10-digit game ID to import"
+        required: false
+        type: string
+      game_date:
+        description: "ISO date YYYY-MM-DD for the game"
+        required: false
+        type: string
   push:
     paths:
       - ".github/workflows/prop_hunter_nba_usage.yml"
       - "prop_hunter_nba_usage.py"
       - "prop_hunter_nba_usage_test.py"
+      - "prop_hunter_nba_usage_ingest.py"
 permissions:
   contents: read
 jobs:
@@ -26,10 +36,23 @@ jobs:
           now=datetime.now(timezone.utc)
           start=now.year if now.month>=10 else now.year-1
           season=f"{start}-{str(start+1)[-2:]}"
-          from prop_hunter_nba_usage import safe_fetch_season_usage
           rows=safe_fetch_season_usage(season,timeout=12)
           if not rows:
               print("NBA official usage source UNAVAILABLE: no USG% imported; no synthetic values")
           else:
               print(f"NBA official usage source OK: season={season}, players={len(rows)}")
           PY
+
+      - name: Optional verified NBA game usage import
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.nba_game_id != '' && inputs.game_date != '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NBA_GAME_ID: ${{ inputs.nba_game_id }}
+          NBA_GAME_DATE: ${{ inputs.game_date }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Usage import SKIPPED: Supabase secrets missing"
+            exit 0
+          fi
+          python prop_hunter_nba_usage_ingest.py "$NBA_GAME_ID" "$NBA_GAME_DATE"
