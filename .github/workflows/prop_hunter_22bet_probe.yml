@@ -6,6 +6,7 @@ name: Prop Hunter 22bet Source Probe
       - 'prop_hunter_22bet_probe.py'
       - 'prop_hunter_22bet_points.py'
       - 'prop_hunter_22bet_points_test.py'
+      - 'prop_hunter_22bet_integration_test.py'
       - 'prop_hunter_22bet.py'
       - 'prop_hunter_source_orchestrator.py'
       - '.github/workflows/prop_hunter_22bet_probe.yml'
@@ -24,6 +25,8 @@ jobs:
         run: pip install requests
       - name: Verify 22bet points parser
         run: python prop_hunter_22bet_points_test.py
+      - name: Validate end-to-end 22bet normalization and unknown-market blocking
+        run: python prop_hunter_22bet_integration_test.py
       - name: Check collector disabled by default
         run: python -c 'import prop_hunter_22bet as b; assert not b.configured(); assert b.fetch_22bet_nba_points()==[]'
       - name: Test opt-in live NBA collector (no publishing)
