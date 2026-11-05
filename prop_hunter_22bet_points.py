@@ -2,6 +2,7 @@
 """Conservative 22bet NBA player points parser. No unverified market mappings."""
 from __future__ import annotations
 import math
+from datetime import datetime, timezone
 
 def parse_nba_points_subgame(payload, event, host="https://22bet.com"):
     value=(payload or {}).get("Value") if isinstance(payload,dict) else None
@@ -15,6 +16,7 @@ def parse_nba_points_subgame(payload, event, host="https://22bet.com"):
     if not isinstance(group,dict): return []
     outcomes=group.get("E") or []
     result=[]
+    observed_at=datetime.now(timezone.utc).isoformat()
     for bucket in outcomes:
         for e in (bucket if isinstance(bucket,list) else [bucket]):
             if not isinstance(e,dict): continue
@@ -31,5 +33,5 @@ def parse_nba_points_subgame(payload, event, host="https://22bet.com"):
             result.append({"source":"22bet_linefeed","bookmaker":"22bet","sport":"NBA","league":"NBA","source_event_id":eid,"event_id":eid,
                 "commence_time":str(event.get("S") or ""),"home_team":str(event.get("O1") or ""),"away_team":str(event.get("O2") or ""),
                 "player_name":player,"market":"points","market_key":"points","direction":direction,"line":line,"odds_decimal":odds,
-                "selection":f"{player} {direction} {line} points","raw":{"host":host,"type":typ,"player_id":pl.get("I")}})
+                "selection":f"{player} {direction} {line} points","observed_at":observed_at,"odds_observed":True,"raw":{"host":host,"type":typ,"player_id":pl.get("I")}})
     return result
