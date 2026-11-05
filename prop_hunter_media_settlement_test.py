@@ -33,3 +33,6 @@ assert cards._label({'point':25.5,'direction':'over','market':'Points'})=='Over 
 assert results._card_pick({'pick_keys':['a']},[{'dedup_key':'a','player':'A','market':'Points','line':20.5}],[])['point']==20.5
 assert results._card_pick({'pick_keys':['a','b']},[{'dedup_key':'a'},{'dedup_key':'b'}],[]) is None
 print('MEDIA SETTLEMENT TEST PASSED: render, original ID, no caption, legacy upgrade, 429 retry')
+
+assert cards._label({'point':25.5,'direction':'over','market':'Points Over 25.5'})=='Over 25.5 Points'
+assert cards._label({'point':.5,'direction':'over','market':'Moneyline','raw':{'team_builder_market':'moneyline'}})=='Sieg (inkl. OT)'

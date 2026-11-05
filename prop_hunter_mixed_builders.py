@@ -1,6 +1,6 @@
 """Confirmed same-game team/player tickets; no multiplied SGP prices."""
 from datetime import datetime,timezone
-import math,re
+import math,re,hashlib
 from prop_hunter_form_quality import rejection,evidence
 
 def get(o,k,d=None):return o.get(k,d) if isinstance(o,dict) else getattr(o,k,d)
@@ -46,6 +46,8 @@ def build(props,Pick,now=None):
                 except (KeyError,TypeError,ValueError):bad=True;break
                 if not math.isfinite(point) or not math.isfinite(price) or price<=1 or not leg.get('selection_id'):bad=True;break
                 item=dict(leg,game=game,sport=sport,league=sport,event_id=eid,commence_time=start.isoformat(),bookmaker=book)
+                item['book_selection_id']=str(leg['selection_id'])
+                item['selection_id']=hashlib.sha256('|'.join((book,eid,qid,str(leg['selection_id']))).encode()).hexdigest()
                 if kind=='player':
                     matches=[]
                     for prop in props:

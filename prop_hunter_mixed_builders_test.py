@@ -30,3 +30,18 @@ assert match_final_score(both,event)['actual_value']==105
 both['raw']['scope']='first_half';assert not team_leg_valid(both) and match_final_score(both,event) is None
 wrong=deepcopy(event);wrong['status']['type']['completed']=False;assert match_final_score(leg,wrong) is None
 print('MIXED BUILDER TEST PASSED: observed prices, form, expiry, selection identity, moneyline, both-over, final scope')
+
+# End-to-end result indexing uses the preserved book event and grades all legs.
+from unittest.mock import patch
+import prophunter_results as reporter
+combo=vars(picks[0]).copy()
+rows=[]
+for index,l in enumerate(combo['leg_details']):
+ rows.append({'result':'win','actual_value':1 if index==0 else 25,'pick_raw':dict(l)})
+with patch.object(reporter,'_settlement_ready_time',return_value=True):
+ by_dedup,by_signature=reporter._index_results(rows)
+ assert reporter._settle_combo(combo,by_dedup,by_signature)
+ assert combo['result']=='win' and abs(combo['profit']-.1)<1e-8
+ assert all(l['result']=='win' for l in combo['leg_details'])
+assert all(len(l['selection_id'])==64 for l in picks[0].leg_details)
+print('MIXED BUILDER RESULT INDEX / COMBINED PRICE PROFIT TEST PASSED')

@@ -255,7 +255,10 @@ def _label(detail: Dict[str, Any]) -> str:
     if pt is None:
         return market
     sign = "Over" if d == "over" else "Under"
-    rest = re.sub(r"(?i)^(over|under)\s+[\d.]+\s*", "", market)
+    kind=(detail.get("raw") or {}).get("team_builder_market")
+    if kind=="moneyline":return "Sieg (inkl. OT)"
+    if kind=="both_over":return f"Beide Teams Over {pt:g}"
+    rest = re.sub(r"(?i)\b(over|under)\s+[\d.]+", "", market).strip()
     return f"{sign} {pt:g} {rest}".strip()
 
 
@@ -290,9 +293,8 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
                 subtitle = game[:60]
         elif typ == "single":
             name = str(getattr(pick, "player", "") or "")
-            _market_with_line = lambda market, direction, point: f"{market} {direction} {point:g}" if point is not None else str(market)
             rows.append({"name": name, "photo": player_photo(name, league),
-                         "label": _market_with_line(getattr(pick, "market", "") or "", getattr(pick, "direction", "over"), getattr(pick, "point", None)),
+                         "label": _label({"market":getattr(pick,"market","") or "","direction":getattr(pick,"direction","over"),"point":getattr(pick,"point",None)}),
                          "form": _form_text(feats), "result":_result_text(vars(pick)), "odds": f"@{float(getattr(pick, 'odds', 0) or 0):.2f}"})
             title, subtitle = "SINGLE", game[:60] or "Pro Tip"
         else:
@@ -301,7 +303,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             for det in details:
                 lg = league_of(det.get("sport")) or league
                 nm = str(det.get("player") or "")
-                rows.append({"name": nm, "photo": player_photo(nm, lg), "label": _label(det), "form": _form_text(det.get("features")), "result":_result_text(det),
+                rows.append({"name": nm, "photo": (team_logo(nm,lg) if det.get("kind")=="team" else player_photo(nm, lg)), "label": _label(det), "form": _form_text(det.get("features")), "result":_result_text(det),
                              "odds": f"@{float(det.get('odds') or 0):.2f}" if det.get("odds") else ""})
             title = "CROSS-GAME BUILDER" if cross else ("SAME-GAME BUILDER" if teams else "BUILDER")
             subtitle = f"{len(rows)} Legs" + (" · mehrere Spiele" if cross else (f" · {game[:40]}" if game else ""))
@@ -310,6 +312,8 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         odds = getattr(pick, "odds", None)
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
         footer = "Bestätigte Book-Quote prüfen" if est else (f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else "")
+        stake=getattr(pick,"stake",None)
+        if stake is not None:footer += f" · Einsatz {float(stake):g}u"
         return render(typ, title, subtitle, sport, teams, rows[:7], footer, getattr(pick,"settlement_summary", ""))
     except Exception:
         return None
@@ -320,7 +324,7 @@ def snapshot(pick):
     """JSON-safe presentation evidence for editing the original photo later."""
     import json
     from types import SimpleNamespace
-    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit")}
+    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit","stake")}
     data["picks"]=[vars(x) if isinstance(x,SimpleNamespace) else (x.model_dump() if hasattr(x,"model_dump") else dict(x) if isinstance(x,dict) else {"market":getattr(x,"market", ""),"odds":getattr(x,"odds",None)}) for x in (getattr(pick,"picks",None) or [])]
     return json.loads(json.dumps(data,default=str))
 
