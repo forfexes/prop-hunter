@@ -5010,11 +5010,21 @@ def save_gamelogs_to_supabase(player: str, sport: str, games: list):
 def compute_player_features(games: list, line: float, stat_key: str) -> dict | None:
     """Berechnet ML-Features aus historischen Game Logs."""
     if len(games) < 5: return None
-    vals = [float(g.get(stat_key, 0) or 0) for g in games]
-    l5  = vals[:5];  l10 = vals[:10]; l20 = vals[:20]
+    import math
+    vals = []
+    for g in games[:15]:
+        raw = g.get(stat_key)
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value) and value >= 0:
+            vals.append(value)
+    if len(vals) < 5: return None
+    l5  = vals[:5];  l10 = vals[:10]; l15 = vals[:15]
     hit_rate_l5  = sum(1 for v in l5  if v > line) / len(l5)
     hit_rate_l10 = sum(1 for v in l10 if v > line) / len(l10) if l10 else 0
-    hit_rate_l20 = sum(1 for v in l20 if v > line) / len(l20) if l20 else 0
+    hit_rate_l15 = sum(1 for v in l15 if v > line) / len(l15) if l15 else 0
     avg_l5  = sum(l5)  / len(l5)
     avg_l10 = sum(l10) / len(l10) if l10 else avg_l5
     streak = 0
@@ -5023,14 +5033,14 @@ def compute_player_features(games: list, line: float, stat_key: str) -> dict | N
         else: break
     home_games  = [g for g in games if g.get("is_home")]
     away_games  = [g for g in games if not g.get("is_home")]
-    home_hit_rate = sum(1 for g in home_games if float(g.get(stat_key,0) or 0) > line) / len(home_games) if home_games else hit_rate_l10
+    home_hit_rate = sum(1 for g in home_games if g.get(stat_key) is not None and float(g.get(stat_key)) > line) / len(home_games) if home_games else hit_rate_l10
     away_hit_rate = sum(1 for g in away_games if float(g.get(stat_key,0) or 0) > line) / len(away_games) if away_games else hit_rate_l10
     # Heim/Auswärts-Bonus (20% bessere Heim-Stats ist typisch)
     is_home_game = games[0].get("is_home", True) if games else True
     location_adj = (home_hit_rate - away_hit_rate) * 0.5 if home_games and away_games else 0
     return {
         "hit_rate_l5": hit_rate_l5, "hit_rate_l10": hit_rate_l10,
-        "hit_rate_l20": hit_rate_l20, "avg_l5": avg_l5, "avg_l10": avg_l10,
+        "hit_rate_l15": hit_rate_l15, "avg_l5": avg_l5, "avg_l10": avg_l10,
         "streak": streak, "home_hit_rate": home_hit_rate,
         "away_hit_rate": away_hit_rate,
         "location_adj": home_hit_rate - away_hit_rate,
@@ -5083,11 +5093,11 @@ def player_ml_probability(player: str, sport: str, market: str,
     if not feats: return None
 
     # Einfaches gewichtetes Modell (kein Training nötig — direkte Heuristik)
-    # Gewichtung: L5 Hit Rate 40%, L10 Hit Rate 35%, L20 Hit Rate 15%, Streak 10%
+    # Gewichtung: L5 Hit Rate 40%, L10 Hit Rate 35%, L15 Hit Rate 15%, Streak 10%
     location_adj = feats.get("location_adj", 0)
     prob = (0.40 * feats["hit_rate_l5"] +
             0.35 * feats["hit_rate_l10"] +
-            0.15 * feats["hit_rate_l20"] +
+            0.15 * feats["hit_rate_l15"] +
             0.10 * min(feats["streak"] / 5, 1.0))
     # location_adj already reflects home-vs-away split; apply conservatively.
     prob += location_adj * 0.15
