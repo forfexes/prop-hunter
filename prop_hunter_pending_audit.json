@@ -1,22 +1,12 @@
 {
-  "generated_at": "2026-11-05T15:51:10.230968+00:00",
-  "unresolved": 27,
+  "generated_at": "2026-11-05T16:39:59.380099+00:00",
+  "unresolved": 21,
   "counts": {
-    "awaiting_game_completion": 18,
-    "unmapped_market": 4,
-    "no_unique_official_game": 5
+    "awaiting_game_completion": 17,
+    "unsupported_team_or_game_market": 1,
+    "no_unique_official_game": 3
   },
   "picks": [
-    {
-      "pick_id": "b1f0eefa6935489b80e9d7b4798b5d53",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-05",
-      "league": "NFL",
-      "player": "Parker Washington",
-      "market": "2_plus_td Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
     {
       "pick_id": "3079bd1c19b0ecb251faee063b3caa9a",
       "source": "prop_hunter_picks",
@@ -188,50 +178,14 @@
       "evidence": null
     },
     {
-      "pick_id": "0e146eaaec401b29ee95be9069f56fcb",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-04",
-      "league": "?",
-      "player": "Caleb Wilson + Jared McCain + Precious Achiuwa",
-      "market": "3-Leg LOTTERY",
-      "reason": "unmapped_market",
-      "evidence": null
-    },
-    {
-      "pick_id": "6d0532f7fb21245ab2435d3d1990b1ab",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-04",
-      "league": "?",
-      "player": "Jared McCain + Precious Achiuwa",
-      "market": "2-Leg RISK",
-      "reason": "unmapped_market",
-      "evidence": null
-    },
-    {
-      "pick_id": "7e2ae770776ce2c7df3b7f53c4b153bb",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-04",
-      "league": "?",
-      "player": "Both Teams Total + Joel Farabee + Ivica Zubac",
-      "market": "3-Leg RISK",
-      "reason": "unmapped_market",
-      "evidence": null
-    },
-    {
       "pick_id": "f67e85c8c24fde7925ff1c25655bd0d6",
       "source": "prop_hunter_picks",
       "date": "2026-11-04",
       "league": "NBA",
       "player": "Both Teams Total",
       "market": "points Over 112.5",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": "34936999",
-        "quoted_kickoff": "2026-11-05T03:10:00+00:00",
-        "quoted_game": "LA Lakers @ SAC Kings",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
-      }
+      "reason": "unsupported_team_or_game_market",
+      "evidence": null
     },
     {
       "pick_id": "d3d3959989ec4f0e3d1fa806cef71d1d",
@@ -280,32 +234,6 @@
         "loaded_player_rows": 0,
         "loaded_game_dates": []
       }
-    },
-    {
-      "pick_id": "b775f63593d778204c9e67c6bf89e02a",
-      "source": "history_leg",
-      "date": "2026-11-04",
-      "league": "NBA",
-      "player": "Both Teams Total",
-      "market": "points Over 112.5",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": "34936999",
-        "quoted_kickoff": "2026-11-05T03:10:00+00:00",
-        "quoted_game": "LA Lakers @ SAC Kings",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
-      }
-    },
-    {
-      "pick_id": "7c738fec6aece0aa0fc3714125193e4c",
-      "source": "history_leg",
-      "date": "2026-11-04",
-      "league": "NBA",
-      "player": "Precious Achiuwa",
-      "market": "Player To Record A Three In The First 3 Minutes Over 0",
-      "reason": "unmapped_market",
-      "evidence": null
     }
   ]
 }
