@@ -37,3 +37,16 @@ def fetch_season_usage(season, timeout=20):
         timeout=timeout,
     )
     return normalize_usage_rows(response.get_normalized_dict().get("LeagueDashPlayerStats", []))
+
+def safe_fetch_season_usage(season, timeout=12, logger=None):
+    """Fail open for bot execution, fail closed for data quality.
+
+    A blocked stats.nba.com endpoint must not create fake USG% or stop
+    normal player-feature/settlement jobs.
+    """
+    try:
+        return fetch_season_usage(season, timeout=timeout)
+    except Exception as exc:
+        if logger is not None:
+            logger.warning("NBA official usage unavailable (%s): %s", type(exc).__name__, exc)
+        return {}
