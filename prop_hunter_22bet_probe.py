@@ -21,7 +21,8 @@ def probe(sports=("NBA","NHL","NFL")):
                 payload=_game(HOST,eid)
                 value=(payload or {}).get("Value") if isinstance(payload,dict) else None
                 if isinstance(value,dict):
-                    detail_shapes.append({"groups":len(value.get("GE") or []),"subgames":len(value.get("SG") or []),"event_outcomes":len(value.get("E") or []),"keys":sorted(value.keys())[:20]})
+                    subgame_titles=[str(x.get("TG") or x.get("PN") or x.get("N") or "")[:70] for x in (value.get("SG") or [])[:35] if isinstance(x,dict)]
+                    detail_shapes.append({"subgame_titles":subgame_titles,"groups":len(value.get("GE") or []),"subgames":len(value.get("SG") or []),"event_outcomes":len(value.get("E") or []),"keys":sorted(value.keys())[:20]})
                 quotes.extend(parse_game(payload,sport,ev,HOST))
         out[sport]={"events":len(events),"matching":len(matching),"observed_player_quotes":len(quotes),"detail_shapes":detail_shapes}
     return out
