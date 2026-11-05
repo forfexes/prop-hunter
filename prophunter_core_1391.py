@@ -3843,6 +3843,21 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
     for p in singles:
         edge = p.edge_pct
         prob = p.probability
+        # Reject invalid prices/probabilities and unsupported extreme longshots.
+        try:
+            import math
+            price = float(p.odds)
+            probability = float(prob)
+            if not (math.isfinite(price) and price > 1.0 and
+                    math.isfinite(probability) and 0.0 < probability <= 1.0):
+                rejected["invalid_price_probability"] += 1; continue
+            if price >= 10.0:
+                feats = getattr(p, "features", {}) or {}
+                sample = int(feats.get("gamelog_n") or 0)
+                if sample < 10:
+                    rejected["longshot_insufficient_form"] += 1; continue
+        except (TypeError, ValueError, OverflowError):
+            rejected["invalid_price_probability"] += 1; continue
         if not _has_observed_price(p):
             rejected["unverified_odds"] += 1; continue
         if edge is None:
