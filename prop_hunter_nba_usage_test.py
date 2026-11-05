@@ -46,3 +46,11 @@ with patch.dict(sys.modules,{"nba_api":fake,"nba_api.stats":stats,"nba_api.stats
 with patch("prop_hunter_nba_usage.fetch_game_usage",side_effect=TimeoutError):
     assert safe_fetch_game_usage("0022600001","2026-10-28")==[]
 print("NBA OFFICIAL BOXSCORE USAGE FETCH CONTRACT PASSED")
+
+from prop_hunter_nba_usage import calculate_boxscore_usage
+assert calculate_boxscore_usage(20,8,3,35,240,90,25,12) is not None
+assert calculate_boxscore_usage(20,8,3,0,240,90,25,12) is None
+assert calculate_boxscore_usage(20,8,3,35,240,0,0,0) is None
+assert calculate_boxscore_usage(None,8,3,35,240,90,25,12) is None
+assert calculate_boxscore_usage(-1,8,3,35,240,90,25,12) is None
+print("NBA OBSERVED BOXSCORE USG ESTIMATE PASSED")
