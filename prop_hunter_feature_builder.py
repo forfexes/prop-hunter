@@ -72,6 +72,17 @@ def volume_value(row, field):
             if field == "usage_pct" and value > 100:
                 continue
             return value
+    # ESPN stores made-attempted shooting splits inside raw.stat_map.
+    # Use the attempt count only when the pair is valid; do not infer USG%.
+    raw = row.get("raw")
+    stat_map = raw.get("stat_map") if isinstance(raw, dict) else None
+    espn_key = {"fga": "FG", "fta": "FT", "three_pa": "3PT"}.get(field)
+    if espn_key and isinstance(stat_map, dict):
+        pair = stat_map.get(espn_key)
+        if isinstance(pair, str) and pair.count("-") == 1:
+            made, attempted = pair.split("-")
+            if made.isdecimal() and attempted.isdecimal() and int(made) <= int(attempted):
+                return float(attempted)
     return None
 
 def volume_profile(rows):
