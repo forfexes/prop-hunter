@@ -44,6 +44,8 @@ jobs:
           python prop_hunter_media_settlement_test.py
           python prop_hunter_mixed_builders_test.py
           python prop_hunter_settler_fast_test.py
+          python prop_hunter_settlement_backlog_test.py
+          python ml_validation_test.py
       - name: Full card dry run
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
         env:
