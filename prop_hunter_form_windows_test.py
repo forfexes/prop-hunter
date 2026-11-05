@@ -166,3 +166,8 @@ assert venue['away_hit_rate']==0.0
 assert venue['location_adj']==1.0
 assert player_feats([{'points':20,'is_home':True} for _ in range(5)],15,'points')['location_adj']==0.0
 print('PLAYER ML VENUE MISSING-STAT / L15 GUARDS PASSED')
+
+# Without both known venue splits, no home-away adjustment is justified.
+assert player_feats([{'points':20,'is_home':True} for _ in range(5)],15,'points')['location_adj']==0.0
+assert player_feats([{'points':20} for _ in range(5)],15,'points')['location_adj']==0.0
+print('PLAYER ML VENUE FALLBACK REGRESSION PASSED')
