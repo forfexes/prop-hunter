@@ -50,6 +50,45 @@ def hit(rs,k,line):
     vs=[val(r,k) for r in rs if val(r,k) is not None]
     return round(sum(v>line for v in vs)/len(vs),4) if vs else None
 
+# Optional role/volume evidence. Missing fields stay missing; never invent
+# minutes, attempts, or usage from a box-score screenshot.
+VOLUME_FIELDS = {
+    "minutes": ("minutes", "min"),
+    "fga": ("fga", "field_goals_attempted"),
+    "fta": ("fta", "free_throws_attempted"),
+    "three_pa": ("three_pa", "three_point_attempts", "3pa"),
+    "usage_pct": ("usage_pct", "usg_pct"),
+}
+
+def volume_value(row, field):
+    import math
+    for key in VOLUME_FIELDS[field]:
+        raw = row.get(key)
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value) and value >= 0:
+            if field == "usage_pct" and value > 100:
+                continue
+            return value
+    return None
+
+def volume_profile(rows):
+    result = {}
+    for n in (5, 10, 15):
+        subset = rows[:n]
+        values = {}
+        for field in VOLUME_FIELDS:
+            observed = [volume_value(row, field) for row in subset]
+            observed = [v for v in observed if v is not None]
+            if observed:
+                values[field + "_avg"] = round(mean(observed), 4)
+                values[field + "_n"] = len(observed)
+        if values:
+            result["last_" + str(n)] = values
+    return result
+
 def load_feature_logs(scope="", page_size=1000):
     """Read by immutable id, so concurrent pruning cannot shift row offsets."""
     client=supabase_client()
@@ -92,6 +131,8 @@ def main():
               "last_game_date":items[0].get("game_date") if items else None,
               **form_context(historical,league)}
         feat["historical_last_15"]={st+"_avg":avg(historical,st) for st in STATS if avg(historical,st) is not None}
+        volume = volume_profile(items)
+        if volume: feat["role_volume"] = volume
         for n in [5,10,15]:
             sub=items[:n]; feat[f"last_{n}"]={}
             for st in STATS:
