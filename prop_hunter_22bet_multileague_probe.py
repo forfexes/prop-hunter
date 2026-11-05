@@ -23,6 +23,7 @@ def discover():
             eid=ev.get("I") or ev.get("CI")
             if not eid: continue
             game=_game(HOST,eid)
+            if not game: game=_game(HOST,eid)
             val=(game or {}).get("Value") if isinstance(game,dict) else None
             if not isinstance(val,dict):continue
             subs=[x for x in val.get("SG") or [] if isinstance(x,dict)]
@@ -32,6 +33,7 @@ def discover():
                 subid=sub.get("CI") or sub.get("I")
                 if not subid:continue
                 data=_game(HOST,subid)
+                if not data: data=_game(HOST,subid)
                 v=(data or {}).get("Value") if isinstance(data,dict) else None
                 groups=(v or {}).get("GE") or [] if isinstance(v,dict) else []
                 types={}
@@ -49,7 +51,7 @@ def discover():
                                 samples[typ]={"player":str(pl.get("N") or "")[:50] if isinstance(pl,dict) else "","line":o.get("P"),"price":o.get("C"),"group":o.get("G"),"player_team":pl.get("T") if isinstance(pl,dict) else None}
                             if isinstance(o.get("PL"),dict) and o["PL"].get("N"):player_fields+=1
                 subdata.append({"title":str(sub.get("TG") or sub.get("PN") or "")[:55],"groups":len(groups),"player_named_outcomes":player_fields,"outcome_types":dict(sorted(types.items(),key=lambda p:-p[1])[:12]),"type_samples":samples})
-            details.append({"subgames":len(subs),"candidate_subgames":subdata})
-        result[league]={"catalog_events":len(events),"matching_events":len(matches),"details":details,"status":"no_matching_events" if not matches else "inspected"}
+            details.append({"subgames":len(subs),"candidate_subgames":subdata,"event_league":str(ev.get("LE") or ev.get("L") or "")[:90],"event_teams":[str(ev.get("O1") or "")[:65],str(ev.get("O2") or "")[:65]]})
+        result[league]={"catalog_events":len(events),"matching_events":len(matches),"details":details,"status":"no_matching_events" if not matches else ("inspected_with_market_data" if any(any(s.get("player_named_outcomes",0)>0 for s in d.get("candidate_subgames",[])) for d in details) else "market_data_unavailable")}
     return result
 if __name__=="__main__":print(json.dumps(discover(),sort_keys=True))
