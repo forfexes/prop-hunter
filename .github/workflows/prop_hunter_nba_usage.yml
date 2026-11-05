@@ -1,0 +1,28 @@
+name: Prop Hunter NBA Usage Source Check
+"on":
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  usage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install nba_api requests
+      - name: Official NBA Usage API smoke test
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from prop_hunter_nba_usage import fetch_season_usage
+          now=datetime.now(timezone.utc)
+          start=now.year if now.month>=10 else now.year-1
+          season=f"{start}-{str(start+1)[-2:]}"
+          rows=fetch_season_usage(season,timeout=20)
+          if not rows:
+              raise RuntimeError("NBA official USG% returned no valid player rows")
+          print(f"NBA official usage source OK: season={season}, players={len(rows)}")
+          PY
