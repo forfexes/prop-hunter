@@ -14,11 +14,16 @@ def probe(sports=("NBA","NHL","NFL")):
         events=_list_events(HOST,sid)
         matching=[e for e in events if isinstance(e,dict) and _league_ok(sport,e)]
         quotes=[]
+        detail_shapes=[]
         for ev in matching[:2]:
             eid=ev.get("I") or ev.get("CI") or ev.get("id")
             if eid:
-                quotes.extend(parse_game(_game(HOST,eid),sport,ev,HOST))
-        out[sport]={"events":len(events),"matching":len(matching),"observed_player_quotes":len(quotes)}
+                payload=_game(HOST,eid)
+                value=(payload or {}).get("Value") if isinstance(payload,dict) else None
+                if isinstance(value,dict):
+                    detail_shapes.append({"groups":len(value.get("GE") or []),"subgames":len(value.get("SG") or []),"event_outcomes":len(value.get("E") or []),"keys":sorted(value.keys())[:20]})
+                quotes.extend(parse_game(payload,sport,ev,HOST))
+        out[sport]={"events":len(events),"matching":len(matching),"observed_player_quotes":len(quotes),"detail_shapes":detail_shapes}
     return out
 if __name__=="__main__":
     print(json.dumps(probe(),sort_keys=True))
