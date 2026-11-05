@@ -1,6 +1,11 @@
 name: Prop Hunter NBA Usage Source Check
 "on":
   workflow_dispatch: {}
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_nba_usage.yml"
+      - "prop_hunter_nba_usage.py"
+      - "prop_hunter_nba_usage_test.py"
 permissions:
   contents: read
 jobs:
