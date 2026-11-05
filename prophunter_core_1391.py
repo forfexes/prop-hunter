@@ -5031,13 +5031,20 @@ def compute_player_features(games: list, line: float, stat_key: str) -> dict | N
     for v in l5:
         if v > line: streak += 1
         else: break
-    home_games  = [g for g in games if g.get("is_home")]
-    away_games  = [g for g in games if not g.get("is_home")]
-    home_hit_rate = sum(1 for g in home_games if g.get(stat_key) is not None and float(g.get(stat_key)) > line) / len(home_games) if home_games else hit_rate_l10
-    away_hit_rate = sum(1 for g in away_games if float(g.get(stat_key,0) or 0) > line) / len(away_games) if away_games else hit_rate_l10
-    # Heim/Auswärts-Bonus (20% bessere Heim-Stats ist typisch)
-    is_home_game = games[0].get("is_home", True) if games else True
-    location_adj = (home_hit_rate - away_hit_rate) * 0.5 if home_games and away_games else 0
+    # Use the same validated, recent 15-game window for venue splits.
+    valid_games = []
+    for g in games[:15]:
+        try:
+            v = float(g.get(stat_key))
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(v) and v >= 0:
+            valid_games.append((g, v))
+    home_vals = [v for g, v in valid_games if g.get("is_home") is True]
+    away_vals = [v for g, v in valid_games if g.get("is_home") is False]
+    home_hit_rate = sum(v > line for v in home_vals) / len(home_vals) if home_vals else hit_rate_l10
+    away_hit_rate = sum(v > line for v in away_vals) / len(away_vals) if away_vals else hit_rate_l10
+    location_adj = (home_hit_rate - away_hit_rate) if home_vals and away_vals else 0.0
     return {
         "hit_rate_l5": hit_rate_l5, "hit_rate_l10": hit_rate_l10,
         "hit_rate_l15": hit_rate_l15, "avg_l5": avg_l5, "avg_l10": avg_l10,
