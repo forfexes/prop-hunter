@@ -4,6 +4,8 @@ name: Prop Hunter 22bet Multi-League Probe
   push:
     paths:
       - 'prop_hunter_22bet_multileague_probe.py'
+      - 'prop_hunter_22bet_candidates.py'
+      - 'prop_hunter_22bet_candidates_test.py'
       - '.github/workflows/prop_hunter_22bet_multileague.yml'
 permissions:
   contents: read
@@ -18,5 +20,7 @@ jobs:
           python-version: '3.11'
       - name: Install
         run: pip install requests
+      - name: Verify NFL NHL raw market safety
+        run: python prop_hunter_22bet_candidates_test.py
       - name: Multi-league discovery (no publishing)
         run: python prop_hunter_22bet_multileague_probe.py
