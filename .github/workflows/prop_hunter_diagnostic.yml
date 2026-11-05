@@ -19,6 +19,8 @@ name: Prop Hunter Diagnostic Dry Run
       - 'prop_hunter_nba_usage_ingest_test.py'
       - 'prop_hunter_nba_usage_features.py'
       - 'prop_hunter_nba_usage_features_test.py'
+      - 'prop_hunter_bwin_us_probe.py'
+      - 'test_prop_hunter_bwin_us_probe.py'
 
 permissions:
   contents: read
@@ -62,6 +64,7 @@ jobs:
           python prop_hunter_usage_provider_exports_test.py
           python prop_hunter_nba_usage_ingest_test.py
           python prop_hunter_nba_usage_features_test.py
+          python test_prop_hunter_bwin_us_probe.py
       - name: Full card dry run
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
         env:
