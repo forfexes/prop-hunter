@@ -4744,8 +4744,11 @@ def run(dry_run=False,sport_filter=None):
         extras += build_mixed(props, Pick)
         from prop_hunter_combo_prices import publishable_extra
         _generated_count=len(extras)
+        from collections import Counter
+        from prop_hunter_combo_prices import publishable_extra_reason
+        rejected_reasons = Counter(publishable_extra_reason(p) for p in extras if not publishable_extra(p))
         extras = [p for p in extras if publishable_extra(p)]
-        log.info("builder price scope: generated=%d accepted=%d rejected=%d",_generated_count,len(extras),_generated_count-len(extras))
+        log.info("builder price scope: generated=%d accepted=%d rejected=%d reasons=%s",_generated_count,len(extras),_generated_count-len(extras),dict(rejected_reasons))
         picks = picks + extras
         log.info("verified builder extras: +%d", len(extras))
     except Exception as exc:
