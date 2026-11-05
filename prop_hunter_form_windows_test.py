@@ -157,3 +157,12 @@ assert player_feats([{'points':None}]*5,20,'points') is None
 assert player_feats([{'points':float('nan')}]*5,20,'points') is None
 assert player_feats([{'points':10}]*5,20,'points')['hit_rate_l15']==0
 print('PRODUCTION PLAYER ML L15 / MISSING STATS REGRESSION PASSED')
+
+# Missing away values must not dilute venue form or create fake under wins.
+venue_rows=[{'points':20,'is_home':True} for _ in range(5)]+[{'points':None,'is_home':False} for _ in range(5)]+[{'points':10,'is_home':False} for _ in range(5)]
+venue=player_feats(venue_rows,15,'points')
+assert venue['home_hit_rate']==1.0
+assert venue['away_hit_rate']==0.0
+assert venue['location_adj']==1.0
+assert player_feats([{'points':20,'is_home':True} for _ in range(5)],15,'points')['location_adj']==0.0
+print('PLAYER ML VENUE MISSING-STAT / L15 GUARDS PASSED')
