@@ -33,6 +33,8 @@ jobs:
         run: |
           python -m py_compile prophunter.py prophunter_core_1391.py prop_hunter_builder_engine.py prop_hunter_ladder_l15_test.py prop_hunter_quote_guard.py prop_hunter_settler.py prop_hunter_settler_extras.py
           python prop_hunter_ladder_l15_test.py
+          python prop_hunter_form_windows_test.py
+          python prop_hunter_form_quality_test.py
           python prop_hunter_runtime_guard.py
           python prop_hunter_market_regression_test.py
           python prop_hunter_combo_prices_test.py
