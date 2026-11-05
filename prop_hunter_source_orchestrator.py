@@ -70,6 +70,11 @@ def _direct_jobs(sports):
             for sport in active:jobs.append((f'1xbet_{sport.lower()}',lambda s=sport:xb.fetch_1xbet_props(s,max_events=max(1,int(os.getenv('PH_1XBET_MAX_EVENTS','2'))))))
     except Exception as exc:warn(f'1xBet adapter unavailable: {exc}')
     try:
+        import prop_hunter_22bet as bet22
+        if 'NBA' in active and bet22.configured():
+            jobs.append(('22bet_nba',lambda:bet22.fetch_22bet_nba_points(max_events=2)))
+    except Exception as exc:warn(f'22bet adapter unavailable: {exc}')
+    try:
         import prop_hunter_sgo as sgo
         if sgo.configured():
             keys={'MLB':'baseball_mlb','NBA':'basketball_nba','WNBA':'basketball_wnba','NFL':'americanfootball_nfl','NHL':'icehockey_nhl','NCAAB':'basketball_ncaab','NCAAF':'americanfootball_ncaaf','EUROLEAGUE':'basketball_euroleague'}
