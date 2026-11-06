@@ -7,6 +7,8 @@ name: Prop Hunter NBA Alternative Sources
       - 'prop_hunter_boxscorelab_test.py'
       - 'prop_hunter_free_nba_sources.py'
       - 'prop_hunter_free_nba_sources_test.py'
+      - 'prop_hunter_season_usage_mapping.py'
+      - 'prop_hunter_season_usage_mapping_test.py'
       - '.github/workflows/prop_hunter_nba_alternative_sources.yml'
 permissions:
   contents: read
@@ -20,6 +22,7 @@ jobs:
         run: |
           python prop_hunter_boxscorelab_test.py
           python prop_hunter_free_nba_sources_test.py
+          python prop_hunter_season_usage_mapping_test.py
           python prop_hunter_bref_usage_test.py
           python prop_hunter_usage_provider_exports_test.py
       - name: Read-only public BoxScore Lab season source
