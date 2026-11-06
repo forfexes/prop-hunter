@@ -179,3 +179,10 @@ _grimes = [{'league':'NBA','game_date':d,'points':p} for d,p in [('2026-10-06',1
 _valid = _season_rows(_grimes,'NBA','2026-11-06')
 assert [x['points'] for x in _valid] == [7,23,10], _valid
 print('NBA PRESEASON BACKFILL EXCLUSION PASSED')
+
+# Incomplete regular-season windows must not inherit old L15 hit evidence.
+_guard_source = Path('prophunter_core_1391.py').read_text(encoding='utf-8')
+assert 'feats["gamelog_prob_rejected"] = True' in _guard_source
+assert 'feats.pop(stale_key, None)' in _guard_source
+assert '"gamelog_l15_hits", "gamelog_l15_line"' in _guard_source
+print('INSUFFICIENT L15 EVIDENCE FAIL-CLOSED REGRESSION PASSED')
