@@ -785,18 +785,32 @@ def build_performance_summary(history: list) -> str:
     lines+=["",_performance_line("GESAMT",rows)]
     return "\n".join(lines)
 
-def _send_summary(text: str) -> None:
+def _send_summary(text: str) -> bool:
+    """Confirm Telegram accepted a report; never report success on HTTP failure."""
     if not TG_TOKEN or not TG_CHAT:
-        print(text)
-        return
+        print("Telegram report not sent: token or chat id missing")
+        return False
     try:
-        requests.post(
+        response = requests.post(
             f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
             json={"chat_id": TG_CHAT, "text": text, "disable_web_page_preview": True},
             timeout=TIMEOUT,
         )
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {}
+        if response.status_code != 200 or payload.get("ok") is not True:
+            print(f"Telegram report rejected: HTTP {response.status_code}; "
+                  f"error_code={payload.get('error_code')}; "
+                  f"description={str(payload.get('description', 'unknown'))[:160]}")
+            return False
+        message_id = (payload.get("result") or {}).get("message_id")
+        print(f"Telegram report sent: message_id={message_id}")
+        return True
     except Exception as exc:
         print(f"Telegram send failed: {exc}")
+        return False
 
 
 def _combo_source_key(combo: dict, day: str) -> Optional[str]:
