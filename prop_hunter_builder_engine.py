@@ -620,9 +620,20 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
     same_game = bool(_game(legs[0])) and len({_game(x) for x in legs}) == 1
     all_hr = all(_is_hr(x) for x in legs)
     category = "hr_lottery" if all_hr and label in {"RISK", "LOTTERY"} else label.lower()
-    ptype = "betbuilder" if same_game and label in {"SAFE", "VALUE"} else (
-        "big" if label in {"RISK", "LOTTERY"} else ("kombi2" if len(legs) == 2 else "kombi3")
-    )
+    # Typ-Zuordnung muss auf einen Typ fallen, den ALLE Downstream-Filter kennen
+    # (Card-Formatter, Core-Combo-Listen, Pending-Audit, Retrosheet). Diese kennen
+    # kombi2/kombi3/big/super/betbuilder/ladder/lottery — aber NICHT kombi4/kombi5.
+    # Darum: 2->kombi2, 3->kombi3, 4+->super (der etablierte 4er/Mehr-Leg-Typ).
+    if same_game and label in {"SAFE", "VALUE"}:
+        ptype = "betbuilder"
+    elif label in {"RISK", "LOTTERY"}:
+        ptype = "big"
+    elif len(legs) == 2:
+        ptype = "kombi2"
+    elif len(legs) == 3:
+        ptype = "kombi3"
+    else:
+        ptype = "super"
 
     analysis = (
         f"{'HR LOTTERY' if all_hr else label} · gemeinsame Prob {prob*100:.1f}% "
@@ -726,8 +737,14 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
             reverse=True,
         )[:14]
 
-        for size in (2, 3, 4):
-            for legs in itertools.combinations(book_pool, size):
+        # 2–5 Legs. 1-Leg ist kein Builder (das ist ein Single, laeuft ueber die
+        # normale Single-Pipeline). Fuer 4er/5er nur die staerksten Legs
+        # kombinieren, sonst sprengt die Kombinatorik (C(14,5)=2002) die
+        # Actions-Minuten ohne Mehrwert — die schwachen Legs schaffen es ohnehin
+        # nie ueber die EV/Prob-Schwellen in _make_builder.
+        for size in (2, 3, 4, 5):
+            combo_pool = book_pool if size <= 3 else book_pool[:9]
+            for legs in itertools.combinations(combo_pool, size):
                 odds = math.prod(_odds(x) for x in legs)
                 min_prob = min(_prob(x) for x in legs)
                 all_hr = all(_is_hr(x) for x in legs)
@@ -748,8 +765,22 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
                         label = "RISK"
                     else:
                         label = "LOTTERY"
+                elif size == 4:
+                    # 4er nur als echter VALUE, wenn jede Leg solide ist und die
+                    # Gesamtquote nicht ausufert; sonst RISK, ganz oben LOTTERY.
+                    if min_prob >= 0.55 and odds <= 12.0:
+                        label = "VALUE"
+                    elif odds <= 30.0:
+                        label = "RISK"
+                    else:
+                        label = "LOTTERY"
                 else:
-                    label = "LOTTERY"
+                    # 5-Leg: nur zulassen, wenn jede einzelne Leg stark ist
+                    # (min_prob hoch), damit es kein Lotterielos mit Fantasiequote wird.
+                    if min_prob >= 0.58 and odds <= 40.0:
+                        label = "RISK"
+                    else:
+                        label = "LOTTERY"
 
                 built = _make_builder(legs, label, PickCls, pairs)
                 if built:
