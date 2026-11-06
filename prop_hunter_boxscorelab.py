@@ -39,6 +39,7 @@ def parse_season_csv(csv_text, season):
     if not usage or not player:
         raise ValueError("missing explicit player/usage columns: " + ",".join(reader.fieldnames))
     games = column("gp", "games", "gamesplayed")
+    team_col = column("team", "teamabbr", "teamabbreviation")
     season_field = column("season")
     rows = []
     seen = set()
@@ -70,11 +71,12 @@ def parse_season_csv(csv_text, season):
         else:
             count = None
         # The CSV can contain multiple teams per player; retain rows for review, but do not ID-join.
-        key = (name, str(r.get("team") or ""), season)
+        team = str(r.get(team_col) or "").strip() if team_col else ""
+        key = (name, team, season)
         if key in seen:
             raise ValueError("duplicate source player/team/season row")
         seen.add(key)
-        rows.append({"player_name": name, "season": season, "usage_pct": pct,
+        rows.append({"player_name": name, "team": team, "season": season, "usage_pct": pct,
                      "games": count, "scope": "season",
                      "source": "boxscorelab_csv_cc_by_4_0",
                      "attribution": "BoxScore Lab, https://boxscorelab.com"})
