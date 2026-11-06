@@ -11,6 +11,7 @@ legacy settler did not originally map (carries/rushing attempts and targets).
 from __future__ import annotations
 
 import re
+from collections import Counter
 from typing import Any, Dict, Optional
 
 from prop_hunter_settler import (
@@ -153,26 +154,32 @@ def main() -> None:
     aliases = learn_aliases(list(picks) + list(logs))
     log_index = build_log_index(logs)
     settled = []
+    diagnostics = Counter()
     for p in picks:
         market = p.get("market") or p.get("prop_type") or p.get("selection")
         stat = detect_extra_stat(market)
         if not stat:
+            diagnostics['not_supplemental_market'] += 1
             continue
         sport = str(p.get("league") or p.get("sport") or "").upper()
         if not _allowed(stat, sport):
+            diagnostics['unsupported_sport_stat'] += 1
             continue
         status_now = str(p.get("status") or p.get("result") or "pending").lower()
         if status_now not in {"", "pending", "open", "none", "null", "unsettled"}:
             continue
         gl = find_gamelog(p, logs, aliases=aliases, log_index=log_index)
         if not gl:
+            diagnostics['missing_unique_gamelog'] += 1
             continue
         value = extra_stat_value(gl, stat)
         line = extra_line_of_pick(p, stat)
         side = side_of_pick(p)
         status = result_for_value(value, line, side)
         if status == "no_result":
+            diagnostics["missing_stat_line_or_side"] += 1
             continue
+        diagnostics['settled'] += 1
         pid = pick_id(p)
         result_key_stat = legacy_detect_stat(market) or stat
         settled.append({
@@ -195,7 +202,7 @@ def main() -> None:
         })
     safe_json_write(OUT, settled)
     persist_settlements(settled)
-    log(f"extras settler done: picks={len(picks)} logs={len(logs)} settled={len(settled)}")
+    log(f"extras settler done: picks={len(picks)} logs={len(logs)} settled={len(settled)} reasons={dict(diagnostics)}")
 
 if __name__ == "__main__":
     main()
