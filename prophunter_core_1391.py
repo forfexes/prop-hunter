@@ -1281,6 +1281,14 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 feats = dict(getattr(p, "features", None) or {})
                 feats["gamelog_n"] = n
                 feats["gamelog_l15_n"] = n
+                # Never reuse stale L15 hit counts/lines from an earlier
+                # enrichment when current-season evidence is insufficient.
+                for stale_key in ("gamelog_l15_hits", "gamelog_l15_line",
+                                  "gamelog_l15_direction", "gamelog_l15_empirical_rate",
+                                  "gamelog_model_rate", "monte_carlo_prob",
+                                  "monte_carlo_n", "recent_form"):
+                    feats.pop(stale_key, None)
+                feats["gamelog_prob_rejected"] = True
                 feats["gamelog_skip_reason"] = "fewer_than_6_current_season_games"
                 p.features = feats
                 # An unpaired bookmaker quote is not a no-vig fair probability.
