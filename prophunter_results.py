@@ -606,7 +606,10 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
     # Never infer a result from the card text or from an unmatched selection.
     if not edited:
         if not any(_status_icon(x.get("result")) for x in selected_picks + selected_combos):
-            return None
+            # Preserve a previously graded card's pending count when a result
+            # was reopened; never resurrect a premature win.
+            if not (card.get("settlement_text") and (selected_picks or selected_combos)):
+                return None
         details = []
         for pick in selected_picks:
             icon = _status_icon(pick.get("result"))
