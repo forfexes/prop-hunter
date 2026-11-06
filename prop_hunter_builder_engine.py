@@ -500,6 +500,27 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
         if len(legs) < 2:
             continue
 
+        # JK-Style Stufenraster fuer Basketball-Punkte: JK staffelt grob
+        # (5 / 10 / 15 / 20 / 25), nicht eng (6 / 7 / 8 / 9). Enge Punkt-Stufen
+        # sind praktisch dieselbe Wette; 5er-Schritte sind klar getrennte Ideen.
+        # Nur NBA/WNBA Punkte, und nur wenn genug Raster-Stufen uebrig bleiben —
+        # sonst lieber die echten Stufen behalten als die Ladder wegwerfen.
+        # Andere Maerkte (Strikeouts 5/6/7/8, SOG, Yards) behalten ihre
+        # natuerlichen Stufen, denn dort sind enge Schritte korrekt (so spielt
+        # JK selbst seine Pitcher-Strikeout-Ladders).
+        _sp = _sport(legs[0]["prop"]) if legs else ""
+        if (os.getenv("PH_JK_POINTS_GRID", "1").lower() in {"1", "true", "yes", "on"}
+                and _sp in {"NBA", "WNBA"} and "points" in base):
+            _step = int(os.getenv("PH_JK_POINTS_STEP", "5"))
+            _grid = [x for x in legs if abs(float(x["point"]) - round(float(x["point"]))) < 1e-9
+                     and int(round(float(x["point"]))) % _step == 0]
+            # Half-point-Linien (z.B. 9.5) auf das Raster normalisieren: 9.5 -> 10.
+            if len(_grid) < 2:
+                _grid = [x for x in legs
+                         if int(math.ceil(float(x["point"]))) % _step == 0]
+            if len(_grid) >= 2:
+                legs = _grid
+
         # Keep ladders readable and actionable. Every rung is still a real observed
         # bookmaker line, but dozens of alt-lines for one player add noise rather
         # than a distinct betting idea. Preserve easy/hard endpoints plus the best
