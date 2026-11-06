@@ -16,3 +16,6 @@ try:
 except ValueError:
     pass
 print("BoxScore Lab season source tests passed")
+
+team_rows = parse_season_csv('player_name,team,season,games_played,usage_rate\nTest Player,BOS,2026-27,12,0.24\n', '2026-27')
+assert team_rows[0]['team'] == 'BOS'
