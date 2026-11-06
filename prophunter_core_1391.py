@@ -4740,8 +4740,14 @@ def run(dry_run=False,sport_filter=None):
     try:
         from prop_hunter_builder_engine import build_autonomous_extras
         extras = build_autonomous_extras(picks, props, Pick, LadderLeg)
-        from prop_hunter_mixed_builders import build as build_mixed
-        extras += build_mixed(props, Pick)
+        # A failure in optional mixed builders must not discard already built
+        # independent ladders and same-game builders.
+        try:
+            from prop_hunter_mixed_builders import build as build_mixed
+            mixed_extras = build_mixed(props, Pick)
+            extras += list(mixed_extras or [])
+        except Exception as mixed_exc:
+            log.warning("optional mixed builder skipped; retaining autonomous extras: %s", mixed_exc)
         from prop_hunter_combo_prices import publishable_extra
         _generated_count=len(extras)
         from collections import Counter
