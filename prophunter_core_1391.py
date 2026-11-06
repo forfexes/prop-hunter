@@ -1400,7 +1400,8 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             side_label = "unter Linie" if direction == "under" else "über Linie"
             if prev_used:
                 feats["gamelog_prev_season_n"] = prev_used
-            extra = f"Form L5 {feats['recent_form']['l5']['hits']}/{feats['recent_form']['l5']['n']} · L{n}{"(+"+str(prev_used)+" Vorsaison)" if prev_used else ""} avg {avg:.1f}, {int(empirical_hits/n*100)}% {side_label}"
+            prev_tag = f"(+{prev_used} Vorsaison)" if prev_used else ""
+            extra = f"Form L5 {feats['recent_form']['l5']['hits']}/{feats['recent_form']['l5']['n']} · L{n}{prev_tag} avg {avg:.1f}, {int(empirical_hits/n*100)}% {side_label}"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue
