@@ -604,7 +604,7 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
     # Some legacy cards use a different line layout. Still edit the ORIGINAL
     # Telegram message with a verified per-selection settlement appendix.
     # Never infer a result from the card text or from an unmatched selection.
-    if not edited and not (card.get("settlement_text") and (selected_picks or selected_combos)):
+    if not edited:
         if not any(_status_icon(x.get("result")) for x in selected_picks + selected_combos):
             return None
         details = []
