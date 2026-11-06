@@ -68,8 +68,11 @@ def extra_stat_value(gl: Dict[str, Any], stat: str):
         if value is not None:
             return value
     if stat == "touchdowns":
-        rec = to_float(gl.get("receiving_touchdowns"), 0.0) or 0.0
-        rush = to_float(gl.get("rushing_touchdowns"), 0.0) or 0.0
+        rec = to_float(gl.get("receiving_touchdowns"))
+        rush = to_float(gl.get("rushing_touchdowns"))
+        # Missing fields are not proof of zero touchdowns: avoid false losses.
+        if rec is None or rush is None:
+            return None
         return rec + rush
     raw = gl.get("raw") if isinstance(gl.get("raw"), dict) else {}
     v = to_float(raw.get(stat))
