@@ -27,6 +27,8 @@ W = 1080
 CYAN = (34, 230, 238)
 WHITE = (245, 250, 252)
 MUTED = (150, 178, 190)
+GREEN = (46, 226, 130)   # GEWONNEN
+RED = (240, 78, 92)      # VERLOREN
 PANEL = (10, 26, 38, 205)
 HEADERS = {"User-Agent": "PropHunter-Cards/1.0 (+https://github.com/forfexes/prop-hunter)"}
 
@@ -221,11 +223,20 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         if r.get("odds"):
             d.text((W - 100, y + 62), r["odds"], font=_font(40), fill=CYAN, anchor="rm")
         if r.get("result"):
-            d.text((232,y+164),_fit(d,r["result"],_font(23),640),font=_font(23),fill=CYAN,anchor="lm")
+            _rt=str(r["result"])
+            _rc=GREEN if "GEWONNEN" in _rt else RED if "VERLOREN" in _rt else CYAN
+            d.text((232,y+164),_fit(d,_rt,_font(23),640),font=_font(23),fill=_rc,anchor="lm")
         y += row_h
     if footer:
         d.text((W // 2, h - 92), _fit(d, footer, _font(30), W - 160), font=_font(30), fill=WHITE, anchor="mm")
-    d.text((W // 2, h - 56), (_fit(d, settlement, _font(24), W - 150) if settlement else "Auswertung: offen"), font=_font(24, False), fill=MUTED, anchor="mm")
+    if settlement:
+        _sl=settlement.lower()
+        _sc=(GREEN if ("gewonnen" in _sl or "+" in settlement) and "verloren" not in _sl
+             else RED if ("verloren" in _sl or "-0" in settlement or "−" in settlement)
+             else MUTED)
+        d.text((W // 2, h - 56), _fit(d, settlement, _font(24), W - 150), font=_font(24, False), fill=_sc, anchor="mm")
+    else:
+        d.text((W // 2, h - 56), "Auswertung: offen", font=_font(24, False), fill=MUTED, anchor="mm")
     buf = io.BytesIO()
     img.convert("RGB").save(buf, "PNG", optimize=True)
     return buf.getvalue()
@@ -237,6 +248,15 @@ def _result_text(detail):
     label={"win":"GEWONNEN","won":"GEWONNEN","loss":"VERLOREN","lost":"VERLOREN","push":"PUSH","void":"VOID","withdrawn":"ZURÜCKGEZOGEN"}.get(state,"")
     actual=detail.get("actual_value")
     return (f"Ist: {actual} · " if actual is not None else "")+label
+
+def _result_color(detail):
+    """GEWONNEN -> gruen, VERLOREN -> rot, sonst (Push/Void/offen) CYAN."""
+    state=str(detail.get("result") or detail.get("status") or "").lower()
+    if state in {"win","won"}:
+        return GREEN
+    if state in {"loss","lost"}:
+        return RED
+    return CYAN
 
 
 def _form_text(features: Dict[str, Any]) -> str:
