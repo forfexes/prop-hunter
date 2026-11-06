@@ -10,7 +10,15 @@ def reference_date(value=None):
 def season_floor(league,reference):
     league=str(league or '').upper()
     day=reference_date(reference)
-    if league in {'NBA','NHL','NCAAB','EUROLEAGUE','AHL','SHL','SWISS_NL'}:
+    if league == 'NBA':
+        season_year = day.year if day.month >= 9 else day.year - 1
+        # NBA 2026/27 regular season starts on Oct 20, 2026. Earlier
+        # October ESPN backfill rows include preseason and must not
+        # inflate L10/L15 player-prop evidence. Fail closed for this season.
+        if season_year == 2026:
+            return date(2026,10,20)
+        return date(season_year,9,1)
+    if league in {'NHL','NCAAB','EUROLEAGUE','AHL','SHL','SWISS_NL'}:
         return date(day.year if day.month>=9 else day.year-1,9,1)
     if league in {'NFL','NCAAF'}:
         return date(day.year if day.month>=7 else day.year-1,7,1)
