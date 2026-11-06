@@ -5,6 +5,8 @@ name: Prop Hunter NBA Alternative Sources
     paths:
       - 'prop_hunter_boxscorelab.py'
       - 'prop_hunter_boxscorelab_test.py'
+      - 'prop_hunter_free_nba_sources.py'
+      - 'prop_hunter_free_nba_sources_test.py'
       - '.github/workflows/prop_hunter_nba_alternative_sources.yml'
 permissions:
   contents: read
@@ -17,14 +19,15 @@ jobs:
       - name: Offline tests
         run: |
           python prop_hunter_boxscorelab_test.py
+          python prop_hunter_free_nba_sources_test.py
           python prop_hunter_bref_usage_test.py
           python prop_hunter_usage_provider_exports_test.py
       - name: Read-only public BoxScore Lab season source
         run: |
           python - <<'PY'
-          from prop_hunter_boxscorelab import source_check
+          from prop_hunter_free_nba_sources import collect_boxscorelab_seasons
           try:
-              print(source_check("2026-27"))
+              print(collect_boxscorelab_seasons())
           except Exception as exc:
               print("SOURCE_UNAVAILABLE:",type(exc).__name__,str(exc)[:300])
               raise
