@@ -12,7 +12,7 @@ future=[dict(current[0],game_date='2026-11-01',rebounds=99)]
 rows=current+old+other+future
 assert select_form_rows(rows,'NBA','2026-10-30')==current
 assert form_context(rows,'NBA','2026-10-30')['form_games_available']==7
-assert season_floor('NBA','2027-01-01')==date(2026,9,1)
+assert season_floor('NBA','2027-01-01')==date(2026,10,20)
 assert season_floor('NFL','2027-01-01')==date(2026,7,1)
 assert season_floor('MLB','2026-10-30')==date(2026,1,1)
 assert select_form_rows([dict(current[0],game_date=None)],'NBA','2026-10-30')==[]
@@ -50,12 +50,18 @@ for fallback in [False,True]:
     active_rows=rows;ns['_GAMELOG_CACHE'].clear()
     a,b=prop(),prop('WNBA')
     ns['enrich_gamelogs_fairprob']([a,b])
-    assert a.features['gamelog_l15_n']==7 and a.features['gamelog_l15_hits']==0
+    assert a.features['gamelog_l15_n']==15 and a.features['form_current_games']==7 and a.features['form_prev_season_games']==8
+    assert a.features['gamelog_l15_hits']==8, a.features
     assert b.features['gamelog_l15_n']==7 and b.features['gamelog_l15_hits']==7
     active_rows=current[:3]+old;ns['_GAMELOG_CACHE'].clear()
+    a=prop()
+    ns['enrich_gamelogs_fairprob']([a])
+    assert a.features['gamelog_n']==11 and a.features['form_prev_season_games']==8 and 'fair_prob' in a.features
+    # fewer than 3 current games: no padding, evidence rejected
+    active_rows=current[:2]+old;ns['_GAMELOG_CACHE'].clear()
     a,b=prop(),prop(fair=.2)
     ns['enrich_gamelogs_fairprob']([a,b])
-    assert a.features['gamelog_n']==3 and 'fair_prob' not in a.features
+    assert a.features['gamelog_n']==2 and 'fair_prob' not in a.features
     assert b.features['fair_prob']==.2
 
 # Equal-to-line outcomes are pushes, not successful Under observations.
@@ -67,9 +73,9 @@ assert push.features['gamelog_l15_hits']==0
 assert push.features['gamelog_l15_rate']==0, push.features
 assert push.features['gamelog_l10_rate']==0
 
-active_rows=[dict(current[0],game_id=f'l{i}',game_date=(date(2026,10,27)-timedelta(days=i)).isoformat(),rebounds=0 if i<10 else 20) for i in range(15)]
+active_rows=[dict(current[0],game_id=f'l{i}',game_date=(date(2026,12,10)-timedelta(days=i)).isoformat(),rebounds=0 if i<10 else 20) for i in range(15)]
 ns['_GAMELOG_CACHE'].clear()
-long=prop()
+long=prop();long.commence_time='2026-12-11T02:00Z'
 ns['enrich_gamelogs_fairprob']([long])
 assert long.features['gamelog_l10_n']==10 and long.features['gamelog_l10_hits']==0
 assert long.features['gamelog_l15_n']==15 and long.features['gamelog_l15_hits']==5
@@ -186,3 +192,10 @@ assert 'feats["gamelog_prob_rejected"] = True' in _guard_source
 assert 'feats.pop(stale_key, None)' in _guard_source
 assert '"gamelog_l15_hits", "gamelog_l15_line"' in _guard_source
 print('INSUFFICIENT L15 EVIDENCE FAIL-CLOSED REGRESSION PASSED')
+
+# early-season padding: previous regular season only, never preseason
+from prop_hunter_form_windows import select_prev_season_rows
+_b=dict(league='NBA',rebounds=5);_prev=[dict(_b,game_id='p1',game_date='2026-04-10'),dict(_b,game_id='p2',game_date='2025-10-10'),dict(_b,game_id='p3',game_date='2025-12-01')]
+_got=[r['game_id'] for r in select_prev_season_rows(_prev,'NBA','2026-10-30')]
+assert _got==['p1','p3'],_got
+print('PREV SEASON PADDING TEST PASSED')

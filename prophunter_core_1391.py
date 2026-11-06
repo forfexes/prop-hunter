@@ -1252,8 +1252,19 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 rows0 = list(res.data or [])
                 _prefetched_rows[key] = rows0
             fast_rows = select_form_rows(rows0, sport_label, reference)
+            n_current = len(fast_rows)
+            prev_used = 0
+            # Thin early-season sample: pad (never replace) with the previous
+            # regular season, clearly flagged. Preseason is never used.
+            if sport_label == "NBA" and 3 <= n_current < 15:
+                from prop_hunter_form_windows import select_prev_season_rows
+                prev_rows = select_prev_season_rows(rows0, sport_label, reference, 15 - n_current)
+                prev_used = len(prev_rows)
+                fast_rows = list(fast_rows) + prev_rows
             feats = dict(getattr(p, "features", None) or {})
             feats.update(form_context(rows0, sport_label, reference))
+            feats["form_current_games"] = n_current
+            feats["form_prev_season_games"] = prev_used
             p.features = feats
             if cache_k not in _GAMELOG_CACHE:
                 vals0 = []
@@ -1277,7 +1288,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                 _GAMELOG_CACHE[cache_k] = vals0
             vals = _GAMELOG_CACHE[cache_k]
             n = len(vals)
-            if n < 6:
+            if n < 6 or n_current < 3:
                 feats = dict(getattr(p, "features", None) or {})
                 feats["gamelog_n"] = n
                 feats["gamelog_l15_n"] = n
@@ -1289,7 +1300,7 @@ def enrich_gamelogs_fairprob(props: list) -> list:
                                   "monte_carlo_n", "recent_form"):
                     feats.pop(stale_key, None)
                 feats["gamelog_prob_rejected"] = True
-                feats["gamelog_skip_reason"] = "fewer_than_6_current_season_games"
+                feats["gamelog_skip_reason"] = "fewer_than_3_current_or_6_total_games"
                 p.features = feats
                 # An unpaired bookmaker quote is not a no-vig fair probability.
                 # Preserve independent existing evidence; never manufacture +4% EV.
@@ -1370,6 +1381,8 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             # Gewicht der DB-Rate steigt mit Sample-Größe (6 Spiele→0.30, 10+→0.5; L15 bleibt gecappt).
             if old:
                 db_weight = min(0.5, 0.05 * n)  # n=6→0.30, n=10→0.50, capped 0.5
+                if prev_used:  # last-season padding counts at half weight
+                    db_weight = min(0.5, 0.05 * (n_current + 0.5 * prev_used))
                 blended = float(old) * (1 - db_weight) + rate * db_weight
                 feats["fair_prob"] = round(blended, 4)
             else:
@@ -1385,7 +1398,9 @@ def enrich_gamelogs_fairprob(props: list) -> list:
             p.features = feats
             avg = sum(vals)/n
             side_label = "unter Linie" if direction == "under" else "über Linie"
-            extra = f"Form L5 {feats['recent_form']['l5']['hits']}/{feats['recent_form']['l5']['n']} · L{n} avg {avg:.1f}, {int(empirical_hits/n*100)}% {side_label}"
+            if prev_used:
+                feats["gamelog_prev_season_n"] = prev_used
+            extra = f"Form L5 {feats['recent_form']['l5']['hits']}/{feats['recent_form']['l5']['n']} · L{n}{"(+"+str(prev_used)+" Vorsaison)" if prev_used else ""} avg {avg:.1f}, {int(empirical_hits/n*100)}% {side_label}"
             p.enrichment = ((getattr(p, "enrichment", "") or "") + " | " + extra)[:240]
             boosted += 1
         except Exception: continue

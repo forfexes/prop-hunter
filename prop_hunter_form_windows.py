@@ -1,5 +1,5 @@
 """Current-season form windows, with retained older history kept for comparison."""
-from datetime import date,datetime,timezone
+from datetime import date,datetime,timedelta,timezone
 
 def reference_date(value=None):
     if isinstance(value,datetime):return value.date()
@@ -17,6 +17,8 @@ def season_floor(league,reference):
         # inflate L10/L15 player-prop evidence. Fail closed for this season.
         if season_year == 2026:
             return date(2026,10,20)
+        if season_year == 2025:
+            return date(2025,10,21)  # 2025/26 regular season start (no preseason)
         return date(season_year,9,1)
     if league in {'NHL','NCAAB','EUROLEAGUE','AHL','SHL','SWISS_NL'}:
         return date(day.year if day.month>=9 else day.year-1,9,1)
@@ -64,3 +66,21 @@ def form_context(rows,league,reference=None):
                 form_games_available=len(current),
                 form_first_game_date=current[-1].get('game_date') if current else None,
                 form_last_game_date=current[0].get('game_date') if current else None)
+
+
+def select_prev_season_rows(rows,league,reference=None,limit=15):
+    """Regular-season rows of the PREVIOUS season (never preseason), newest first.
+    Used only to pad a thin current-season sample; callers keep current games first."""
+    ref=reference_date(reference)
+    floor=season_floor(league,ref)
+    if floor is None:return []
+    prev_floor=season_floor(league,floor-timedelta(days=200))
+    if prev_floor is None:return []
+    out=[]
+    for row in rows or []:
+        if str(row.get('league') or '').upper()!=str(league or '').upper():continue
+        try:day=date.fromisoformat(str(row.get('game_date') or '')[:10])
+        except ValueError:continue
+        if prev_floor<=day<floor:out.append(row)
+    out.sort(key=lambda x:(str(x.get('game_date')),str(x.get('game_id') or '')),reverse=True)
+    return out[:limit]
