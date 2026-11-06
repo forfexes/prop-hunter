@@ -601,8 +601,31 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
         edited += int(_decorate_single(lines, p, used))
     for c in selected_combos:
         edited += int(_decorate_combo(lines, c, used))
+    # Some legacy cards use a different line layout. Still edit the ORIGINAL
+    # Telegram message with a verified per-selection settlement appendix.
+    # Never infer a result from the card text or from an unmatched selection.
     if not edited and not (card.get("settlement_text") and (selected_picks or selected_combos)):
-        return None
+        if not any(_status_icon(x.get("result")) for x in selected_picks + selected_combos):
+            return None
+        details = []
+        for pick in selected_picks:
+            icon = _status_icon(pick.get("result"))
+            if icon:
+                name = str(pick.get("player") or pick.get("player_name") or "Spieler")
+                market = str(pick.get("market") or "")
+                actual = _fmt_actual(pick.get("actual_value"))
+                units = _to_float(pick.get("profit"), 0.0) or 0.0
+                details.append(f"{icon} {name} {market}" + (f" · Ergebnis {actual}" if actual else "") + f" · {units:+.2f}u")
+        for combo in selected_combos:
+            icon = _status_icon(combo.get("result"))
+            if icon:
+                label = str(combo.get("type") or "Builder").title()
+                units = _to_float(combo.get("profit"), 0.0) or 0.0
+                details.append(f"{icon} {label} · {units:+.2f}u")
+        if details:
+            lines = [ln for ln in lines if not ln.strip().startswith("🏁 Auswertung:") and not ln.strip().startswith("🏁 Details:")]
+            insert_at = next((i for i, ln in enumerate(lines) if ln.strip() == "@prophunter"), len(lines))
+            lines[insert_at:insert_at] = ["🏁 Details:"] + details
 
     closed = [p for p in selected_picks if _status_icon(p.get("result"))]
     closed += [c for c in selected_combos if _status_icon(c.get("result"))]
