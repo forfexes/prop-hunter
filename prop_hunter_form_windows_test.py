@@ -171,3 +171,11 @@ print('PLAYER ML VENUE MISSING-STAT / L15 GUARDS PASSED')
 assert player_feats([{'points':20,'is_home':True} for _ in range(5)],15,'points')['location_adj']==0.0
 assert player_feats([{'points':20} for _ in range(5)],15,'points')['location_adj']==0.0
 print('PLAYER ML VENUE FALLBACK REGRESSION PASSED')
+
+# NBA 2026 preseason backfill must never count as regular-season L10/L15.
+from prop_hunter_form_windows import select_form_rows as _season_rows, season_floor as _season_floor
+assert _season_floor('NBA','2026-11-06').isoformat() == '2026-10-20'
+_grimes = [{'league':'NBA','game_date':d,'points':p} for d,p in [('2026-10-06',16),('2026-10-09',12),('2026-10-17',11),('2026-10-22',10),('2026-10-28',23),('2026-11-02',7)]]
+_valid = _season_rows(_grimes,'NBA','2026-11-06')
+assert [x['points'] for x in _valid] == [7,23,10], _valid
+print('NBA PRESEASON BACKFILL EXCLUSION PASSED')
