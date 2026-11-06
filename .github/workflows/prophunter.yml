@@ -86,6 +86,7 @@ jobs:
         run: |
           python -m compileall -q .
           python prop_hunter_card_quality_test.py
+          python prop_hunter_form_windows_test.py
           python prop_hunter_media_settlement_test.py
           python prop_hunter_mixed_builders_test.py
           python prop_hunter_ladder_l15_test.py
