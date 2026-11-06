@@ -5,11 +5,18 @@ from prop_hunter_1xbet import _list_events, _game, SPORT_IDS
 from prop_hunter_22bet_points import parse_nba_points_subgame
 HOST="https://22bet.com/service-api/LineFeed"
 LEAGUES={
+ "NBA":(SPORT_IDS["NBA"],("nba","national basketball association")),
+ "NCAAB":(SPORT_IDS["NBA"],("ncaa","college basketball","ncaab")),
+ "NCAAF":(SPORT_IDS["NFL"],("ncaa","college football","ncaaf")),
  "MLB":(SPORT_IDS["MLB"],("mlb","major league baseball")),
  "NFL":(SPORT_IDS["NFL"],("nfl","national football league")),
  "NHL":(SPORT_IDS["NHL"],("nhl","national hockey league")),
  "WNBA":(SPORT_IDS["WNBA"],("wnba",)),
  "EUROBASKET":(SPORT_IDS["NBA"],("eurobasket","euro basket","european basketball championship")),
+ "EUROLEAGUE":(SPORT_IDS["NBA"],("euroleague","euro league")),
+ "AHL":(SPORT_IDS["NHL"],("ahl","american hockey league")),
+ "SHL":(SPORT_IDS["NHL"],("shl","swedish hockey league")),
+ "SWISS_NL":(SPORT_IDS["NHL"],("national league","swiss national league")),
 }
 def discover():
     result={}
