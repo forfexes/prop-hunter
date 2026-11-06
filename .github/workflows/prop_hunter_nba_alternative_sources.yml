@@ -9,6 +9,8 @@ name: Prop Hunter NBA Alternative Sources
       - 'prop_hunter_free_nba_sources_test.py'
       - 'prop_hunter_season_usage_mapping.py'
       - 'prop_hunter_season_usage_mapping_test.py'
+      - 'prop_hunter_nba_season_staging_ingest.py'
+      - 'prop_hunter_nba_season_staging_ingest_test.py'
       - '.github/workflows/prop_hunter_nba_alternative_sources.yml'
 permissions:
   contents: read
@@ -23,6 +25,7 @@ jobs:
           python prop_hunter_boxscorelab_test.py
           python prop_hunter_free_nba_sources_test.py
           python prop_hunter_season_usage_mapping_test.py
+          python prop_hunter_nba_season_staging_ingest_test.py
           python prop_hunter_bref_usage_test.py
           python prop_hunter_usage_provider_exports_test.py
       - name: Read-only public BoxScore Lab season source
@@ -35,3 +38,8 @@ jobs:
               print("SOURCE_UNAVAILABLE:",type(exc).__name__,str(exc)[:300])
               raise
           PY
+      - name: Import free NBA season rows to isolated staging (if credentials configured)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python prop_hunter_nba_season_staging_ingest.py
