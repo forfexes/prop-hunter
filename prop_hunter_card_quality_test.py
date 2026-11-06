@@ -29,3 +29,11 @@ text=_decorate_card(c,[p],[]);assert 'mindestens 10' in text and '20%' not in te
 ladder=N(type='ladder',picks=[],legs=[],features={})
 with patch('prop_hunter_builder_engine._real_ladders',return_value=[ladder]):assert build_autonomous_extras([],[],N,N)==[ladder]
 print('FINAL LONGSHOT GATE / TOUCHDOWN LABEL / VERIFIED LOGO ALIASES / QUALITY WITHDRAWAL / LADDER INDEPENDENCE PASSED')
+
+# Regression: optional mixed-builder failures must not discard autonomous ladders.
+from pathlib import Path
+_core_source = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
+assert 'mixed_extras = build_mixed(props, Pick)' in _core_source
+assert 'except Exception as mixed_exc:' in _core_source
+assert 'retaining autonomous extras' in _core_source
+print("MIXED BUILDER FAILURE ISOLATION CONTRACT PASSED")
