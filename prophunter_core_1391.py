@@ -1038,6 +1038,22 @@ def learning_multiplier(p) -> float:
     base = gk.split("|")[-1]
     dir_entry = weights.get(f"market_dir:{sport}|{base}|{direction}")
     if dir_entry and dir_entry.get("bets", 0) >= 15:
+        # HARTER BLOCK fuer chronische Geldverlierer: Draht runterdrehen reicht
+        # nicht, wenn ein Markt+Richtung ueber genug Wetten klar unter Breakeven
+        # liegt (z.B. NBA points over 37% -6.8u, NFL rushing_yards over 12%).
+        # Block greift nur bei klarer Datenlage (genug Wetten UND miese Trefferquote
+        # UND negativer ROI) und loest sich automatisch, sobald der Markt sich
+        # erholt — er ist datengetrieben, kein fester Ausschluss.
+        _bets = dir_entry.get("bets", 0)
+        _hr = dir_entry.get("hit_rate")
+        _roi = dir_entry.get("roi", 0)
+        _min_bets = int(os.getenv("PH_BLOCK_MIN_BETS", "20"))
+        _max_hr = float(os.getenv("PH_BLOCK_MAX_HITRATE", "0.40"))
+        _max_roi = float(os.getenv("PH_BLOCK_MAX_ROI", "-0.08"))
+        if (os.getenv("PH_HARD_BLOCK_LOSERS", "1").lower() in {"1", "true", "yes", "on"}
+                and _bets >= _min_bets and _hr is not None
+                and _hr < _max_hr and _roi < _max_roi):
+            return 0.0
         return dir_entry["weight"]
     sport_dir = weights.get(f"sport_dir:{sport}|{direction}")
     entry = weights.get(f"market:{gk}")
