@@ -461,6 +461,18 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
                 "passing yards", "rushing yards", "receiving yards", "receptions",
                 "passing touchdowns", "rushing touchdowns", "receiving touchdowns", "touchdowns"
             ))
+        ) or (
+            # Basketball-Punkte/Rebounds/Assists sind klassische Ladder-Maerkte
+            # (JK: Kia Nurse 10+/15+/20+). Ohne diese Lane entstanden Ladders NUR,
+            # wenn der Spieler zufaellig auch einen Single im selben Markt hatte —
+            # darum wurden aus 69 qualifizierten Stufen 0 Ladders. Mit der Lane
+            # baut jede Alt-Linien-Treppe eine Ladder, unabhaengig vom Single-Slot.
+            sport in {"NBA", "WNBA"} and any(x in base for x in (
+                "points", "rebounds", "assists", "threes", "three", "steals", "blocks"
+            ))
+        ) or (
+            # MLB Pitcher-Strikeouts: JKs Kern-Ladder (Kade Anderson 5+/6+/7+/8+).
+            sport == "MLB" and any(x in base for x in ("strikeout", "strikeouts"))
         )
         if selected_keys and (player, base, direction) not in selected_keys and not dedicated_ladder:
             continue
