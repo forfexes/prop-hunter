@@ -48,6 +48,10 @@ def discover():
                 samples={}
                 for g in groups:
                     if not isinstance(g,dict):continue
+                    # Gruppenname benennt den Markt (z.B. "Total Passing Yards").
+                    # Ohne ihn ist eine Type-ID nicht sicher einem Markt zuzuordnen —
+                    # genau das brauchen wir, um NFL/NHL fail-closed zu mappen.
+                    gname=str(g.get("GN") or g.get("N") or g.get("PN") or "")[:45]
                     for bucket in g.get("E") or []:
                         for o in (bucket if isinstance(bucket,list) else [bucket]):
                             if not isinstance(o,dict):continue
@@ -55,7 +59,7 @@ def discover():
                             types[typ]=types.get(typ,0)+1
                             if typ not in samples and len(samples)<25:
                                 pl=o.get("PL")
-                                samples[typ]={"player":str(pl.get("N") or "")[:50] if isinstance(pl,dict) else "","line":o.get("P"),"price":o.get("C"),"group":o.get("G"),"player_team":pl.get("T") if isinstance(pl,dict) else None}
+                                samples[typ]={"player":str(pl.get("N") or "")[:50] if isinstance(pl,dict) else "","line":o.get("P"),"price":o.get("C"),"group":o.get("G"),"group_name":gname,"player_team":pl.get("T") if isinstance(pl,dict) else None}
                             if isinstance(o.get("PL"),dict) and o["PL"].get("N"):player_fields+=1
                 subdata.append({"title":str(sub.get("TG") or sub.get("PN") or "")[:55],"groups":len(groups),"player_named_outcomes":player_fields,"outcome_types":dict(sorted(types.items(),key=lambda p:-p[1])[:12]),"type_samples":samples})
             details.append({"subgames":len(subs),"candidate_subgames":subdata,"event_league":str(ev.get("LE") or ev.get("L") or "")[:90],"event_teams":[str(ev.get("O1") or "")[:65],str(ev.get("O2") or "")[:65]]})
