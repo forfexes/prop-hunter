@@ -112494,8 +112494,8 @@
           "bookmaker": "draftkings",
           "source": "draftkings_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.26,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-11-07T14:22:10.711201+00:00",
@@ -112533,7 +112533,10 @@
             }
           },
           "gamelog_n": 15
-        }
+        },
+        "actual_value": 6,
+        "settled_at": "2026-11-08T09:44:44.463499+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-11-07",
@@ -112631,8 +112634,8 @@
           "bookmaker": "draftkings",
           "source": "draftkings_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.33,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-11-07T14:22:11.368459+00:00",
@@ -112670,7 +112673,10 @@
             }
           },
           "gamelog_n": 15
-        }
+        },
+        "actual_value": 2,
+        "settled_at": "2026-11-08T09:44:44.463336+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-11-07",
@@ -113608,8 +113614,8 @@
           "bookmaker": "bovada",
           "source": "bovada_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.26,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-11-07T20:32:49.068324+00:00",
@@ -113647,7 +113653,10 @@
             }
           },
           "gamelog_n": 15
-        }
+        },
+        "actual_value": 5,
+        "settled_at": "2026-11-08T09:44:44.463197+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-11-07",
@@ -113815,8 +113824,8 @@
           "bookmaker": "draftkings",
           "source": "draftkings_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "win",
+        "profit": 0.36,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-11-07T20:32:49.838765+00:00",
@@ -113854,7 +113863,10 @@
             }
           },
           "gamelog_n": 15
-        }
+        },
+        "actual_value": 2,
+        "settled_at": "2026-11-08T09:44:44.463336+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-11-07",
@@ -118248,7 +118260,7 @@
             "source_market": "assists",
             "direction": "under",
             "point": 4.5,
-            "odds": 1.3846,
+            "odds": 1.38,
             "probability": 0.86,
             "edge_pct": 19.1,
             "gamelog_l15_hits": 15,
@@ -118291,7 +118303,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.07,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.066123+00:00",
+            "result": "win",
+            "actual_value": 1
           },
           {
             "player": "Scoot Henderson",
@@ -118343,7 +118360,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.04,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.066123+00:00",
+            "result": "win",
+            "actual_value": 1
           }
         ],
         "odds": 1.38,
@@ -118358,7 +118380,7 @@
         "commence_time": null,
         "event_id": null,
         "probability": 0.86,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-11-07T20:32:52.066123+00:00",
         "ladder_legs": [
           {
@@ -118396,7 +118418,124 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
         "same_player_multistat": false,
-        "date": "2026-11-07"
+        "date": "2026-11-07",
+        "profit": 0.11,
+        "settlement_legs": [
+          {
+            "player": "Scoot Henderson",
+            "sport": "NBA",
+            "market": "Assists Under 4.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 4.5,
+            "odds": 1.38,
+            "probability": 0.86,
+            "edge_pct": 19.1,
+            "gamelog_l15_hits": 15,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-06",
+              "gamelog_l15_hits": 15,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 4.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 4.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 5,
+                  "avg": 1.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 10,
+                  "avg": 1.9
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 15,
+                  "avg": 1.8
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 10
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.07,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.066123+00:00",
+            "result": "win",
+            "actual_value": 1
+          },
+          {
+            "player": "Scoot Henderson",
+            "sport": "NBA",
+            "market": "Assists Under 2.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 2.5,
+            "odds": 3.1,
+            "probability": 0.5012,
+            "edge_pct": 55.4,
+            "gamelog_l15_hits": 10,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-06",
+              "gamelog_l15_hits": 10,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 2.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 2.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 1.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 6,
+                  "avg": 1.9
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 10,
+                  "avg": 1.8
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 6
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.04,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.066123+00:00",
+            "result": "win",
+            "actual_value": 1
+          }
+        ]
       },
       {
         "type": "ladder",
@@ -118413,7 +118552,7 @@
             "source_market": "rebounds",
             "direction": "under",
             "point": 12.5,
-            "odds": 1.5263,
+            "odds": 1.53,
             "probability": 0.86,
             "edge_pct": 31.3,
             "gamelog_l15_hits": 15,
@@ -118456,7 +118595,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.09,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.367629+00:00",
+            "result": "win",
+            "actual_value": 5
           },
           {
             "player": "Donovan Clingan",
@@ -118508,7 +118652,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.1,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.367629+00:00",
+            "result": "win",
+            "actual_value": 5
           },
           {
             "player": "Donovan Clingan",
@@ -118560,7 +118709,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.03,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.367629+00:00",
+            "result": "win",
+            "actual_value": 5
           }
         ],
         "odds": 1.53,
@@ -118575,7 +118729,7 @@
         "commence_time": null,
         "event_id": null,
         "probability": 0.86,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-11-07T20:32:52.367629+00:00",
         "ladder_legs": [
           {
@@ -118623,7 +118777,181 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
         "same_player_multistat": false,
-        "date": "2026-11-07"
+        "date": "2026-11-07",
+        "profit": 0.17,
+        "settlement_legs": [
+          {
+            "player": "Donovan Clingan",
+            "sport": "NBA",
+            "market": "Rebounds Under 12.5",
+            "source_market": "rebounds",
+            "direction": "under",
+            "point": 12.5,
+            "odds": 1.53,
+            "probability": 0.86,
+            "edge_pct": 31.3,
+            "gamelog_l15_hits": 15,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-04",
+              "gamelog_l15_hits": 15,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 12.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 12.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 5,
+                  "avg": 9.8
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 10,
+                  "avg": 8.0
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 15,
+                  "avg": 8.6
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 10
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.09,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.367629+00:00",
+            "result": "win",
+            "actual_value": 5
+          },
+          {
+            "player": "Donovan Clingan",
+            "sport": "NBA",
+            "market": "Rebounds Under 11.5",
+            "source_market": "rebounds",
+            "direction": "under",
+            "point": 11.5,
+            "odds": 1.8,
+            "probability": 0.86,
+            "edge_pct": 54.8,
+            "gamelog_l15_hits": 15,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-04",
+              "gamelog_l15_hits": 15,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 11.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 11.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 5,
+                  "avg": 9.8
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 10,
+                  "avg": 8.0
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 15,
+                  "avg": 8.6
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 10
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.1,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.367629+00:00",
+            "result": "win",
+            "actual_value": 5
+          },
+          {
+            "player": "Donovan Clingan",
+            "sport": "NBA",
+            "market": "Rebounds Under 10.5",
+            "source_market": "rebounds",
+            "direction": "under",
+            "point": 10.5,
+            "odds": 2.25,
+            "probability": 0.5695,
+            "edge_pct": 28.1,
+            "gamelog_l15_hits": 11,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-04",
+              "gamelog_l15_hits": 11,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 10.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 10.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 3,
+                  "avg": 9.8
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 8,
+                  "avg": 8.0
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 11,
+                  "avg": 8.6
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 8
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.03,
+            "date": "2026-11-07",
+            "created_at": "2026-11-07T20:32:52.367629+00:00",
+            "result": "win",
+            "actual_value": 5
+          }
+        ]
       },
       {
         "type": "big",
@@ -122785,12 +123113,15 @@
             "gamelog_prev_season_n": 11
           },
           "leg_details": null,
-          "result": null,
-          "actual_value": null,
-          "profit": null,
+          "result": "win",
+          "actual_value": 6,
+          "profit": 0.26,
           "stake": 0.33,
           "picks": []
-        }
+        },
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 07.11.2026\n\n🏀 Donovan Clingan\n🏟 SA Spurs @ POR Trail Blazers\n\n   ✅ • points Under 11.5 @1.79 → 0.33u · Ergebnis 6 · +0.26u\n📈 Prob 68% · Edge +12.7% · Confidence 82/100\n💡 src:draftkings | Form L5 4/5 · L15(+11 Vorsaison) avg 8.4, 86% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.26u\n@prophunter",
+        "settlement_updated_at": "2026-11-08T09:47:45.029953+00:00"
       },
       {
         "created_at": "2026-11-07T14:22:13.686271+00:00",
@@ -123003,7 +123334,10 @@
           "profit": null,
           "stake": 0.33,
           "picks": []
-        }
+        },
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 07.11.2026\n\n🏀 Scoot Henderson\n🏟 SA Spurs @ POR Trail Blazers\n\n   ✅ • rebounds Under 2.5 @1.99 → 0.33u · Ergebnis 2 · +0.36u\n📈 Prob 65% · Edge +14.7% · Confidence 82/100\n💡 src:draftkings | Form L5 5/5 · L15(+10 Vorsaison) avg 1.7, 80% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.36u\n@prophunter",
+        "settlement_updated_at": "2026-11-08T09:47:47.573018+00:00"
       },
       {
         "created_at": "2026-11-07T14:22:13.686278+00:00",
@@ -124643,12 +124977,15 @@
             "gamelog_prev_season_n": 11
           },
           "leg_details": null,
-          "result": null,
-          "actual_value": null,
-          "profit": null,
+          "result": "win",
+          "actual_value": 5,
+          "profit": 0.26,
           "stake": 0.33,
           "picks": []
-        }
+        },
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 07.11.2026\n\n🏀 Donovan Clingan\n🏟 San Antonio Spurs @ Portland Trail Blazers\n\n   ✅ • rebounds Under 11.5 @1.80 → 0.33u · Ergebnis 5 · +0.26u\n📈 Prob 73% · Edge +17.4% · Confidence 89/100\n💡 src:bovada | Form L5 5/5 · L15(+11 Vorsaison) avg 8.6, 100% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.26u\n@prophunter",
+        "settlement_updated_at": "2026-11-08T09:47:49.586057+00:00"
       },
       {
         "created_at": "2026-11-07T20:32:53.110221+00:00",
@@ -124969,7 +125306,10 @@
           "profit": null,
           "stake": 0.33,
           "picks": []
-        }
+        },
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 07.11.2026\n\n🏀 Scoot Henderson\n🏟 SA Spurs @ POR Trail Blazers\n\n   ✅ • rebounds Under 2.5 @2.08 → 0.33u · Ergebnis 2 · +0.36u\n📈 Prob 64% · Edge +16.3% · Confidence 83/100\n💡 src:draftkings | Form L5 5/5 · L15(+10 Vorsaison) avg 1.7, 80% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.36u\n@prophunter",
+        "settlement_updated_at": "2026-11-08T09:47:51.891101+00:00"
       },
       {
         "created_at": "2026-11-07T20:32:53.110233+00:00",
@@ -125852,113 +126192,29 @@
           },
           "leg_details": [
             {
-              "player": "Scoot Henderson",
-              "sport": "NBA",
               "market": "Assists Under 4.5",
-              "source_market": "assists",
-              "direction": "under",
+              "odds": 1.38,
+              "stake": 0.07,
               "point": 4.5,
-              "odds": 1.3846,
+              "direction": "under",
               "probability": 0.86,
               "edge_pct": 19.1,
-              "gamelog_l15_hits": 15,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-06",
-                "gamelog_l15_hits": 15,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 4.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 4.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 5,
-                    "avg": 1.4
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 10,
-                    "avg": 1.9
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 15,
-                    "avg": 1.8
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 10
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Scoot Henderson",
-              "sport": "NBA",
               "market": "Assists Under 2.5",
-              "source_market": "assists",
-              "direction": "under",
-              "point": 2.5,
               "odds": 3.1,
+              "stake": 0.04,
+              "point": 2.5,
+              "direction": "under",
               "probability": 0.5012,
               "edge_pct": 55.4,
-              "gamelog_l15_hits": 10,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-06",
-                "gamelog_l15_hits": 10,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 2.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 2.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 4,
-                    "avg": 1.4
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 6,
-                    "avg": 1.9
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 10,
-                    "avg": 1.8
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 6
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             }
           ],
-          "result": null,
+          "result": "win",
           "actual_value": null,
-          "profit": null,
+          "profit": 0.11,
           "stake": 0.11,
           "picks": [
             {
@@ -125981,8 +126237,33 @@
               "edge_pct": 55.4,
               "bookmaker": "bovada"
             }
+          ],
+          "ladder_legs": [
+            {
+              "market": "Assists Under 4.5",
+              "odds": 1.38,
+              "stake": 0.07,
+              "point": 4.5,
+              "direction": "under",
+              "probability": 0.86,
+              "edge_pct": 19.1,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Assists Under 2.5",
+              "odds": 3.1,
+              "stake": 0.04,
+              "point": 2.5,
+              "direction": "under",
+              "probability": 0.5012,
+              "edge_pct": 55.4,
+              "bookmaker": "bovada"
+            }
           ]
-        }
+        },
+        "image_settlement_version": 1,
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 07.11.2026\n\n🏀 Scoot Henderson\n🏟 San Antonio Spurs @ Portland Trail Blazers\n\n✅ Assists Under 4.5 @1.38 → 0.07u · Ergebnis 1 · +0.03u\n  📈 Prob konservativ 86% · EV konservativ +19.1% · L15 15/15\n✅ Assists Under 2.5 @3.10 → 0.04u · Ergebnis 1 · +0.08u\n  📈 Prob konservativ 50% · EV konservativ +55.4% · L15 10/15\n\n\n🏁 Auswertung: 1✅ 0❌ · +0.11u\n@prophunter",
+        "settlement_updated_at": "2026-11-08T09:47:54.243259+00:00"
       },
       {
         "created_at": "2026-11-07T20:32:53.110262+00:00",
@@ -126013,165 +126294,39 @@
           },
           "leg_details": [
             {
-              "player": "Donovan Clingan",
-              "sport": "NBA",
               "market": "Rebounds Under 12.5",
-              "source_market": "rebounds",
-              "direction": "under",
+              "odds": 1.53,
+              "stake": 0.09,
               "point": 12.5,
-              "odds": 1.5263,
+              "direction": "under",
               "probability": 0.86,
               "edge_pct": 31.3,
-              "gamelog_l15_hits": 15,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-04",
-                "gamelog_l15_hits": 15,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 12.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 12.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 5,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 10,
-                    "avg": 8.0
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 15,
-                    "avg": 8.6
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 10
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Donovan Clingan",
-              "sport": "NBA",
               "market": "Rebounds Under 11.5",
-              "source_market": "rebounds",
-              "direction": "under",
-              "point": 11.5,
               "odds": 1.8,
+              "stake": 0.1,
+              "point": 11.5,
+              "direction": "under",
               "probability": 0.86,
               "edge_pct": 54.8,
-              "gamelog_l15_hits": 15,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-04",
-                "gamelog_l15_hits": 15,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 11.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 11.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 5,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 10,
-                    "avg": 8.0
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 15,
-                    "avg": 8.6
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 10
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Donovan Clingan",
-              "sport": "NBA",
               "market": "Rebounds Under 10.5",
-              "source_market": "rebounds",
-              "direction": "under",
-              "point": 10.5,
               "odds": 2.25,
+              "stake": 0.03,
+              "point": 10.5,
+              "direction": "under",
               "probability": 0.5695,
               "edge_pct": 28.1,
-              "gamelog_l15_hits": 11,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-04",
-                "gamelog_l15_hits": 11,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 10.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 10.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 3,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 8,
-                    "avg": 8.0
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 11,
-                    "avg": 8.6
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 8
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             }
           ],
-          "result": null,
+          "result": "win",
           "actual_value": null,
-          "profit": null,
+          "profit": 0.17,
           "stake": 0.22,
           "picks": [
             {
@@ -126204,8 +126359,43 @@
               "edge_pct": 28.1,
               "bookmaker": "bovada"
             }
+          ],
+          "ladder_legs": [
+            {
+              "market": "Rebounds Under 12.5",
+              "odds": 1.53,
+              "stake": 0.09,
+              "point": 12.5,
+              "direction": "under",
+              "probability": 0.86,
+              "edge_pct": 31.3,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Rebounds Under 11.5",
+              "odds": 1.8,
+              "stake": 0.1,
+              "point": 11.5,
+              "direction": "under",
+              "probability": 0.86,
+              "edge_pct": 54.8,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Rebounds Under 10.5",
+              "odds": 2.25,
+              "stake": 0.03,
+              "point": 10.5,
+              "direction": "under",
+              "probability": 0.5695,
+              "edge_pct": 28.1,
+              "bookmaker": "bovada"
+            }
           ]
-        }
+        },
+        "image_settlement_version": 1,
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 07.11.2026\n\n🏀 Donovan Clingan\n🏟 San Antonio Spurs @ Portland Trail Blazers\n\n✅ Rebounds Under 12.5 @1.53 → 0.09u · Ergebnis 5 · +0.05u\n  📈 Prob konservativ 86% · EV konservativ +31.3% · L15 15/15\n✅ Rebounds Under 11.5 @1.80 → 0.1u · Ergebnis 5 · +0.08u\n  📈 Prob konservativ 86% · EV konservativ +54.8% · L15 15/15\n✅ Rebounds Under 10.5 @2.25 → 0.03u · Ergebnis 5 · +0.04u\n  📈 Prob konservativ 57% · EV konservativ +28.1% · L15 11/15\n\n\n🏁 Auswertung: 1✅ 0❌ · +0.17u\n@prophunter",
+        "settlement_updated_at": "2026-11-08T09:47:56.515296+00:00"
       },
       {
         "created_at": "2026-11-07T20:32:53.110266+00:00",
@@ -133701,7 +133891,7 @@
             "source_market": "assists",
             "direction": "under",
             "point": 4.5,
-            "odds": 1.3846,
+            "odds": 1.38,
             "probability": 0.86,
             "edge_pct": 19.1,
             "gamelog_l15_hits": 15,
@@ -133744,7 +133934,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.07,
+            "date": "2026-11-08",
+            "created_at": "2026-11-08T00:22:40.157764+00:00",
+            "result": "win",
+            "actual_value": 1
           },
           {
             "player": "Scoot Henderson",
@@ -133753,7 +133948,7 @@
             "source_market": "assists",
             "direction": "under",
             "point": 3.5,
-            "odds": 1.3571,
+            "odds": 1.36,
             "probability": 0.8013,
             "edge_pct": 8.7,
             "gamelog_l15_hits": 14,
@@ -133796,7 +133991,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.04,
+            "date": "2026-11-08",
+            "created_at": "2026-11-08T00:22:40.157764+00:00",
+            "result": "win",
+            "actual_value": 1
           },
           {
             "player": "Scoot Henderson",
@@ -133848,7 +134048,12 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": "2026-11-08 03:00:00+00:00"
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.04,
+            "date": "2026-11-08",
+            "created_at": "2026-11-08T00:22:40.157764+00:00",
+            "result": "win",
+            "actual_value": 1
           }
         ],
         "odds": 1.38,
@@ -133863,7 +134068,7 @@
         "commence_time": null,
         "event_id": null,
         "probability": 0.86,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-11-08T00:22:40.157764+00:00",
         "ladder_legs": [
           {
@@ -133911,7 +134116,181 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
         "same_player_multistat": false,
-        "date": "2026-11-08"
+        "date": "2026-11-08",
+        "profit": 0.12,
+        "settlement_legs": [
+          {
+            "player": "Scoot Henderson",
+            "sport": "NBA",
+            "market": "Assists Under 4.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 4.5,
+            "odds": 1.38,
+            "probability": 0.86,
+            "edge_pct": 19.1,
+            "gamelog_l15_hits": 15,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-06",
+              "gamelog_l15_hits": 15,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 4.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 4.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 5,
+                  "avg": 1.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 10,
+                  "avg": 1.9
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 15,
+                  "avg": 1.8
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 10
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.07,
+            "date": "2026-11-08",
+            "created_at": "2026-11-08T00:22:40.157764+00:00",
+            "result": "win",
+            "actual_value": 1
+          },
+          {
+            "player": "Scoot Henderson",
+            "sport": "NBA",
+            "market": "Assists Under 3.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 3.5,
+            "odds": 1.36,
+            "probability": 0.8013,
+            "edge_pct": 8.7,
+            "gamelog_l15_hits": 14,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-06",
+              "gamelog_l15_hits": 14,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 3.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 3.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 5,
+                  "avg": 1.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 9,
+                  "avg": 1.9
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 14,
+                  "avg": 1.8
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 9
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.04,
+            "date": "2026-11-08",
+            "created_at": "2026-11-08T00:22:40.157764+00:00",
+            "result": "win",
+            "actual_value": 1
+          },
+          {
+            "player": "Scoot Henderson",
+            "sport": "NBA",
+            "market": "Assists Under 2.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 2.5,
+            "odds": 3.1,
+            "probability": 0.5012,
+            "edge_pct": 55.4,
+            "gamelog_l15_hits": 10,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "San Antonio Spurs @ Portland Trail Blazers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-08",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-06",
+              "gamelog_l15_hits": 10,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 2.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 2.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 1.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 6,
+                  "avg": 1.9
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 10,
+                  "avg": 1.8
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 6
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-08 03:00:00+00:00",
+            "stake": 0.04,
+            "date": "2026-11-08",
+            "created_at": "2026-11-08T00:22:40.157764+00:00",
+            "result": "win",
+            "actual_value": 1
+          }
+        ]
       },
       {
         "type": "ladder",
@@ -137345,165 +137724,39 @@
           },
           "leg_details": [
             {
-              "player": "Scoot Henderson",
-              "sport": "NBA",
               "market": "Assists Under 4.5",
-              "source_market": "assists",
-              "direction": "under",
+              "odds": 1.38,
+              "stake": 0.07,
               "point": 4.5,
-              "odds": 1.3846,
+              "direction": "under",
               "probability": 0.86,
               "edge_pct": 19.1,
-              "gamelog_l15_hits": 15,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-06",
-                "gamelog_l15_hits": 15,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 4.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 4.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 5,
-                    "avg": 1.4
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 10,
-                    "avg": 1.9
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 15,
-                    "avg": 1.8
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 10
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Scoot Henderson",
-              "sport": "NBA",
               "market": "Assists Under 3.5",
-              "source_market": "assists",
-              "direction": "under",
+              "odds": 1.36,
+              "stake": 0.04,
               "point": 3.5,
-              "odds": 1.3571,
+              "direction": "under",
               "probability": 0.8013,
               "edge_pct": 8.7,
-              "gamelog_l15_hits": 14,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-06",
-                "gamelog_l15_hits": 14,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 3.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 3.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 5,
-                    "avg": 1.4
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 9,
-                    "avg": 1.9
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 14,
-                    "avg": 1.8
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 9
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Scoot Henderson",
-              "sport": "NBA",
               "market": "Assists Under 2.5",
-              "source_market": "assists",
-              "direction": "under",
-              "point": 2.5,
               "odds": 3.1,
+              "stake": 0.04,
+              "point": 2.5,
+              "direction": "under",
               "probability": 0.5012,
               "edge_pct": 55.4,
-              "gamelog_l15_hits": 10,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "San Antonio Spurs @ Portland Trail Blazers",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-08",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-06",
-                "gamelog_l15_hits": 10,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 2.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 2.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 4,
-                    "avg": 1.4
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 6,
-                    "avg": 1.9
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 10,
-                    "avg": 1.8
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 6
-                  }
-                },
-                "gamelog_n": 15
-              },
-              "commence_time": "2026-11-08 03:00:00+00:00"
+              "bookmaker": "bovada"
             }
           ],
-          "result": null,
+          "result": "win",
           "actual_value": null,
-          "profit": null,
+          "profit": 0.12,
           "stake": 0.15,
           "picks": [
             {
@@ -137536,8 +137789,43 @@
               "edge_pct": 55.4,
               "bookmaker": "bovada"
             }
+          ],
+          "ladder_legs": [
+            {
+              "market": "Assists Under 4.5",
+              "odds": 1.38,
+              "stake": 0.07,
+              "point": 4.5,
+              "direction": "under",
+              "probability": 0.86,
+              "edge_pct": 19.1,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Assists Under 3.5",
+              "odds": 1.36,
+              "stake": 0.04,
+              "point": 3.5,
+              "direction": "under",
+              "probability": 0.8013,
+              "edge_pct": 8.7,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Assists Under 2.5",
+              "odds": 3.1,
+              "stake": 0.04,
+              "point": 2.5,
+              "direction": "under",
+              "probability": 0.5012,
+              "edge_pct": 55.4,
+              "bookmaker": "bovada"
+            }
           ]
-        }
+        },
+        "image_settlement_version": 1,
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 08.11.2026\n\n🏀 Scoot Henderson\n🏟 San Antonio Spurs @ Portland Trail Blazers\n\n✅ Assists Under 4.5 @1.38 → 0.07u · Ergebnis 1 · +0.03u\n  📈 Prob konservativ 86% · EV konservativ +19.1% · L15 15/15\n✅ Assists Under 3.5 @1.36 → 0.04u · Ergebnis 1 · +0.01u\n  📈 Prob konservativ 80% · EV konservativ +8.7% · L15 14/15\n✅ Assists Under 2.5 @3.10 → 0.04u · Ergebnis 1 · +0.08u\n  📈 Prob konservativ 50% · EV konservativ +55.4% · L15 10/15\n\n\n🏁 Auswertung: 1✅ 0❌ · +0.12u\n@prophunter",
+        "settlement_updated_at": "2026-11-08T09:47:59.344765+00:00"
       },
       {
         "created_at": "2026-11-08T04:25:29.204588+00:00",
