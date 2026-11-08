@@ -139,6 +139,14 @@ def fetch_22bet_nfl_props(max_events=3):
                 subval = _game(HOST, sid)
             except Exception:
                 continue
+            if os.getenv("PH_22BET_DEBUG"):
+                _v = (subval or {}).get("Value") if isinstance(subval, dict) else None
+                _ge = (_v or {}).get("GE") or [] if isinstance(_v, dict) else []
+                for _g in _ge[:1]:
+                    for _b in (_g.get("E") or [])[:1]:
+                        for _o in (_b if isinstance(_b, list) else [_b])[:3]:
+                            if isinstance(_o, dict):
+                                print(f"22bet_nfl raw outcome: {_o}", flush=True)
             rows.extend(_subgame_rows(subval, ev))
     return rows
 
