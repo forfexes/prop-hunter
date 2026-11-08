@@ -122,7 +122,11 @@ def fetch_22bet_nfl_props(max_events=3):
         val = (payload or {}).get("Value") if isinstance(payload, dict) else None
         if not isinstance(val, dict):
             continue
-        for sub in val.get("SG") or []:
+        subs = val.get("SG") or []
+        if os.getenv("PH_22BET_DEBUG"):
+            titles = [str(s.get("TG") or s.get("PN") or s.get("N") or "")[:28] for s in subs if isinstance(s, dict)]
+            print(f"22bet_nfl debug: event {eid} subgames={len(subs)} titles={titles[:12]}", flush=True)
+        for sub in subs:
             if not isinstance(sub, dict):
                 continue
             title = str(sub.get("TG") or sub.get("PN") or sub.get("N") or "").strip().lower()
