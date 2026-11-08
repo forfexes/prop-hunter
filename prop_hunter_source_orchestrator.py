@@ -75,6 +75,11 @@ def _direct_jobs(sports):
             jobs.append(('22bet_nba',lambda:bet22.fetch_22bet_nba_points(max_events=2)))
     except Exception as exc:warn(f'22bet adapter unavailable: {exc}')
     try:
+        import prop_hunter_22bet_nfl as bet22nfl
+        if 'NFL' in active and bet22nfl.configured():
+            jobs.append(('22bet_nfl',lambda:bet22nfl.fetch_22bet_nfl_props(max_events=3)))
+    except Exception as exc:warn(f'22bet NFL adapter unavailable: {exc}')
+    try:
         import prop_hunter_sgo as sgo
         if sgo.configured():
             keys={'MLB':'baseball_mlb','NBA':'basketball_nba','WNBA':'basketball_wnba','NFL':'americanfootball_nfl','NHL':'icehockey_nhl','NCAAB':'basketball_ncaab','NCAAF':'americanfootball_ncaaf','EUROLEAGUE':'basketball_euroleague'}

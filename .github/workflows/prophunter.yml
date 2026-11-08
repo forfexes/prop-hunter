@@ -130,6 +130,7 @@ jobs:
           PH_KAMBI_TIMEOUT: '4'
           PH_1XBET_ENABLED: '1'
           PH_22BET_ENABLED: '1'
+          PH_22BET_NFL_ENABLED: '1'
           PH_1XBET_MAX_EVENTS: '2'
           PH_1XBET_TIMEOUT: '4'
           PH_SGO_MAX_EVENTS: '4'
@@ -185,6 +186,7 @@ jobs:
           ODDSAPI_IO_KEY: ${{ secrets.ODDSAPI_IO_KEY }}
           PH_KEYLESS_BOOKS_ENABLED: '1'
           PH_22BET_ENABLED: '1'
+          PH_22BET_NFL_ENABLED: '1'
           PH_SGO_DIRECT: '0'
           PH_ODDS_HTTP_TIMEOUT: '5'
           PH_AI_RETRY: '0'
