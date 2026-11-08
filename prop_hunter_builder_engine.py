@@ -736,11 +736,24 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
         pool.append(candidate)
 
     # Independently verified ladders must also run when the builder pool is empty.
-    pool = sorted(
-        pool,
-        key=lambda x: ((_prob(x) * _odds(x) - 1.0), _prob(x)),
-        reverse=True,
-    )[:28]
+    # Pool-Zusammenstellung mit SPIELE-VIELFALT: gute Cross-Game-Parlays brauchen
+    # Legs aus VIELEN verschiedenen Spielen (z.B. Curry + Jokic + Mobley + Towns
+    # aus 4 Partien), nicht nur aus den 2-3 Primetime-Spielen. Darum zuerst die
+    # besten N Legs PRO SPIEL garantieren, dann global nach Edge auffuellen.
+    _pool_cap = int(os.getenv("PH_BUILDER_POOL", "40"))
+    _per_game = int(os.getenv("PH_BUILDER_PER_GAME", "3"))
+    _by_edge = sorted(pool, key=lambda x: ((_prob(x) * _odds(x) - 1.0), _prob(x)), reverse=True)
+    _game_counts: Dict[str, int] = {}
+    _diverse: List[Any] = []
+    _rest: List[Any] = []
+    for _p in _by_edge:
+        _g = _game(_p) or "?"
+        if _game_counts.get(_g, 0) < _per_game:
+            _game_counts[_g] = _game_counts.get(_g, 0) + 1
+            _diverse.append(_p)
+        else:
+            _rest.append(_p)
+    pool = (_diverse + _rest)[:_pool_cap]
 
     corr = safe_json_load(CORR_FILE, {}) or {}
     pairs = corr.get("pairs", {}) if isinstance(corr, dict) else {}
@@ -773,12 +786,13 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
         if book:
             by_book.setdefault(book, []).append(candidate)
 
+    _book_cap = int(os.getenv("PH_BUILDER_BOOK_POOL", "18"))
     for book_pool in by_book.values():
         book_pool = sorted(
             book_pool,
             key=lambda x: ((_prob(x) * _odds(x) - 1.0), _prob(x)),
             reverse=True,
-        )[:14]
+        )[:_book_cap]
 
         # 2–5 Legs. 1-Leg ist kein Builder (das ist ein Single, laeuft ueber die
         # normale Single-Pipeline). Fuer 4er/5er nur die staerksten Legs
@@ -786,7 +800,9 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
         # Actions-Minuten ohne Mehrwert — die schwachen Legs schaffen es ohnehin
         # nie ueber die EV/Prob-Schwellen in _make_builder.
         for size in (2, 3, 4, 5):
-            combo_pool = book_pool if size <= 3 else book_pool[:9]
+            # Grosser Pool: 2er/3er aus allen (C(18,3)=816 ok), 4er/5er nur aus
+            # den staerksten 10, sonst explodiert C(18,5)=8568 die Actions-Minuten.
+            combo_pool = book_pool if size <= 3 else book_pool[:10]
             for legs in itertools.combinations(combo_pool, size):
                 odds = math.prod(_odds(x) for x in legs)
                 min_prob = min(_prob(x) for x in legs)
