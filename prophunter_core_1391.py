@@ -4788,6 +4788,15 @@ def run(dry_run=False,sport_filter=None):
             extras += list(mixed_extras or [])
         except Exception as mixed_exc:
             log.warning("optional mixed builder skipped; retaining autonomous extras: %s", mixed_exc)
+        # Estimated team+player same-game builders (opt-in, flagged + P/L-invalidated).
+        try:
+            from prop_hunter_estimated_mixed import build_estimated_mixed
+            est_mixed = build_estimated_mixed(props, Pick)
+            if est_mixed:
+                extras += list(est_mixed)
+                log.info("estimated team+player builders: +%d", len(est_mixed))
+        except Exception as est_exc:
+            log.warning("estimated mixed builder skipped: %s", est_exc)
         from prop_hunter_combo_prices import publishable_extra
         _generated_count=len(extras)
         from collections import Counter
