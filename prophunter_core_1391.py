@@ -2535,6 +2535,39 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
     if entry is None: entry={"date":today,"picks":[],"kombis":[]}; h.append(entry)
     singles=[p for p in picks if p.type=="single"]
     combos=[p for p in picks if p.type in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")]
+    # Builder-Dedup nach Leg-Signatur: zwei Builder mit denselben Legs
+    # (Spieler+Markt+Linie+Richtung, Reihenfolge egal) sind EIN Tipp. Ohne das
+    # landeten identische Same-Game-Builder doppelt auf Telegram, weil die
+    # combo_id auch created_at einschliesst und sie nie als Duplikat erkannte.
+    def _combo_sig(p):
+        legs = getattr(p, "leg_details", None) or []
+        parts = []
+        for l in legs:
+            if isinstance(l, dict):
+                pt = l.get("point")
+                try: pt = f"{float(pt):g}"
+                except (TypeError, ValueError): pt = str(pt or "")
+                parts.append("|".join((
+                    str(l.get("player") or l.get("player_name") or "").strip().lower(),
+                    str(l.get("market") or "").strip().lower(),
+                    pt, str(l.get("direction") or "").strip().lower(),
+                )))
+        if not parts:
+            # Fallback auf die Textlegs, falls keine leg_details vorhanden.
+            parts = [str(x).strip().lower() for x in (getattr(p, "legs", None) or [])]
+        return (getattr(p, "type", ""), tuple(sorted(parts)))
+    _seen_combo_sigs = set()
+    _deduped_combos = []
+    for _c in combos:
+        _sig = _combo_sig(_c)
+        # Builder ohne Legs (leere Signatur) nie zusammenwerfen.
+        if _sig[1] and _sig in _seen_combo_sigs:
+            continue
+        _seen_combo_sigs.add(_sig)
+        _deduped_combos.append(_c)
+    if len(_deduped_combos) != len(combos):
+        log.info("combo dedup: %d → %d (identische Builder entfernt)", len(combos), len(_deduped_combos))
+    combos = _deduped_combos
     sport_map={"⚾":"MLB","🏀":"NBA/WNBA","🏈":"NFL"}
     def _clean_sport(p):
         # Echtes Sport-Feld bevorzugen (WNBA vs NBA sauber getrennt), Emoji nur als Fallback.

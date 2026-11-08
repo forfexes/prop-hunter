@@ -869,7 +869,14 @@ def build_autonomous_extras(picks: Sequence[Any], props: Iterable[Any], PickCls:
                 ),
                 reverse=True,
             )
-            extras.append(candidates[label][0])
+            # Nicht doppelt hinzufuegen: ein Same-Game-Builder steckt sowohl in
+            # same_game_candidates (dedizierte Lane oben) als auch hier im
+            # Label-Bucket. Ohne diesen Check landete er zweimal in extras und
+            # damit doppelt auf Telegram.
+            _best = candidates[label][0]
+            _sig = tuple(getattr(_best, "legs", []) or [])
+            if not _sig or not any(tuple(getattr(x, "legs", []) or []) == _sig for x in extras):
+                extras.append(_best)
 
     # Preserve one dedicated HR lottery in addition to the general buckets.
     hr_tickets = [
