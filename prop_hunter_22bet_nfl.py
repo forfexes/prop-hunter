@@ -24,20 +24,24 @@ from prop_hunter_1xbet import _list_events, _game, _league_ok, _direction, SPORT
 HOST = "https://22bet.com/service-api/LineFeed"
 
 # type_id -> (market_key, market_label). ONLY verified ids. Everything else dropped.
+#
+# Verification status (checked against the live 22bet screen + raw LineFeed dump,
+# Falcons @ Bengals 2026-11-08):
+#   8397  Passing Yards  — UNAMBIGUOUS: only QBs, lines 149.5/174.5/199.5, a range
+#         no other NFL stat produces. Safe to post.
+#   8395/8393/6188 — the raw dump showed one type_id carrying mixed lines
+#         (e.g. 8395 with 0.5, 4.5, 5.5 across different players), so the
+#         type_id alone does NOT pin the market. Left OUT until each is
+#         verified per (type_id, line-band) against the operator screen —
+#         posting them now would risk mislabelled lines.
 VERIFIED_MARKETS = {
     "8397": ("passing_yards", "Passing Yards"),
-    "8395": ("rushing_yards", "Rushing Yards"),
-    "8393": ("receiving_yards", "Receiving Yards"),
-    "6188": ("touchdowns", "Touchdowns"),
 }
 
-# Plausibility guards per market: a line outside the band means the mapping or
-# the feed is off, so the outcome is dropped rather than posted wrong.
+# Plausibility guard: a passing-yards line is always a high two/three-digit
+# number. Anything outside this band means the feed or mapping is off -> drop.
 LINE_BANDS = {
     "passing_yards": (40.0, 400.0),
-    "rushing_yards": (2.0, 200.0),
-    "receiving_yards": (2.0, 200.0),
-    "touchdowns": (0.5, 5.5),
 }
 
 
@@ -68,9 +72,15 @@ def _subgame_rows(subval, event):
                 player = str(pl.get("N") or "").strip() if isinstance(pl, dict) else ""
                 if not player:
                     continue
-                direction = _direction(e)
+                # 22bet liefert diese Spieler-Props als reine "Over X.5"-Outcomes:
+                # ein Eintrag pro Spieler+Schwelle, die Linie (P) ist die Schwelle,
+                # die Quote (C) ist der Preis, dass der Spieler DRUEBER kommt. Es gibt
+                # keine Unter-Seite in diesem Feed-Typ (bestaetigt am Rohdump:
+                # {'T':8395,'P':0.5,'PL':{'N':'Khalil Herbert'},'C':2.22} ohne over/under-Label).
+                # Falls ein Label doch eine Richtung nennt, respektieren wir sie; sonst "over".
+                direction = _direction(e) or "over"
                 if direction not in {"over", "under"}:
-                    continue  # ambiguous direction -> skip, never guess
+                    continue
                 try:
                     line = float(e.get("P"))
                     odds = float(e.get("C"))
@@ -103,13 +113,9 @@ def fetch_22bet_nfl_props(max_events=3):
         return []
     try:
         events = _list_events(HOST, SPORT_IDS["NFL"])
-    except Exception as exc:
-        if os.getenv("PH_22BET_DEBUG"): print(f"22bet_nfl: _list_events raised {exc}", flush=True)
+    except Exception:
         return []
     candidates = [e for e in events if isinstance(e, dict) and _league_ok("NFL", e)]
-    if os.getenv("PH_22BET_DEBUG"):
-        labels = [str(e.get("LE") or e.get("L") or "")[:30] for e in events[:5] if isinstance(e, dict)]
-        print(f"22bet_nfl debug: raw_events={len(events)} after_league_ok={len(candidates)} sample_labels={labels}", flush=True)
     rows = []
     for ev in candidates[:max(1, min(int(max_events), 6))]:
         eid = ev.get("I") or ev.get("CI")
@@ -139,14 +145,6 @@ def fetch_22bet_nfl_props(max_events=3):
                 subval = _game(HOST, sid)
             except Exception:
                 continue
-            if os.getenv("PH_22BET_DEBUG"):
-                _v = (subval or {}).get("Value") if isinstance(subval, dict) else None
-                _ge = (_v or {}).get("GE") or [] if isinstance(_v, dict) else []
-                for _g in _ge[:1]:
-                    for _b in (_g.get("E") or [])[:1]:
-                        for _o in (_b if isinstance(_b, list) else [_b])[:3]:
-                            if isinstance(_o, dict):
-                                print(f"22bet_nfl raw outcome: {_o}", flush=True)
             rows.extend(_subgame_rows(subval, ev))
     return rows
 

@@ -46,12 +46,21 @@ def test_line_band_guard():
     assert rows == [], rows
 
 
-def test_touchdowns_mapped():
+def test_unverified_type_dropped():
+    # 6188/8395/8393 are not yet verified -> must be dropped (mixed lines risk)
     rows = _subgame_rows(_subval([
-        {"T": "6188", "PL": {"N": "Bijan Robinson over", "I": 4}, "P": 0.5, "C": 1.8},
-        {"T": "6188", "PL": {"N": "Bijan Robinson under", "I": 4}, "P": 0.5, "C": 2.0},
+        {"T": "6188", "PL": {"N": "Bijan Robinson", "I": 4}, "P": 0.5, "C": 1.8},
+        {"T": "8395", "PL": {"N": "Khalil Herbert", "I": 5}, "P": 0.5, "C": 2.22},
     ]), EVENT)
-    assert len(rows) == 2 and all(r["market_key"] == "touchdowns" for r in rows), rows
+    assert rows == [], rows
+
+
+def test_over_default_no_label():
+    # real 22bet feed has no over/under label -> default to over
+    rows = _subgame_rows(_subval([
+        {"T": "8397", "PL": {"N": "Joe Burrow", "I": 1}, "P": 199.5, "C": 1.9},
+    ]), EVENT)
+    assert len(rows) == 1 and rows[0]["direction"] == "over", rows
 
 
 def test_fetch_fail_closed_when_disabled():
@@ -64,6 +73,7 @@ if __name__ == "__main__":
     test_unmapped_type_dropped()
     test_ambiguous_direction_skipped()
     test_line_band_guard()
-    test_touchdowns_mapped()
+    test_unverified_type_dropped()
+    test_over_default_no_label()
     test_fetch_fail_closed_when_disabled()
     print("22bet NFL verified-mapping, fail-closed and direction tests passed")
