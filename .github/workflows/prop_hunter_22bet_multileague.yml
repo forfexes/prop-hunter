@@ -24,3 +24,5 @@ jobs:
         run: python prop_hunter_22bet_candidates_test.py
       - name: Multi-league discovery (no publishing)
         run: python prop_hunter_22bet_multileague_probe.py
+      - name: NFL verification dump (no publishing)
+        run: python prop_hunter_22bet_nfl_verify.py || echo "nfl verify soft-fail"
