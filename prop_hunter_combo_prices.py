@@ -1,6 +1,14 @@
 """Keep multiplied same-game prices out of published tips and realised P/L."""
 import math
+import os
 import re
+
+def _estimated_same_game_allowed():
+    # Opt-in: publish same-game builders with an ESTIMATED (multiplied) price,
+    # clearly flagged on the card and invalidated in realised P/L, instead of
+    # dropping them. Honest middle ground — the user still sees the combo but
+    # knows the final quote must be checked at the book.
+    return os.getenv("PH_ESTIMATED_SAME_GAME_BUILDERS", "0").strip().lower() in {"1","true","yes","on"}
 
 def value(obj,key,default=None):
     return obj.get(key,default) if isinstance(obj,dict) else getattr(obj,key,default)
@@ -38,6 +46,13 @@ def publishable_extra(obj):
     if confirmed_ticket(obj):
         return True
     if unpriced_sgp(obj):
+        # Opt-in: let an ESTIMATED same-game builder through if it is explicitly
+        # flagged as such. The card shows the "quote estimated" warning and the
+        # settlement pipeline still invalidates its P/L, so nothing is misrepresented.
+        if _estimated_same_game_allowed():
+            f=features(obj)
+            if value(obj,'builder_odds_estimated_from_legs') or f.get('builder_odds_estimated_from_legs'):
+                return True
         return False
     legs=value(obj,'leg_details',[]) or []
     games=[re.sub(r'\s+',' ',str(value(x,'game','') or '').strip().lower()) for x in legs]

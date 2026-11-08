@@ -700,6 +700,16 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
         "commence_time": getattr(x,"commence_time",None),
     } for x in legs]
     built.features = {"odds_observed": True, "price_type": "bookmaker", "bookmaker": _book(legs[0])}
+    # Same-Game-Builder ohne bestaetigte Buchmacher-Kombiquote: die Gesamtquote
+    # ist aus korrelierten Einzelquoten MULTIPLIZIERT, also nur eine Schaetzung —
+    # beim Buchmacher weicht die echte SGP-Quote ab. Wir werfen sie nicht mehr
+    # weg (opt-in), sondern markieren sie als geschaetzt: die Karte zeigt dann
+    # "⚠️ finale Quote beim Book pruefen", und die P/L-Auswertung invalidiert sie,
+    # damit die Statistik ehrlich bleibt. Cross-Game-Builder (unabhaengige Legs)
+    # sind davon NICHT betroffen — dort ist das Produkt mathematisch korrekt.
+    if same_game and len(legs) >= 2:
+        built.features["builder_odds_estimated_from_legs"] = True
+        built.features["combo_scope"] = "same_game"
     return built
 
 
