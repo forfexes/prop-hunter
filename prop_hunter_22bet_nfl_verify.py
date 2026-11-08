@@ -13,7 +13,11 @@ HOST = "https://22bet.com/service-api/LineFeed"
 
 
 def main():
-    events = _list_events(HOST, SPORT_IDS["NFL"])
+    events = []
+    for _ in range(4):  # list feed is flaky: retry until it returns events
+        events = _list_events(HOST, SPORT_IDS["NFL"])
+        if events:
+            break
     nfl = [e for e in events if isinstance(e, dict) and _league_ok("NFL", e)]
     print(f"NFL events: raw={len(events)} nfl={len(nfl)}", flush=True)
     # Prefer a real single game (two team names), skip 'Enhanced Specials'.

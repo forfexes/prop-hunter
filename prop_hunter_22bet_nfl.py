@@ -111,10 +111,14 @@ def fetch_22bet_nfl_props(max_events=3):
     """Return observed NFL player-prop rows from 22bet. Fail-closed when unreachable."""
     if not configured():
         return []
-    try:
-        events = _list_events(HOST, SPORT_IDS["NFL"])
-    except Exception:
-        return []
+    events = []
+    for _ in range(3):  # 22bet list feed is flaky, often empty on first hit
+        try:
+            events = _list_events(HOST, SPORT_IDS["NFL"])
+        except Exception:
+            events = []
+        if events:
+            break
     candidates = [e for e in events if isinstance(e, dict) and _league_ok("NFL", e)]
     rows = []
     for ev in candidates[:max(1, min(int(max_events), 6))]:
@@ -123,15 +127,14 @@ def fetch_22bet_nfl_props(max_events=3):
             continue
         try:
             payload = _game(HOST, eid)
+            if not payload:
+                payload = _game(HOST, eid)  # first hit often empty
         except Exception:
             continue
         val = (payload or {}).get("Value") if isinstance(payload, dict) else None
         if not isinstance(val, dict):
             continue
         subs = val.get("SG") or []
-        if os.getenv("PH_22BET_DEBUG"):
-            titles = [str(s.get("TG") or s.get("PN") or s.get("N") or "")[:28] for s in subs if isinstance(s, dict)]
-            print(f"22bet_nfl debug: event {eid} subgames={len(subs)} titles={titles[:12]}", flush=True)
         for sub in subs:
             if not isinstance(sub, dict):
                 continue
@@ -143,6 +146,8 @@ def fetch_22bet_nfl_props(max_events=3):
                 continue
             try:
                 subval = _game(HOST, sid)
+                if not subval:
+                    subval = _game(HOST, sid)  # first hit often empty
             except Exception:
                 continue
             rows.extend(_subgame_rows(subval, ev))
