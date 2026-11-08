@@ -25,23 +25,31 @@ HOST = "https://22bet.com/service-api/LineFeed"
 
 # type_id -> (market_key, market_label). ONLY verified ids. Everything else dropped.
 #
-# Verification status (checked against the live 22bet screen + raw LineFeed dump,
-# Falcons @ Bengals 2026-11-08):
-#   8397  Passing Yards  — UNAMBIGUOUS: only QBs, lines 149.5/174.5/199.5, a range
-#         no other NFL stat produces. Safe to post.
-#   8395/8393/6188 — the raw dump showed one type_id carrying mixed lines
-#         (e.g. 8395 with 0.5, 4.5, 5.5 across different players), so the
-#         type_id alone does NOT pin the market. Left OUT until each is
-#         verified per (type_id, line-band) against the operator screen —
-#         posting them now would risk mislabelled lines.
+# Verified against the live 22bet screen + two full LineFeed dumps
+# (Falcons@Bengals and Panthers@Broncos, 2026-11-08):
+#
+#   8397/8398 (group 2627) = Passing Yards — ONLY QBs, lines 149.5..324.5,
+#     a range and player set no other NFL stat produces. Confirmed across four
+#     QBs (Burrow, Penix, Young, Nix). Rock solid.
+#   6188 (group 1953) = Anytime Touchdown — single 0.5 line for every skill
+#     player, prices fanning out per player. Matches JK's "anytime TD" screen.
+#
+# NOT yet mapped (left out, fail-closed): 8395/8396 (group 2626) and
+# 8393/8394 (group 2625) are yard markets for RB/WR but the live screen's
+# rushing-yards lines (69.5..99.5) don't line up cleanly with either group's
+# observed range yet, so rushing vs receiving can't be separated with
+# certainty — posting them now would risk mislabelling. 6109/6229 are Yes/No
+# TD variants without a line.
 VERIFIED_MARKETS = {
     "8397": ("passing_yards", "Passing Yards"),
+    "8398": ("passing_yards", "Passing Yards"),
+    "6188": ("anytime_td", "Anytime Touchdown"),
 }
 
-# Plausibility guard: a passing-yards line is always a high two/three-digit
-# number. Anything outside this band means the feed or mapping is off -> drop.
+# Plausibility guards. A mislabelled line falls outside its band and is dropped.
 LINE_BANDS = {
-    "passing_yards": (40.0, 400.0),
+    "passing_yards": (100.0, 400.0),   # QB passing lines only
+    "anytime_td": (0.5, 0.5),          # anytime TD is exactly the 0.5 line
 }
 
 

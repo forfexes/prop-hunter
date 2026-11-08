@@ -30,12 +30,12 @@ def test_unmapped_type_dropped():
     assert rows == [], rows
 
 
-def test_ambiguous_direction_skipped():
-    # no over/under token and unknown type -> direction empty -> skip
+def test_anytime_td_mapped():
+    # 6188 line 0.5 = Anytime Touchdown, direction defaults to over (feed has no label)
     rows = _subgame_rows(_subval([
         {"T": "6188", "PL": {"N": "Bijan Robinson", "I": 3}, "P": 0.5, "C": 1.8},
     ]), EVENT)
-    assert rows == [], rows
+    assert len(rows) == 1 and rows[0]["market_key"] == "anytime_td" and rows[0]["direction"] == "over", rows
 
 
 def test_line_band_guard():
@@ -47,10 +47,10 @@ def test_line_band_guard():
 
 
 def test_unverified_type_dropped():
-    # 6188/8395/8393 are not yet verified -> must be dropped (mixed lines risk)
+    # 8395/8393 (rushing/receiving yards, not yet separable) must be dropped
     rows = _subgame_rows(_subval([
-        {"T": "6188", "PL": {"N": "Bijan Robinson", "I": 4}, "P": 0.5, "C": 1.8},
-        {"T": "8395", "PL": {"N": "Khalil Herbert", "I": 5}, "P": 0.5, "C": 2.22},
+        {"T": "8395", "PL": {"N": "Khalil Herbert", "I": 5}, "P": 5.5, "C": 2.22},
+        {"T": "8393", "PL": {"N": "Charlie Woerner", "I": 6}, "P": 7.5, "C": 1.87},
     ]), EVENT)
     assert rows == [], rows
 
@@ -71,7 +71,7 @@ def test_fetch_fail_closed_when_disabled():
 if __name__ == "__main__":
     test_verified_passing_yards_mapped()
     test_unmapped_type_dropped()
-    test_ambiguous_direction_skipped()
+    test_anytime_td_mapped()
     test_line_band_guard()
     test_unverified_type_dropped()
     test_over_default_no_label()
