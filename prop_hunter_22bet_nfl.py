@@ -103,9 +103,13 @@ def fetch_22bet_nfl_props(max_events=3):
         return []
     try:
         events = _list_events(HOST, SPORT_IDS["NFL"])
-    except Exception:
+    except Exception as exc:
+        if os.getenv("PH_22BET_DEBUG"): print(f"22bet_nfl: _list_events raised {exc}", flush=True)
         return []
     candidates = [e for e in events if isinstance(e, dict) and _league_ok("NFL", e)]
+    if os.getenv("PH_22BET_DEBUG"):
+        labels = [str(e.get("LE") or e.get("L") or "")[:30] for e in events[:5] if isinstance(e, dict)]
+        print(f"22bet_nfl debug: raw_events={len(events)} after_league_ok={len(candidates)} sample_labels={labels}", flush=True)
     rows = []
     for ev in candidates[:max(1, min(int(max_events), 6))]:
         eid = ev.get("I") or ev.get("CI")
