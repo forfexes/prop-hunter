@@ -23,6 +23,8 @@ def main():
         teams = f"{ev.get('O1')} vs {ev.get('O2')}"
         print(f"\n=== EVENT {eid}: {teams} ===", flush=True)
         payload = _game(HOST, eid)
+        if not payload:
+            payload = _game(HOST, eid)  # 22bet often returns empty on first hit
         val = (payload or {}).get("Value") if isinstance(payload, dict) else None
         if not isinstance(val, dict):
             continue
@@ -36,15 +38,18 @@ def main():
             if not sid:
                 continue
             subval = _game(HOST, sid)
+            if not subval:
+                subval = _game(HOST, sid)  # retry: first hit is often empty
             v = (subval or {}).get("Value") if isinstance(subval, dict) else None
             if not isinstance(v, dict):
                 continue
+            # Aggregate per type_id: which (player, line, price) triples exist.
+            # This reveals the real market per type_id across the WHOLE subgame.
+            from collections import defaultdict
+            per_type = defaultdict(list)
             for group in v.get("GE") or []:
                 if not isinstance(group, dict):
                     continue
-                # Group-level fields may name the market / carry GÜ-GU grouping.
-                gmeta = {k: group.get(k) for k in ("G", "GS", "GN", "N", "PN", "Name") if group.get(k) is not None}
-                printed = 0
                 for bucket in group.get("E") or []:
                     for o in (bucket if isinstance(bucket, list) else [bucket]):
                         if not isinstance(o, dict):
@@ -52,9 +57,13 @@ def main():
                         pl = o.get("PL")
                         if not isinstance(pl, dict) or not pl.get("N"):
                             continue
-                        if printed < 6:
-                            print(f"  GROUP {gmeta} | OUTCOME {json.dumps(o, ensure_ascii=False)}", flush=True)
-                            printed += 1
+                        per_type[str(o.get("T"))].append(
+                            (str(pl.get("N"))[:18], o.get("P"), o.get("C"), o.get("G"))
+                        )
+            for tid, rows_ in sorted(per_type.items()):
+                lines = sorted({r[1] for r in rows_ if r[1] is not None})
+                sample = rows_[:3]
+                print(f"  SUB '{title}' type {tid}: n={len(rows_)} lines={lines[:10]} sample={sample}", flush=True)
 
 
 if __name__ == "__main__":
