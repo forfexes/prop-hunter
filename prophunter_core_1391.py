@@ -2762,10 +2762,16 @@ def call_with_retry(prompt,llm,retries=AI_RETRY):
     cur=prompt
     for attempt in range(retries+1):
         raw=llm(cur)
-        if not raw: return []
+        if not raw:
+            log.warning("LLM: leere Antwort von Gemini UND Groq (kein Text) — rescue uebernimmt")
+            return []
         picks,err=parse_picks(raw)
+        # Auch bei retries=0 sichtbar machen, warum 0 Picks: entweder Parsing-Fehler
+        # oder die KI gab zwar Text, aber keine verwertbaren Picks zurueck.
+        if not picks:
+            log.warning("LLM: Antwort geparst zu 0 Picks (attempt %d) — grund=%s | antwort[:200]=%s",
+                        attempt+1, err or "keine picks im JSON", str(raw)[:200].replace(chr(10)," "))
         if picks or attempt>=retries: return picks
-        log.warning("LLM invalid (attempt %d): %s",attempt+1,err)
         cur=prompt+f"\n\nDeine Antwort war ungültig: {err}\nGib NUR valides JSON Array zurück."
     return []
 
