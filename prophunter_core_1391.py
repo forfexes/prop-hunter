@@ -408,6 +408,26 @@ def stake_for(prob,odds,ai=None):
     if ai is None: return k or 0.25
     return min(round((k+ai)/2,2),ai)
 
+def calibrate_prob(prob):
+    """Korrigiert die Ueberkonfidenz des Modells. Backtest ueber 758 gegradete
+    Picks: vorhergesagt im Schnitt 71%, real getroffen 54% (+17 Punkte zu hoch);
+    selbst '90-100%'-Picks trafen nur 54%. Das blaeht Edge/EV/Stake auf und laesst
+    schlechte Picks gut aussehen. Wir ziehen die Prob zur 50%-Mitte:
+        kalibriert = 0.5 + (prob - 0.5) * SHRINK
+    SHRINK=0.4 minimierte den Brier-Score (MSE) im Backtest. Schaltbar."""
+    if prob is None:
+        return None
+    try:
+        import os as _os
+        if _os.getenv("PH_PROB_CALIBRATION", "1").lower() not in {"1","true","yes","on"}:
+            return prob
+        shrink = float(_os.getenv("PH_PROB_SHRINK", "0.4"))
+        p = float(prob)
+        cal = 0.5 + (p - 0.5) * shrink
+        return round(max(0.02, min(0.97, cal)), 4)
+    except (TypeError, ValueError):
+        return prob
+
 
 # ─────────────────────────────────────────────
 # OPTIONAL LIBRARIES
@@ -3789,13 +3809,18 @@ def analyse(props):
         sport_label = m.sport
         blended_prob = blend_with_ml(pk, base_prob, sport_label)
         if blended_prob:
-            pk.probability = round(float(blended_prob), 4)
-            pk.edge_pct=round(edge_pct(blended_prob,pk.odds)*100,2)
-            pk.ev=round(ev(blended_prob,pk.odds),3)
-            pk.stake=stake_for(blended_prob,pk.odds,pk.stake)
+            # Kalibrierung GEGEN die Modell-Ueberkonfidenz, bevor Edge/EV/Stake
+            # darauf aufbauen — sonst sind alle drei aufgeblaeht.
+            cal_prob = calibrate_prob(blended_prob)
+            pk.probability = round(float(cal_prob), 4)
+            pk.edge_pct=round(edge_pct(cal_prob,pk.odds)*100,2)
+            pk.ev=round(ev(cal_prob,pk.odds),3)
+            pk.stake=stake_for(cal_prob,pk.odds,pk.stake)
         elif pk.probability:
-            pk.edge_pct=round(edge_pct(pk.probability,pk.odds)*100,2)
-            pk.stake=stake_for(pk.probability,pk.odds,pk.stake)
+            cal_prob = calibrate_prob(pk.probability)
+            pk.probability = round(float(cal_prob), 4)
+            pk.edge_pct=round(edge_pct(cal_prob,pk.odds)*100,2)
+            pk.stake=stake_for(cal_prob,pk.odds,pk.stake)
         # Flat-Stake fuer Singles: wenn gesetzt, bekommt JEDER Single denselben
         # festen Einsatz (z.B. 1.0u) statt variabler Kelly-Stakes wie 0.22u/0.36u.
         # Gilt nur fuer Singles — Builder/Ladders behalten ihre eigenen Stakes.
