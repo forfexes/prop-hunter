@@ -2773,17 +2773,23 @@ def call_with_retry(prompt,llm,retries=AI_RETRY):
 # AI CLIENTS
 # ─────────────────────────────────────────────
 def call_gemini(prompt):
+    if not GEMINI_KEYS:
+        log.warning("gemini: kein API-Key gesetzt (GEMINI_API_KEY) — LLM-Pfad uebersprungen")
+        return None
     for key in GEMINI_KEYS:
         url=f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={key}"
         try:
             r=requests.post(url,json={"contents":[{"parts":[{"text":prompt}]}],
                 "generationConfig":{"temperature":AI_TEMP,"maxOutputTokens":AI_TOKENS}},timeout=TIMEOUT*2)
-            if r.status_code==429: time.sleep(2); continue
-            if r.status_code!=200: log.warning("gemini %d",r.status_code); continue
+            if r.status_code==429: log.warning("gemini 429 (rate limit / quota) key …%s",str(key)[-4:]); time.sleep(2); continue
+            if r.status_code!=200: log.warning("gemini %d: %s",r.status_code,str(r.text)[:160]); continue
             return r.json()["candidates"][0]["content"]["parts"][0]["text"]
         except Exception as e: log.warning("gemini: %s",e)
     return None
 def call_groq(prompt):
+    if not GROQ_KEYS:
+        log.warning("groq: kein API-Key gesetzt (GROQ_API_KEY) — LLM-Pfad uebersprungen")
+        return None
     for key in GROQ_KEYS:
         for model in GROQ_MODELS:
             try:
@@ -2792,7 +2798,8 @@ def call_groq(prompt):
                     json={"model":model,"messages":[{"role":"user","content":prompt}],
                           "max_tokens":AI_TOKENS,"temperature":AI_TEMP},timeout=TIMEOUT*2)
                 if r.status_code==200: return r.json()["choices"][0]["message"]["content"]
-                if r.status_code==429: continue
+                if r.status_code==429: log.warning("groq 429 %s (rate limit) key …%s",model,str(key)[-4:]); continue
+                log.warning("groq %s %d: %s",model,r.status_code,str(r.text)[:160])
             except Exception as e: log.warning("groq %s: %s",model,e)
     return None
 
