@@ -235,11 +235,11 @@
     },
     "NBA:10+_points:over|NBA:20+_points:over": {
       "factor": 1.0,
-      "n": 2,
+      "n": 6,
       "both_wins": 1,
-      "observed_joint": 0.5,
-      "expected_joint": 0.1596,
-      "raw_ratio": 1.35
+      "observed_joint": 0.16667,
+      "expected_joint": 0.13176,
+      "raw_ratio": 1.2649
     },
     "NBA:16+_points:over|NBA:18+_points:over": {
       "factor": 1.0,
@@ -706,20 +706,20 @@
       "raw_ratio": 0.6
     },
     "NBA:points:under|NBA:points:under": {
-      "factor": 1.12,
-      "n": 109,
-      "both_wins": 48,
-      "observed_joint": 0.44037,
-      "expected_joint": 0.36674,
-      "raw_ratio": 1.2007
+      "factor": 0.9139,
+      "n": 157,
+      "both_wins": 54,
+      "observed_joint": 0.34395,
+      "expected_joint": 0.37636,
+      "raw_ratio": 0.9139
     },
     "NBA:rebounds:under|NBA:rebounds:under": {
       "factor": 1.12,
-      "n": 64,
-      "both_wins": 32,
-      "observed_joint": 0.5,
-      "expected_joint": 0.42956,
-      "raw_ratio": 1.164
+      "n": 77,
+      "both_wins": 42,
+      "observed_joint": 0.54545,
+      "expected_joint": 0.44429,
+      "raw_ratio": 1.2277
     },
     "NBA:blocks:under|NBA:blocks:under": {
       "factor": 1.0,
@@ -1323,10 +1323,10 @@
     },
     "NBA:11+_points:over|NBA:12+_points:over": {
       "factor": 1.0,
-      "n": 1,
+      "n": 4,
       "both_wins": 0,
       "observed_joint": 0.0,
-      "expected_joint": 0.24741,
+      "expected_joint": 0.36533,
       "raw_ratio": 0.6
     },
     "NBA:7+_points:over|NBA:8+_points:over": {
@@ -1347,18 +1347,18 @@
     },
     "NBA:8+_points:over|NBA:9+_points:over": {
       "factor": 1.0,
-      "n": 1,
+      "n": 4,
       "both_wins": 0,
       "observed_joint": 0.0,
-      "expected_joint": 0.28569,
+      "expected_joint": 0.57098,
       "raw_ratio": 0.6
     },
     "NBA:10+_points:over|NBA:8+_points:over": {
       "factor": 1.0,
-      "n": 1,
+      "n": 3,
       "both_wins": 0,
       "observed_joint": 0.0,
-      "expected_joint": 0.23753,
+      "expected_joint": 0.25985,
       "raw_ratio": 0.6
     },
     "NBA:10+_points:over|NBA:9+_points:over": {
@@ -1371,10 +1371,10 @@
     },
     "NBA:5+_assists:over|NBA:6+_assists:over": {
       "factor": 1.0,
-      "n": 1,
+      "n": 3,
       "both_wins": 0,
       "observed_joint": 0.0,
-      "expected_joint": 0.13117,
+      "expected_joint": 0.11782,
       "raw_ratio": 0.6
     },
     "NBA:12+_points:over|NBA:14+_points:over": {
@@ -1392,8 +1392,64 @@
       "observed_joint": 1.0,
       "expected_joint": 0.21847,
       "raw_ratio": 1.35
+    },
+    "NBA:2+_rebounds:over|NBA:3+_rebounds:over": {
+      "factor": 1.0,
+      "n": 2,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.40161,
+      "raw_ratio": 0.6
+    },
+    "NBA:5+_rebounds:over|NBA:6+_rebounds:over": {
+      "factor": 1.0,
+      "n": 2,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.32142,
+      "raw_ratio": 0.6
+    },
+    "NBA:11+_points:over|NBA:8+_points:over": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.58514,
+      "raw_ratio": 0.6
+    },
+    "NBA:12+_points:over|NBA:8+_points:over": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.51144,
+      "raw_ratio": 0.6
+    },
+    "NBA:11+_points:over|NBA:9+_points:over": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.52697,
+      "raw_ratio": 0.6
+    },
+    "NBA:12+_points:over|NBA:9+_points:over": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.4606,
+      "raw_ratio": 0.6
+    },
+    "NBA:2+_threes:over|NBA:5+_threes:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.18593,
+      "raw_ratio": 0.6
     }
   },
   "profiles": {},
-  "updated_at": "2026-11-08T21:42:49.680440+00:00"
+  "updated_at": "2026-11-09T10:12:35.214240+00:00"
 }
