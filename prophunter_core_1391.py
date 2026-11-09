@@ -58,7 +58,7 @@ PM_MAX         = 5
 STATCAST_DAYS  = 30
 NBA_LAST_N     = 10
 NFL_LAST_N     = 5
-AI_TOKENS      = 3000
+AI_TOKENS      = int(os.getenv("PH_AI_TOKENS", "8000"))
 AI_TEMP        = 0.6
 AI_RETRY       = max(0, int(os.getenv("PH_AI_RETRY", "0")))
 
@@ -2745,11 +2745,47 @@ JSON SCHEMA:
 
 _FENCE=re.compile(r"^```(?:json)?\s*|\s*```$",re.MULTILINE)
 def strip_fence(t): return _FENCE.sub("",t or "").strip()
+def _salvage_truncated_array(body, s):
+    """Rettet komplette Objekte aus einem abgeschnittenen JSON-Array.
+    Gemini/Groq schneiden lange Antworten am Token-Limit ab, dann fehlt die
+    schliessende ']' und das ganze Array ging frueher verloren. Wir scannen die
+    Objekte auf oberster Ebene und nehmen jedes vollstaendige { ... } mit."""
+    objs=[]; depth=0; start=None; in_str=False; esc=False
+    for i in range(s+1, len(body)):
+        c=body[i]
+        if in_str:
+            if esc: esc=False
+            elif c=="\\": esc=True
+            elif c=='"': in_str=False
+            continue
+        if c=='"': in_str=True
+        elif c=="{":
+            if depth==0: start=i
+            depth+=1
+        elif c=="}":
+            depth-=1
+            if depth==0 and start is not None:
+                frag=body[start:i+1]
+                try: objs.append(json.loads(frag))
+                except json.JSONDecodeError: pass
+                start=None
+    return objs
+
 def parse_picks(raw):
     body=strip_fence(raw); s=body.find("["); e=body.rfind("]")
-    if s==-1 or e<=s: return [],"no array"
-    try: data=json.loads(body[s:e+1])
-    except json.JSONDecodeError as ex: return [],str(ex)
+    if s==-1: return [],"no array"
+    if e<=s:
+        # Abgeschnittene Antwort (kein schliessendes ']'): komplette Objekte retten.
+        data=_salvage_truncated_array(body, s)
+        if not data: return [],"no array"
+        log.warning("LLM-Antwort abgeschnitten — %d komplette Picks gerettet", len(data))
+    else:
+        try: data=json.loads(body[s:e+1])
+        except json.JSONDecodeError:
+            # Auch bei Syntaxfehler im Array die vollstaendigen Objekte retten.
+            data=_salvage_truncated_array(body, s)
+            if not data: return [],"json decode failed"
+            log.warning("LLM-Array fehlerhaft — %d komplette Picks gerettet", len(data))
     if not isinstance(data,list): return [],"not a list"
     picks=[]; errs=[]
     for i,r in enumerate(data):
