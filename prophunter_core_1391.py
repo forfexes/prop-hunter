@@ -3957,6 +3957,21 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
             rejected["no_edge"] += 1; continue
         if edge <= 0:
             rejected["negative_edge"] += 1; continue
+        # Datengestuetzter OVER-Quoten-Filter: Over-Singles verlieren strukturell
+        # bei mittleren/hohen Quoten. Ueber 430 Over-Picks:
+        #   Quote <2.0 : 104-59  (64%)  ±0u   -> behalten
+        #   Quote 2.x  :  63-117 (35%)  -9.1u -> der ganze Over-Verlust
+        #   Quote 3-5  :  20-49  (29%)  -1.1u
+        # Grund: Over braucht ein ueberdurchschnittliches Spiel; Spieler liefern
+        # viel haeufiger ein normales/schwaches. Under braucht nur ein normales
+        # Spiel. Darum: Over nur bei niedriger Quote zulassen, wo es echt trifft.
+        _over_cap = float(os.getenv("PH_OVER_ODDS_CAP", "2.0"))
+        if (os.getenv("PH_OVER_ODDS_FILTER", "1").lower() in {"1","true","yes","on"}
+                and (p.direction or "over").lower() == "over"
+                and float(p.odds) >= _over_cap):
+            # Ausnahme: Home-Run-Lotterie (bewusst Longshot) nicht hierdurch kippen.
+            if "home run" not in (p.market or "").lower() and "hr" != (p.market or "").lower():
+                rejected["over_odds_too_high"] += 1; continue
         if not _sanity_line(p):
             rejected["bad_line"] += 1; continue
         if _is_basket_pick(p):
