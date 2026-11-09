@@ -3796,6 +3796,15 @@ def analyse(props):
         elif pk.probability:
             pk.edge_pct=round(edge_pct(pk.probability,pk.odds)*100,2)
             pk.stake=stake_for(pk.probability,pk.odds,pk.stake)
+        # Flat-Stake fuer Singles: wenn gesetzt, bekommt JEDER Single denselben
+        # festen Einsatz (z.B. 1.0u) statt variabler Kelly-Stakes wie 0.22u/0.36u.
+        # Gilt nur fuer Singles — Builder/Ladders behalten ihre eigenen Stakes.
+        _flat = os.getenv("PH_FLAT_SINGLE_STAKE", "").strip()
+        if _flat:
+            try:
+                pk.stake = float(_flat)
+            except ValueError:
+                pass
     picks = quality_filter_picks(picks)
     return picks
 
@@ -4011,7 +4020,17 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
                 learn_blocked += 1
                 continue
             combined_w = max(0.65, min(1.35, market_w * source_w))
-            p.stake = round(max(MIN_STAKE, min(MAX_STAKE, (p.stake or 0.33) * combined_w)), 2)
+            # Flat-Stake bleibt fix: das Learning blockt weiter schwache Maerkte
+            # (market_w <= 0.75 oben), aendert aber bei festem Single-Einsatz den
+            # Betrag nicht mehr — sonst waere 1.0u wieder z.B. 0.87u.
+            _flat_single = os.getenv("PH_FLAT_SINGLE_STAKE", "").strip()
+            if _flat_single:
+                try:
+                    p.stake = float(_flat_single)
+                except ValueError:
+                    p.stake = round(max(MIN_STAKE, min(MAX_STAKE, (p.stake or 0.33) * combined_w)), 2)
+            else:
+                p.stake = round(max(MIN_STAKE, min(MAX_STAKE, (p.stake or 0.33) * combined_w)), 2)
             try:
                 p.features = dict(feats)
                 p.features["learning_market_weight"] = round(market_w, 3)
