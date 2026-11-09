@@ -234,6 +234,10 @@ jobs:
           python prop_hunter_model_registry.py
           python prop_hunter_coverage_watchdog.py || echo "PH_COLLECTOR_FAILURE=1" >> "$GITHUB_ENV"
           python prop_hunter_market_discovery.py || echo "PH_COLLECTOR_FAILURE=1" >> "$GITHUB_ENV"
+          # ML-Modell nach jedem Settlement neu bewerten + bei bestandener
+          # Out-of-Sample-Validierung live schalten (self-learning). Guarded:
+          # retrainer.py speichert nur ein Modell, das die Validierung besteht.
+          python prop_hunter_retrainer.py || echo "retrainer soft-fail (kept previous model)"
 
       - name: Save results and learning
         run: |
