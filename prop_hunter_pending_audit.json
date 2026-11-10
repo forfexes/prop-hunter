@@ -1,10 +1,9 @@
 {
-  "generated_at": "2026-11-10T01:11:03.878875+00:00",
-  "unresolved": 123,
+  "generated_at": "2026-11-10T04:57:20.844829+00:00",
+  "unresolved": 66,
   "counts": {
-    "awaiting_game_completion": 96,
-    "no_unique_official_game": 24,
-    "awaiting_combo_legs": 1,
+    "awaiting_game_completion": 44,
+    "no_unique_official_game": 20,
     "missing_stat_or_line": 1,
     "unsupported_team_or_game_market": 1
   },
@@ -36,26 +35,6 @@
       "league": "NBA",
       "player": "Tari Eason",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "5aecb8f1c89e5a3d0ec880f8b20ea0f6",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Jakob Poeltl",
-      "market": "Rebounds Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "219dd8bb222debe3b9ba16bf53374d40",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Cooper Flagg",
-      "market": "Assists Ladder",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
@@ -110,16 +89,6 @@
       "evidence": null
     },
     {
-      "pick_id": "775010b3f3e39df3465c0b3aaf3931b8",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Cooper Flagg",
-      "market": "assists Under 6.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "bcc0892874fb1a5ea5e33f3376a866f9",
       "source": "prop_hunter_picks",
       "date": "2026-11-10",
@@ -160,16 +129,6 @@
       "evidence": null
     },
     {
-      "pick_id": "fbd6b8f195fd9af8db3ae85bb42243c1",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Jakob Poeltl",
-      "market": "points Under 9.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "7a6348a7d87e6cd735fae97ad4424ce4",
       "source": "prop_hunter_picks",
       "date": "2026-11-10",
@@ -186,8 +145,14 @@
       "league": "NBA",
       "player": "Immanuel Quickley",
       "market": "points Under 19.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "33139175",
+        "quoted_kickoff": "2026-11-10T00:30:00+00:00",
+        "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
+        "loaded_player_rows": 0,
+        "loaded_game_dates": []
+      }
     },
     {
       "pick_id": "1ca5758cc4aecc8cfb0bfe6eac6d3454",
@@ -206,16 +171,6 @@
       "league": "NHL",
       "player": "Victor Eklund",
       "market": "points Under 1",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "07e1b17c2ed84bdf085506a919f439cb",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Ivica Zubac",
-      "market": "assists Over 1.5",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
@@ -260,56 +215,6 @@
       "evidence": null
     },
     {
-      "pick_id": "5c4d5d81dae25d4455b58c17c1625590",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Cleveland Cavaliers @ Charlotte Hornets",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
-      }
-    },
-    {
-      "pick_id": "2cfb5068e920a7f21b68e928ac839676",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "LA Lakers @ ATL Hawks",
-        "loaded_player_rows": 1,
-        "loaded_game_dates": [
-          "2026-11-08"
-        ]
-      }
-    },
-    {
-      "pick_id": "475afcd2fcafd035caf23418a6ffb9f1",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Cleveland Cavaliers @ Charlotte Hornets",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
-      }
-    },
-    {
       "pick_id": "8a9b54926fcef07cf880039475e2391d",
       "source": "prop_hunter_picks",
       "date": "2026-11-09",
@@ -340,34 +245,6 @@
       "evidence": null
     },
     {
-      "pick_id": "804925fa814f0b58c1ed82410d8e9a71",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "LA Lakers @ ATL Hawks",
-        "loaded_player_rows": 1,
-        "loaded_game_dates": [
-          "2026-11-08"
-        ]
-      }
-    },
-    {
-      "pick_id": "40b662e4a9b5fbd9643d9172b78403b2",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ryan Kalkbrenner",
-      "market": "rebounds Under 6.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "1879af8e80f6d56db5b97a90e625730d",
       "source": "prop_hunter_picks",
       "date": "2026-11-09",
@@ -386,115 +263,6 @@
       "market": "points Over 1",
       "reason": "awaiting_game_completion",
       "evidence": null
-    },
-    {
-      "pick_id": "06c07334b8b000b087ca1cc906f1dbc1",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "CJ McCollum",
-      "market": "rebounds Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "3740b8ac69b3d8ab6b39e187239e4c77",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "?",
-      "player": "Ziaire Williams + Amen Thompson",
-      "market": "2-Leg VALUE",
-      "reason": "awaiting_combo_legs",
-      "evidence": null
-    },
-    {
-      "pick_id": "eb7cbd27f054473f72f32bad8167ebc5",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Cleveland Cavaliers @ Charlotte Hornets",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
-      }
-    },
-    {
-      "pick_id": "2760b76a7848b6285adacefe607d5b47",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Los Angeles Lakers @ Atlanta Hawks",
-        "loaded_player_rows": 1,
-        "loaded_game_dates": [
-          "2026-11-08"
-        ]
-      }
-    },
-    {
-      "pick_id": "9b59f045c9d6fb958fc054de23f97eeb",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "LA Lakers @ ATL Hawks",
-        "loaded_player_rows": 1,
-        "loaded_game_dates": [
-          "2026-11-08"
-        ]
-      }
-    },
-    {
-      "pick_id": "78267dcdee33b8b8603bad437a247cf4",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Los Angeles Lakers @ Atlanta Hawks",
-        "loaded_player_rows": 1,
-        "loaded_game_dates": [
-          "2026-11-08"
-        ]
-      }
-    },
-    {
-      "pick_id": "2b51cd6b70dc467f5df49c4eb51b28a3",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Kevin Huerter",
-      "market": "Points Ladder",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Washington Wizards @ Detroit Pistons",
-        "loaded_player_rows": 2,
-        "loaded_game_dates": [
-          "2026-11-04",
-          "2026-11-08"
-        ]
-      }
     },
     {
       "pick_id": "faf9426329180811dc0e6b0ee8a28a48",
@@ -517,41 +285,11 @@
       }
     },
     {
-      "pick_id": "e7c6b52f6c2bd8439d9053c0ed5755d8",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Jarrett Allen",
-      "market": "blocks Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "0fc21eed6d181dd114aab0f1c01efc3c",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "points Over 11.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "39c4084f903d1d2ee2f35607eab740b3",
       "source": "prop_hunter_picks",
       "date": "2026-11-09",
       "league": "NBA",
       "player": "Stephen Curry",
-      "market": "points Over 5.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "baab969575f2f97a70f04ca5b750ee1b",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Luka Doncic",
       "market": "points Over 5.5",
       "reason": "awaiting_game_completion",
       "evidence": null
@@ -563,8 +301,14 @@
       "league": "NBA",
       "player": "Austin Reaves",
       "market": "assists Over 5.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": "1028754118",
+        "quoted_kickoff": "2026-11-10T00:00:00+00:00",
+        "quoted_game": "LA Lakers @ ATL Hawks",
+        "loaded_player_rows": 0,
+        "loaded_game_dates": []
+      }
     },
     {
       "pick_id": "0a45d53b1b6a28b78ef3f71e00b79455",
@@ -577,72 +321,12 @@
       "evidence": null
     },
     {
-      "pick_id": "f74057efb0d6860dac578a7c9fbfa2f1",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Donovan Mitchell",
-      "market": "blocks Under 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "79976261ba9ba1903a6b1559cb7d2367",
       "source": "prop_hunter_picks",
       "date": "2026-11-09",
       "league": "NFL",
       "player": "James Cook",
       "market": "rushing_attempts Over 19.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "617b29377f6941bafc9dbeff47ad0fad",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Onyeka Okongwu",
-      "market": "blocks Under 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "df600185134be260322648dece8b8063",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "John Collins",
-      "market": "blocks Under 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "ca7b3ee6cb1470eda9a9c6a7a5af6905",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Naz Reid",
-      "market": "blocks Under 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "53a41de0c555d8d7388de48fec5162b5",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Anthony Davis",
-      "market": "blocks Under 2.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "717e16d32b74d020c06ac5d4ee74e0da",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Paul Reed",
-      "market": "blocks Under 2.5",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
@@ -683,16 +367,6 @@
       "league": "NHL",
       "player": "Connor McDavid",
       "market": "assists Over 0.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "ca40bb764c47973c836da27319fad99c",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Daniss Jenkins",
-      "market": "assists Over 2.5",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
@@ -740,10 +414,11 @@
         "quoted_game_id": "33128211",
         "quoted_kickoff": "2026-11-08T23:00:00+00:00",
         "quoted_game": "Los Angeles Lakers @ Detroit Pistons",
-        "loaded_player_rows": 2,
+        "loaded_player_rows": 3,
         "loaded_game_dates": [
           "2026-11-02",
-          "2026-11-06"
+          "2026-11-06",
+          "2026-11-09"
         ]
       }
     },
@@ -769,8 +444,10 @@
         "quoted_game_id": "36282777",
         "quoted_kickoff": "2026-11-08T01:10:00+00:00",
         "quoted_game": "Washington Wizards @ Oklahoma City Thunder",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-09"
+        ]
       }
     },
     {
@@ -785,8 +462,10 @@
         "quoted_game_id": "1028744825",
         "quoted_kickoff": "2026-11-07T00:30:00+00:00",
         "quoted_game": "PHI 76ers @ CLE Cavaliers",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-09"
+        ]
       }
     },
     {
@@ -801,8 +480,10 @@
         "quoted_game_id": "1028744817",
         "quoted_kickoff": "2026-11-07T00:00:00+00:00",
         "quoted_game": "Washington Wizards @ Atlanta Hawks",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-09"
+        ]
       }
     },
     {
@@ -835,8 +516,10 @@
         "quoted_game_id": "1028744825",
         "quoted_kickoff": "2026-11-07T00:30:00+00:00",
         "quoted_game": "PHI 76ers @ CLE Cavaliers",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-09"
+        ]
       }
     },
     {
@@ -861,8 +544,10 @@
         "quoted_game_id": "32835583",
         "quoted_kickoff": "2026-11-03T03:00:00+00:00",
         "quoted_game": "Toronto Raptors @ Los Angeles Clippers",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-09"
+        ]
       }
     },
     {
@@ -895,8 +580,10 @@
         "quoted_game_id": "1028754180",
         "quoted_kickoff": "2026-11-02T02:00:00+00:00",
         "quoted_game": "TOR Raptors @ LA Lakers",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-09"
+        ]
       }
     },
     {
@@ -952,262 +639,6 @@
       "evidence": null
     },
     {
-      "pick_id": "ce4d56c082e235d37bc1440df6f1ac8d",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Kevin Huerter",
-      "market": "Points Under 9.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "fb0902fddb9ca989942180162c514222",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Kevin Huerter",
-      "market": "Points Under 7.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "0959c00c9b7b0e0b77195c06aaba02d6",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Kevin Huerter",
-      "market": "Points Under 6.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "687b65fb07488c108d82797155938038",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Kevin Huerter",
-      "market": "Points Under 5.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "f6d43f5dd1f5029ae85ebf157de2f22c",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "6+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "bf2f2756a5e102ebe78d46754f90465f",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "12+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "a24b7157f4aac32401a028ff08bdbe66",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "14+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "a6bf44da679e4a2d59349698ab6ad9b3",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "16+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "d74d0fcf8c458f71a5d51de3bfcdfdb9",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "6+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "2c686779b4eb9dd7e12ee660ede1c50f",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "9+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "45186aa36dbe60394841660f0ca10a90",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "14+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "facf6a3d43d73898693c9568c81fe831",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "16+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "1d83d8796520ef176af3de604a3ffae8",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "7+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "ed541b3e0b37eb0d39c704b71ca6a657",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "9+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "78929a5a37bba1728c0eda25d2b4d165",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "10+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "df36b3a8034aa6cd6e5dc9aaeb90f02a",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "11+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "1a1a62a9f716b2c56cfdb5a6267453be",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Under 15.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "6923c7895a61ccb74a05cd66308bc828",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Under 14.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "2e923dd9e8c577c844a1248759baf972",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Under 13.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "17b23462ac21cd02a167ab8af3efcf92",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "Points Over 10.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "cfa75b56b37a2a9d643b950d1ec05121",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Amen Thompson",
-      "market": "Assists Over 3.5",
-      "reason": "no_unique_official_game",
-      "evidence": {
-        "quoted_game_id": null,
-        "quoted_kickoff": null,
-        "quoted_game": "Denver Nuggets @ Houston Rockets",
-        "loaded_player_rows": 0,
-        "loaded_game_dates": []
-      }
-    },
-    {
-      "pick_id": "cd66c046cf37809566a724ea7780c345",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "12+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "e5886aad2df19c68cff436d65f003ac7",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Under 12.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "6bcc9d9da7c3a37373fec1ea05b9225f",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Ziaire Williams",
-      "market": "10+ Points",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "084a85f2fc481c5be3da0c69a4f1fd01",
-      "source": "history_leg",
-      "date": "2026-11-09",
-      "league": "NBA",
-      "player": "Grayson Allen",
-      "market": "Points Under 20.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
       "pick_id": "3599085b72974b40d5b060fde074c502",
       "source": "history_leg",
       "date": "2026-11-10",
@@ -1234,8 +665,14 @@
       "league": "NBA",
       "player": "Immanuel Quickley",
       "market": "Points Under 22.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": "2026-11-10 00:30:00+00:00",
+        "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
+        "loaded_player_rows": 0,
+        "loaded_game_dates": []
+      }
     },
     {
       "pick_id": "175af42407007171efb09bcbff7dfcdc",
@@ -1244,8 +681,14 @@
       "league": "NBA",
       "player": "Immanuel Quickley",
       "market": "Points Under 19.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": "2026-11-10 00:30:00+00:00",
+        "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
+        "loaded_player_rows": 0,
+        "loaded_game_dates": []
+      }
     },
     {
       "pick_id": "700277743c101364baf26e07f1001467",
@@ -1254,8 +697,14 @@
       "league": "NBA",
       "player": "Immanuel Quickley",
       "market": "Points Under 18.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": "2026-11-10 00:30:00+00:00",
+        "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
+        "loaded_player_rows": 0,
+        "loaded_game_dates": []
+      }
     },
     {
       "pick_id": "fd36accaf0db58f22396f13794b3115d",
@@ -1264,58 +713,14 @@
       "league": "NBA",
       "player": "Immanuel Quickley",
       "market": "Points Under 15.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "f6fa4d5d079ce2ac4e43c37e04737a9a",
-      "source": "history_leg",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Cooper Flagg",
-      "market": "Assists Under 7.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "5577bfc362fbb73bdc9b38f6ab963966",
-      "source": "history_leg",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Cooper Flagg",
-      "market": "Assists Under 6.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "3c8cdb59b119b87c7ba5b4512a96ed90",
-      "source": "history_leg",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Cooper Flagg",
-      "market": "Assists Under 5.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "b6afb6f8cc0a54a20c61d35540584bac",
-      "source": "history_leg",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Jakob Poeltl",
-      "market": "Rebounds Under 7.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "32e090d6167150196bbfc4f5fdf23de1",
-      "source": "history_leg",
-      "date": "2026-11-10",
-      "league": "NBA",
-      "player": "Jakob Poeltl",
-      "market": "Rebounds Under 6.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": "2026-11-10 00:30:00+00:00",
+        "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
+        "loaded_player_rows": 0,
+        "loaded_game_dates": []
+      }
     },
     {
       "pick_id": "f8277bf4b2416006b4f2cd087b6efe4c",
