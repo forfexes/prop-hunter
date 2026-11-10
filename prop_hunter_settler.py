@@ -517,6 +517,12 @@ def main():
         if status == "no_result":
             continue
         pid = pick_id(p)
+        # actual_value ist in Supabase eine double-precision-Spalte. Fuer binaere
+        # Maerkte (Anytime TD, To Score, Double Double ...) liefert stat_value()
+        # einen bool True/False — der als String "false" nach Postgres ginge und
+        # den ganzen Settlement-Upsert mit "invalid input syntax for type double
+        # precision" abbrechen laesst (blockte ALLE Settlements). Bool -> 1.0/0.0.
+        actual_num = float(value) if isinstance(value, bool) else value
         settled.append({
             "result_id": hash_key("pick", pid),
             "pick_id": pid,
@@ -528,7 +534,7 @@ def main():
             "stat_key": stat,
             "line": line,
             "side": side,
-            "actual_value": value,
+            "actual_value": actual_num,
             "result": status,
             "game_id": gl.get("game_id"),
             "settled_at": now_iso(),
