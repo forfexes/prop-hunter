@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-10T14:40:50.093358+00:00",
+  "updated_at": "2026-11-10T17:55:58.748949+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,15 +16,14 @@
       ]
     },
     "NBA": {
-      "rows": 420,
+      "rows": 955,
       "sources": [
-        "betrivers_direct",
         "bovada_direct",
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 11,
-      "latest": "2026-11-10T03:16:57.383312+00:00",
+      "market_count": 10,
+      "latest": "2026-11-10T15:42:46.366289+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -40,29 +39,27 @@
       ]
     },
     "NFL": {
-      "rows": 127,
+      "rows": 128,
       "sources": [
         "betrivers_direct",
+        "bovada_direct",
+        "kambi"
+      ],
+      "market_count": 13,
+      "latest": "2026-11-10T15:42:55.357233+00:00",
+      "missing_core": []
+    },
+    "NHL": {
+      "rows": 8,
+      "sources": [
+        "draftkings_direct",
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 16,
-      "latest": "2026-11-10T03:17:04.484305+00:00",
+      "market_count": 3,
+      "latest": "2026-11-10T03:17:11.515305+00:00",
       "missing_core": [
-        "touchdown"
-      ]
-    },
-    "NHL": {
-      "rows": 3,
-      "sources": [
-        "kambi"
-      ],
-      "market_count": 2,
-      "latest": "2026-11-09T18:16:51.874646+00:00",
-      "missing_core": [
-        "shots",
-        "goals",
-        "points",
+        "assists",
         "saves"
       ]
     }
@@ -102,29 +99,11 @@
       ]
     },
     {
-      "sport": "NFL",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "touchdown"
-      ]
-    },
-    {
-      "sport": "NHL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "kambi"
-      ]
-    },
-    {
       "sport": "NHL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "shots",
-        "goals",
-        "points",
+        "assists",
         "saves"
       ]
     }
