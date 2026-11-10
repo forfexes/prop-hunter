@@ -707,11 +707,11 @@
     },
     "NBA:points:under|NBA:points:under": {
       "factor": 0.85,
-      "n": 220,
+      "n": 227,
       "both_wins": 54,
-      "observed_joint": 0.24545,
-      "expected_joint": 0.36218,
-      "raw_ratio": 0.6777
+      "observed_joint": 0.23789,
+      "expected_joint": 0.36228,
+      "raw_ratio": 0.6566
     },
     "NBA:rebounds:under|NBA:rebounds:under": {
       "factor": 1.12,
@@ -794,12 +794,12 @@
       "raw_ratio": 0.6
     },
     "NBA:assists:under|NBA:assists:under": {
-      "factor": 0.9844,
-      "n": 17,
+      "factor": 0.975,
+      "n": 18,
       "both_wins": 6,
-      "observed_joint": 0.35294,
-      "expected_joint": 0.40338,
-      "raw_ratio": 0.875
+      "observed_joint": 0.33333,
+      "expected_joint": 0.40654,
+      "raw_ratio": 0.8199
     },
     "NBA:10+_rebounds:over|NBA:9+_rebounds:over": {
       "factor": 1.0,
@@ -1323,10 +1323,10 @@
     },
     "NBA:11+_points:over|NBA:12+_points:over": {
       "factor": 1.0,
-      "n": 4,
-      "both_wins": 0,
-      "observed_joint": 0.0,
-      "expected_joint": 0.36533,
+      "n": 5,
+      "both_wins": 1,
+      "observed_joint": 0.2,
+      "expected_joint": 0.3425,
       "raw_ratio": 0.6
     },
     "NBA:7+_points:over|NBA:8+_points:over": {
@@ -1363,10 +1363,10 @@
     },
     "NBA:10+_points:over|NBA:9+_points:over": {
       "factor": 1.0,
-      "n": 7,
-      "both_wins": 6,
-      "observed_joint": 0.85714,
-      "expected_joint": 0.4344,
+      "n": 8,
+      "both_wins": 7,
+      "observed_joint": 0.875,
+      "expected_joint": 0.42576,
       "raw_ratio": 1.35
     },
     "NBA:5+_assists:over|NBA:6+_assists:over": {
@@ -1426,19 +1426,19 @@
       "raw_ratio": 0.6
     },
     "NBA:11+_points:over|NBA:9+_points:over": {
-      "factor": 1.0049,
-      "n": 9,
-      "both_wins": 6,
-      "observed_joint": 0.66667,
-      "expected_joint": 0.43917,
+      "factor": 1.0097,
+      "n": 10,
+      "both_wins": 7,
+      "observed_joint": 0.7,
+      "expected_joint": 0.42739,
       "raw_ratio": 1.35
     },
     "NBA:12+_points:over|NBA:9+_points:over": {
       "factor": 1.0,
-      "n": 3,
-      "both_wins": 0,
-      "observed_joint": 0.0,
-      "expected_joint": 0.4606,
+      "n": 4,
+      "both_wins": 1,
+      "observed_joint": 0.25,
+      "expected_joint": 0.4258,
       "raw_ratio": 0.6
     },
     "NBA:2+_threes:over|NBA:5+_threes:over": {
@@ -1515,10 +1515,10 @@
     },
     "NBA:10+_points:over|NBA:11+_points:over": {
       "factor": 1.0,
-      "n": 6,
-      "both_wins": 6,
+      "n": 7,
+      "both_wins": 7,
       "observed_joint": 1.0,
-      "expected_joint": 0.3377,
+      "expected_joint": 0.33023,
       "raw_ratio": 1.35
     },
     "NBA:10+_points:over|NBA:6+_points:over": {
@@ -1528,8 +1528,16 @@
       "observed_joint": 1.0,
       "expected_joint": 0.54335,
       "raw_ratio": 1.35
+    },
+    "NBA:10+_points:over|NBA:12+_points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 1,
+      "observed_joint": 1.0,
+      "expected_joint": 0.28543,
+      "raw_ratio": 1.35
     }
   },
   "profiles": {},
-  "updated_at": "2026-11-10T04:57:29.164197+00:00"
+  "updated_at": "2026-11-10T10:36:56.939693+00:00"
 }
