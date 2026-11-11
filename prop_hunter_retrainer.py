@@ -31,6 +31,9 @@ def main():
                 reg["global_model"]={"status":"skipped","samples":len(y)}
     except Exception as exc:
         reg["global_model"]={"status":"error","error":str(exc)[:300]}
+        import traceback as _tb
+        print("retrainer global error:", str(exc)[:300])
+        _tb.print_exc()
     reg["updated_at"]=datetime.now(timezone.utc).isoformat(); reg["active_groups"]=active
     FILE.write_text(json.dumps(reg,ensure_ascii=False,indent=2,default=str),encoding="utf-8")
     print(f"retrainer: groups={len(reg.get('groups',{}))} global={reg.get('global_model',{}).get('status')}")
