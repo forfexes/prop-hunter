@@ -714,12 +714,12 @@
       "raw_ratio": 0.6
     },
     "NBA:rebounds:under|NBA:rebounds:under": {
-      "factor": 1.12,
-      "n": 79,
+      "factor": 1.0818,
+      "n": 86,
       "both_wins": 42,
-      "observed_joint": 0.53165,
-      "expected_joint": 0.44171,
-      "raw_ratio": 1.2036
+      "observed_joint": 0.48837,
+      "expected_joint": 0.45143,
+      "raw_ratio": 1.0818
     },
     "NBA:blocks:under|NBA:blocks:under": {
       "factor": 1.0,
@@ -1536,8 +1536,16 @@
       "observed_joint": 1.0,
       "expected_joint": 0.28543,
       "raw_ratio": 1.35
+    },
+    "NBA:15+_points:over|NBA:6+_points:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.09549,
+      "raw_ratio": 0.6
     }
   },
   "profiles": {},
-  "updated_at": "2026-11-11T06:50:50.687915+00:00"
+  "updated_at": "2026-11-11T13:31:01.578173+00:00"
 }
