@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-12T10:33:26.482240+00:00",
+  "updated_at": "2026-11-12T13:50:22.454053+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,16 +16,17 @@
       ]
     },
     "NBA": {
-      "rows": 1743,
+      "rows": 831,
       "sources": [
+        "betrivers_direct",
         "bovada_direct",
-        "draftkings_direct"
+        "draftkings_direct",
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 7,
-      "latest": "2026-11-12T02:09:05.983966+00:00",
-      "missing_core": [
-        "threes"
-      ]
+      "market_count": 10,
+      "latest": "2026-11-11T22:57:49.458718+00:00",
+      "missing_core": []
     },
     "WNBA": {
       "rows": 0,
@@ -40,24 +41,29 @@
       ]
     },
     "NFL": {
-      "rows": 61,
+      "rows": 2,
       "sources": [
-        "betrivers_direct"
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 11,
-      "latest": "2026-11-12T02:09:10.326424+00:00",
+      "market_count": 2,
+      "latest": "2026-11-12T02:09:08.851025+00:00",
       "missing_core": [
-        "touchdown"
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing"
       ]
     },
     "NHL": {
-      "rows": 154,
+      "rows": 78,
       "sources": [
-        "betrivers_direct",
-        "fanduel_direct"
+        "draftkings_direct",
+        "fanduel_direct",
+        "kambi"
       ],
       "market_count": 5,
-      "latest": "2026-11-11T22:57:37.593253+00:00",
+      "latest": "2026-11-12T02:09:36.474159+00:00",
       "missing_core": [
         "saves"
       ]
@@ -82,14 +88,6 @@
       ]
     },
     {
-      "sport": "NBA",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "threes"
-      ]
-    },
-    {
       "sport": "WNBA",
       "severity": "high",
       "issue": "no_recent_rows"
@@ -107,18 +105,13 @@
     },
     {
       "sport": "NFL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "betrivers_direct"
-      ]
-    },
-    {
-      "sport": "NFL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "touchdown"
+        "touchdown",
+        "receiving",
+        "rushing",
+        "passing"
       ]
     },
     {
