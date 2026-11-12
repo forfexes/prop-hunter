@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-12T00:04:45.137645+00:00",
+  "updated_at": "2026-11-12T10:33:26.482240+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,17 +16,16 @@
       ]
     },
     "NBA": {
-      "rows": 1776,
+      "rows": 1743,
       "sources": [
-        "betrivers_direct",
         "bovada_direct",
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "draftkings_direct"
       ],
-      "market_count": 9,
-      "latest": "2026-11-11T22:57:49.386735+00:00",
-      "missing_core": []
+      "market_count": 7,
+      "latest": "2026-11-12T02:09:05.983966+00:00",
+      "missing_core": [
+        "threes"
+      ]
     },
     "WNBA": {
       "rows": 0,
@@ -41,24 +40,24 @@
       ]
     },
     "NFL": {
-      "rows": 118,
+      "rows": 61,
       "sources": [
-        "draftkings_direct",
-        "kambi"
+        "betrivers_direct"
       ],
-      "market_count": 8,
-      "latest": "2026-11-11T22:57:55.230494+00:00",
-      "missing_core": []
+      "market_count": 11,
+      "latest": "2026-11-12T02:09:10.326424+00:00",
+      "missing_core": [
+        "touchdown"
+      ]
     },
     "NHL": {
-      "rows": 68,
+      "rows": 154,
       "sources": [
-        "draftkings_direct",
-        "fanduel_direct",
-        "kambi"
+        "betrivers_direct",
+        "fanduel_direct"
       ],
-      "market_count": 4,
-      "latest": "2026-11-11T22:57:36.355600+00:00",
+      "market_count": 5,
+      "latest": "2026-11-11T22:57:37.593253+00:00",
       "missing_core": [
         "saves"
       ]
@@ -83,6 +82,14 @@
       ]
     },
     {
+      "sport": "NBA",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "threes"
+      ]
+    },
+    {
       "sport": "WNBA",
       "severity": "high",
       "issue": "no_recent_rows"
@@ -96,6 +103,22 @@
         "rebounds",
         "assists",
         "threes"
+      ]
+    },
+    {
+      "sport": "NFL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "betrivers_direct"
+      ]
+    },
+    {
+      "sport": "NFL",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "touchdown"
       ]
     },
     {
