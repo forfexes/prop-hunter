@@ -589,6 +589,21 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
         built.point = first["point"]
         built.features = {"odds_observed": True, "price_type": "bookmaker", "bookmaker": book, "ladder_rungs": len(legs)}
         built.leg_details = leg_details
+
+        # Qualitaets-Gate fuer NBA/WNBA-Ladders (datengetrieben): Basketball-Ladders
+        # verlieren (39% HR, -3u), vor allem die 2-Stufen-Variante (35% HR, -1.3u),
+        # waehrend 4-Stufer (+5.5u) und NFL/NHL/MLB-Ladders (54-56% HR) tragen.
+        # Darum fuer NBA/WNBA: mindestens 3 Stufen ODER eine starke erste Stufe.
+        # Andere Sportarten bleiben unberuehrt. Abschaltbar via PH_LADDER_NBA_GATE=0.
+        _gate_on = os.getenv("PH_LADDER_NBA_GATE", "1").lower() in {"1", "true", "yes", "on"}
+        _sp_built = _sport(anchor)
+        if _gate_on and _sp_built in {"NBA", "WNBA"}:
+            _min_rungs = int(os.getenv("PH_LADDER_NBA_MIN_RUNGS", "3"))
+            _strong_first = float(os.getenv("PH_LADDER_NBA_STRONG_FIRST", "0.72"))
+            _first_prob = float(first.get("probability") or 0)
+            if len(legs) < _min_rungs and _first_prob < _strong_first:
+                continue
+
         ladders.append(built)
 
     ladders.sort(key=lambda p: (
@@ -640,6 +655,17 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
     probability_floors = {"SAFE": 0.30, "VALUE": 0.16, "RISK": 0.055, "LOTTERY": 0.008}
     if edge < thresholds[label] or prob < probability_floors[label]:
         return None
+
+    # Datengetriebenes Gate fuer 2-Bein-Cross-Game-Kombis (kombi2): verlieren
+    # historisch (7% HR, -0.7u). Eine echte 2-Leg-Kombi braucht eine solide
+    # gemeinsame Trefferwahrscheinlichkeit, sonst ist sie nur multiplizierte
+    # Varianz. Same-Game-Builder und Single-/Ladder-Lanes sind nicht betroffen.
+    # Abschaltbar via PH_KOMBI2_MIN_JOINT=0.
+    _sg = bool(_game(legs[0])) and len({_game(x) for x in legs}) == 1
+    if len(legs) == 2 and not _sg and label in {"SAFE", "VALUE"}:
+        _k2_min = float(os.getenv("PH_KOMBI2_MIN_JOINT", "0.42"))
+        if _k2_min > 0 and prob < _k2_min:
+            return None
 
     caps = {"SAFE": 0.35, "VALUE": 0.26, "RISK": 0.14, "LOTTERY": 0.06}
     fractions = {"SAFE": 0.24, "VALUE": 0.18, "RISK": 0.10, "LOTTERY": 0.04}
