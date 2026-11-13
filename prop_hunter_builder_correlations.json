@@ -707,11 +707,11 @@
     },
     "NBA:points:under|NBA:points:under": {
       "factor": 0.85,
-      "n": 274,
-      "both_wins": 74,
-      "observed_joint": 0.27007,
-      "expected_joint": 0.3755,
-      "raw_ratio": 0.7192
+      "n": 291,
+      "both_wins": 88,
+      "observed_joint": 0.30241,
+      "expected_joint": 0.37657,
+      "raw_ratio": 0.803
     },
     "NBA:rebounds:under|NBA:rebounds:under": {
       "factor": 1.0087,
@@ -794,12 +794,12 @@
       "raw_ratio": 0.6
     },
     "NBA:assists:under|NBA:assists:under": {
-      "factor": 0.9678,
-      "n": 19,
+      "factor": 0.9353,
+      "n": 22,
       "both_wins": 6,
-      "observed_joint": 0.31579,
-      "expected_joint": 0.40016,
-      "raw_ratio": 0.7891
+      "observed_joint": 0.27273,
+      "expected_joint": 0.40888,
+      "raw_ratio": 0.667
     },
     "NBA:10+_rebounds:over|NBA:9+_rebounds:over": {
       "factor": 1.0,
@@ -1371,10 +1371,10 @@
     },
     "NBA:5+_assists:over|NBA:6+_assists:over": {
       "factor": 1.0,
-      "n": 3,
+      "n": 4,
       "both_wins": 0,
       "observed_joint": 0.0,
-      "expected_joint": 0.11782,
+      "expected_joint": 0.11623,
       "raw_ratio": 0.6
     },
     "NBA:12+_points:over|NBA:14+_points:over": {
@@ -1458,11 +1458,11 @@
       "raw_ratio": 1.35
     },
     "NBA:14+_points:over|NBA:6+_points:over": {
-      "factor": 0.9778,
-      "n": 12,
+      "factor": 0.9667,
+      "n": 14,
       "both_wins": 0,
       "observed_joint": 0.0,
-      "expected_joint": 0.3096,
+      "expected_joint": 0.30208,
       "raw_ratio": 0.6
     },
     "NBA:16+_points:over|NBA:6+_points:over": {
@@ -1560,8 +1560,24 @@
       "observed_joint": 1.0,
       "expected_joint": 0.51387,
       "raw_ratio": 1.35
+    },
+    "NBA:4+_assists:over|NBA:5+_assists:over": {
+      "factor": 1.0,
+      "n": 2,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.21847,
+      "raw_ratio": 0.6
+    },
+    "NBA:4+_assists:over|NBA:6+_assists:over": {
+      "factor": 1.0,
+      "n": 1,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.12816,
+      "raw_ratio": 0.6
     }
   },
   "profiles": {},
-  "updated_at": "2026-11-13T03:16:10.518670+00:00"
+  "updated_at": "2026-11-13T09:36:23.269742+00:00"
 }
