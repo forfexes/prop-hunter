@@ -227,6 +227,18 @@ def _candidate_from_prop(prop: Any, PickCls: Any) -> Optional[Any]:
     if edge < minimum_edge:
         return None
 
+    # Over-Odds-Cap auch fuer Builder-Legs (konsistent zum Single-Filter im Core).
+    # Over braucht ein ueberdurchschnittliches Spiel und trifft bei hoher Quote
+    # strukturell schlecht; ohne diesen Cap landeten Over-Legs wie Maluach Over
+    # 11.5 Reb @16.0 (L15 3/15) in Buildern/Big/Ladders. HR bleibt ausgenommen
+    # (bewusste Longshot-Lane). Abschaltbar via PH_OVER_ODDS_FILTER=0.
+    if (os.getenv("PH_OVER_ODDS_FILTER", "1").lower() in {"1", "true", "yes", "on"}
+            and not _is_hr(prop)
+            and _direction(prop) == "over"):
+        _over_cap = float(os.getenv("PH_OVER_ODDS_CAP", "2.0"))
+        if odds >= _over_cap:
+            return None
+
     category = "hr_risk" if _is_hr(prop) else "verified_pool"
     fraction = 0.08 if _is_hr(prop) else 0.16
     cap = 0.18 if _is_hr(prop) else 0.35
@@ -736,6 +748,11 @@ def _make_builder(legs: Sequence[Any], label: str, PickCls: Any, pairs: Dict[str
     if same_game and len(legs) >= 2:
         built.features["builder_odds_estimated_from_legs"] = True
         built.features["combo_scope"] = "same_game"
+    elif len(legs) >= 2:
+        # Cross-Game explizit markieren: unabhaengige Spiele, Quotenprodukt korrekt.
+        # Ohne dieses Feld stand combo_scope=None und die P/L-Auswertung konnte
+        # Cross-Game nicht als solches erkennen (betraf z.B. 'big'-Lottery-Tickets).
+        built.features["combo_scope"] = "cross_game"
     return built
 
 
