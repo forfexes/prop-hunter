@@ -1,13 +1,134 @@
 {
-  "generated_at": "2026-11-12T23:13:58.300212+00:00",
-  "unresolved": 60,
+  "generated_at": "2026-11-13T03:16:02.824006+00:00",
+  "unresolved": 87,
   "counts": {
-    "awaiting_game_completion": 35,
-    "no_unique_official_game": 23,
+    "awaiting_game_completion": 55,
+    "awaiting_combo_legs": 2,
+    "no_unique_official_game": 28,
     "missing_stat_or_line": 1,
     "unsupported_team_or_game_market": 1
   },
   "picks": [
+    {
+      "pick_id": "372645ed6b0cae90158485a7901ae133",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "Points Ladder",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "25ece2434c1f213d422e3ff76ce9f4e1",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Moussa Diabate",
+      "market": "Points Ladder",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "64203f8abdb5f4e34dc6fe7dc28e20bf",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Naz Reid",
+      "market": "Points Ladder",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "b6f3fce62b2583abbb559a30d9581acc",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "Points Ladder",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "61b61526264565ec16401d4353e2be6b",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Points Ladder",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "0f8a850aac2fb6fbe4635853a38bfb6b",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Assists Ladder",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "b03a93c2f6d532702489b3b216c5953a",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "points Under 17.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "28270728cab1cf78c04828f462de757c",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Dillon Brooks",
+      "market": "points Over 14.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "371b719e353b6eab1b864698465fe994",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Naz Reid",
+      "market": "points Under 18.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "6d7cd7d754a462e59854a2d25accd02c",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Moussa Diabate",
+      "market": "points Under 8.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "f80c082ba9af7ac555aa8cfbeaf0aa67",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Collin Gillespie",
+      "market": "points Under 8.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "565bafeab4ee20b6a977630bb852951b",
+      "source": "prop_hunter_picks",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "points Under 8.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
     {
       "pick_id": "b882821aac4229ea62f889a39175a736",
       "source": "prop_hunter_picks",
@@ -15,7 +136,7 @@
       "league": "?",
       "player": "Khaman Maluach + Joel Embiid",
       "market": "2-Leg RISK",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -25,7 +146,7 @@
       "league": "?",
       "player": "Alex DeBrincat + Neal Pionk",
       "market": "2-Leg SAFE",
-      "reason": "awaiting_game_completion",
+      "reason": "awaiting_combo_legs",
       "evidence": null
     },
     {
@@ -35,8 +156,16 @@
       "league": "NBA",
       "player": "Naji Marshall",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "DAL Mavericks @ MIN Timberwolves",
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-08"
+        ]
+      }
     },
     {
       "pick_id": "7504a6f8686767549ea4715999100659",
@@ -45,28 +174,16 @@
       "league": "NBA",
       "player": "Naji Marshall",
       "market": "Points Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "5fd313b81abc5d0b8287197f22229354",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-12",
-      "league": "NBA",
-      "player": "Joel Embiid",
-      "market": "Assists Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
-    },
-    {
-      "pick_id": "74c38cad4a57a45b4d88ef85b8fd1063",
-      "source": "prop_hunter_picks",
-      "date": "2026-11-12",
-      "league": "NBA",
-      "player": "Joel Embiid",
-      "market": "Assists Ladder",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Dallas Mavericks @ Minnesota Timberwolves",
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-08"
+        ]
+      }
     },
     {
       "pick_id": "0adba00aa93642aa1a80b130e0d2b4de",
@@ -294,9 +411,10 @@
         "quoted_game_id": null,
         "quoted_kickoff": null,
         "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
-        "loaded_player_rows": 1,
+        "loaded_player_rows": 2,
         "loaded_game_dates": [
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -312,9 +430,10 @@
         "quoted_game_id": "33139175",
         "quoted_kickoff": "2026-11-10T00:30:00+00:00",
         "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
-        "loaded_player_rows": 1,
+        "loaded_player_rows": 2,
         "loaded_game_dates": [
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -513,10 +632,11 @@
         "quoted_game_id": "32835583",
         "quoted_kickoff": "2026-11-03T03:00:00+00:00",
         "quoted_game": "Toronto Raptors @ Los Angeles Clippers",
-        "loaded_player_rows": 2,
+        "loaded_player_rows": 3,
         "loaded_game_dates": [
           "2026-11-09",
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -550,10 +670,11 @@
         "quoted_game_id": "1028754180",
         "quoted_kickoff": "2026-11-02T02:00:00+00:00",
         "quoted_game": "TOR Raptors @ LA Lakers",
-        "loaded_player_rows": 2,
+        "loaded_player_rows": 3,
         "loaded_game_dates": [
           "2026-11-09",
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -601,9 +722,10 @@
         "quoted_game_id": null,
         "quoted_kickoff": "2026-11-10 00:30:00+00:00",
         "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
-        "loaded_player_rows": 1,
+        "loaded_player_rows": 2,
         "loaded_game_dates": [
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -619,9 +741,10 @@
         "quoted_game_id": null,
         "quoted_kickoff": "2026-11-10 00:30:00+00:00",
         "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
-        "loaded_player_rows": 1,
+        "loaded_player_rows": 2,
         "loaded_game_dates": [
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -637,9 +760,10 @@
         "quoted_game_id": null,
         "quoted_kickoff": "2026-11-10 00:30:00+00:00",
         "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
-        "loaded_player_rows": 1,
+        "loaded_player_rows": 2,
         "loaded_game_dates": [
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -655,9 +779,10 @@
         "quoted_game_id": null,
         "quoted_kickoff": "2026-11-10 00:30:00+00:00",
         "quoted_game": "Memphis Grizzlies @ Toronto Raptors",
-        "loaded_player_rows": 1,
+        "loaded_player_rows": 2,
         "loaded_game_dates": [
-          "2026-11-11"
+          "2026-11-11",
+          "2026-11-12"
         ]
       }
     },
@@ -758,8 +883,20 @@
       "league": "NHL",
       "player": "Alex DeBrincat",
       "market": "Shots On Goal Over 3.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "DET Red Wings @ FLA Panthers",
+        "loaded_player_rows": 5,
+        "loaded_game_dates": [
+          "2026-11-02",
+          "2026-11-03",
+          "2026-11-05",
+          "2026-11-07",
+          "2026-11-10"
+        ]
+      }
     },
     {
       "pick_id": "0559fbfa1a8477f587f3eca817e4cdcc",
@@ -768,8 +905,20 @@
       "league": "NHL",
       "player": "Neal Pionk",
       "market": "Shots On Goal Over 1.5",
-      "reason": "awaiting_game_completion",
-      "evidence": null
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "WPG Jets @ DAL Stars",
+        "loaded_player_rows": 5,
+        "loaded_game_dates": [
+          "2026-11-01",
+          "2026-11-03",
+          "2026-11-05",
+          "2026-11-08",
+          "2026-11-10"
+        ]
+      }
     },
     {
       "pick_id": "b9a44c7ce370d110e39bf54dd4b2e207",
@@ -778,16 +927,194 @@
       "league": "NBA",
       "player": "Khaman Maluach",
       "market": "Rebounds Over 11.5",
+      "reason": "no_unique_official_game",
+      "evidence": {
+        "quoted_game_id": null,
+        "quoted_kickoff": null,
+        "quoted_game": "Charlotte Hornets @ Phoenix Suns",
+        "loaded_player_rows": 1,
+        "loaded_game_dates": [
+          "2026-11-05"
+        ]
+      }
+    },
+    {
+      "pick_id": "4ccca5b17c1eff7906e2bfdfbce0ef82",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Assists Under 5.5",
       "reason": "awaiting_game_completion",
       "evidence": null
     },
     {
-      "pick_id": "cc837686fed11b8cbca0031f37ad6877",
+      "pick_id": "72f1aea57f5ed797a8d77881721ab7f8",
       "source": "history_leg",
-      "date": "2026-11-12",
+      "date": "2026-11-13",
       "league": "NBA",
-      "player": "Joel Embiid",
-      "market": "Assists Over 5.5",
+      "player": "Grayson Allen",
+      "market": "Assists Under 4.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "a04be65bce40f2d1fc4b11760a909d20",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Assists Under 3.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "fd02a8ada86f4a44fb139868fee0a2c5",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Points Under 21.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "fc7f4eb48df9af7f3f11b4fd70a7322f",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Points Under 16.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "7676546e6763b8c66c742c6745d5ece3",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Points Under 15.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "5cd8bb3262559c0b8035e6c987b590b8",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Grayson Allen",
+      "market": "Points Under 14.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "c37a70477d0a03ff66d58688a0576af9",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "Points Under 9.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "8af03dceb4890730e59b126127b5c4a4",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "Points Under 7.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "edadab77879db804a61c43a82c2d3b87",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "Points Under 6.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "59393c0b7b652cd45d921c31c913a38b",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Naz Reid",
+      "market": "Points Under 24.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "9f7c3c040185376eb61995980f239562",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Naz Reid",
+      "market": "Points Under 19.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "beb2e908d92646e03eea6e00826a4357",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Moussa Diabate",
+      "market": "Points Under 11.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "d3be03c987d392c98d080b209e9ce341",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Moussa Diabate",
+      "market": "Points Under 9.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "34b81f08d47332c47f296548fe244f90",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Moussa Diabate",
+      "market": "Points Under 8.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "9281dc06aed1a3a39a123d0b73f183b9",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Moussa Diabate",
+      "market": "Points Under 6.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "6bfdefb7be1831c2a3a5894e99df4545",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "Points Under 8.5",
+      "reason": "awaiting_game_completion",
+      "evidence": null
+    },
+    {
+      "pick_id": "e61ec3f1883070bf106a03ccd2679dd0",
+      "source": "history_leg",
+      "date": "2026-11-13",
+      "league": "NBA",
+      "player": "Sion James",
+      "market": "Points Under 7.5",
       "reason": "awaiting_game_completion",
       "evidence": null
     }
