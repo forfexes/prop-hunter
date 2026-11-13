@@ -29,7 +29,7 @@ TIMEOUT = int(os.getenv("PH_RESULTS_HTTP_TIMEOUT", "8"))
 LOOKBACK_DAYS = max(1, int(os.getenv("PH_RESULTS_LOOKBACK_DAYS", "4")))
 FALLBACK_SUMMARY = os.getenv("PH_RESULTS_FALLBACK_SUMMARY", "0").strip() == "1"
 
-CLOSED = {"win", "won", "loss", "lost", "push"}
+CLOSED = {"win", "won", "loss", "lost", "push", "void"}
 
 
 def _headers(extra: Optional[dict] = None) -> dict:
