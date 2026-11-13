@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-13T13:36:28.834705+00:00",
+  "updated_at": "2026-11-13T14:20:21.801286+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,14 +16,13 @@
       ]
     },
     "NBA": {
-      "rows": 87,
+      "rows": 250,
       "sources": [
-        "betrivers_direct",
         "bovada_direct",
         "kambi"
       ],
-      "market_count": 16,
-      "latest": "2026-11-12T16:07:04.800839+00:00",
+      "market_count": 8,
+      "latest": "2026-11-12T16:07:04.827738+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -39,28 +38,29 @@
       ]
     },
     "NFL": {
-      "rows": 35,
+      "rows": 44,
       "sources": [
-        "draftkings_direct"
+        "betrivers_direct",
+        "bovada_direct",
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 1,
-      "latest": "2026-11-12T16:06:26.524028+00:00",
+      "market_count": 13,
+      "latest": "2026-11-13T01:43:54.770305+00:00",
       "missing_core": [
-        "touchdown",
-        "rushing",
-        "passing",
-        "receptions"
+        "touchdown"
       ]
     },
     "NHL": {
-      "rows": 70,
+      "rows": 29,
       "sources": [
-        "betrivers_direct",
-        "fanduel_direct"
+        "betrivers_direct"
       ],
-      "market_count": 5,
-      "latest": "2026-11-12T16:06:40.219036+00:00",
+      "market_count": 3,
+      "latest": "2026-11-12T16:06:40.216158+00:00",
       "missing_core": [
+        "shots",
+        "goals",
         "saves"
       ]
     }
@@ -101,21 +101,18 @@
     },
     {
       "sport": "NFL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "draftkings_direct"
-      ]
-    },
-    {
-      "sport": "NFL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "touchdown",
-        "rushing",
-        "passing",
-        "receptions"
+        "touchdown"
+      ]
+    },
+    {
+      "sport": "NHL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "betrivers_direct"
       ]
     },
     {
@@ -123,6 +120,8 @@
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
+        "shots",
+        "goals",
         "saves"
       ]
     }
