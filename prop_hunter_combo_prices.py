@@ -24,13 +24,23 @@ def confirmed_ticket(obj):
 def unpriced_sgp(obj):
     if value(obj,'type') in {'single','ladder'} or confirmed_ticket(obj):
         return False
+    legs=value(obj,'leg_details',[]) or []
+    games=[re.sub(r'\s+',' ',str(value(x,'game','') or '').strip().lower()) for x in legs]
+    # Cross-Game zuerst ausschliessen: unabhaengige Spiele, das Quoten-PRODUKT
+    # ist mathematisch korrekt (keine Korrelation), also KEIN unpriced SGP —
+    # auch wenn der Builder aus Einzelquoten abgeleitet wurde. Vorher hat das
+    # Flag 'derived_builder'/'estimated_from_legs' unten faelschlich auch alle
+    # Cross-Game-Builder invalidiert (combo_scope=cross_game wurde ignoriert).
+    scope=str(value(obj,'combo_scope') or features(obj).get('combo_scope') or '').lower()
+    if scope=='cross_game':
+        return False
+    if len(legs)>=2 and all(games) and len(set(games))==len(games):
+        return False
     f=features(obj)
     if value(obj,'builder_odds_estimated_from_legs') or f.get('builder_odds_estimated_from_legs') or f.get('price_type')=='derived_builder':
         return True
-    legs=value(obj,'leg_details',[]) or []
     if len(legs)<2:
         return False
-    games=[re.sub(r'\s+',' ',str(value(x,'game','') or '').strip().lower()) for x in legs]
     # A repeated event creates an SGP component even in a mixed-match ticket.
     if not all(games) or len(set(games))==len(games):
         return False

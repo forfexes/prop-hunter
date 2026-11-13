@@ -58,22 +58,28 @@ exec(compile(ast.fix_missing_locations(ast.Module(body=[fence],type_ignores=[]))
 assert ns['picks']==[single]
 print('PRODUCTION FINAL PRICE FENCE PASSED')
 
-# Real incident: two different games were given the generic Same-Game reason.
+# Cross-Game-Builder (verschiedene, unabhaengige Spiele): das Quoten-PRODUKT
+# ist mathematisch korrekt, also KEIN unpriced SGP — darf weder neu
+# invalidiert noch zurueckgehalten werden, auch wenn aus Einzelquoten abgeleitet.
 wrong=dict(type='betbuilder',odds=3.94,result='withdrawn',status='withdrawn',profit=None,
     quote_invalidated=True,quote_original_result='loss',quote_original_profit=-.1,
     quote_invalidation_reason='Same-Game-Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote',
     features=dict(combo_scope='cross_game',price_type='derived_acca',builder_odds_estimated_from_legs=True),
     leg_details=[dict(player='Both Teams Total',odds=1.95,game='MEM Grizzlies @ POR Trail Blazers'),
                  dict(player='CJ McCollum',odds=2.02,game='CLE Cavaliers @ ATL Hawks')])
-assert invalidate_unpriced_combo(wrong)
-assert wrong['quote_invalidation_reason'].startswith('Cross-Game-')
-assert wrong['result']=='withdrawn' and wrong['profit'] is None
-assert wrong['quote_original_result']=='loss' and wrong['quote_original_profit']==-.1
-assert not invalidate_unpriced_combo(wrong), 'reason migration must be idempotent'
-other=deepcopy(wrong);other['quote_invalidation_reason']='Drittelquote wurde als Gesamtspielquote ausgegeben'
-assert not invalidate_unpriced_combo(other)
-unknown=deepcopy(wrong);unknown.pop('quote_invalidated');unknown['leg_details'][0]['game']=''
+# Cross-Game ist kein unpriced SGP (mehr):
+assert not unpriced_sgp(wrong)
+# Ein frischer (noch nicht invalidierter) Cross-Game-Builder wird NICHT invalidiert:
+fresh_cross=deepcopy(wrong); fresh_cross.pop('quote_invalidated'); fresh_cross.pop('quote_original_result'); fresh_cross.pop('quote_original_profit')
+fresh_cross.update(result='win',profit=0.33)
+assert not invalidate_unpriced_combo(fresh_cross)
+assert fresh_cross['result']=='win' and fresh_cross['profit']==0.33, 'cross-game darf nicht zurueckgehalten werden'
+# Ein bereits invalidierter Alt-Ticket bleibt withdrawn (keine Reaktivierung):
+assert not invalidate_unpriced_combo(wrong)
+assert wrong['result']=='withdrawn'
+# Echter unpriced Fall: fehlendes Spiel-Label -> Kombi-Grund, wird invalidiert.
+unknown=deepcopy(wrong);unknown.pop('quote_invalidated');unknown.pop('quote_original_result');unknown.pop('quote_original_profit')
+unknown['features']=dict(price_type='derived_builder')  # kein cross_game-scope
+unknown['leg_details'][0]['game']='';unknown['leg_details'][1]['game']=''
 assert invalidate_unpriced_combo(unknown) and unknown['quote_invalidation_reason'].startswith('Kombi-')
-rendered=_decorate_card(dict(text='CROSS\nEV +100%\n🏁 Auswertung: offen',combo_ids=['cross-reason']),[],[dict(wrong,combo_id='cross-reason')])
-assert 'Cross-Game-Gesamtquote' in rendered and 'Same-Game-Gesamtquote' not in rendered
-print('CROSS-GAME WITHDRAWAL REASON / HISTORY MIGRATION PASSED')
+print('CROSS-GAME NOT INVALIDATED / UNPRICED SGP GATE PASSED')
