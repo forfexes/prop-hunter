@@ -1007,7 +1007,15 @@ def main() -> int:
             cards_ready += 1
             # Skip network call when identical to the last successful in-place settlement.
             legacy_source = _card_pick(card,picks,combos)
-            if text == card.get("settlement_text"):
+            # Einmaliges Force-Re-Render fuer gesettlete Ladders, deren Karte die
+            # Stufen-Auswertung (Ist: N je Stufe) noch nicht zeigt. LADDER_RUNG_CARD_VERSION
+            # hochzaehlen, um kuenftig erneut alle Ladder-Karten aufzufrischen.
+            LADDER_RUNG_CARD_VERSION=2
+            _is_graded_ladder=bool(legacy_source and legacy_source.get("type")=="ladder"
+                and str(legacy_source.get("result") or "pending").lower() in CLOSED
+                and any(l.get("result") is not None for l in (legacy_source.get("leg_details") or [])))
+            _rung_upgrade_due=_is_graded_ladder and int(card.get("ladder_rung_version") or 0)<LADDER_RUNG_CARD_VERSION
+            if text == card.get("settlement_text") and not _rung_upgrade_due:
                 if not legacy_source or not _image_upgrade_due(card,day) or image_migrations>=migration_limit:
                     continue
                 image_migrations += 1
@@ -1016,11 +1024,21 @@ def main() -> int:
                 visual=dict(card["image_pick"])
                 for key in ("result","actual_value","profit","leg_details","ladder_legs"):
                     if key in legacy_source:visual[key]=legacy_source[key]
-                if visual.get("type")=="ladder" and legacy_source.get("ladder_legs"):
-                    visual["leg_details"]=legacy_source["ladder_legs"]
+                # Fuer die Stufen-Auswertung ZAEHLEN die leg_details — dort stehen
+                # nach dem Settlement result+actual_value pro Stufe. ladder_legs sind
+                # oft leer (result=None); sie nur als Fallback nehmen, NIEMALS die
+                # gefuellten leg_details damit ueberschreiben.
+                if visual.get("type")=="ladder":
+                    graded_legs=[l for l in (legacy_source.get("leg_details") or []) if l.get("result") is not None]
+                    if graded_legs:
+                        visual["leg_details"]=legacy_source["leg_details"]
+                    elif legacy_source.get("ladder_legs"):
+                        visual["leg_details"]=legacy_source["ladder_legs"]
                 card["image_pick"]=visual
             if _edit_message(card.get("message_id"), text, card.get("chat_id"), **({"image_pick":card["image_pick"]} if card.get("media_type")=="photo" and card.get("image_pick") else {"fallback_pick":legacy_source} if legacy_source else {})):
                 card["image_settlement_version"] = 1
+                if _is_graded_ladder:
+                    card["ladder_rung_version"] = LADDER_RUNG_CARD_VERSION
                 card["settlement_text"] = text
                 card["settlement_updated_at"] = datetime.now(timezone.utc).isoformat()
                 cards_edited += 1
