@@ -306,10 +306,22 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         if typ == "ladder":
             name = str(getattr(pick, "player", "") or "")
             photo = player_photo(name, league)
-            for leg, det in zip(getattr(pick, "picks", None) or [], details or [{}] * len(getattr(pick, "picks", None) or [])):
-                rows.append({"name": name, "photo": photo, "label": str(getattr(leg, "market", "")).replace("_"," "),
-                             "result":_result_text(det), "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])}" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
-                             "odds": f"@{float(leg.odds):.2f}"})
+            # Pro Stufe aus leg_details rendern: DORT stehen result + actual_value
+            # nach dem Settlement (z.B. "Ist: 14 · GEWONNEN"). picks/ladder_legs
+            # werden beim Settlement NICHT befuellt, nur leg_details — frueher zippte
+            # die Schleife ueber picks und zeigte darum nie ein Stufen-Ergebnis.
+            ladder_src = details or []
+            if not ladder_src:
+                # Fallback: noch nicht gesettlete Karte ohne leg_details.
+                for leg in getattr(pick, "picks", None) or []:
+                    ladder_src.append({"market": getattr(leg, "market", ""), "odds": getattr(leg, "odds", None)})
+            for det in ladder_src:
+                _odds = det.get("odds")
+                rows.append({"name": name, "photo": photo,
+                             "label": str(det.get("market", "")).replace("_", " "),
+                             "result": _result_text(det),
+                             "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])}" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
+                             "odds": f"@{float(_odds):.2f}" if _odds else ""})
             title, subtitle = "PLAYER LADDER", "Ein Spieler · mehrere Stufen"
             if not teams and game and game.lower() != "verified ladder":
                 subtitle = game[:60]
