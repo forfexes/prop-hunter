@@ -4964,6 +4964,10 @@ def run(dry_run=False,sport_filter=None):
             rescue = rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS)
             before = len(picks)
             picks = merge_unique_picks(picks, rescue, max_singles=RESCUE_MAX_PICKS, max_total=RESCUE_MAX_PICKS)
+            # Fill-Up-Rescue gegen die HEUTE schon geposteten deduplizieren: ohne das
+            # kamen dieselben Rescue-Singles (z.B. MarShawn Lloyd Over 9.5) bei jedem
+            # Lauf neu durch, weil merge_unique_picks nur innerhalb des Laufs dedupt.
+            picks = filter_picks(picks)
             log.info("fill-up rescue: picks %d → %d (singles %d → %d)",
                      before, len(picks), singles_now,
                      sum(1 for p in picks if getattr(p, "type", None) == "single"))
@@ -4973,7 +4977,7 @@ def run(dry_run=False,sport_filter=None):
         # Letzter Versuch: Edge Filter lockern
         rescue2 = rescue_picks_from_props(props, max_picks=4)
         if rescue2:
-            picks = rescue2
+            picks = filter_picks(rescue2)  # auch hier gegen heute Gepostete deduppen
             log.info("relaxed rescue: %d picks", len(picks))
         else:
             log.warning("no picks at all — nothing to post")
