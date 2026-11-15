@@ -366,6 +366,20 @@ def find_gamelog(
                     continue
             dated.append((-1 if verified_start else abs(delta), 0 if delta == 0 else 1, gl))
     if not dated:
+        # Fallback gegen falsche Spielzuordnung des Quoten-Feeds: wenn weder
+        # game_id noch die startzeit-verifizierte Datumssuche greifen (z.B. der
+        # Feed haengt einen Spieler ans falsche Spiel: falsche game_id UND
+        # falsche commence_time), es fuer DIESEN Spieler an GENAU EINEM Spieltag
+        # aber genau ein beobachtetes Gamelog gibt, das am Pick-Zieldatum liegt,
+        # ist die Zuordnung eindeutig — ein Spieler spielt pro Tag nur ein Spiel.
+        # Nur ein einziger exakter Datumstreffer zaehlt; alles andere bleibt offen.
+        if os.getenv("PH_SETTLE_NAME_DATE_FALLBACK", "1").lower() in {"1", "true", "yes", "on"}:
+            same_day = [
+                gl for gl in player_logs
+                if _date_only(gl.get("game_date") or gl.get("date")) == target
+            ]
+            if len(same_day) == 1:
+                return same_day[0]
         return None
     dated.sort(key=lambda x: (x[0], x[1]))
     best_rank = dated[0][:2]
