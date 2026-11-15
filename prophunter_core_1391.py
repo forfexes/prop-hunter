@@ -4429,6 +4429,23 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             rejected["unverified_odds"] += 1
             continue
 
+        # Over-Odds-Cap AUCH im Rescue-Pfad (konsistent zum Hauptfilter oben und
+        # zum Builder). Over bei hoher Quote verliert strukturell; ohne diesen Cap
+        # rutschten Rescue-Overs wie NFL receiving/rushing Over @2.6-3.6 durch, die
+        # der Hauptfilter laengst blockt. Bewusste Longshot-Lanes (MLB HR, NFL/NCAAF
+        # Anytime-TD) bleiben ausgenommen. Abschaltbar via PH_OVER_ODDS_FILTER=0.
+        # Richtung steckt im market-Text ("... Over 29.5" / "... Under 1.5"),
+        # Prop hat kein eigenes direction-Feld — nur echte Over-Props filtern.
+        _mkt_low = market.lower()
+        _is_over = bool(re.search(r"\bover\b", _mkt_low)) or (
+            "under" not in _mkt_low and bool(feats.get("is_over")))
+        if (os.getenv("PH_OVER_ODDS_FILTER", "1").lower() in {"1", "true", "yes", "on"}
+                and not is_hr and not is_td_scorer and _is_over):
+            _over_cap = float(os.getenv("PH_OVER_ODDS_CAP", "2.0"))
+            if odds >= _over_cap:
+                rejected["over_odds_too_high"] += 1
+                continue
+
         # VERIFIED HR LANE: HR ist Lottery, kein +EV-Zwang.
         # Kriterium: starkes HR-Profil aus DATA+ (HR-Rate/Score), Odds 3.0–9.0.
         if is_hr:
