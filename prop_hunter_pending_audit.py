@@ -94,13 +94,24 @@ def main():
         'ambiguous_market_line', 'ambiguous_league', 'unmapped_market',
         'no_unique_official_game',
     }
+    # Weiche terminale Gruende: nicht sofort terminal (die Gamelogs koennen noch
+    # eintreffen), aber wenn ein Pick nach deutlich laengerer Karenz IMMER NOCH
+    # nicht gradebar ist, ist er faktisch tot (z.B. Spieler-Mismatch, uralte
+    # Ladder, fehlende Linie) und darf nicht ewig als pending haengen bleiben.
+    TERMINAL_SOFT = {
+        'missing_stat_or_line', 'missing_unique_gamelog', 'ready_to_settle',
+    }
     if os.getenv('PH_AUTO_VOID_STALE', '0').lower() in {'1', 'true', 'yes', 'on'}:
         grace_days = int(os.getenv('PH_AUTO_VOID_DAYS', '3'))
+        soft_grace_days = int(os.getenv('PH_AUTO_VOID_SOFT_DAYS', '7'))
         cutoff = datetime.now(timezone.utc) - timedelta(days=grace_days)
+        soft_cutoff = datetime.now(timezone.utc) - timedelta(days=soft_grace_days)
         by_id = {pick_id(p): p for p in picks}
         void_rows = []
         for d in details:
-            if d['reason'] not in TERMINAL:
+            is_hard = d['reason'] in TERMINAL
+            is_soft = d['reason'] in TERMINAL_SOFT
+            if not is_hard and not is_soft:
                 continue
             p = by_id.get(d['pick_id'])
             if not p:
@@ -116,7 +127,9 @@ def main():
                     dt = datetime.fromisoformat(str(p.get('date'))[:10]).replace(tzinfo=timezone.utc)
                 except (ValueError, TypeError):
                     continue
-            if dt > cutoff:
+            # Harte Gruende nach normaler Karenz, weiche erst nach langer Karenz.
+            limit = cutoff if is_hard else soft_cutoff
+            if dt > limit:
                 continue  # noch zu frisch — in Ruhe lassen
             pid = d['pick_id']
             void_rows.append({
