@@ -536,12 +536,26 @@ def _real_ladders(props: Iterable[Any], PickCls: Any, LadderLegCls: Any, selecte
         if (os.getenv("PH_JK_POINTS_GRID", "1").lower() in {"1", "true", "yes", "on"}
                 and _sp in {"NBA", "WNBA"} and "points" in base):
             _step = int(os.getenv("PH_JK_POINTS_STEP", "5"))
-            _grid = [x for x in legs if abs(float(x["point"]) - round(float(x["point"]))) < 1e-9
-                     and int(round(float(x["point"]))) % _step == 0]
-            # Half-point-Linien (z.B. 9.5) auf das Raster normalisieren: 9.5 -> 10.
-            if len(_grid) < 2:
-                _grid = [x for x in legs
-                         if int(math.ceil(float(x["point"]))) % _step == 0]
+            # Buchmacher bieten fast nie glatte 5er-Linien (5/10/15/20), sondern
+            # .5-Linien drumherum (16.5, 19.5, 25.5). JK staffelt aber grob in 5er-
+            # Schritten. Darum jede Linie ihrem NAECHSTEN 5er-Bucket zuordnen
+            # (round(point/5)*5) und pro Bucket die beste Stufe behalten — so wird
+            # aus 16.5/19.5/25.5 ein echtes 15/20/25-Raster statt eng benachbarter
+            # Quasi-Duplikate. Toleranz: nur Linien <= _tol vom Bucket entfernt.
+            _tol = float(os.getenv("PH_JK_POINTS_TOL", "2.5"))
+            _buckets = {}
+            for x in legs:
+                try:
+                    pt = float(x["point"])
+                except (TypeError, ValueError, KeyError):
+                    continue
+                b = int(round(pt / _step) * _step)
+                if b <= 0 or abs(pt - b) > _tol:
+                    continue
+                # pro Bucket die Linie am naechsten am 5er behalten (sauberste JK-Stufe)
+                if b not in _buckets or abs(pt - b) < abs(float(_buckets[b]["point"]) - b):
+                    _buckets[b] = x
+            _grid = [_buckets[b] for b in sorted(_buckets)]
             if len(_grid) >= 2:
                 legs = _grid
 
