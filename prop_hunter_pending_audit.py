@@ -4,7 +4,7 @@ from collections import Counter
 import re
 from datetime import datetime, timezone, timedelta
 import os
-from prop_hunter_shared_utils import select_settlement_picks, select_rows, pick_id, safe_json_write, now_iso, hash_key, norm_name
+from prop_hunter_shared_utils import select_settlement_picks, select_rows, pick_id, safe_json_write, safe_json_load, now_iso, hash_key, norm_name
 from prop_hunter_settler import persist_settlements
 from prop_hunter_settler import (
     _load_relevant_gamelogs, _pick_ready_for_settlement, build_log_index,
@@ -152,6 +152,42 @@ def main():
             print(f'Auto-void: {len(void_rows)} stale picks voided reasons={dict(vc)}', flush=True)
         else:
             print('Auto-void: no stale terminal picks past grace window', flush=True)
+
+    # ─── AUTO-VOID fuer HISTORY-KOMBIS/LADDERS ──────────────────────────────
+    # select_settlement_picks liefert nur flache Singles aus Supabase. Kombis und
+    # Ladders leben in picks_history.json (kombis[]) und waren fuer das Auto-Void
+    # unsichtbar — eine nie gradebare Ladder (z.B. Keegan Murray, 25.10.) blieb
+    # darum ewig pending. Hier dieselbe Soft-Karenz direkt auf die History-Kombis.
+    if os.getenv('PH_AUTO_VOID_STALE', '0').lower() in {'1', 'true', 'yes', 'on'}:
+        combo_grace = int(os.getenv('PH_AUTO_VOID_SOFT_DAYS', '7'))
+        combo_cutoff = datetime.now(timezone.utc) - timedelta(days=combo_grace)
+        try:
+            hist = safe_json_load('picks_history.json', [])
+            voided = 0
+            for entry in hist:
+                for c in entry.get('kombis', []) or []:
+                    if str(c.get('result') or 'pending').lower() != 'pending':
+                        continue
+                    ref = str(c.get('date') or entry.get('date') or '')[:10]
+                    try:
+                        dt = datetime.fromisoformat(ref).replace(tzinfo=timezone.utc)
+                    except (ValueError, TypeError):
+                        continue
+                    if dt > combo_cutoff:
+                        continue
+                    c['result'] = 'void'
+                    c['profit'] = 0.0
+                    c['settlement_invalidated'] = True
+                    c['void_reason'] = 'stale_combo_never_gradeable'
+                    c['settled_at'] = now_iso()
+                    voided += 1
+            if voided:
+                safe_json_write('picks_history.json', hist)
+                print(f'Auto-void combos: {voided} stale history combos voided', flush=True)
+            else:
+                print('Auto-void combos: none past grace window', flush=True)
+        except Exception as exc:
+            print(f'Auto-void combos skipped: {str(exc)[:120]}', flush=True)
 
     report = {'generated_at': now_iso(), 'unresolved': len(details), 'counts': dict(counts), 'picks': details}
     safe_json_write('prop_hunter_pending_audit.json', report)
