@@ -1015,15 +1015,32 @@ def main() -> int:
                 and str(legacy_source.get("result") or "pending").lower() in CLOSED
                 and any(l.get("result") is not None for l in (legacy_source.get("leg_details") or [])))
             _rung_upgrade_due=_is_graded_ladder and int(card.get("ladder_rung_version") or 0)<LADDER_RUNG_CARD_VERSION
-            if text == card.get("settlement_text") and not _rung_upgrade_due:
+            # Einmaliges Re-Render fuer Datum+Anstoss auf der Karte (auch OFFENE):
+            # alte Karten zeigen noch keine Kickoff-Zeit. Nur Foto-Karten, deren
+            # image_pick eine commence_time/game_date traegt, kommen in Frage.
+            CARD_TIME_VERSION=1
+            _img=card.get("image_pick") or {}
+            _has_kick=bool(_img.get("commence_time") or _img.get("game_date") or _img.get("date"))
+            _time_upgrade_due=(card.get("media_type")=="photo" and _has_kick
+                and int(card.get("card_time_version") or 0)<CARD_TIME_VERSION
+                and image_migrations<migration_limit)
+            if text == card.get("settlement_text") and not _rung_upgrade_due and not _time_upgrade_due:
                 if not legacy_source or not _image_upgrade_due(card,day) or image_migrations>=migration_limit:
                     continue
+                image_migrations += 1
+            elif _time_upgrade_due and text == card.get("settlement_text"):
+                # reiner Zeit-Refresh ohne Settlement-Aenderung zaehlt zum Migrations-Budget
                 image_migrations += 1
             if card.get("image_pick") and legacy_source:
                 # Keep original presentation, overlay official settled values.
                 visual=dict(card["image_pick"])
                 for key in ("result","actual_value","profit","leg_details","ladder_legs"):
                     if key in legacy_source:visual[key]=legacy_source[key]
+                # Kickoff-Zeit nachtragen, falls die Alt-Karte sie nicht gespeichert
+                # hat (snapshot() fuehrte commence_time frueher nicht mit).
+                for key in ("commence_time","game_date","date"):
+                    if not visual.get(key) and legacy_source.get(key):
+                        visual[key]=legacy_source[key]
                 # Fuer die Stufen-Auswertung ZAEHLEN die leg_details — dort stehen
                 # nach dem Settlement result+actual_value pro Stufe. ladder_legs sind
                 # oft leer (result=None); sie nur als Fallback nehmen, NIEMALS die
@@ -1039,6 +1056,8 @@ def main() -> int:
                 card["image_settlement_version"] = 1
                 if _is_graded_ladder:
                     card["ladder_rung_version"] = LADDER_RUNG_CARD_VERSION
+                if _time_upgrade_due:
+                    card["card_time_version"] = CARD_TIME_VERSION
                 card["settlement_text"] = text
                 card["settlement_updated_at"] = datetime.now(timezone.utc).isoformat()
                 cards_edited += 1
