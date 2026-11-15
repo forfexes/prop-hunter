@@ -506,6 +506,40 @@ def persist_settlements(rows):
             mark_source_pick_settled(row["pick_raw"], row["result"])
 
 
+def _espn_fallback_gamelog(pick: Dict[str, Any], stat: str) -> Optional[Dict[str, Any]]:
+    """Build a gamelog dict from ESPN when the primary source has none.
+
+    Mirrors NETRATTLER's multi-source ResultResolver: a second, independent
+    settlement source so feed mis-assignments don't strand a pick as pending.
+    Returns a dict shaped for stat_value(), or None. Fail-soft.
+    """
+    if os.getenv("PH_ESPN_FALLBACK", "1").lower() not in {"1", "true", "yes", "on"}:
+        return None
+    try:
+        from prop_hunter_espn_boxscore import espn_player_statline
+    except Exception:
+        return None
+    player = pick.get("player_name") or pick.get("player")
+    sport = (pick.get("sport") or pick.get("league") or "").upper()
+    target = str(pick.get("date") or pick.get("commence_time") or "")[:10]
+    if not (player and sport and target):
+        return None
+    try:
+        line = espn_player_statline(player, sport, target)
+    except Exception:
+        line = None
+    if not line:
+        return None
+    # Nur zurueckgeben, wenn ESPN den konkret gefragten Stat kennt — sonst wuerde
+    # stat_value() spaeter None liefern und der Pick bliebe ohnehin offen.
+    probe = dict(line)
+    probe.update({"sport": sport, "league": sport, "player_name": player,
+                  "source": "espn_fallback", "game_id": None})
+    if stat_value(probe, stat) is None:
+        return None
+    return probe
+
+
 def main():
     picks = load_picks()
     pending_status = {"", "pending", "open", "none", "null", "unsettled"}
@@ -523,7 +557,13 @@ def main():
             continue
         gl = find_gamelog(p, logs, aliases=aliases, log_index=log_index)
         if not gl:
-            continue
+            # ESPN-Fallback (NETRATTLER-Resolver-Muster): die primaere Quelle
+            # (nba_api / Sport-Collector) hat keinen Gamelog — z.B. weil der Feed
+            # den Spieler dem falschen Spiel zuordnete. Statt den Pick ungradet zu
+            # lassen, die Statline bei ESPN holen und daraus ein Gamelog bauen.
+            gl = _espn_fallback_gamelog(p, stat)
+            if not gl:
+                continue
         value = stat_value(gl, stat)
         side = side_of_pick(p)
         line = line_of_pick(p)
