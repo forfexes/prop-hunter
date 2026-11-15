@@ -838,11 +838,31 @@ def fetch_prizepicks_props(sport_label: str) -> list:
     if not lid: return []
     out = []
     try:
-        import cloudscraper
-        s = cloudscraper.create_scraper()
-        r = s.get(f"https://api.prizepicks.com/projections?league_id={lid}&per_page=500&single_stat=true", timeout=25)
-        if r.status_code != 200:
-            log.warning("PrizePicks %s: %s", sport_label, r.status_code); return []
+        import cloudscraper, time as _t
+        s = cloudscraper.create_scraper(browser={"browser": "chrome", "platform": "windows", "mobile": False})
+        pp_headers = {
+            "Accept": "application/json",
+            "Origin": "https://app.prizepicks.com",
+            "Referer": "https://app.prizepicks.com/",
+            "X-Device-Id": "prop-hunter",
+        }
+        # Cookie-Warmup gegen 403 (Cloudflare), Retry mit Backoff gegen 429 (Rate-Limit).
+        try:
+            s.get("https://app.prizepicks.com/", timeout=15, headers=pp_headers)
+        except Exception:
+            pass
+        url = f"https://api.prizepicks.com/projections?league_id={lid}&per_page=500&single_stat=true"
+        r = None
+        for attempt in range(3):
+            r = s.get(url, timeout=25, headers=pp_headers)
+            if r.status_code == 200:
+                break
+            if r.status_code in (403, 429):
+                _t.sleep(2 * (attempt + 1))  # 2s, 4s, 6s
+                continue
+            break
+        if not r or r.status_code != 200:
+            log.warning("PrizePicks %s: %s", sport_label, r.status_code if r else "no-response"); return []
         data = r.json()
         players = {}
         for inc in data.get("included", []) or []:
@@ -873,8 +893,32 @@ def fetch_underdog_props(sport_filter=None) -> list:
     if "UD" in _PPUD_CACHE: return _PPUD_CACHE["UD"]
     out = []
     try:
-        r = requests.get("https://api.underdogfantasy.com/beta/v3/over_under_lines",
-                         timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        # HTTP 426 (Upgrade Required) kommt, wenn die Client-Version-Header fehlen.
+        # Underdog verlangt eine aktuelle App-Kennung; Browser-aehnliche Header +
+        # Client-Version beheben das. cloudscraper umgeht zusaetzlich Cloudflare.
+        ud_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                          "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+            "Origin": "https://underdogfantasy.com",
+            "Referer": "https://underdogfantasy.com/",
+            "Client-Type": "web",
+            "Client-Version": "20241115",
+            "User-Latitude": "40.7", "User-Longitude": "-74.0",
+        }
+        url = "https://api.underdogfantasy.com/beta/v6/over_under_lines"
+        try:
+            import cloudscraper
+            r = cloudscraper.create_scraper().get(url, timeout=25, headers=ud_headers)
+        except Exception:
+            r = requests.get(url, timeout=25, headers=ud_headers)
+        if r.status_code == 404:  # v6 nicht da -> auf v3 zurueck
+            try:
+                import cloudscraper
+                r = cloudscraper.create_scraper().get(
+                    "https://api.underdogfantasy.com/beta/v3/over_under_lines", timeout=25, headers=ud_headers)
+            except Exception:
+                r = requests.get("https://api.underdogfantasy.com/beta/v3/over_under_lines", timeout=25, headers=ud_headers)
         if r.status_code != 200:
             log.warning("Underdog: %s", r.status_code); return []
         data = r.json()
