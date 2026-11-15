@@ -187,6 +187,59 @@ def _fit(draw, text: str, font, max_w: int) -> str:
     return text
 
 
+_WD_DE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+
+
+def _kickoff_text(pick) -> str:
+    """Anstoss als 'So 15.11. · 19:00' in lokaler Zeit (Default Europe/Zurich).
+
+    Liest commence_time (ISO, meist UTC) und faellt sonst auf game_date zurueck.
+    Gibt '' zurueck, wenn nichts Brauchbares da ist.
+    """
+    from datetime import datetime, timezone
+
+    def _get(obj, key):
+        if isinstance(obj, dict):
+            return obj.get(key)
+        return getattr(obj, key, None)
+
+    raw = _get(pick, "commence_time")
+    feats = _get(pick, "features") or {}
+    if not raw and isinstance(feats, dict):
+        raw = feats.get("commence_time") or feats.get("start_time_utc")
+    has_time = bool(raw)
+    if not raw:
+        raw = _get(pick, "game_date") or _get(pick, "date")
+    if not raw:
+        return ""
+    try:
+        dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return str(raw)[:10]
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+        dt = dt.astimezone(ZoneInfo(os.getenv("PH_CARD_TZ", "Europe/Zurich")))
+    except Exception:
+        pass
+    label = f"{_WD_DE[dt.weekday()]} {dt.day:02d}.{dt.month:02d}."
+    if has_time:
+        label += f" · {dt.hour:02d}:{dt.minute:02d}"
+    return label
+
+
+def _with_kickoff(subtitle: str, pick) -> str:
+    """Haengt Datum/Zeit an den Subtitle (ohne Dublette, auf Kartenbreite begrenzt)."""
+    ko = _kickoff_text(pick)
+    if not ko:
+        return subtitle
+    base = (subtitle or "").strip()
+    if ko in base:
+        return base
+    return f"{base[:46]} · {ko}" if base else ko
+
+
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],
            rows: List[Dict[str, Any]], footer: str = "", settlement: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
@@ -343,6 +396,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             subtitle = f"{len(rows)} Legs" + (" · mehrere Spiele" if cross else (f" · {game[:40]}" if game else ""))
         if not rows:
             return None
+        subtitle = _with_kickoff(subtitle, pick)
         odds = getattr(pick, "odds", None)
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
         footer = "Bestätigte Book-Quote prüfen" if est else (f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else "")
@@ -358,7 +412,7 @@ def snapshot(pick):
     """JSON-safe presentation evidence for editing the original photo later."""
     import json
     from types import SimpleNamespace
-    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit","stake")}
+    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit","stake","commence_time","game_date","date")}
     data["picks"]=[vars(x) if isinstance(x,SimpleNamespace) else (x.model_dump() if hasattr(x,"model_dump") else dict(x) if isinstance(x,dict) else {"market":getattr(x,"market", ""),"odds":getattr(x,"odds",None)}) for x in (getattr(pick,"picks",None) or [])]
     return json.loads(json.dumps(data,default=str))
 
