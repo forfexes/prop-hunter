@@ -1754,10 +1754,18 @@ def enrich_matchup(props: list) -> list:
             if "components" in best:
                 p.features["matchup_components"] = best["components"]
             enriched += 1
-        except Exception:
+        except Exception as _mx:
+            if os.getenv("PH_MATCHUP_DEBUG"):
+                log.warning("matchup error on %s: %s", getattr(p, "player", "?"), str(_mx)[:80])
             continue
-    if enriched:
-        log.info("matchup enrichment: %d picks rated", enriched)
+    # Diagnose: immer loggen, damit sichtbar ist ob Defense-Daten geladen wurden.
+    try:
+        from prop_hunter_matchup import _ranked as _mr
+        teams_nba = len(_mr("NBA"))
+    except Exception:
+        teams_nba = -1
+    log.info("matchup enrichment: %d/%d picks rated (NBA defense teams=%d)",
+             enriched, len(props), teams_nba)
     return props
 
 
@@ -1765,22 +1773,15 @@ def _norm_team(s: str) -> str:
     return "".join(ch for ch in str(s or "").lower() if ch.isalnum())
 
 
-# Mannschaftsname -> ESPN-Abkuerzung (nur was ESPN-statistics nutzt). Unbekannte
-# Namen werden unveraendert durchgereicht; matchup_rating liefert dann None.
-_ESPN_ABBR = {}
-
-
 def _espn_abbr(team: str) -> str:
-    """Grobe ESPN-Abbreviation aus einem Teamnamen (letztes Wort -> Kuerzel)."""
-    t = str(team or "").strip()
-    if not t:
-        return ""
-    # ESPN nutzt Kuerzel wie BOS, WAS, GSW; der Collector matcht die Abbrev der
-    # team-statistics-Antwort gegen die ersten 3 Grossbuchstaben des Teamworts.
-    # Wir geben den Namen durch; _fetch_team_defense gleicht per Abbrev ab und
-    # matchup_rating normalisiert. Fuer gelaeufige Faelle die Stadt/Nick-Kurzform.
-    last = t.split()[-1].upper()
-    return _ESPN_ABBR.get(_norm_team(t)) or last[:3]
+    """Offizielle Team-Abkuerzung aus einem Teamnamen (zentrale Tabelle im
+    Matchup-Modul). Behebt das Mismatch (Rockets->HOU statt ROC)."""
+    try:
+        from prop_hunter_matchup import team_abbr
+        return team_abbr(team)
+    except Exception:
+        t = str(team or "").strip()
+        return t.split()[-1].upper()[:3] if t else ""
 
 
 def enrich_fpp_nhl(props: list) -> list:

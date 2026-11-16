@@ -77,6 +77,47 @@ def _norm(s) -> str:
     return "".join(ch for ch in str(s or "").lower() if ch.isalnum())
 
 
+# Team-Nickname/Stadt -> offizielle Abkuerzung (nba_api / ESPN). Das Matching
+# laeuft ueber _norm, also genuegen Nickname ODER Stadt. Kritisch, weil die
+# 3-Buchstaben-Heuristik sonst ROC statt HOU, WIZ statt WAS liefert.
+TEAM_ABBR = {
+    # NBA
+    "hawks": "ATL", "atlanta": "ATL", "celtics": "BOS", "boston": "BOS",
+    "nets": "BKN", "brooklyn": "BKN", "hornets": "CHA", "charlotte": "CHA",
+    "bulls": "CHI", "chicago": "CHI", "cavaliers": "CLE", "cavs": "CLE", "cleveland": "CLE",
+    "mavericks": "DAL", "mavs": "DAL", "dallas": "DAL", "nuggets": "DEN", "denver": "DEN",
+    "pistons": "DET", "detroit": "DET", "warriors": "GSW", "goldenstate": "GSW",
+    "rockets": "HOU", "houston": "HOU", "pacers": "IND", "indiana": "IND",
+    "clippers": "LAC", "lakers": "LAL", "grizzlies": "MEM", "memphis": "MEM",
+    "heat": "MIA", "miami": "MIA", "bucks": "MIL", "milwaukee": "MIL",
+    "timberwolves": "MIN", "wolves": "MIN", "minnesota": "MIN",
+    "pelicans": "NOP", "neworleans": "NOP", "knicks": "NYK", "newyork": "NYK",
+    "thunder": "OKC", "oklahomacity": "OKC", "magic": "ORL", "orlando": "ORL",
+    "sixers": "PHI", "76ers": "PHI", "philadelphia": "PHI", "philadelphia76ers": "PHI",
+    "suns": "PHX", "phoenix": "PHX", "trailblazers": "POR", "blazers": "POR", "portland": "POR",
+    "kings": "SAC", "sacramento": "SAC", "spurs": "SAS", "sanantonio": "SAS",
+    "raptors": "TOR", "toronto": "TOR", "jazz": "UTA", "utah": "UTA",
+    "wizards": "WAS", "washington": "WAS",
+}
+
+
+def team_abbr(team: str) -> str:
+    """Offizielle Team-Abkuerzung aus einem Namen (nickname oder stadt)."""
+    t = str(team or "").strip()
+    if not t:
+        return ""
+    n = _norm(t)
+    if n in TEAM_ABBR:
+        return TEAM_ABBR[n]
+    # einzelne Worte durchprobieren (letztes zuerst = meist der Nickname)
+    for w in reversed(t.split()):
+        wn = _norm(w)
+        if wn in TEAM_ABBR:
+            return TEAM_ABBR[wn]
+    # Fallback: erste 3 Grossbuchstaben des letzten Wortes
+    return t.split()[-1].upper()[:3]
+
+
 def _fetch_nba_defense_nbaapi(sport: str) -> Dict[str, Dict[str, float]]:
     """NBA/WNBA opponent defense via nba_api LeagueDashTeamStats (Opponent).
 
