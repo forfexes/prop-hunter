@@ -3963,6 +3963,12 @@ def gather(sport_filter=None):
     # Statistical HR profiles remain enrichment/model inputs only.
     all_props = apply_data_plus_visible(all_props)
     all_props = enrich_gamelogs_fairprob(all_props)
+    # Props aus Snapshots/22bet kommen erst nach der ersten Enrichment-Kette dazu.
+    try:
+        all_props = enrich_injuries(all_props)
+        all_props = enrich_matchup(all_props)
+    except Exception as _e:
+        log.warning("late injury/matchup enrichment: %s", str(_e)[:80])
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))
     return all_props
 
