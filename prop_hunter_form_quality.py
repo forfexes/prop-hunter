@@ -64,7 +64,8 @@ def evidence(features):
         'recent_form','gamelog_n','gamelog_l15_n','gamelog_l15_line',
         'gamelog_l15_direction','gamelog_l15_hits','gamelog_dd_rate',
         'gamelog_prob_rejected','form_window_policy','form_last_game_date',
-        'form_reference_date','form_season_start'}}
+        'form_reference_date','form_season_start',
+        'matchup_label','matchup_favourability','matchup_rank','matchup_of','matchup_stat','matchup_adj'}}
 
 def filter_tickets(picks):
     picks,counts=filter_singles(picks)
