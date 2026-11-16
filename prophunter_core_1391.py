@@ -4421,16 +4421,47 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
 # ─────────────────────────────────────────────
 # FILTER DEDUP
 # ─────────────────────────────────────────────
+def _combo_sig(obj):
+    """Signatur eines Kombi/Ladder/Builder aus seinen Legs (Spieler+Markt+Linie+Richtung)."""
+    get=(lambda k: obj.get(k)) if isinstance(obj,dict) else (lambda k: getattr(obj,k,None))
+    legs=get("leg_details") or get("ladder_legs") or []
+    parts=[]
+    for l in legs:
+        if not isinstance(l,dict): continue
+        parts.append((str(l.get("player") or l.get("team") or "").lower().strip(),
+                      str(l.get("source_market") or l.get("market") or "").lower().strip(),
+                      l.get("point"),str(l.get("direction") or "").lower()))
+    if not parts: return None
+    return (str(get("type") or ""),frozenset(parts))
+
+
+def _posted_combo_sigs():
+    today=datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    sigs=set()
+    for entry in load_history():
+        if entry.get("date")!=today: continue
+        for k in entry.get("kombis",[]) or []:
+            s=_combo_sig(k)
+            if s: sigs.add(s)
+    return sigs
+
+
 def filter_picks(picks):
     posted_keys,posted_players=already_posted()
-    if not posted_keys: return picks
+    combo_sigs=_posted_combo_sigs()
+    if not posted_keys and not combo_sigs: return picks
     before=len(picks)
     out=[]
+    batch_sigs=set()
     for p in picks:
         if p.type=="single":
             dk=dedup_key(p.player or "",p.market or "",getattr(p,"point",None),p.direction)
             if dk in posted_keys: continue
-        # Kombis/BetBuilder: nicht blocken — dürfen auch beim 2. Run erscheinen
+        else:
+            s=_combo_sig(p)
+            if s:
+                if s in combo_sigs or s in batch_sigs: continue
+                batch_sigs.add(s)
         out.append(p)
     log.info("dedup: %d → %d",before,len(out))
     return out
@@ -5258,6 +5289,8 @@ def run(dry_run=False,sport_filter=None):
     from prop_hunter_form_quality import filter_tickets
     picks, form_rejected = filter_tickets(picks)
     log.info("final form evidence filter: %s", form_rejected)
+    # Builder/Ladder/Kombi entstehen nach dem ersten Dedup -> hier gegen heute bereits Gepostetes pruefen.
+    picks = filter_picks(picks)
     if not picks:
         log.warning("no picks with verified quote scope")
         return
