@@ -114,6 +114,11 @@ def team_abbr(team: str) -> str:
         wn = _norm(w)
         if wn in TEAM_ABBR:
             return TEAM_ABBR[wn]
+    if n in _NAME_INDEX:
+        return _NAME_INDEX[n]
+    for w in reversed(t.split()):
+        if _norm(w) in _NAME_INDEX:
+            return _NAME_INDEX[_norm(w)]
     # Fallback: erste 3 Grossbuchstaben des letzten Wortes
     return t.split()[-1].upper()[:3]
 
@@ -195,7 +200,7 @@ def _fetch_standings_points(sport: str) -> Dict[str, Dict[str, float]]:
                     if pa is not None and gp:
                         pa = float(pa) / float(gp)
                 if ab and pa is not None:
-                    out[str(ab).upper()] = {"points": float(pa)}
+                    out[_canon(ab)] = {"points": float(pa)}
             for v in node.values():
                 walk(v)
         elif isinstance(node, list):
@@ -206,10 +211,114 @@ def _fetch_standings_points(sport: str) -> Dict[str, Dict[str, float]]:
     return out
 
 
+# ESPN-Abkuerzung -> offizielle (nba_api) Abkuerzung
+_ESPN_CANON = {"GS": "GSW", "NY": "NYK", "SA": "SAS", "NO": "NOP", "UTAH": "UTA",
+               "WSH": "WAS", "PHO": "PHX", "NOR": "NOP"}
+_NAME_INDEX: Dict[str, str] = {}
+
+
+def _canon(ab: str) -> str:
+    ab = str(ab or "").upper()
+    return _ESPN_CANON.get(ab, ab)
+
+
+def _first_num(txt) -> Optional[float]:
+    try:
+        return float(str(txt).replace("/", "-").split("-")[0])
+    except (TypeError, ValueError):
+        return None
+
+
+def _fetch_defense_from_games(sport: str) -> Dict[str, Dict[str, float]]:
+    """Defense 'allowed'-Werte aus ESPN-Box-Scores abgeschlossener Spiele.
+
+    Was ein Team zulaesst = was der Gegner in dessen Spielen erzielt hat.
+    Keyless, nur RAM, kein Supabase. Fail-soft.
+    """
+    import datetime as _d
+    from concurrent.futures import ThreadPoolExecutor
+    paths = ESPN_LEAGUE.get(sport.upper())
+    if requests is None or not paths:
+        return {}
+    sp, lg = paths
+    days = {"NFL": 80, "MLB": 60}.get(sport.upper(), 45)
+    end = _d.date.today()
+    rng = f"{(end - _d.timedelta(days=days)).strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
+    try:
+        r = requests.get(f"https://site.api.espn.com/apis/site/v2/sports/{sp}/{lg}/scoreboard",
+                         params={"dates": rng, "limit": 500}, headers=_UA, timeout=_TIMEOUT)
+        events = [e for e in (r.json().get("events") or []) if (e.get("status") or {}).get("type", {}).get("completed")]
+    except Exception as e:
+        print(f"matchup: scoreboard failed {sport}: {type(e).__name__}", flush=True)
+        return {}
+    cap = int(os.getenv("PH_MATCHUP_MAX_GAMES", "260"))
+    events = events[-cap:]
+
+    def one(ev):
+        try:
+            j = requests.get(f"https://site.api.espn.com/apis/site/v2/sports/{sp}/{lg}/summary",
+                             params={"event": ev["id"]}, headers=_UA, timeout=_TIMEOUT).json()
+            teams = j.get("boxscore", {}).get("teams") or []
+            comp = (ev.get("competitions") or [{}])[0].get("competitors") or []
+            score = {_canon((c.get("team") or {}).get("abbreviation")): _first_num(c.get("score")) for c in comp}
+            for c in comp:
+                t = c.get("team") or {}
+                ab = _canon(t.get("abbreviation"))
+                for k in ("displayName", "shortDisplayName", "name", "location"):
+                    if t.get(k):
+                        _NAME_INDEX[_norm(t[k])] = ab
+            if len(teams) != 2:
+                return None
+            rows = []
+            for t in teams:
+                stats = {x.get("name"): x.get("displayValue") for x in t.get("statistics", [])}
+                rows.append((_canon(t["team"]["abbreviation"]), stats))
+            return rows, score
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        results = [x for x in ex.map(one, events) if x]
+    acc: Dict[str, Dict[str, list]] = {}
+    for rows, score in results:
+        for i in (0, 1):
+            me, _ = rows[i]
+            opp, ost = rows[1 - i]
+            bag = acc.setdefault(me, {})
+            su = sport.upper()
+            def add(k, v):
+                if v is not None:
+                    bag.setdefault(k, []).append(v)
+            if su in ("NBA", "WNBA"):
+                add("points", score.get(opp))
+                add("rebounds", _first_num(ost.get("totalRebounds")))
+                add("assists", _first_num(ost.get("assists")))
+                add("threes", _first_num(ost.get("threePointFieldGoalsMade-threePointFieldGoalsAttempted")))
+            elif su == "NHL":
+                add("shots_on_goal", _first_num(ost.get("shotsTotal")))
+                add("goals", score.get(opp))
+            elif su == "NFL":
+                p_ = _first_num(ost.get("netPassingYards"))
+                add("passing_yards", p_)
+                add("receiving_yards", p_)
+                add("rushing_yards", _first_num(ost.get("rushingYards")))
+    out: Dict[str, Dict[str, float]] = {}
+    for t, bag in acc.items():
+        o = {k: sum(v) / len(v) for k, v in bag.items() if len(v) >= 3}
+        if o:
+            out[t] = o
+    print(f"matchup: box-score defense {sport}: games={len(results)} teams={len(out)}", flush=True)
+    return out
+
+
 def _fetch_team_defense(sport: str) -> Dict[str, Dict[str, float]]:
     """Return {team_abbrev: {stat_key: allowed_per_game}} for a sport."""
     # NBA/WNBA: nba_api ist die verlaessliche Opponent-Quelle; ESPN-statistics
     # liefert dort oft nur Liga-Leader statt Team-fuer-Team-Defense.
+    if sport.upper() in ("NBA", "WNBA", "NHL", "NFL"):
+        g = _fetch_defense_from_games(sport)
+        if g:
+            return g
     if sport.upper() in ("NBA", "WNBA"):
         nba = _fetch_nba_defense_nbaapi(sport)
         if nba:

@@ -1659,6 +1659,12 @@ def enrich_matchup(props: list) -> list:
         return props
     try:
         from prop_hunter_matchup import matchup_rating, combo_matchup_rating, STAT_MATCH, COMBO_STATS
+        from prop_hunter_matchup import _ranked as _warm
+        for _sp in {str(getattr(p, "sport", "")).upper() for p in props}:
+            try:
+                _warm(_sp)
+            except Exception:
+                pass
     except Exception:
         return props
 

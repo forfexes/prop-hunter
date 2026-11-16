@@ -7,21 +7,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
-      - run: pip install requests
+      - run: pip install requests nba_api
       - run: |
           python - <<'P'
-          import requests, datetime as d
-          H={"User-Agent":"Mozilla/5.0"}
-          for lg,sp,days in (("nba","basketball",3),("nhl","hockey",3),("nfl","football",9)):
-              found=None
-              for k in range(1,days+1):
-                  ds=(d.date.today()-d.timedelta(days=k)).strftime("%Y%m%d")
-                  j=requests.get(f"https://site.api.espn.com/apis/site/v2/sports/{sp}/{lg}/scoreboard?dates={ds}",headers=H,timeout=20).json()
-                  ev=[e for e in j.get("events",[]) if e["status"]["type"]["completed"]]
-                  print(lg,ds,len(ev))
-                  if ev: found=ev[0]["id"]; break
-              if found:
-                  s=requests.get(f"https://site.api.espn.com/apis/site/v2/sports/{sp}/{lg}/summary?event={found}",headers=H,timeout=20).json()
-                  for t in s["boxscore"]["teams"]:
-                      print(lg,t["team"]["abbreviation"],[(x["name"],x["displayValue"]) for x in t["statistics"]])
+          from prop_hunter_matchup import _ranked, team_abbr, matchup_rating
+          for sp in ("NBA","WNBA","NHL","NFL"):
+              r=_ranked(sp); print("RESULT",sp,"teams",len(r), list(r.items())[:1])
+          for t in ("Houston Rockets","Washington Wizards","Toronto Maple Leafs","Detroit Lions"):
+              print("RESULT abbr",t,team_abbr(t))
+          print("RESULT rating", matchup_rating("NBA", team_abbr("Washington Wizards"), "rebounds","over"))
           P
