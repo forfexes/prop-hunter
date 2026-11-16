@@ -1,0 +1,30 @@
+name: Prop Hunter Dedup Telegram
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "1 = wirklich loeschen"
+        default: "0"
+permissions:
+  contents: write
+concurrency:
+  group: prop-hunter-history-writer
+jobs:
+  dedup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install requests
+      - env:
+          APPLY: ${{ inputs.apply }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: python prop_hunter_dedup_telegram.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add picks_history.json
+          git diff --staged --quiet && exit 0
+          git commit -m "prop hunter dedup telegram $(date -u +%F)"
+          git pull --rebase -q && git push -q
