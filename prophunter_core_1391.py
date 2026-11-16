@@ -1598,6 +1598,110 @@ def fetch_fpp_gamelogs(player_name: str, sport: str = "NHL", season: str = "2025
         log.warning("FPP parse %s: %s", player_name, e)
         return []
 
+def enrich_matchup(props: list) -> list:
+    """Haengt das Gegner-Defense-Matchup an jeden Pick (JK-Style-Edge).
+
+    Berechnet via prop_hunter_matchup, wie offen die gegnerische Defense fuer
+    die Stat-Kategorie des Picks ist (ligaweit gerankt, keyless aus ESPN), und
+    legt features['matchup_*'] ab: rank, favourability (0..1), ein Label fuer
+    die Karte ("erlaubt 2.-meiste Rebounds"). Fehlertolerant, additiv.
+    """
+    if not props:
+        return props
+    try:
+        from prop_hunter_matchup import matchup_rating, STAT_MATCH
+    except Exception:
+        return props
+
+    def _stat_for(market: str, sport: str):
+        m = (market or "").lower()
+        keys = STAT_MATCH.get((sport or "").upper(), {})
+        # Reihenfolge: laengere/spezifischere Keys zuerst (threes vor points etc.)
+        for k in sorted(keys, key=len, reverse=True):
+            token = k.replace("_", " ").split()[0]
+            if token in m or k.replace("_", "") in m.replace(" ", ""):
+                return k
+        # haeufige Synonyme
+        if "rebound" in m: return "rebounds" if "rebounds" in keys else None
+        if "assist" in m: return "assists" if "assists" in keys else None
+        if "point" in m: return "points" if "points" in keys else None
+        if "three" in m or "3pt" in m or "3-point" in m: return "threes" if "threes" in keys else None
+        if "shot" in m: return "shots_on_goal" if "shots_on_goal" in keys else None
+        return None
+
+    def _opponent(p):
+        # Der Gegner ist das Team, zu dem der Spieler NICHT gehoert. Ohne
+        # zuverlaessige Spieler-Team-Zuordnung nehmen wir beide Teams in Betracht
+        # und bevorzugen das, fuer das ein Rating existiert (das andere ist das
+        # eigene Team und hat fuer die OFFENSE des Spielers keine Aussage).
+        f = p.features or {}
+        pt = f.get("player_team") or f.get("team")
+        home, away = (p.home or ""), (p.away or "")
+        if pt:
+            ptn = _norm_team(pt)
+            if _norm_team(home) and ptn == _norm_team(home):
+                return away
+            if _norm_team(away) and ptn == _norm_team(away):
+                return home
+        return None  # ohne Team-Zuordnung kein sicheres Matchup
+
+    enriched = 0
+    for p in props:
+        try:
+            stat = _stat_for(p.market, p.sport)
+            if not stat:
+                continue
+            opp = _opponent(p)
+            # Fallback: wenn Team unbekannt, beide Teams testen und das mit
+            # Rating nehmen (ESPN-Abk. matcht nur das echte Gegner-Team selten
+            # doppelt; fail-soft).
+            direction = (getattr(p, "direction", None)
+                         or ("under" if "under" in (p.market or "").lower() else "over"))
+            cand = [opp] if opp else [p.home, p.away]
+            best = None
+            for team in cand:
+                if not team:
+                    continue
+                r = matchup_rating(p.sport, _espn_abbr(team), stat, direction)
+                if r and (best is None or r["favourability"] > best["favourability"]):
+                    best = r
+            if not best:
+                continue
+            p.features["matchup_rank"] = best["rank"]
+            p.features["matchup_of"] = best["of"]
+            p.features["matchup_favourability"] = best["favourability"]
+            p.features["matchup_label"] = best["label"]
+            p.features["matchup_stat"] = stat
+            enriched += 1
+        except Exception:
+            continue
+    if enriched:
+        log.info("matchup enrichment: %d picks rated", enriched)
+    return props
+
+
+def _norm_team(s: str) -> str:
+    return "".join(ch for ch in str(s or "").lower() if ch.isalnum())
+
+
+# Mannschaftsname -> ESPN-Abkuerzung (nur was ESPN-statistics nutzt). Unbekannte
+# Namen werden unveraendert durchgereicht; matchup_rating liefert dann None.
+_ESPN_ABBR = {}
+
+
+def _espn_abbr(team: str) -> str:
+    """Grobe ESPN-Abbreviation aus einem Teamnamen (letztes Wort -> Kuerzel)."""
+    t = str(team or "").strip()
+    if not t:
+        return ""
+    # ESPN nutzt Kuerzel wie BOS, WAS, GSW; der Collector matcht die Abbrev der
+    # team-statistics-Antwort gegen die ersten 3 Grossbuchstaben des Teamworts.
+    # Wir geben den Namen durch; _fetch_team_defense gleicht per Abbrev ab und
+    # matchup_rating normalisiert. Fuer gelaeufige Faelle die Stadt/Nick-Kurzform.
+    last = t.split()[-1].upper()
+    return _ESPN_ABBR.get(_norm_team(t)) or last[:3]
+
+
 def enrich_fpp_nhl(props: list) -> list:
     """Fügt FreePlayerProps NHL Stats als Enrichment hinzu."""
     nhl_props = [p for p in props if p.sport == "NHL"]
@@ -3687,6 +3791,7 @@ def gather(sport_filter=None):
     if str(os.getenv("PH_STATZ_ENABLED","0")).lower() in {"1","true","yes","on"}:
         all_props=enrich_statz(all_props)
     all_props=enrich_propcruncher(all_props)
+    all_props=enrich_matchup(all_props)
     all_props=enrich_fpp_nhl(all_props)
     all_props=enrich_bdl_props(all_props)
     if str(os.getenv("PH_DATASTREAK_ENABLED","0")).lower() in {"1","true","yes","on"}:
