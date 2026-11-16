@@ -3686,6 +3686,16 @@ def fetch_bdl_live_props(sport_key: str) -> list:
     log.info('BDL live props: %d (%s, %d games)',len(out),label,len(games))
     return out
 
+def _late_enrich(props):
+    """Injury + JK-style Matchup auch auf den Fallback-Pfaden (Snapshots/PP/UD...)."""
+    try:
+        props = enrich_injuries(props)
+        props = enrich_matchup(props)
+    except Exception as _e:
+        log.warning("late injury/matchup enrichment: %s", str(_e)[:80])
+    return props
+
+
 def gather(sport_filter=None):
     all_props=[]; active=[]; earliest=None
     cache=load_cache(); new_cache={}
@@ -3906,6 +3916,7 @@ def gather(sport_filter=None):
             all_props=enrich_propsmadness(all_props)
             all_props=enrich_propcruncher(all_props)
             all_props=enrich_gamelogs_fairprob(all_props)
+            all_props=_late_enrich(all_props)
             log.info("ACTIVE (OddsPapi): %s | props: %d"," ".join(active),len(all_props))
             return all_props
         # BALLDONTLIE live sportsbook props before browser/synthetic fallbacks.
@@ -3914,6 +3925,7 @@ def gather(sport_filter=None):
                 all_props.extend(fetch_bdl_live_props(sk))
             if all_props:
                 all_props=enrich_gamelogs_fairprob(all_props)
+                all_props=_late_enrich(all_props)
                 log.info("ACTIVE (BALLDONTLIE): props: %d",len(all_props))
                 return all_props
         # ProCruncher Fallback wenn alle echten Preisquellen leer sind
@@ -3923,6 +3935,7 @@ def gather(sport_filter=None):
             if str(os.getenv("PH_STATZ_ENABLED","0")).lower() in {"1","true","yes","on"}:
                 all_props=enrich_statz(all_props)
             all_props=enrich_gamelogs_fairprob(all_props)
+            all_props=_late_enrich(all_props)
             log.info("ACTIVE (ProCruncher): props: %d",len(all_props))
             return all_props
         # PrizePicks + Underdog (echte Linien, keine Keys)
@@ -3940,12 +3953,14 @@ def gather(sport_filter=None):
                 seen.add(k); uniq.append(p)
             all_props = uniq
             all_props = enrich_gamelogs_fairprob(all_props)
+            all_props=_late_enrich(all_props)
             log.info("ACTIVE (PrizePicks/Underdog): props: %d", len(all_props))
             return all_props
         # Letzter Fallback: Supabase Snapshots (odds-api.io/SGO/OpticOdds Connectoren)
         all_props = fetch_snapshot_props(sport_filter)
         if all_props:
             all_props=enrich_gamelogs_fairprob(all_props)
+            all_props=_late_enrich(all_props)
             log.info("ACTIVE (Snapshots): props: %d",len(all_props))
             return all_props
     # ADDITIV: Supabase-Snapshots (DraftKings echte HR-Odds, Underdog, Sleeper) IMMER dazumischen.
