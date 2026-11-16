@@ -706,20 +706,20 @@
       "raw_ratio": 0.6
     },
     "NBA:points:under|NBA:points:under": {
-      "factor": 0.85,
-      "n": 388,
-      "both_wins": 121,
-      "observed_joint": 0.31186,
-      "expected_joint": 0.38308,
-      "raw_ratio": 0.8141
+      "factor": 0.87,
+      "n": 463,
+      "both_wins": 155,
+      "observed_joint": 0.33477,
+      "expected_joint": 0.38482,
+      "raw_ratio": 0.87
     },
     "NBA:rebounds:under|NBA:rebounds:under": {
       "factor": 1.12,
-      "n": 119,
+      "n": 122,
       "both_wins": 64,
-      "observed_joint": 0.53782,
-      "expected_joint": 0.44074,
-      "raw_ratio": 1.2203
+      "observed_joint": 0.52459,
+      "expected_joint": 0.43785,
+      "raw_ratio": 1.1981
     },
     "NBA:blocks:under|NBA:blocks:under": {
       "factor": 1.0,
@@ -1139,10 +1139,10 @@
     },
     "NHL:2+_shots_on_goal:over|NHL:3+_shots_on_goal:over": {
       "factor": 1.0,
-      "n": 1,
+      "n": 5,
       "both_wins": 0,
       "observed_joint": 0.0,
-      "expected_joint": 0.33402,
+      "expected_joint": 0.43188,
       "raw_ratio": 0.6
     },
     "NBA:3+_rebounds:over|NBA:9+_rebounds:over": {
@@ -1576,8 +1576,24 @@
       "observed_joint": 0.0,
       "expected_joint": 0.12816,
       "raw_ratio": 0.6
+    },
+    "NHL:2+_shots_on_goal:over|NHL:4+_shots_on_goal:over": {
+      "factor": 1.0,
+      "n": 4,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.25097,
+      "raw_ratio": 0.6
+    },
+    "NHL:3+_shots_on_goal:over|NHL:4+_shots_on_goal:over": {
+      "factor": 1.0,
+      "n": 4,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.17837,
+      "raw_ratio": 0.6
     }
   },
   "profiles": {},
-  "updated_at": "2026-11-15T22:33:29.648062+00:00"
+  "updated_at": "2026-11-16T06:09:42.239956+00:00"
 }
