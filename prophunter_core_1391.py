@@ -3686,11 +3686,33 @@ def fetch_bdl_live_props(sport_key: str) -> list:
     log.info('BDL live props: %d (%s, %d games)',len(out),label,len(games))
     return out
 
+def enrich_commence(props):
+    """Setzt commence_time aus dem ESPN-Spielplan, wo die Quelle keine liefert."""
+    try:
+        from prop_hunter_matchup import game_start
+    except Exception:
+        return props
+    n = 0
+    for p in props:
+        try:
+            if getattr(p, "commence_time", None):
+                continue
+            st = game_start(str(getattr(p, "sport", "")), getattr(p, "game", "") or "")
+            if st:
+                p.commence_time = datetime.fromisoformat(st.replace("Z", "+00:00"))
+                n += 1
+        except Exception:
+            continue
+    log.info("commence_time filled from schedule: %d/%d", n, len(props))
+    return props
+
+
 def _late_enrich(props):
     """Injury + JK-style Matchup auch auf den Fallback-Pfaden (Snapshots/PP/UD...)."""
     try:
         props = enrich_injuries(props)
         props = enrich_matchup(props)
+        props = enrich_commence(props)
     except Exception as _e:
         log.warning("late injury/matchup enrichment: %s", str(_e)[:80])
     return props
@@ -3901,6 +3923,7 @@ def gather(sport_filter=None):
     all_props=enrich_propcruncher(all_props)
     all_props=enrich_injuries(all_props)
     all_props=enrich_matchup(all_props)
+    all_props=enrich_commence(all_props)
     all_props=enrich_fpp_nhl(all_props)
     all_props=enrich_bdl_props(all_props)
     if str(os.getenv("PH_DATASTREAK_ENABLED","0")).lower() in {"1","true","yes","on"}:
@@ -3998,6 +4021,7 @@ def gather(sport_filter=None):
     try:
         all_props = enrich_injuries(all_props)
         all_props = enrich_matchup(all_props)
+        all_props = enrich_commence(all_props)
     except Exception as _e:
         log.warning("late injury/matchup enrichment: %s", str(_e)[:80])
     log.info("ACTIVE: %s | props: %d"," ".join(active),len(all_props))

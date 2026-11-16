@@ -474,3 +474,54 @@ if __name__ == "__main__":
     import sys, json
     sp = sys.argv[1] if len(sys.argv) > 1 else "NBA"
     print(json.dumps(_ranked(sp), indent=2)[:2000])
+
+
+# ── Spielplan: Anstoss-Zeiten fuer Props ohne commence_time ──────────────────
+_SCHED: Dict[str, Dict[str, str]] = {}
+
+
+def _load_schedule(sport: str) -> Dict[str, str]:
+    """{normalisierter Teamname: ISO-Startzeit (UTC)} fuer heute..+3 Tage (ESPN, keyless)."""
+    key = sport.upper()
+    if key in _SCHED:
+        return _SCHED[key]
+    out: Dict[str, str] = {}
+    paths = ESPN_LEAGUE.get(key)
+    if requests is not None and paths:
+        import datetime as _d
+        base = f"https://site.api.espn.com/apis/site/v2/sports/{paths[0]}/{paths[1]}/scoreboard"
+        for k in range(-1, 4):
+            ds = (_d.date.today() + _d.timedelta(days=k)).strftime("%Y%m%d")
+            try:
+                j = requests.get(base, params={"dates": ds}, headers=_UA, timeout=_TIMEOUT).json()
+            except Exception:
+                continue
+            for ev in j.get("events") or []:
+                st = ev.get("date")
+                if not st:
+                    continue
+                for c in (ev.get("competitions") or [{}])[0].get("competitors") or []:
+                    t = c.get("team") or {}
+                    for f in ("displayName", "shortDisplayName", "name", "location"):
+                        if t.get(f):
+                            out.setdefault(_norm(t[f]), st)
+    print(f"matchup: schedule {key} teams={len(out)}", flush=True)
+    _SCHED[key] = out
+    return out
+
+
+def game_start(sport: str, game: str) -> Optional[str]:
+    """Startzeit aus 'Away @ Home' (oder 'A vs B'); None wenn nicht auffindbar."""
+    if not game:
+        return None
+    sched = _load_schedule(sport)
+    if not sched:
+        return None
+    for part in str(game).replace(" vs. ", "@").replace(" vs ", "@").split("@"):
+        n = _norm(part)
+        if n in sched:
+            return sched[n]
+        for w in reversed(part.split()):
+            if _norm(w) in sched:
+                return sched[_norm(w)]
+    return None

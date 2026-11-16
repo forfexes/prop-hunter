@@ -204,6 +204,12 @@ def _kickoff_text(pick) -> str:
         return getattr(obj, key, None)
 
     raw = _get(pick, "commence_time")
+    if not raw:
+        _legs = _get(pick, "leg_details") or []
+        _ts = sorted(str(l.get("commence_time")) for l in _legs
+                     if isinstance(l, dict) and l.get("commence_time"))
+        if _ts:
+            raw = _ts[0]
     feats = _get(pick, "features") or {}
     if not raw and isinstance(feats, dict):
         raw = feats.get("commence_time") or feats.get("start_time_utc")
