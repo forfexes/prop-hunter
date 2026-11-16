@@ -77,8 +77,64 @@ def _norm(s) -> str:
     return "".join(ch for ch in str(s or "").lower() if ch.isalnum())
 
 
+def _fetch_nba_defense_nbaapi(sport: str) -> Dict[str, Dict[str, float]]:
+    """NBA/WNBA opponent defense via nba_api LeagueDashTeamStats (Opponent).
+
+    The reliable source for per-team opponent-allowed stats. Returns
+    {TEAM_ABBR: {points/rebounds/assists/threes: allowed_per_game}}.
+    """
+    try:
+        from nba_api.stats.endpoints import leaguedashteamstats
+        from nba_api.stats.static import teams as nba_teams
+    except Exception:
+        return {}
+    season = os.getenv("PH_NBA_SEASON") or _current_nba_season()
+    league_id = "10" if sport.upper() == "WNBA" else "00"
+    try:
+        res = leaguedashteamstats.LeagueDashTeamStats(
+            measure_type_detailed_defense="Opponent",
+            per_mode_detailed="PerGame",
+            season=season,
+            league_id_nullable=league_id,
+            timeout=_TIMEOUT,
+        )
+        rows = res.get_normalized_dict().get("LeagueDashTeamStats", [])
+    except Exception:
+        return {}
+    id_to_abbr = {t["id"]: t["abbreviation"] for t in nba_teams.get_teams()}
+    out: Dict[str, Dict[str, float]] = {}
+    for r in rows:
+        tid = r.get("TEAM_ID")
+        ab = id_to_abbr.get(tid) or (str(r.get("TEAM_NAME", "")).split()[-1][:3].upper())
+        bag = {}
+        for stat_key, col in (("points", "OPP_PTS"), ("rebounds", "OPP_REB"),
+                              ("assists", "OPP_AST"), ("threes", "OPP_FG3M")):
+            v = r.get(col)
+            if v is not None:
+                try:
+                    bag[stat_key] = float(v)
+                except (TypeError, ValueError):
+                    pass
+        if bag:
+            out[str(ab).upper()] = bag
+    return out
+
+
+def _current_nba_season() -> str:
+    import datetime as _d
+    now = _d.date.today()
+    start = now.year if now.month >= 10 else now.year - 1
+    return f"{start}-{str(start + 1)[2:]}"
+
+
 def _fetch_team_defense(sport: str) -> Dict[str, Dict[str, float]]:
     """Return {team_abbrev: {stat_key: allowed_per_game}} for a sport."""
+    # NBA/WNBA: nba_api ist die verlaessliche Opponent-Quelle; ESPN-statistics
+    # liefert dort oft nur Liga-Leader statt Team-fuer-Team-Defense.
+    if sport.upper() in ("NBA", "WNBA"):
+        nba = _fetch_nba_defense_nbaapi(sport)
+        if nba:
+            return nba
     if requests is None:
         return {}
     paths = ESPN_LEAGUE.get(sport.upper())
