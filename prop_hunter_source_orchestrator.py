@@ -80,6 +80,19 @@ def _direct_jobs(sports):
             jobs.append(('22bet_nfl',lambda:bet22nfl.fetch_22bet_nfl_props(max_events=3)))
     except Exception as exc:warn(f'22bet NFL adapter unavailable: {exc}')
     try:
+        # 22bet Multi-Sport: verifizierte Player-Props fuer ALLE Sportarten
+        # (NFL rushing/passing/receptions/TD, NHL shots/goals/assists; NBA/MLB
+        # sobald per Probe verifiziert). Fail-closed, ergaenzt die Einzel-Adapter.
+        import prop_hunter_22bet_all as bet22all
+        if bet22all.configured():
+            for sport in active:
+                if bet22all.VERIFIED_MARKETS.get(sport.upper()):
+                    jobs.append((f'22bet_all_{sport.lower()}',
+                                 lambda: bet22all.fetch_22bet_all(
+                                     max_events_per_sport=int(os.getenv('PH_22BET_ALL_MAX_EVENTS','3')))))
+                    break  # fetch_22bet_all sweeps all sports itself; schedule once
+    except Exception as exc:warn(f'22bet all-sport adapter unavailable: {exc}')
+    try:
         import prop_hunter_sgo as sgo
         if sgo.configured():
             keys={'MLB':'baseball_mlb','NBA':'basketball_nba','WNBA':'basketball_wnba','NFL':'americanfootball_nfl','NHL':'icehockey_nhl','NCAAB':'basketball_ncaab','NCAAF':'americanfootball_ncaaf','EUROLEAGUE':'basketball_euroleague'}
