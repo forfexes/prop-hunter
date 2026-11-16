@@ -7,10 +7,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
-      - run: pip install requests nba_api
+      - run: pip install requests
       - run: |
           python - <<'P'
-          from prop_hunter_matchup import _ranked
-          for sp in ("NBA","WNBA","NHL","NFL","MLB"):
-              r=_ranked(sp); print(sp,"teams",len(r), list(r.items())[:1])
+          import requests, json
+          H={"User-Agent":"Mozilla/5.0"}
+          def g(u):
+              try:
+                  r=requests.get(u,headers=H,timeout=20); print(r.status_code,u); return r.json() if r.ok else None
+              except Exception as e: print("ERR",u,e)
+          for lg,sp,yr in (("nba","basketball",2027),("nhl","hockey",2027),("nfl","football",2026),("mlb","baseball",2026)):
+              d=g(f"https://sports.core.api.espn.com/v2/sports/{sp}/leagues/{lg}/seasons/{yr}/types/2/teams/1/statistics")
+              if d:
+                  cats=d.get("splits",{}).get("categories",[])
+                  print(lg,[ (c["name"],len(c.get("stats",[]))) for c in cats])
+                  print(lg,"names",[s["name"] for c in cats for s in c.get("stats",[])][:80])
+              d=g(f"https://site.api.espn.com/apis/site/v2/sports/{sp}/{lg}/teams/1/statistics")
+              if d: print(lg,"site keys",list(d.keys()), str(d)[:300])
+              d=g(f"https://site.api.espn.com/apis/v2/sports/{sp}/{lg}/standings")
+              if d:
+                  e=d["children"][0]["standings"]["entries"][0]; print(lg,"standings stats",[s["name"] for s in e["stats"]])
           P
