@@ -1609,9 +1609,29 @@ def enrich_matchup(props: list) -> list:
     if not props:
         return props
     try:
-        from prop_hunter_matchup import matchup_rating, STAT_MATCH
+        from prop_hunter_matchup import matchup_rating, combo_matchup_rating, STAT_MATCH, COMBO_STATS
     except Exception:
         return props
+
+    def _combo_for(market: str):
+        """Kombinierte Maerkte erkennen (DD/TD/PRA/P+R/...) -> (key, stats)."""
+        m = (market or "").lower()
+        if "triple" in m and "double" in m:
+            return "triple_double", COMBO_STATS["triple_double"]
+        if "double" in m and "double" in m.replace("double", "", 1):
+            return "double_double", COMBO_STATS["double_double"]
+        if "double-double" in m or "double double" in m:
+            return "double_double", COMBO_STATS["double_double"]
+        if "triple-double" in m or "triple double" in m:
+            return "triple_double", COMBO_STATS["triple_double"]
+        # PRA / P+R / P+A / R+A
+        compact = m.replace(" ", "").replace("+", "")
+        if "pts" in compact or "points" in m:
+            if "reb" in m and "ast" in m: return "pra", COMBO_STATS["pra"]
+            if "reb" in m: return "pr", COMBO_STATS["pr"]
+            if "ast" in m: return "pa", COMBO_STATS["pa"]
+        if "reb" in m and "ast" in m: return "ra", COMBO_STATS["ra"]
+        return None, None
 
     def _stat_for(market: str, sport: str):
         m = (market or "").lower()
@@ -1648,30 +1668,42 @@ def enrich_matchup(props: list) -> list:
     enriched = 0
     for p in props:
         try:
-            stat = _stat_for(p.market, p.sport)
-            if not stat:
-                continue
-            opp = _opponent(p)
-            # Fallback: wenn Team unbekannt, beide Teams testen und das mit
-            # Rating nehmen (ESPN-Abk. matcht nur das echte Gegner-Team selten
-            # doppelt; fail-soft).
             direction = (getattr(p, "direction", None)
                          or ("under" if "under" in (p.market or "").lower() else "over"))
+            opp = _opponent(p)
             cand = [opp] if opp else [p.home, p.away]
+            combo_key, combo_stats = _combo_for(p.market)
             best = None
-            for team in cand:
-                if not team:
+            if combo_key:
+                # DD/TD/PRA: kombiniertes Matchup ueber mehrere Kategorien
+                # (Sengun-Fall: Rebounds + Assists). Over, da DD/TD ein "Ja".
+                for team in cand:
+                    if not team:
+                        continue
+                    r = combo_matchup_rating(p.sport, _espn_abbr(team), combo_stats, "over")
+                    if r and (best is None or r["favourability"] > best["favourability"]):
+                        best = r
+                stat = combo_key
+            else:
+                stat = _stat_for(p.market, p.sport)
+                if not stat:
                     continue
-                r = matchup_rating(p.sport, _espn_abbr(team), stat, direction)
-                if r and (best is None or r["favourability"] > best["favourability"]):
-                    best = r
+                for team in cand:
+                    if not team:
+                        continue
+                    r = matchup_rating(p.sport, _espn_abbr(team), stat, direction)
+                    if r and (best is None or r["favourability"] > best["favourability"]):
+                        best = r
             if not best:
                 continue
-            p.features["matchup_rank"] = best["rank"]
-            p.features["matchup_of"] = best["of"]
             p.features["matchup_favourability"] = best["favourability"]
             p.features["matchup_label"] = best["label"]
             p.features["matchup_stat"] = stat
+            if "rank" in best:
+                p.features["matchup_rank"] = best["rank"]
+                p.features["matchup_of"] = best["of"]
+            if "components" in best:
+                p.features["matchup_components"] = best["components"]
             enriched += 1
         except Exception:
             continue

@@ -177,6 +177,44 @@ def matchup_rating(sport: str, opponent_abbrev: str, stat: str,
             "favourability": fav, "label": label}
 
 
+def combo_matchup_rating(sport: str, opponent_abbrev: str, stats, direction: str = "over") -> Optional[dict]:
+    """Matchup fuer kombinierte Maerkte (Double/Triple-Double, PRA, P+R, P+A).
+
+    Ein DD/TD haengt an mehreren Kategorien gleichzeitig. Wir mitteln die
+    Favourability ueber die beteiligten Stats (points/rebounds/assists) und
+    bauen ein Label aus den beiden staerksten Matchups — genau die Sengun-Logik
+    ('erlaubt 2.-meiste Rebounds UND 7.-meiste Assists'). Gibt None, wenn fuer
+    keine Teilkategorie ein Rating existiert.
+    """
+    if not _ENABLED or not opponent_abbrev:
+        return None
+    parts = []
+    for st in stats:
+        r = matchup_rating(sport, opponent_abbrev, st, direction)
+        if r:
+            parts.append((st, r))
+    if not parts:
+        return None
+    fav = round(sum(r["favourability"] for _, r in parts) / len(parts), 3)
+    # zwei staerkste (niedrigster Rank = offenste Defense) fuers Label
+    parts.sort(key=lambda x: x[1]["rank"])
+    top = parts[:2]
+    label = " · ".join(r["label"] for _, r in top)
+    return {"favourability": fav, "label": label,
+            "components": {st: r["rank"] for st, r in parts}, "of": parts[0][1]["of"]}
+
+
+# Welche Kategorien ein kombinierter Markt-Key braucht.
+COMBO_STATS = {
+    "double_double": ("points", "rebounds", "assists"),
+    "triple_double": ("points", "rebounds", "assists"),
+    "pra": ("points", "rebounds", "assists"),
+    "pr": ("points", "rebounds"),
+    "pa": ("points", "assists"),
+    "ra": ("rebounds", "assists"),
+}
+
+
 if __name__ == "__main__":
     import sys, json
     sp = sys.argv[1] if len(sys.argv) > 1 else "NBA"
