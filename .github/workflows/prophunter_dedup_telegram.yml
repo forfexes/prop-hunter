@@ -15,6 +15,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with: {ref: main}
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
       - run: pip install requests
@@ -27,4 +28,5 @@ jobs:
           git add picks_history.json
           git diff --staged --quiet && exit 0
           git commit -m "prop hunter dedup telegram $(date -u +%F)"
-          git pull --rebase -q && git push -q
+          for i in 1 2 3; do git pull --rebase -X theirs -q && git push -q && exit 0; git rebase --abort 2>/dev/null; sleep 5; done
+          exit 1
