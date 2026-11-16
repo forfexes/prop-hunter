@@ -68,6 +68,7 @@ jobs:
       - name: Full card dry run
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
         env:
+          PH_ESTIMATED_SAME_GAME_BUILDERS: '1'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}

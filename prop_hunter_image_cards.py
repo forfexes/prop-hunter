@@ -404,7 +404,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         subtitle = _with_kickoff(subtitle, pick)
         odds = getattr(pick, "odds", None)
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
-        footer = "Bestätigte Book-Quote prüfen" if est else (f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else "")
+        footer = f"Rechnerische Quote @{float(odds):.2f}" if est and odds else (f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else "")
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
         return render(typ, title, subtitle, sport, teams, rows[:7], footer, getattr(pick,"settlement_summary", ""))

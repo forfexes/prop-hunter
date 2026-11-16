@@ -3358,7 +3358,7 @@ def _render_combo_pro_tip(p):
     out=[f"{title} — {today}",""]
     if game:out.append(f"🏟 {game}")
     if estimated:
-        out.append(f"• {label} — finale Book-Quote prüfen")
+        out.append(f"• {label} · Rechnerische Quote @{float(odds):.2f}")
     else:
         try:out.append(f"• {label} @{float(odds):.2f} → {getattr(p,'stake',0)}u")
         except Exception:out.append(f"• {label} → {getattr(p,'stake',0)}u")
@@ -3373,7 +3373,7 @@ def _render_combo_pro_tip(p):
         except Exception:pass
     if meta:out.append("📈 "+" · ".join(meta))
     if feats.get("combo_scope")=="cross_game":out.append("🌐 Cross-Game")
-    if estimated:out.append("⚠️ Keine synthetische Kombiquote/EV — finale Quote beim Book prüfen")
+    if estimated:out.append("⚠️ Einzelquoten multipliziert · keine bestätigte Buchmacherquote")
     out+=["","🏁 Auswertung: ⏳ offen","@prophunter"]
     return "\n".join(out)
 
