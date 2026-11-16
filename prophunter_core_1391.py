@@ -1598,6 +1598,55 @@ def fetch_fpp_gamelogs(player_name: str, sport: str = "NHL", season: str = "2025
         log.warning("FPP parse %s: %s", player_name, e)
         return []
 
+def enrich_injuries(props: list) -> list:
+    """Verletzungs-Signal (keyless, nflverse): markiert Picks, deren Spieler
+    selbst OUT ist (Flag zum Verwerfen) und zaehlt verletzte Teamkollegen als
+    Usage-Edge (die 'VanVleet out -> Assists werden frei'-Logik).
+
+    NFL jetzt (nflverse). NBA/NHL folgen ueber ESPN, wenn verdrahtet.
+    """
+    if not props:
+        return props
+    try:
+        from prop_hunter_free_data import nfl_out_players, _norm as _inj_norm
+    except Exception:
+        return props
+    nfl_props = [p for p in props if (p.sport or "").upper() == "NFL"]
+    if not nfl_props:
+        return props
+    try:
+        outs = nfl_out_players()
+    except Exception:
+        return props
+    if not outs:
+        return props
+    flagged = 0
+    for p in nfl_props:
+        try:
+            # Spieler selbst verletzt? -> Flag (wird im Filter verworfen).
+            rec = outs.get(_inj_norm(p.player or ""))
+            if rec and rec.get("status") in ("Out", "Doubtful"):
+                p.features["player_injured"] = rec.get("status")
+                p.features["player_injury"] = rec.get("injury")
+                flagged += 1
+            # Verletzte Teamkollegen (Usage frei): zaehlen, grobes Team-Matching
+            # ueber die ESPN-Abbrev der beiden Spiel-Teams.
+            team_abbrs = [_espn_abbr(p.home or ""), _espn_abbr(p.away or "")]
+            mates_out = [v for v in outs.values()
+                         if str(v.get("team", "")).upper() in team_abbrs
+                         and _inj_norm(v.get("name", "")) != _inj_norm(p.player or "")]
+            skill_out = [v for v in mates_out
+                         if str(v.get("position", "")).upper() in ("QB", "RB", "WR", "TE")]
+            if skill_out:
+                p.features["teammates_out"] = len(skill_out)
+                p.features["teammates_out_names"] = [v["name"] for v in skill_out[:4]]
+        except Exception:
+            continue
+    if flagged:
+        log.info("injury enrichment: %d NFL picks flagged as player-out", flagged)
+    return props
+
+
 def enrich_matchup(props: list) -> list:
     """Haengt das Gegner-Defense-Matchup an jeden Pick (JK-Style-Edge).
 
@@ -3823,6 +3872,7 @@ def gather(sport_filter=None):
     if str(os.getenv("PH_STATZ_ENABLED","0")).lower() in {"1","true","yes","on"}:
         all_props=enrich_statz(all_props)
     all_props=enrich_propcruncher(all_props)
+    all_props=enrich_injuries(all_props)
     all_props=enrich_matchup(all_props)
     all_props=enrich_fpp_nhl(all_props)
     all_props=enrich_bdl_props(all_props)
@@ -4170,8 +4220,12 @@ def quality_filter_picks(picks: list[Pick]) -> list[Pick]:
 
     def _sanity_line(p) -> bool:
         """Gibt False zurück wenn Linie unrealistisch ist."""
-        # PropsMadness Hit-Rate Blocker: <25% bei 8+ Samples = Finger weg
         feats = getattr(p, "features", {}) or {}
+        # Verletzter Spieler (nflverse Out/Doubtful): NIE auf einen Spieler
+        # tippen, der nicht spielt. Hart raus.
+        if feats.get("player_injured") in ("Out", "Doubtful"):
+            return False
+        # PropsMadness Hit-Rate Blocker: <25% bei 8+ Samples = Finger weg
         pm = feats.get("pm_hit_rate")
         try:
             if pm is not None and float(pm) < 25:
