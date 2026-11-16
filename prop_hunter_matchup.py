@@ -140,7 +140,8 @@ def _fetch_nba_defense_nbaapi(sport: str) -> Dict[str, Dict[str, float]]:
             timeout=_TIMEOUT,
         )
         rows = res.get_normalized_dict().get("LeagueDashTeamStats", [])
-    except Exception:
+    except Exception as e:
+        print(f"matchup: nba_api failed: {type(e).__name__}: {str(e)[:120]}", flush=True)
         return {}
     id_to_abbr = {t["id"]: t["abbreviation"] for t in nba_teams.get_teams()}
     out: Dict[str, Dict[str, float]] = {}
@@ -168,6 +169,43 @@ def _current_nba_season() -> str:
     return f"{start}-{str(start + 1)[2:]}"
 
 
+def _fetch_standings_points(sport: str) -> Dict[str, Dict[str, float]]:
+    """Fallback: ESPN standings -> points allowed per game (keyless)."""
+    paths = ESPN_LEAGUE.get(sport.upper())
+    if requests is None or not paths:
+        return {}
+    url = f"https://site.api.espn.com/apis/v2/sports/{paths[0]}/{paths[1]}/standings"
+    try:
+        r = requests.get(url, headers=_UA, timeout=_TIMEOUT)
+        data = r.json() if r.ok else {}
+    except Exception as e:
+        print(f"matchup: standings failed: {type(e).__name__}", flush=True)
+        return {}
+    out: Dict[str, Dict[str, float]] = {}
+
+    def walk(node):
+        if isinstance(node, dict):
+            for ent in node.get("standings", {}).get("entries", []) if isinstance(node.get("standings"), dict) else []:
+                ab = (ent.get("team") or {}).get("abbreviation")
+                st = {x.get("name"): x.get("value") for x in ent.get("stats", [])}
+                pa = st.get("avgPointsAgainst")
+                if pa is None:
+                    pa = st.get("pointsAgainst")
+                    gp = st.get("gamesPlayed")
+                    if pa is not None and gp:
+                        pa = float(pa) / float(gp)
+                if ab and pa is not None:
+                    out[str(ab).upper()] = {"points": float(pa)}
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+    walk(data)
+    print(f"matchup: standings fallback teams={len(out)} ({sport})", flush=True)
+    return out
+
+
 def _fetch_team_defense(sport: str) -> Dict[str, Dict[str, float]]:
     """Return {team_abbrev: {stat_key: allowed_per_game}} for a sport."""
     # NBA/WNBA: nba_api ist die verlaessliche Opponent-Quelle; ESPN-statistics
@@ -176,6 +214,9 @@ def _fetch_team_defense(sport: str) -> Dict[str, Dict[str, float]]:
         nba = _fetch_nba_defense_nbaapi(sport)
         if nba:
             return nba
+        fb = _fetch_standings_points(sport)
+        if fb:
+            return fb
     if requests is None:
         return {}
     paths = ESPN_LEAGUE.get(sport.upper())
