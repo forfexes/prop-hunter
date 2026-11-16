@@ -243,15 +243,21 @@ def _fetch_defense_from_games(sport: str) -> Dict[str, Dict[str, float]]:
     sp, lg = paths
     days = {"NFL": 80, "MLB": 60}.get(sport.upper(), 45)
     end = _d.date.today()
-    rng = f"{(end - _d.timedelta(days=days)).strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
-    try:
-        r = requests.get(f"https://site.api.espn.com/apis/site/v2/sports/{sp}/{lg}/scoreboard",
-                         params={"dates": rng, "limit": 500}, headers=_UA, timeout=_TIMEOUT)
-        print(f"matchup: scoreboard {r.status_code} {r.url}", flush=True)
-        events = [e for e in (r.json().get("events") or []) if (e.get("status") or {}).get("type", {}).get("completed")]
-    except Exception as e:
-        print(f"matchup: scoreboard failed {sport}: {type(e).__name__}", flush=True)
-        return {}
+    rng = f"last {days}d"
+    base = f"https://site.api.espn.com/apis/site/v2/sports/{sp}/{lg}/scoreboard"
+
+    def day(k):
+        ds = (end - _d.timedelta(days=k)).strftime("%Y%m%d")
+        try:
+            r = requests.get(base, params={"dates": ds}, headers=_UA, timeout=_TIMEOUT)
+            return [e for e in (r.json().get("events") or [])
+                    if (e.get("status") or {}).get("type", {}).get("completed")]
+        except Exception:
+            return []
+
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        events = [e for lst in ex.map(day, range(1, days + 1)) for e in lst]
+    events.sort(key=lambda e: e.get("date") or "")
     print(f"matchup: {sport} completed events in range: {len(events)} ({rng})", flush=True)
     cap = int(os.getenv("PH_MATCHUP_MAX_GAMES", "260"))
     events = events[-cap:]
