@@ -1754,6 +1754,16 @@ def enrich_matchup(props: list) -> list:
             p.features["matchup_favourability"] = best["favourability"]
             p.features["matchup_label"] = best["label"]
             p.features["matchup_stat"] = stat
+            # JK-Style: Matchup verschiebt die Wahrscheinlichkeit konservativ (max ±3pp).
+            try:
+                if "matchup_adj" not in p.features and p.features.get("fair_prob") is not None:
+                    w = float(os.getenv("PH_MATCHUP_PROB_WEIGHT", "0.06"))
+                    adj = (best["favourability"] - 0.5) * w
+                    old = float(p.features["fair_prob"])
+                    p.features["fair_prob"] = round(min(0.95, max(0.05, old + adj)), 4)
+                    p.features["matchup_adj"] = round(adj, 4)
+            except Exception:
+                pass
             if "rank" in best:
                 p.features["matchup_rank"] = best["rank"]
                 p.features["matchup_of"] = best["of"]

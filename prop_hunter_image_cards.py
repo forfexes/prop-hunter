@@ -319,7 +319,12 @@ def _form_text(features: Dict[str, Any]) -> str:
         w = rf.get(k) or {}
         if w.get("n"):
             parts.append(f"{k.upper()} {int(w.get('hits', 0))}/{int(w['n'])}")
-    return "   ".join(parts)
+    txt = "   ".join(parts)
+    ml = (features or {}).get("matchup_label")
+    fav = (features or {}).get("matchup_favourability")
+    if ml and fav is not None and (fav >= 0.65 or fav <= 0.35):
+        txt = (txt + "  ·  " if txt else "") + str(ml)
+    return txt
 
 
 def _label(detail: Dict[str, Any]) -> str:
