@@ -91,7 +91,7 @@ RESCUE_FILL_TARGET    = max(8, min(RESCUE_MAX_PICKS, int(os.getenv("PH_RESCUE_FI
 MAX_HR_SINGLES        = int(os.getenv("PH_MAX_HR_SINGLES", "0") or 0)  # 0 = no global HR cap
 MAX_COMBOS_TOTAL      = 2
 MAX_LOTTERY_TOTAL     = 2
-MAX_LOTTERY_LEGS      = 3
+MAX_LOTTERY_LEGS      = 10  # Mini 2-3, Standard 4-5, Super 6-8, Mega 9-10; bookmaker quote gate still applies
 
 GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip() or "gemini-3.6-flash"
 GROQ_MODELS    = ["llama-3.3-70b-versatile","llama-3.1-70b-versatile","mixtral-8x7b-32768"]
