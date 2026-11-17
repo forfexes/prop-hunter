@@ -103,4 +103,4 @@ def publishable_extra_reason(obj):
         return "missing_event_identity"
     if len(set(games))<len(games):
         return "same_game_missing_confirmed_quote"
-    return "unknown_price_scope"
+    return "cross_game_missing_confirmed_quote"
