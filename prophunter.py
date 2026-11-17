@@ -7,6 +7,21 @@ for marker in ('if __name__ == "__main__":',"if __name__=='__main__':",'if __nam
 exec(compile(_src,str(_core),'exec'),globals(),globals())
 PH_RUNTIME_VERSION='13.10.1-KEYLESS-HARDENED'
 
+# Optional live NBA context on the existing production enrichment path.
+# Evidence-only: no changes to fair probabilities or bookmaker prices.
+_enrich_matchup_base_nba = enrich_matchup
+def enrich_matchup(props):
+    props = _enrich_matchup_base_nba(props)
+    if os.getenv("PH_NBA_CONTEXT_ENABLED", "1").lower() in ("0", "false", "off"):
+        return props
+    try:
+        from prop_hunter_nba_live_context import attach_verified_nba_context
+        return attach_verified_nba_context(props, sb_client=_sb_read())
+    except Exception as exc:
+        log.warning("optional NBA context skipped: %s", str(exc)[:150])
+        return props
+
+
 try:
     import prop_hunter_builder_engine as _ph_builder
     from prop_hunter_quote_guard import probability_sane as _probability_sane
