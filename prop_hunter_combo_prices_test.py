@@ -20,7 +20,7 @@ observed=deepcopy(p);observed['features']=dict(combined_odds_observed=True,combi
 assert publishable_extra(observed) and not unpriced_sgp(observed)
 cross=deepcopy(p)
 for i,leg in enumerate(cross['leg_details']):leg['game']=f'A{i} @ B{i}'
-assert publishable_extra(cross) and not unpriced_sgp(cross)
+assert not publishable_extra(cross) and not unpriced_sgp(cross)
 # Two same-game legs plus another game still contain an unpriced SGP component.
 cross['leg_details'][1]['game']=cross['leg_details'][0]['game']
 assert not publishable_extra(cross)
@@ -58,9 +58,8 @@ exec(compile(ast.fix_missing_locations(ast.Module(body=[fence],type_ignores=[]))
 assert ns['picks']==[single]
 print('PRODUCTION FINAL PRICE FENCE PASSED')
 
-# Cross-Game-Builder (verschiedene, unabhaengige Spiele): das Quoten-PRODUKT
-# ist mathematisch korrekt, also KEIN unpriced SGP — darf weder neu
-# invalidiert noch zurueckgehalten werden, auch wenn aus Einzelquoten abgeleitet.
+# Cross-game multiplied prices are still not observed bookmaker ticket prices.
+# They must fail the publishing gate, even though they are not same-game SGPs.
 wrong=dict(type='betbuilder',odds=3.94,result='withdrawn',status='withdrawn',profit=None,
     quote_invalidated=True,quote_original_result='loss',quote_original_profit=-.1,
     quote_invalidation_reason='Same-Game-Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote',
@@ -73,6 +72,7 @@ assert not unpriced_sgp(wrong)
 fresh_cross=deepcopy(wrong); fresh_cross.pop('quote_invalidated'); fresh_cross.pop('quote_original_result'); fresh_cross.pop('quote_original_profit')
 fresh_cross.update(result='win',profit=0.33)
 assert not invalidate_unpriced_combo(fresh_cross)
+assert not publishable_extra(fresh_cross)
 assert fresh_cross['result']=='win' and fresh_cross['profit']==0.33, 'cross-game darf nicht zurueckgehalten werden'
 # Ein bereits invalidierter Alt-Ticket bleibt withdrawn (keine Reaktivierung):
 assert not invalidate_unpriced_combo(wrong)
