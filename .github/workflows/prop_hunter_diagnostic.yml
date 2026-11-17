@@ -9,6 +9,9 @@ name: Prop Hunter Diagnostic Dry Run
       - 'prop_hunter_feature_builder.py'
       - 'prop_hunter_media_settlement_test.py'
       - 'prop_hunter_nba_context_engine.py'
+      - 'prop_hunter_nba_dvp_scraper.py'
+      - 'prop_hunter_nba_dvp_scraper_test.py'
+      - 'prop_hunter_nba_live_context.py'
       - 'prop_hunter_nba_context_engine_test.py'
       - 'prop_hunter_nba_context_sources.py'
       - 'prop_hunter_nba_context_sources_test.py'
@@ -71,6 +74,7 @@ jobs:
           python prop_hunter_nba_usage_features_test.py
           python prop_hunter_nba_context_sources_test.py
           python prop_hunter_nba_context_engine_test.py
+          python prop_hunter_nba_dvp_scraper_test.py
           python test_prop_hunter_bwin_us_probe.py
       - name: Full card dry run
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
