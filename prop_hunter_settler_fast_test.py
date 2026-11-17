@@ -159,3 +159,14 @@ with TemporaryDirectory() as tmp:
         fixture.write_text(base+marker+'\n')
         assert 'merge-conflict marker' in inspect_workflow(fixture,'fixture'),marker
 print('WORKFLOW CONFLICT MARKER TEST PASSED')
+
+# Auto-void safety invariants: settle-ready picks and age-only combos stay pending.
+audit_source = Path('prop_hunter_pending_audit.py').read_text(encoding='utf-8')
+terminal_block = audit_source.split('    TERMINAL = {', 1)[1].split('    }', 1)[0]
+soft_block = audit_source.split('    TERMINAL_SOFT = {', 1)[1].split('    }', 1)[0]
+assert "'ready_to_settle'" not in terminal_block + soft_block
+assert "'no_unique_official_game'" not in terminal_block
+assert "'no_unique_official_game'" in soft_block
+combo_block = audit_source.split('    # ─── AUTO-VOID fuer HISTORY-KOMBIS/LADDERS', 1)[1].split('    report = {', 1)[0]
+assert "PH_ALLOW_UNVERIFIED_COMBO_VOID', '0'" in combo_block
+print('AUTO-VOID SAFETY GUARDS PASSED')
