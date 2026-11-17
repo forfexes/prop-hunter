@@ -190,14 +190,17 @@ def _result_context(p: dict) -> Tuple[str, str]:
         or raw.get("source_event_id") or raw.get("event_id") or ""
     ).strip()
     commence = p.get("commence_time") or raw.get("commence_time")
-    d = ""
-    if commence:
+    # Match settlements by the original ticket's publication date, NOT by
+    # UTC kickoff date. US evening events often begin after midnight UTC.
+    # Results and history preserve sent_date/date (e.g. 16 Nov), while
+    # commence_time may be 17 Nov; prioritising kickoff strands combos.
+    d = str(p.get("sent_date") or p.get("date") or raw.get("sent_date")
+            or raw.get("date") or p.get("created_at") or "")[:10]
+    if not d and commence:
         try:
             d = datetime.fromisoformat(str(commence).replace("Z", "+00:00")).date().isoformat()
         except Exception:
             d = str(commence)[:10]
-    if not d:
-        d = str(p.get("sent_date") or p.get("date") or p.get("created_at") or "")[:10]
     return d, event
 
 
