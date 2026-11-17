@@ -111,6 +111,9 @@ def main():
         for d in details:
             is_hard = d['reason'] in TERMINAL
             is_soft = d['reason'] in TERMINAL_SOFT
+            # Missing game logs alone are not evidence of DNP or a voidable wager.
+            if d['reason'] == 'no_unique_official_game':
+                continue
             if not is_hard and not is_soft:
                 continue
             p = by_id.get(d['pick_id'])
