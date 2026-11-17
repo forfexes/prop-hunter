@@ -5318,6 +5318,19 @@ def run(dry_run=False,sport_filter=None):
     if not picks:
         log.warning("no picks with verified quote scope")
         return
+    # Global flat stake applies to every published ticket, including ladders,
+    # builders and lotteries.  Apply before rendering AND persistence so that
+    # settlement profit uses the same stake shown in Telegram.
+    _flat_all = os.getenv("PH_FLAT_ALL_STAKE", "1.0").strip()
+    if _flat_all:
+        try:
+            _stake_all = float(_flat_all)
+            if not (0 < _stake_all <= 5):
+                raise ValueError("flat stake outside 0..5")
+            for _ticket in picks:
+                _ticket.stake = _stake_all
+        except (ValueError, TypeError) as _stake_exc:
+            raise RuntimeError("Invalid PH_FLAT_ALL_STAKE") from _stake_exc
     body=build_post(picks)
     print("\n"+body+"\n")
     telegram_message_id = send_telegram(body,dry_run=dry_run,picks=picks)
