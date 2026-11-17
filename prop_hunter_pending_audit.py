@@ -193,7 +193,33 @@ def main():
         except Exception as exc:
             print(f'Auto-void combos skipped: {str(exc)[:120]}', flush=True)
 
-    report = {'generated_at': now_iso(), 'unresolved': len(details), 'counts': dict(counts), 'picks': details}
+    # Include the complete retained history backlog, not only selected DB picks.
+    history_counts = Counter()
+    history_pending = []
+    hist = safe_json_load('picks_history.json', [])
+    if isinstance(hist, list):
+        for entry in hist:
+            if not isinstance(entry, dict):
+                continue
+            for group in ('picks', 'kombis'):
+                for item in entry.get(group, []) or []:
+                    if not isinstance(item, dict):
+                        continue
+                    state = str(item.get('result') or item.get('status') or 'pending').lower()
+                    if state not in {'', 'pending', 'open', 'unsettled', 'none', 'null'}:
+                        continue
+                    history_counts[group] += 1
+                    history_pending.append({
+                        'group': group,
+                        'date': item.get('date') or entry.get('date'),
+                        'player': item.get('player_name') or item.get('player'),
+                        'market': item.get('market') or item.get('type'),
+                        'id': item.get('id') or item.get('pick_id'),
+                    })
+    report = {'generated_at': now_iso(), 'unresolved': len(details), 'counts': dict(counts), 'picks': details,
+              'history_pending_counts': dict(history_counts),
+              'history_pending_total': len(history_pending),
+              'history_pending': history_pending}
     safe_json_write('prop_hunter_pending_audit.json', report)
     print(f'Pending audit: unresolved={len(details)} reasons={dict(counts)}', flush=True)
 
