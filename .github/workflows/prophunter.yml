@@ -48,12 +48,12 @@ jobs:
           if not url or not key:
               raise SystemExit("Supabase preflight failed: SUPABASE_URL/SUPABASE_KEY missing")
           req = urllib.request.Request(
-              f"{url}/rest/v1/prop_hunter_db_health?select=table_name,rows&limit=1",
+              f"{url}/rest/v1/prop_hunter_picks?select=id&limit=1",
               headers={"apikey": key},
           )
           import time
-          # Retry transient database statement timeouts; do not bypass the
-          # preflight or proceed to Telegram if the database remains unhealthy.
+          # Lightweight indexed table check; avoid aggregate health views that
+          # can time out even while the picks database is operational.
           for attempt in range(3):
               try:
                   with urllib.request.urlopen(req, timeout=15) as response:
