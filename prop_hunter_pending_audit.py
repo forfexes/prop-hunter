@@ -197,12 +197,17 @@ def main():
     history_counts = Counter()
     history_pending = []
     hist = safe_json_load('picks_history.json', [])
+    if isinstance(hist, dict):
+        hist = hist.get('days') or hist.get('history') or hist.get('entries') or []
     if isinstance(hist, list):
         for entry in hist:
             if not isinstance(entry, dict):
                 continue
             for group in ('picks', 'kombis'):
-                for item in entry.get(group, []) or []:
+                items = entry.get(group) or []
+                if not isinstance(items, list):
+                    continue
+                for item in items:
                     if not isinstance(item, dict):
                         continue
                     state = str(item.get('result') or item.get('status') or 'pending').lower()
@@ -221,7 +226,7 @@ def main():
               'history_pending_total': len(history_pending),
               'history_pending': history_pending}
     safe_json_write('prop_hunter_pending_audit.json', report)
-    print(f'Pending audit: unresolved={len(details)} reasons={dict(counts)}', flush=True)
+    print(f'Pending audit: unresolved={len(details)} reasons={dict(counts)} history_pending={len(history_pending)} by_group={dict(history_counts)}', flush=True)
 
 
 if __name__ == '__main__':
