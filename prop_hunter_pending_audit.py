@@ -158,7 +158,8 @@ def main():
     # Ladders leben in picks_history.json (kombis[]) und waren fuer das Auto-Void
     # unsichtbar — eine nie gradebare Ladder (z.B. Keegan Murray, 25.10.) blieb
     # darum ewig pending. Hier dieselbe Soft-Karenz direkt auf die History-Kombis.
-    if os.getenv('PH_AUTO_VOID_STALE', '0').lower() in {'1', 'true', 'yes', 'on'}:
+    if (os.getenv('PH_AUTO_VOID_STALE', '0').lower() in {'1', 'true', 'yes', 'on'}
+            and os.getenv('PH_ALLOW_UNVERIFIED_COMBO_VOID', '0').lower() in {'1', 'true', 'yes', 'on'}):
         combo_grace = int(os.getenv('PH_AUTO_VOID_SOFT_DAYS', '7'))
         combo_cutoff = datetime.now(timezone.utc) - timedelta(days=combo_grace)
         try:
