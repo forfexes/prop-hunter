@@ -6,8 +6,11 @@ from PIL import Image
 import prop_hunter_image_cards as cards
 import prophunter_results as results
 
-pick=N(type='betbuilder',features={},game='Lakers @ Celtics',sport='NBA',odds=3.4,leg_details=[{'player':'Player A','market':'Points','point':25.5,'direction':'over','odds':1.8},{'player':'Player B','market':'Rebounds','point':6.5,'direction':'under','odds':1.9}])
+pick=N(type='betbuilder',features={'combined_odds_observed':True,'combined_quote_id':'fixture-bookmaker-ticket'},game='Lakers @ Celtics',sport='NBA',odds=3.4,leg_details=[{'player':'Player A','market':'Points','point':25.5,'direction':'over','odds':1.8},{'player':'Player B','market':'Rebounds','point':6.5,'direction':'under','odds':1.9}])
 with patch.object(cards,'player_photo',return_value=None),patch.object(cards,'team_logo',return_value=None):
+ # Unverified builder total must never render or reach Telegram.
+ unverified=N(**dict(vars(pick),features={}))
+ assert cards.build_for_pick(unverified) is None
  data=cards.snapshot(pick)
  opened=cards.build_for_pick(pick)
  closed=cards.settled_image(data,'🏁 Auswertung: 1✅ 0❌ · +0.12u')
