@@ -253,10 +253,12 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     head_h = 430 if teams else 280
     h = head_h + row_h * len(rows) + 190
     img = _background(sport, h)
+    accent = ((184, 110, 255) if kind in ("big", "super", "lottery") else
+              (255, 198, 70) if kind == "ladder" else CYAN)
     d = ImageDraw.Draw(img, "RGBA")
     d.text((W // 2, 62), "PROP HUNTER", font=_font(62), fill=WHITE, anchor="mm")
-    d.rounded_rectangle([40, 120, W - 40, h - 30], 28, outline=CYAN + (255,), width=4)
-    d.text((W // 2, 170), title, font=_font(54), fill=CYAN, anchor="mm")
+    d.rounded_rectangle([40, 120, W - 40, h - 30], 28, outline=accent + (255,), width=4)
+    d.text((W // 2, 170), title, font=_font(54), fill=accent, anchor="mm")
     d.text((W // 2, 222), subtitle, font=_font(30, False), fill=MUTED, anchor="mm")
     y = 262
     if teams:
@@ -275,12 +277,12 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         ph = _circle(r.get("photo"), 112, r.get("name") or "?")
         img.alpha_composite(ph, (92, y + 11))
         d.text((232, y + 38), _fit(d, r.get("name") or "", _font(36), 520), font=_font(36), fill=WHITE, anchor="lm")
-        d.rounded_rectangle([232, y + 66, 232 + min(560, 24 + int(d.textlength(r.get("label") or "", font=_font(30)))), y + 108], 12, fill=CYAN + (255,))
+        d.rounded_rectangle([232, y + 66, 232 + min(560, 24 + int(d.textlength(r.get("label") or "", font=_font(30)))), y + 108], 12, fill=accent + (255,))
         d.text((244, y + 87), _fit(d, r.get("label") or "", _font(30), 540), font=_font(30), fill=(4, 20, 28), anchor="lm")
         if r.get("form"):
             d.text((232, y + 134), r["form"], font=_font(24, False), fill=MUTED, anchor="lm")
         if r.get("odds"):
-            d.text((W - 100, y + 62), r["odds"], font=_font(40), fill=CYAN, anchor="rm")
+            d.text((W - 100, y + 62), r["odds"], font=_font(40), fill=accent, anchor="rm")
         if r.get("result"):
             _rt=str(r["result"])
             _rc=GREEN if "GEWONNEN" in _rt else RED if "VERLOREN" in _rt else CYAN
@@ -403,17 +405,25 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
                 nm = str(det.get("player") or "")
                 rows.append({"name": nm, "photo": (team_logo(nm,lg) if det.get("kind")=="team" else player_photo(nm, lg)), "label": _label(det), "form": _form_text(det.get("features")), "result":_result_text(det),
                              "odds": f"@{float(det.get('odds') or 0):.2f}" if det.get("odds") else ""})
-            title = "CROSS-GAME BUILDER" if cross else ("SAME-GAME BUILDER" if teams else "BUILDER")
+            title = ("MEGA LOTTERY" if len(rows) >= 9 else
+                     "SUPER LOTTERY" if len(rows) >= 6 else
+                     "LOTTERY" if typ in ("big", "super", "lottery") else
+                     "CROSS-GAME BUILDER" if cross else
+                     "SAME-GAME BUILDER" if teams else "BUILDER")
             subtitle = f"{len(rows)} Legs" + (" · mehrere Spiele" if cross else (f" · {game[:40]}" if game else ""))
         if not rows:
             return None
         subtitle = _with_kickoff(subtitle, pick)
         odds = getattr(pick, "odds", None)
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
-        footer = f"Rechnerische Quote @{float(odds):.2f}" if est and odds else (f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else "")
+        combo = typ not in ("single", "ladder")
+        verified = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
+        if combo and not verified:
+            return None
+        footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
-        return render(typ, title, subtitle, sport, teams, rows[:7], footer, getattr(pick,"settlement_summary", ""))
+        return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""))
     except Exception:
         return None
 
