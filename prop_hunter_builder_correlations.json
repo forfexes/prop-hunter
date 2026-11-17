@@ -483,11 +483,11 @@
     },
     "NBA:4+_rebounds:over|NBA:5+_rebounds:over": {
       "factor": 1.0,
-      "n": 1,
+      "n": 2,
       "both_wins": 1,
-      "observed_joint": 1.0,
-      "expected_joint": 0.45308,
-      "raw_ratio": 1.35
+      "observed_joint": 0.5,
+      "expected_joint": 0.38296,
+      "raw_ratio": 1.3056
     },
     "NBA:5+_rebounds:over|NBA:7+_rebounds:over": {
       "factor": 1.0,
@@ -707,19 +707,19 @@
     },
     "NBA:points:under|NBA:points:under": {
       "factor": 0.85,
-      "n": 427,
+      "n": 433,
       "both_wins": 136,
-      "observed_joint": 0.3185,
-      "expected_joint": 0.38698,
-      "raw_ratio": 0.823
+      "observed_joint": 0.31409,
+      "expected_joint": 0.38919,
+      "raw_ratio": 0.807
     },
     "NBA:rebounds:under|NBA:rebounds:under": {
-      "factor": 1.0975,
-      "n": 113,
+      "factor": 1.0045,
+      "n": 123,
       "both_wins": 55,
-      "observed_joint": 0.48673,
-      "expected_joint": 0.44347,
-      "raw_ratio": 1.0975
+      "observed_joint": 0.44715,
+      "expected_joint": 0.44514,
+      "raw_ratio": 1.0045
     },
     "NBA:blocks:under|NBA:blocks:under": {
       "factor": 1.0,
@@ -963,11 +963,11 @@
     },
     "NBA:3+_rebounds:over|NBA:4+_rebounds:over": {
       "factor": 1.0,
-      "n": 1,
-      "both_wins": 0,
-      "observed_joint": 0.0,
-      "expected_joint": 0.63953,
-      "raw_ratio": 0.6
+      "n": 3,
+      "both_wins": 2,
+      "observed_joint": 0.66667,
+      "expected_joint": 0.54783,
+      "raw_ratio": 1.2169
     },
     "NBA:3+_rebounds:over|NBA:7+_rebounds:over": {
       "factor": 1.0,
@@ -995,11 +995,11 @@
     },
     "NBA:3+_rebounds:over|NBA:5+_rebounds:over": {
       "factor": 1.0,
-      "n": 3,
+      "n": 4,
       "both_wins": 2,
-      "observed_joint": 0.66667,
-      "expected_joint": 0.37887,
-      "raw_ratio": 1.35
+      "observed_joint": 0.5,
+      "expected_joint": 0.37147,
+      "raw_ratio": 1.346
     },
     "NBA:5+_rebounds:over|NBA:8+_rebounds:over": {
       "factor": 1.0,
@@ -1595,5 +1595,5 @@
     }
   },
   "profiles": {},
-  "updated_at": "2026-11-17T03:25:44.221799+00:00"
+  "updated_at": "2026-11-17T04:52:45.808905+00:00"
 }
