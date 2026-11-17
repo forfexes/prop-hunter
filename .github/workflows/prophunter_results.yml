@@ -214,6 +214,8 @@ jobs:
           PH_AUTO_VOID_STALE: '0'    # terminale Altlasten (DNP/Fantasy/Team/Doppellinie) nach Karenz voiden
           PH_AUTO_VOID_DAYS: '3'
         run: |
+          # Fail before any settlement writes or Telegram edits on date-regression failure.
+          python prop_hunter_result_date_test.py
           python prop_hunter_quote_incidents.py
           python prop_hunter_settler.py
           python prop_hunter_settler_extras.py
@@ -223,7 +225,6 @@ jobs:
             PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
             python prop_hunter_feature_builder.py
           fi
-          python prop_hunter_result_date_test.py
           python -u prophunter_results.py
           python prop_hunter_pending_audit.py
 
