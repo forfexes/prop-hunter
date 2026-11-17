@@ -100,6 +100,38 @@ def volume_profile(rows):
             result["last_" + str(n)] = values
     return result
 
+def observed_nba_shot_context(items):
+    """Optional shot-zone evidence from game logs with canonical NBA player IDs.
+
+    Missing data remains missing. No name joins or synthetic shot maps.
+    """
+    try:
+        from prop_hunter_nba_context_engine import shot_form
+        from datetime import datetime, timezone
+        ids = set()
+        events = []
+        for item in items:
+            raw = item.get("raw") if isinstance(item.get("raw"), dict) else {}
+            shots = raw.get("shot_events") or []
+            if not isinstance(shots, list) or not shots:
+                continue
+            player_id = item.get("nba_player_id") or raw.get("nba_player_id")
+            if not (str(player_id).isdigit() and int(player_id) > 0):
+                return None
+            ids.add(int(player_id))
+            events.extend(x for x in shots if isinstance(x, dict))
+        if len(ids) != 1 or not events:
+            return None
+        today = datetime.now(timezone.utc).date()
+        season_year = today.year if today.month >= 10 else today.year - 1
+        season = f"{season_year}-{str(season_year + 1)[-2:]}"
+        profile = shot_form(events, nba_player_id=next(iter(ids)),
+                            season=season, before_date=today.isoformat())
+        return profile if profile["observed_games"] else None
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
 def load_feature_logs(scope="", page_size=1000):
     """Read by immutable id, so concurrent pruning cannot shift row offsets."""
     client=supabase_client()
@@ -144,6 +176,10 @@ def main():
         feat["historical_last_15"]={st+"_avg":avg(historical,st) for st in STATS if avg(historical,st) is not None}
         volume = volume_profile(items)
         if volume: feat["role_volume"] = volume
+        if league == "NBA":
+            shot_context = observed_nba_shot_context(items)
+            if shot_context:
+                feat["nba_shot_zones"] = shot_context
         for n in [5,10,15]:
             sub=items[:n]; feat[f"last_{n}"]={}
             for st in STATS:
