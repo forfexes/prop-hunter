@@ -1,0 +1,46 @@
+name: Prop Hunter Sandbox Hardtest
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/workflows/prop_hunter_sandbox_hardtest.yml'
+      - 'prop_hunter_combo_prices_test.py'
+permissions:
+  contents: read
+jobs:
+  sandbox-hardtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TELEGRAM_BOT_TOKEN: ''
+      TELEGRAM_CHAT_ID: ''
+      SUPABASE_URL: ''
+      SUPABASE_KEY: ''
+      PH_ESTIMATED_SAME_GAME_BUILDERS: '0'
+      PH_AUTO_VOID_STALE: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependencies
+        run: pip install -r requirements.txt
+      - name: Offline integrity and quote hardtest
+        run: |
+          python -m compileall -q .
+          python prop_hunter_combo_prices_test.py
+          python prop_hunter_card_quality_test.py
+          python prop_hunter_form_windows_test.py
+          python prop_hunter_media_settlement_test.py
+          python prop_hunter_mixed_builders_test.py
+          python prop_hunter_ladder_l15_test.py
+          python prop_hunter_runtime_guard.py
+      - name: Assert no production credentials
+        run: |
+          python - <<'PY'
+          import os
+          for key in ('TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID','SUPABASE_URL','SUPABASE_KEY'):
+              assert not os.getenv(key), f'Sandbox credential unexpectedly available: {key}'
+          print('Sandbox isolation OK: no Telegram or Supabase credentials')
+          PY
