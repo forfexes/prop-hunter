@@ -5328,7 +5328,13 @@ def run(dry_run=False,sport_filter=None):
             if not (0 < _stake_all <= 5):
                 raise ValueError("flat stake outside 0..5")
             for _ticket in picks:
-                _ticket.stake = _stake_all
+                _kind = str(getattr(_ticket, "type", "") or "").lower()
+                _market = str(getattr(_ticket, "market", "") or "").lower()
+                _profile = str(getattr(_ticket, "profile", "") or "").lower()
+                _is_lottery = any("lottery" in x for x in (_kind, _market, _profile))
+                # Some historical lottery cards use the "big" ticket type.
+                _is_lottery = _is_lottery or _kind == "big"
+                _ticket.stake = 0.10 if _is_lottery else _stake_all
         except (ValueError, TypeError) as _stake_exc:
             raise RuntimeError("Invalid PH_FLAT_ALL_STAKE") from _stake_exc
     body=build_post(picks)
