@@ -7,6 +7,10 @@ name: Prop Hunter Diagnostic Dry Run
       - '.github/workflows/prop_hunter_diagnostic.yml'
       - '.github/diagnostic-trigger'
       - 'prop_hunter_feature_builder.py'
+      - 'prop_hunter_nba_context_engine.py'
+      - 'prop_hunter_nba_context_engine_test.py'
+      - 'prop_hunter_nba_context_sources.py'
+      - 'prop_hunter_nba_context_sources_test.py'
       - 'prop_hunter_form_windows_test.py'
       - 'prophunter_core_1391.py'
       - 'prop_hunter_nba_usage.py'
@@ -64,11 +68,13 @@ jobs:
           python prop_hunter_usage_provider_exports_test.py
           python prop_hunter_nba_usage_ingest_test.py
           python prop_hunter_nba_usage_features_test.py
+          python prop_hunter_nba_context_sources_test.py
+          python prop_hunter_nba_context_engine_test.py
           python test_prop_hunter_bwin_us_probe.py
       - name: Full card dry run
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
         env:
-          PH_ESTIMATED_SAME_GAME_BUILDERS: '1'
+          PH_ESTIMATED_SAME_GAME_BUILDERS: '0'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
