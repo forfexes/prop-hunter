@@ -169,4 +169,5 @@ assert "'no_unique_official_game'" not in terminal_block
 assert "'no_unique_official_game'" in soft_block
 combo_block = audit_source.split('    # ─── AUTO-VOID fuer HISTORY-KOMBIS/LADDERS', 1)[1].split('    report = {', 1)[0]
 assert "PH_ALLOW_UNVERIFIED_COMBO_VOID', '0'" in combo_block
+assert "if d['reason'] == 'no_unique_official_game':\n                continue" in audit_source
 print('AUTO-VOID SAFETY GUARDS PASSED')
