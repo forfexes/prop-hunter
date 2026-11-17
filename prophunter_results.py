@@ -674,6 +674,9 @@ def _card_pick(card,picks,combos):
     return obj
 
 
+_EDIT_STATE = {"gone": False}
+
+
 def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=None, fallback_pick=None) -> bool:
     if not TG_TOKEN or not message_id:
         return False
@@ -725,6 +728,7 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                 time.sleep(wait_s)
                 continue
             print(f"Telegram edit {r.status_code}: {r.text[:200]}")
+            _EDIT_STATE["gone"] = bool(r.status_code == 400 and "message to edit not found" in r.text.lower())
             return False
         except Exception as exc:
             if attempt>=retries:
@@ -1001,6 +1005,8 @@ def main() -> int:
                 _sync_pick_table(combo)
 
         for card in entry.get("cards") or []:
+            if card.get("tg_gone"):
+                continue
             text = _decorate_card(card, picks, combos)
             if not text:
                 continue
@@ -1052,7 +1058,13 @@ def main() -> int:
                     elif legacy_source.get("ladder_legs"):
                         visual["leg_details"]=legacy_source["ladder_legs"]
                 card["image_pick"]=visual
-            if _edit_message(card.get("message_id"), text, card.get("chat_id"), **({"image_pick":card["image_pick"]} if card.get("media_type")=="photo" and card.get("image_pick") else {"fallback_pick":legacy_source} if legacy_source else {})):
+            _EDIT_STATE["gone"] = False
+            _edit_ok = _edit_message(card.get("message_id"), text, card.get("chat_id"), **({"image_pick":card["image_pick"]} if card.get("media_type")=="photo" and card.get("image_pick") else {"fallback_pick":legacy_source} if legacy_source else {}))
+            if not _edit_ok and _EDIT_STATE["gone"]:
+                # Nachricht existiert nicht mehr (geloescht): nie wieder versuchen.
+                card["tg_gone"] = True
+                changed = True
+            if _edit_ok:
                 card["image_settlement_version"] = 1
                 if _is_graded_ladder:
                     card["ladder_rung_version"] = LADDER_RUNG_CARD_VERSION
