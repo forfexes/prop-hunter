@@ -30,7 +30,10 @@ from datetime import datetime, timezone
 # sport -> { type_id(str): (market_key, market_label, direction) }
 # direction "over"/"under" for paired lines, "yes" for binary (line usually 0.5).
 VERIFIED_MARKETS = {
-    # 8393/8394 and 8395/8396 have contradictory mappings in the existing\n    # source modules; require operator-side market verification before enabling.\n    "NFL": {\n        "8397": ("passing_yards", "Passing Yards", "over"),
+    # 8393/8394 and 8395/8396 have contradictory mappings in the existing
+    # source modules; require operator-side market verification before enabling.
+    "NFL": {
+        "8397": ("passing_yards", "Passing Yards", "over"),
         "8398": ("passing_yards", "Passing Yards", "under"),
         "6188": ("anytime_td", "Anytime TD", "yes"),
     },
