@@ -51,22 +51,13 @@ def unpriced_sgp(obj):
         return False
 
 def publishable_extra(obj):
-    if value(obj,'type') in {'single','ladder'}:
+    """Only singles/ladders or tickets with a verified bookmaker combined quote."""
+    if value(obj, 'type') in {'single', 'ladder'}:
         return True
-    if confirmed_ticket(obj):
-        return True
-    if unpriced_sgp(obj):
-        # Opt-in: let an ESTIMATED same-game builder through if it is explicitly
-        # flagged as such. The card shows the "quote estimated" warning and the
-        # settlement pipeline still invalidates its P/L, so nothing is misrepresented.
-        if _estimated_same_game_allowed():
-            f=features(obj)
-            if value(obj,'builder_odds_estimated_from_legs') or f.get('builder_odds_estimated_from_legs'):
-                return True
-        return False
-    legs=value(obj,'leg_details',[]) or []
-    games=[re.sub(r'\s+',' ',str(value(x,'game','') or '').strip().lower()) for x in legs]
-    return len(games)>=2 and all(games) and len(set(games))==len(games)
+    # Never publish multiplied prices, even across different games, and never
+    # allow an environment opt-in to bypass a missing observed ticket quote.
+    return confirmed_ticket(obj)
+
 
 def quote_withdrawal_reason(ticket):
     legs=value(ticket,'leg_details',[]) or []
