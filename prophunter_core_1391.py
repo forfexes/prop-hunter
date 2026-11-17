@@ -5229,9 +5229,12 @@ def run(dry_run=False,sport_filter=None):
     log.info("PROP HUNTER %s (dry=%s sport=%s)", PH_RUNTIME_VERSION, dry_run, sport_filter or "all")
     props=gather(sport_filter)
     if not props:
-        log.warning("no props found")
+        log.error("CARD EMPTY at DATA COLLECTION: gather returned zero observed props")
+        if not dry_run and os.getenv("PH_FAIL_ON_EMPTY_CARD", "1") == "1":
+            raise RuntimeError("PROP HUNTER EMPTY CARD: no observed props from gather")
         return
 
+    log.info("CARD PIPELINE: gathered_props=%d", len(props))
     picks=analyse(props)
 
     if not picks:
@@ -5264,7 +5267,9 @@ def run(dry_run=False,sport_filter=None):
             picks = filter_picks(rescue2)  # auch hier gegen heute Gepostete deduppen
             log.info("relaxed rescue: %d picks", len(picks))
         else:
-            log.warning("no picks at all — nothing to post")
+            log.error("CARD EMPTY at MODEL/RESCUE: gathered_props=%d; check source-prop rescue rejected breakdown above", len(props))
+            if not dry_run and os.getenv("PH_FAIL_ON_EMPTY_CARD", "1") == "1":
+                raise RuntimeError("PROP HUNTER EMPTY CARD: zero qualified LLM and source-rescue picks")
             return
 
     # No arbitrary pick-count cap: every verified +EV single may survive.
@@ -5316,7 +5321,9 @@ def run(dry_run=False,sport_filter=None):
     # Builder/Ladder/Kombi entstehen nach dem ersten Dedup -> hier gegen heute bereits Gepostetes pruefen.
     picks = filter_picks(picks)
     if not picks:
-        log.warning("no picks with verified quote scope")
+        log.error("CARD EMPTY at FINAL GATES: gathered_props=%d; inspect recent-form, ticket-price, and dedup rejection logs above", len(props))
+        if not dry_run and os.getenv("PH_FAIL_ON_EMPTY_CARD", "1") == "1":
+            raise RuntimeError("PROP HUNTER EMPTY CARD: every candidate rejected by final gates")
         return
     # Global flat stake applies to every published ticket, including ladders,
     # builders and lotteries.  Apply before rendering AND persistence so that
