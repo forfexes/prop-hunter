@@ -92,14 +92,14 @@ def main():
     TERMINAL = {
         'unsupported_season_or_fantasy_market', 'unsupported_team_or_game_market',
         'ambiguous_market_line', 'ambiguous_league', 'unmapped_market',
-        'no_unique_official_game',
     }
     # Weiche terminale Gruende: nicht sofort terminal (die Gamelogs koennen noch
     # eintreffen), aber wenn ein Pick nach deutlich laengerer Karenz IMMER NOCH
     # nicht gradebar ist, ist er faktisch tot (z.B. Spieler-Mismatch, uralte
     # Ladder, fehlende Linie) und darf nicht ewig als pending haengen bleiben.
     TERMINAL_SOFT = {
-        'missing_stat_or_line', 'missing_unique_gamelog', 'ready_to_settle',
+        'missing_stat_or_line', 'missing_unique_gamelog',
+        'no_unique_official_game',
     }
     if os.getenv('PH_AUTO_VOID_STALE', '0').lower() in {'1', 'true', 'yes', 'on'}:
         grace_days = int(os.getenv('PH_AUTO_VOID_DAYS', '3'))
