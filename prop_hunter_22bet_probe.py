@@ -5,12 +5,12 @@ from prop_hunter_1xbet import _list_events, _league_ok, _game, parse_game, SPORT
 from prop_hunter_22bet_points import parse_nba_points_subgame
 
 HOST="https://22bet.com/service-api/LineFeed"
-def probe(sports=("NBA","NHL","NFL")):
+def probe(sports=("NBA","WNBA","NHL","NFL","MLB")):
     out={}
     for sport in sports:
         sid=SPORT_IDS.get(sport)
         if not sid:
-            out[sport]={"events":0,"matching":0,"observed_player_quotes":0}
+            out[sport]={"observed_market_types":{k:{"count":v["count"],"subgames":sorted(v["subgames"]),"samples":v["samples"]} for k,v in observed_market_types.items()},"events":0,"matching":0,"observed_player_quotes":0}
             continue
         events=_list_events(HOST,sid)
         matching=[e for e in events if isinstance(e,dict) and _league_ok(sport,e)]
@@ -18,6 +18,7 @@ def probe(sports=("NBA","NHL","NFL")):
         detail_shapes=[]
         subgame_details=[]
         confirmed_points=[]
+        observed_market_types={}
         for ev in matching[:2]:
             eid=ev.get("I") or ev.get("CI") or ev.get("id")
             if eid:
@@ -36,6 +37,20 @@ def probe(sports=("NBA","NHL","NFL")):
                         if not sub_id: continue
                         sub_payload=_game(HOST,sub_id)
                         sub_value=(sub_payload or {}).get("Value") if isinstance(sub_payload,dict) else None
+                        if isinstance(sub_value,dict):
+                            for group in (sub_value.get("GE") or []):
+                                if not isinstance(group,dict): continue
+                                for bucket in (group.get("E") or []):
+                                    for outcome in (bucket if isinstance(bucket,list) else [bucket]):
+                                        if not isinstance(outcome,dict): continue
+                                        typ=str(outcome.get("T") or "")
+                                        if not typ: continue
+                                        rec=observed_market_types.setdefault(typ,{"count":0,"subgames":set(),"samples":[]})
+                                        rec["count"]+=1
+                                        rec["subgames"].add(title[:60])
+                                        if len(rec["samples"])<3:
+                                            pl=outcome.get("PL")
+                                            rec["samples"].append({"player":str(pl.get("N") or "")[:50] if isinstance(pl,dict) else "","line":outcome.get("P"),"odds":outcome.get("C"),"label":str(outcome.get("N") or outcome.get("PN") or "")[:80]})
                         sub_rows=parse_game(sub_payload,sport,ev,HOST)
                         quotes.extend(sub_rows)
                         if sport=="NBA" and title.lower()=="players\u0027 stats" and not confirmed_points:
