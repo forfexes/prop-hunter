@@ -9,6 +9,7 @@ def probe(sports=("NBA","WNBA","NHL","NFL","MLB")):
     out={}
     for sport in sports:
         sid=SPORT_IDS.get(sport)
+        observed_market_types={}
         if not sid:
             out[sport]={"observed_market_types":{k:{"count":v["count"],"subgames":sorted(v["subgames"]),"samples":v["samples"]} for k,v in observed_market_types.items()},"events":0,"matching":0,"observed_player_quotes":0}
             continue
@@ -18,7 +19,6 @@ def probe(sports=("NBA","WNBA","NHL","NFL","MLB")):
         detail_shapes=[]
         subgame_details=[]
         confirmed_points=[]
-        observed_market_types={}
         for ev in matching[:2]:
             eid=ev.get("I") or ev.get("CI") or ev.get("id")
             if eid:
@@ -57,7 +57,7 @@ def probe(sports=("NBA","WNBA","NHL","NFL","MLB")):
                             confirmed_points.extend(parse_nba_points_subgame(sub_payload,ev,HOST))
                         subgame_details.append({"title":title[:50],"groups":len((sub_value or {}).get("GE") or []) if isinstance(sub_value,dict) else 0,"quotes":len(sub_rows),"sample_groups":[{"keys":sorted(g.keys())[:15],"name":str(g.get("GS") or g.get("Name") or g.get("GN") or "")[:70],"outcome_count":len(g.get("E") or []),"sample_outcomes":[{"keys":sorted(e.keys()),"player_field_type":type(e.get("PL")).__name__,"player_label":str(e.get("PL") or e.get("PN") or "")[:70],"price":e.get("C"),"line":e.get("P"),"type":e.get("T")} for item in (g.get("E") or [])[:2] for e in (item if isinstance(item,list) else [item])[:2] if isinstance(e,dict)]} for g in ((sub_value or {}).get("GE") or [])[:3] if isinstance(g,dict)]})
                         if len(subgame_details)>=8: break
-        out[sport]={"events":len(events),"matching":len(matching),"observed_player_quotes":len(quotes),"detail_shapes":detail_shapes,"subgame_details":subgame_details,"confirmed_nba_points_quotes":len(confirmed_points),"confirmed_nba_points_samples":[{"player":q["player_name"],"line":q["line"],"side":q["direction"],"odds":q["odds_decimal"]} for q in confirmed_points[:8]]}
+        out[sport]={"observed_market_types":{k:{"count":v["count"],"subgames":sorted(v["subgames"]),"samples":v["samples"]} for k,v in observed_market_types.items()},"events":len(events),"matching":len(matching),"observed_player_quotes":len(quotes),"detail_shapes":detail_shapes,"subgame_details":subgame_details,"confirmed_nba_points_quotes":len(confirmed_points),"confirmed_nba_points_samples":[{"player":q["player_name"],"line":q["line"],"side":q["direction"],"odds":q["odds_decimal"]} for q in confirmed_points[:8]]}
     return out
 if __name__=="__main__":
     print(json.dumps(probe(),sort_keys=True))
