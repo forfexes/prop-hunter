@@ -1726,7 +1726,10 @@ def enrich_matchup(props: list) -> list:
             direction = (getattr(p, "direction", None)
                          or ("under" if "under" in (p.market or "").lower() else "over"))
             opp = _opponent(p)
-            cand = [opp] if opp else [p.home, p.away]
+            # Never pick whichever of home/away looks most favourable: that
+            # silently treats the player's own team as the opponent.
+            # Missing verified roster-team identity => no opponent adjustment.
+            cand = [opp] if opp else []
             combo_key, combo_stats = _combo_for(p.market)
             best = None
             if combo_key:
