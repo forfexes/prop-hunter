@@ -4768,8 +4768,15 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         # Richtung steckt im market-Text ("... Over 29.5" / "... Under 1.5"),
         # Prop hat kein eigenes direction-Feld — nur echte Over-Props filtern.
         _mkt_low = market.lower()
-        _is_over = bool(re.search(r"\bover\b", _mkt_low)) or (
-            "under" not in _mkt_low and bool(feats.get("is_over")))
+        # Source Prop.direction is authoritative: many direct bookmakers send
+        # market="points" and direction="over" as separate fields.
+        # Previously the rescue branch missed these rows and bypassed the
+        # same high-price Over cap used by the primary quality filter.
+        _source_direction = str(getattr(sp, "direction", "") or "").lower().strip()
+        _is_over = (_source_direction == "over" or
+                    (not _source_direction and (
+                        bool(re.search(r"\bover\b", _mkt_low)) or
+                        ("under" not in _mkt_low and bool(feats.get("is_over"))))))
         if (os.getenv("PH_OVER_ODDS_FILTER", "1").lower() in {"1", "true", "yes", "on"}
                 and not is_hr and not is_td_scorer and _is_over):
             _over_cap = float(os.getenv("PH_OVER_ODDS_CAP", "2.0"))
