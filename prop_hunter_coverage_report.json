@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-17T05:20:34.276384+00:00",
+  "updated_at": "2026-11-17T12:09:44.423121+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,7 +16,7 @@
       ]
     },
     "NBA": {
-      "rows": 4742,
+      "rows": 3494,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -24,8 +24,8 @@
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 14,
-      "latest": "2026-11-17T00:25:55.072786+00:00",
+      "market_count": 13,
+      "latest": "2026-11-17T03:29:02.882662+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -41,7 +41,7 @@
       ]
     },
     "NFL": {
-      "rows": 1230,
+      "rows": 1195,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -50,11 +50,11 @@
         "kambi"
       ],
       "market_count": 34,
-      "latest": "2026-11-17T03:29:07.962992+00:00",
+      "latest": "2026-11-17T03:29:07.946557+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 474,
+      "rows": 1073,
       "sources": [
         "betrivers_direct",
         "bovada_direct",
@@ -62,11 +62,9 @@
         "fanduel_direct",
         "kambi"
       ],
-      "market_count": 5,
-      "latest": "2026-11-17T00:26:12.450378+00:00",
-      "missing_core": [
-        "saves"
-      ]
+      "market_count": 6,
+      "latest": "2026-11-17T03:29:13.157026+00:00",
+      "missing_core": []
     }
   },
   "issues": [
@@ -101,14 +99,6 @@
         "rebounds",
         "assists",
         "threes"
-      ]
-    },
-    {
-      "sport": "NHL",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "saves"
       ]
     }
   ]
