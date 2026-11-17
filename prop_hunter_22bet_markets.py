@@ -9,9 +9,9 @@ never reach the pipeline.
 
 Probe evidence (2026-11-16, prop_hunter_22bet_probe output):
   NFL 'Players' stats':
-    8395/8396  Rushing Yards   (Henry RB 5.5, Hampton RB 4.5) over/under
+    8395/8396  Unresolved RB yard/threshold market — do not publish
     8397/8398  Passing Yards   (Herbert QB 193.5, Brissett QB 149.5) over/under
-    8393/8394  Receptions      (Zay Flowers WR 3.5 — line too low for yards) over/under
+    8393/8394  Unresolved receiving/reception market — do not publish
     6188       Anytime TD      (line 0.5, Henry @6.5) yes
   NHL 'Players' stats':
     1444       Shots on Goal   (line 0.5, Caufield @2.15) over (paired 1445 under)
@@ -30,13 +30,8 @@ from datetime import datetime, timezone
 # sport -> { type_id(str): (market_key, market_label, direction) }
 # direction "over"/"under" for paired lines, "yes" for binary (line usually 0.5).
 VERIFIED_MARKETS = {
-    "NFL": {
-        "8395": ("rushing_yards", "Rushing Yards", "over"),
-        "8396": ("rushing_yards", "Rushing Yards", "under"),
-        "8397": ("passing_yards", "Passing Yards", "over"),
+    # 8393/8394 and 8395/8396 have contradictory mappings in the existing\n    # source modules; require operator-side market verification before enabling.\n    "NFL": {\n        "8397": ("passing_yards", "Passing Yards", "over"),
         "8398": ("passing_yards", "Passing Yards", "under"),
-        "8393": ("receptions", "Receptions", "over"),
-        "8394": ("receptions", "Receptions", "under"),
         "6188": ("anytime_td", "Anytime TD", "yes"),
     },
     "NHL": {
