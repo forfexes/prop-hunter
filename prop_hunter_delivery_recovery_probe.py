@@ -66,6 +66,22 @@ def run_audit():
             except Exception as exc:
                 j["logs_error"]=type(exc).__name__+" "+str(exc)[:70]
         out["runs"].append(info)
+    try:
+        r2=json.loads(get("/actions/workflows/prop_hunter_card_only_migrate.yml/runs?per_page=8"))
+        for run in r2.get("workflow_runs",[]):
+            state={"id":run.get("id"),"conclusion":run.get("conclusion"),
+                   "created_at":run.get("created_at"),"jobs":[]}
+            try:
+                jobs=json.loads(get(f"/actions/runs/{run['id']}/jobs?per_page=20")).get("jobs",[])
+                for j in jobs:
+                    state["jobs"].append({"id":j.get("id"),"conclusion":j.get("conclusion"),
+                         "steps":[{"name":step.get("name"),"conclusion":step.get("conclusion")}
+                                  for step in j.get("steps",[]) if step.get("conclusion")=="failure"]})
+            except Exception as exc:
+                state["jobs_error"]=type(exc).__name__
+            out.setdefault("migration_runs",[]).append(state)
+    except Exception as exc:
+        out["errors"].append("migration_lookup: "+type(exc).__name__)
     return out
 
 if __name__=="__main__":
