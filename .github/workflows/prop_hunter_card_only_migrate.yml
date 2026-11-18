@@ -48,7 +48,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           python -m json.tool picks_history.json >/dev/null
-          git add picks_history.json
+          git add picks_history.json diagnostics/prop_hunter_card_only_migration_status.json
           if git diff --staged --quiet; then
             echo "No Telegram card changes to commit"
             exit 0
