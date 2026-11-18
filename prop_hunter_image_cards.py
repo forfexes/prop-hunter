@@ -428,7 +428,10 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
         return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""))
-    except Exception:
+    except Exception as exc:
+        # Do not silently hide broken historical card data: the migration needs
+        # an actionable failure class without exposing player or Telegram data.
+        print(f"PROP HUNTER image render failed: type={str(getattr(pick, 'type', ''))[:32]} error={type(exc).__name__}: {str(exc)[:180]}", flush=True)
         return None
 
 
