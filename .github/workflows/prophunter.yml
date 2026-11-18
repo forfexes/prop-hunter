@@ -40,6 +40,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
         run: |
           python - <<'PY'
           import os, urllib.error, urllib.request
@@ -103,6 +105,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           PROP_HUNTER_SPORTS: MLB,NBA,WNBA,NFL,NHL,NCAAB,NCAAF,EUROLEAGUE
           PH_KEYLESS_BOOKS_ENABLED: '1'
           PH_KEYLESS_BOOKS: draftkings,fanduel,bovada,betrivers
@@ -167,6 +171,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           LAST_N_GAMES: '30'
         run: python prop_hunter_scraper.py || echo "DATA cache soft-fail; card continues"
@@ -186,6 +192,8 @@ jobs:
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           ODDSPAPI_KEYS: ${{ secrets.ODDSPAPI_KEYS }}
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           ODDSPAPI: ${{ secrets.ODDSPAPI }}
