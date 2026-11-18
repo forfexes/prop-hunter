@@ -56,7 +56,7 @@ ladder_rows = [{"name": "One Ladder Player", "photo": None,
                 "form": "L10 8/10   L15 12/15"} for i in range(3)]
 with patch.object(cards, "_circle", side_effect=record_portrait):
     png = cards.render("ladder", "LADDER", "Single athlete / 3 rungs", "basketball", [], ladder_rows)
-assert png.startswith(b"\\x89PNG")
+assert png[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10])
 assert len(portraits) == 1, portraits
 
 # Reject mislabeled multi-player ladders, rather than silently posting a builder.
