@@ -30,6 +30,7 @@ jobs:
           python -m py_compile prophunter_results.py prop_hunter_image_cards.py prop_hunter_card_only_migrate.py
           python prop_hunter_media_settlement_test.py
           python prop_hunter_card_design_migration_test.py
+          python prop_hunter_card_pending_visual_test.py
           python prop_hunter_decisive_leg_test.py
       - name: Edit existing Telegram cards only
         env:
