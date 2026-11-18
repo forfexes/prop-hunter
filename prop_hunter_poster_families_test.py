@@ -33,13 +33,13 @@ for family, count in [("single",1),("ladder",3),("builder",3),("lottery",3)]:
     test_family(family,count)
 print("FOUR POSTER FAMILIES PNG RENDER PASS")
 
-# League-aware template contract: 4 unique sports environments x 4 ORIGINAL poster families.
-assert len(all_required_templates()) == 16
+# League-aware template contract: 5 unique sports environments x 4 ORIGINAL poster families.
+assert len(all_required_templates()) == 20
 assert set(SPORTS) == {"NBA", "WNBA", "NCAAB", "EUROLEAGUE", "NFL", "NCAAF", "NHL", "MLB"}
 for league in SPORTS:
     for family in FAMILIES:
         assert template_location(league, family).suffix == ".webp"
-assert template_location("WNBA", "single") == template_location("NBA", "single")
+assert template_location("WNBA", "single") != template_location("NBA", "single")
 assert template_location("NCAAF", "builder") == template_location("NFL", "builder")
 for key in SPORTS:
     assert cards.league_of(key), key
@@ -71,7 +71,7 @@ with patch.object(cards, "player_photo", return_value=None), patch.object(cards,
     assert cards.build_for_pick(ladder_pick) == b"ok"
     assert len(rr.call_args.args[5]) == 2
     assert {row["name"] for row in rr.call_args.args[5]} == {"Player One"}
-print("EIGHT SPORT ROUTES / SIXTEEN ORIGINAL-LAYOUT SLOTS / SINGLE-PLAYER LADDER PASSED")
+print("EIGHT SPORT ROUTES / TWENTY ORIGINAL-LAYOUT SLOTS / SINGLE-PLAYER LADDER PASSED")
 
 # The generator consumes a real render-ready artwork file when present.
 # It must NOT silently claim that an absent user master exists.
@@ -109,3 +109,14 @@ for family, fingerprint in _original_sha256.items():
     with Image.open(src) as original:
         assert original.format == "JPEG" and original.size == (691, 1536)
 print("ALL FOUR EXACT USER ORIGINAL JPGS VERIFIED IN GITHUB CHECKOUT")
+
+# WNBA is a distinct artwork target even though the underlying sport is basketball.
+wnba_pick = SimpleNamespace(type="single", player="Test WNBA Athlete", game="Test",
+    source_sport="WNBA", features={}, odds=1.9, stake=.25,
+    market="points", direction="over", point=15.5)
+with patch.object(cards, "player_photo", return_value=None), patch.object(cards, "render", return_value=b"ok") as rr:
+    assert cards.build_for_pick(wnba_pick) == b"ok"
+    assert rr.call_args.kwargs["template_sport"] == "WNBA"
+for hint, expected in [("NHL", "hockey"), ("NFL", "football"), ("WNBA", "basketball")]:
+    assert cards.league_of(hint)[0] == expected
+print("WNBA DEDICATED ORIGINAL ARTWORK AND NHL/NFL LEAGUE ROUTING PASS")
