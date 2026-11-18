@@ -242,6 +242,11 @@ jobs:
             exit 0
           fi
           git commit -m "prop hunter card history $(date -u +%F-%H%M)"
+          # The card collector may modify tracked cache/diagnostic files.
+          # History is already committed above; discard only other unstaged
+          # working-tree changes so rebase can safely publish Telegram IDs.
+          git restore --worktree -- .
+          git diff --quiet || { echo "Unexpected dirty worktree after history commit"; exit 1; }
           # Other workflows may update unrelated files while card sends.
           # Rebase committed history without stashing it or losing message IDs.
           for attempt in 1 2 3; do
