@@ -34,6 +34,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           PH_BACKFILL_DAYS: "550"
           PH_BACKFILL_SPORTS: "MLB,NBA,WNBA,NFL,NHL"
           PH_BACKFILL_FLUSH_ROWS: "1000"
@@ -43,6 +45,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
         run: |
           PH_GAMELOG_KEEP_PER_PLAYER=15 python prop_hunter_gamelog_retention.py --apply
           python prop_hunter_feature_builder.py
