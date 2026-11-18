@@ -794,7 +794,9 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                     reply = r.json()
                 except (ValueError, AttributeError):
                     reply = {}
-                result = reply.get("result") if isinstance(reply, dict) else None
+                if not isinstance(reply, dict):
+                    reply = {}
+                result = reply.get("result")
                 same_message = isinstance(result, dict) and str(result.get("message_id")) == str(message_id)
                 has_photo = bool(result.get("photo")) if isinstance(result, dict) else False
                 if reply.get("ok") is not True or not same_message or (image_pick and not has_photo):
