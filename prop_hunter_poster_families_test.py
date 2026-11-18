@@ -8,6 +8,7 @@ from PIL import Image
 from unittest.mock import patch
 from types import SimpleNamespace
 import prop_hunter_image_cards as cards
+import prop_hunter_original_compositor as originals
 from prop_hunter_original_template_registry import SPORTS, FAMILIES, template_location, all_required_templates
 from prop_hunter_image_cards import render
 
@@ -50,16 +51,16 @@ for key in SPORTS:
     assert cards.league_of(key), key
 
 # Rendering a three-rung ladder draws exactly one player portrait.
-orig_circle = cards._circle
+orig_circle = originals._portrait
 portraits = []
-def record_portrait(im, size, name):
+def record_portrait(im, person, rect, name):
     if name == "One Ladder Player":
-        portraits.append((size, name))
-    return orig_circle(im, size, name)
+        portraits.append((rect, name))
+    return orig_circle(im, person, rect, name)
 ladder_rows = [{"name": "One Ladder Player", "photo": None,
                 "label": f"Points Over {20+i}.5", "odds": "@1.90",
                 "form": "L10 8/10   L15 12/15"} for i in range(3)]
-with patch.object(cards, "_circle", side_effect=record_portrait):
+with patch.object(originals, "_portrait", side_effect=record_portrait):
     png = cards.render("ladder", "LADDER", "Single athlete / 3 rungs", "basketball", [], ladder_rows)
 assert png[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10])
 assert len(portraits) == 1, portraits
