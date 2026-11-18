@@ -39,6 +39,8 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           PH_CARD_ONLY_MAX_UPDATES: '35'
           PH_CARD_ONLY_LOOKBACK_DAYS: '7'
         run: |
