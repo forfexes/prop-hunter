@@ -688,6 +688,31 @@ def _decorate_card(card: dict, picks: list, combos: list) -> Optional[str]:
     return text if len(text) <= 4096 else None
 
 
+def _card_visual_text(card: dict, picks: list, combos: list) -> Optional[str]:
+    """Allow pending PHOTO-only design edits without inventing a settlement.
+
+    The settlement formatter intentionally returns None for still-open tickets;
+    visual redesigns nevertheless need the original safe card text. Never use
+    this fallback for closed, withdrawn, invalidated, or partly graded tickets.
+    """
+    decorated=_decorate_card(card,picks,combos)
+    if decorated:
+        return decorated
+    if card.get("media_type")!="photo" or not card.get("image_pick"):
+        return None
+    linked=_card_pick(card,picks,combos)
+    if not linked or linked.get("quality_invalidated") or linked.get("quote_invalidated"):
+        return None
+    if str(linked.get("result") or "pending").lower() != "pending":
+        return None
+    for leg in (linked.get("settlement_legs") or linked.get("leg_details") or []):
+        if isinstance(leg,dict) and str(leg.get("result") or "pending").lower()!="pending":
+            return None
+    # A pending original photo may be edited in-place; this is not a result.
+    original=str(card.get("settlement_text") or card.get("text") or "")
+    return original if original and len(original)<=4096 else None
+
+
 def _image_upgrade_due(card, day):
     if card.get("image_settlement_version")==1:return False
     if card.get("media_type")=="photo" or card.get("image_pick"):return True
@@ -1104,7 +1129,7 @@ def main() -> int:
         for card in entry.get("cards") or []:
             if card.get("tg_gone"):
                 continue
-            text = _decorate_card(card, picks, combos)
+            text = _card_visual_text(card, picks, combos)
             if not text:
                 continue
             cards_ready += 1
