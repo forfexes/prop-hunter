@@ -94,3 +94,41 @@ with tempfile.TemporaryDirectory() as tmp:
         assert len(partial["picks"])==1 and len(partial["kombis"])==1
         assert partial["cards"][1]["combo_ids"]==[partial["kombis"][0]["combo_id"]]
 print("TELEGRAM PER-CARD ID / LADDER MAPPING / ATOMIC HISTORY REGRESSIONS PASSED")
+
+
+# The executable bot loads core_1392, which overrides core_1391.persist.
+# Exercise that production implementation too, not just the legacy baseline.
+production_ast=ast.parse(Path("prophunter_core_1392.py").read_text(encoding="utf-8"))
+prod_persist=[x for x in production_ast.body
+              if isinstance(x,ast.FunctionDef) and x.name=="persist"]
+assert len(prod_persist)==1
+legacy_defs=[x for x in source.body if isinstance(x,ast.FunctionDef)
+             and x.name in {"load_history","save_history",
+                            "persist_confirmed_telegram_cards"}]
+prod_scope=dict(scope)
+prod_scope["log"]=N(info=lambda *args,**kw:None,warning=lambda *args,**kw:None)
+exec(compile(ast.Module(body=legacy_defs+prod_persist,type_ignores=[]),
+             "<production history integrity>","exec"),prod_scope)
+with tempfile.TemporaryDirectory() as tmp:
+    filename=Path(tmp)/"picks_history.json"
+    prod_scope["HISTORY_FILE"]=str(filename)
+    with patch.dict(sys.modules,{"prop_hunter_form_quality":module}):
+        prod_scope["persist"](picks,telegram_message_id=301,telegram_cards=cards)
+        entry=prod_scope["load_history"]()[0]
+        assert [x["message_id"] for x in entry["cards"]]==[301,302,303]
+        assert [x["image_pick"]["player"] for x in entry["cards"]]==[
+            "Player A","Player B","Player C"]
+        assert all(x["card_design_version"]==3 for x in entry["cards"])
+        assert entry["cards"][0]["pick_keys"] and not entry["cards"][0]["combo_ids"]
+        assert entry["cards"][1]["combo_ids"]!=entry["cards"][2]["combo_ids"]
+        before=filename.read_bytes()
+        try:prod_scope["persist"](picks,telegram_cards=cards)
+        except RuntimeError:pass
+        else:raise AssertionError("Production accepted duplicate message IDs")
+        assert filename.read_bytes()==before
+        filename.unlink()
+        assert prod_scope["persist_confirmed_telegram_cards"](picks,cards[:2])==2
+        entry=prod_scope["load_history"]()[0]
+        assert [x["message_id"] for x in entry["cards"]]==[301,302]
+        assert len(entry["picks"])==1 and len(entry["kombis"])==1
+print("PRODUCTION 1392 TELEGRAM PER-CARD AND PARTIAL DELIVERY REGRESSIONS PASSED")
