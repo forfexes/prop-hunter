@@ -334,7 +334,7 @@ def sb_insert(row):
             return
 
 
-def persist(picks, telegram_message_id=None, telegram_text=None):
+def persist(picks, telegram_message_id=None, telegram_text=None, telegram_cards=None):
     today=datetime.now(timezone.utc).strftime("%Y-%m-%d")
     h=load_history()
     entry=next((e for e in h if e.get("date")==today),None)
@@ -343,6 +343,44 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
         h.append(entry)
     singles=[p for p in picks if p.type=="single"]
     combos=[p for p in picks if p.type in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")]
+
+    # Production uses THIS 1392 persistence implementation (it overrides 1391).
+    # Validate the full Telegram manifest before any DB/history writes.
+    delivered=list(telegram_cards) if telegram_cards is not None else list(
+        globals().get("_LAST_TELEGRAM_CARDS") or [])
+    if telegram_cards is not None:
+        if not isinstance(telegram_cards,(list,tuple)):
+            raise RuntimeError("Telegram card manifest must be a list")
+        if len(delivered)!=len(singles)+len(combos):
+            raise RuntimeError("Telegram card manifest incomplete; refusing history write")
+        known={int(c["message_id"]) for e in h for c in (e.get("cards") or [])
+               if c.get("message_id")}
+        message_ids=set();seen_singles=set();seen_combos=set()
+        for sent in delivered:
+            if not isinstance(sent,dict):
+                raise RuntimeError("Invalid Telegram card manifest entry")
+            mid=int(sent.get("message_id") or 0)
+            if mid<1 or mid in known or mid in message_ids:
+                raise RuntimeError("Telegram card ID missing or duplicated")
+            message_ids.add(mid)
+            si=sent.get("single_indices") or []
+            ci=sent.get("combo_indices") or []
+            if len(si)+len(ci)!=1:
+                raise RuntimeError("Telegram card must contain exactly one tip")
+            if si:
+                idx=int(si[0])
+                if idx<0 or idx>=len(singles) or idx in seen_singles:
+                    raise RuntimeError("Unmatched or duplicate Telegram single")
+                seen_singles.add(idx)
+            if ci:
+                idx=int(ci[0])
+                if idx<0 or idx>=len(combos) or idx in seen_combos:
+                    raise RuntimeError("Unmatched or duplicate Telegram combo")
+                seen_combos.add(idx)
+            if sent.get("media_type")=="photo" and not isinstance(sent.get("image_pick"),dict):
+                raise RuntimeError("Original Telegram photo snapshot missing")
+        if len(seen_singles)!=len(singles) or len(seen_combos)!=len(combos):
+            raise RuntimeError("Telegram card coverage incomplete")
     sport_map={"⚾":"MLB","🏀":"NBA/WNBA","🏈":"NFL"}
     def _clean_sport(p):
         s = (getattr(p, "source_sport", "") or getattr(p, "sport", "") or "").upper()
@@ -408,7 +446,7 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
             "features": getattr(p, "features", {}) or {},
             "raw": combo,
         })
-    if telegram_message_id:
+    if telegram_message_id or telegram_cards is not None:
         cards = entry.setdefault("cards", [])
         pick_keys = [
             dedup_key(p.player or "", p.market or "", getattr(p, "point", None), p.direction)
@@ -428,7 +466,6 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
                 combo["combo_id"] = cid
             combo_ids.append(cid)
 
-        delivered = list(globals().get("_LAST_TELEGRAM_CARDS") or [])
         if delivered:
             for sent in delivered:
                 idxs = sent.get("combo_indices")
@@ -457,6 +494,7 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
                     "card_kind": sent.get("kind") or "main",
                     "media_type": sent.get("media_type", "text"),
                     "image_pick": sent.get("image_pick"),
+                    "card_design_version": 3 if sent.get("media_type")=="photo" else 0,
                 })
             globals()["_LAST_TELEGRAM_CARDS"] = []
         else:
