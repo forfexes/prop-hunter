@@ -1,0 +1,63 @@
+name: Prop Hunter Recent Card Runs Audit
+"on":
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_recent_runs_audit.yml"
+  workflow_dispatch: {}
+permissions:
+  actions: read
+  contents: write
+concurrency:
+  group: prop-hunter-history-writer
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Inspect recent autonomous and card migration runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          repo=os.environ["GH_REPO"]
+          token=os.environ["GH_TOKEN"]
+          data={}
+          for workflow in ("prophunter.yml","prop_hunter_card_only_migrate.yml"):
+              url=f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs?per_page=15"
+              req=Request(url,headers={"Authorization":f"Bearer {token}",
+                  "Accept":"application/vnd.github+json","User-Agent":"prop-hunter-audit"})
+              with urlopen(req,timeout=20) as response:
+                  items=json.load(response)["workflow_runs"]
+              data[workflow]=[{
+                  "id":x["id"],"status":x["status"],"conclusion":x["conclusion"],
+                  "created_at":x["created_at"],"updated_at":x["updated_at"],
+                  "head_sha":x["head_sha"],
+                  "html_url":x["html_url"]} for x in items]
+          path=Path("diagnostics/prop_hunter_recent_card_runs.json")
+          path.parent.mkdir(exist_ok=True)
+          path.write_text(json.dumps(data,indent=2),encoding="utf-8")
+          print("Latest card runs:",[r["id"] for r in data["prophunter.yml"][:5]])
+          print("Latest migration runs:",[r["id"] for r in data["prop_hunter_card_only_migrate.yml"][:5]])
+          PY
+      - name: Save run IDs to diagnostics only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/prop_hunter_recent_card_runs.json
+          git diff --staged --quiet && exit 0
+          git commit -m "diagnostics: recent original card delivery run IDs [skip ci]"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
