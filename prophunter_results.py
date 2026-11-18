@@ -227,6 +227,36 @@ def _index_results(rows: Iterable[dict]):
     return by_dedup, by_signature
 
 
+def _fixture_compatible(pick: dict, result_row: dict) -> bool:
+    """Match only the original dated fixture, not another same-day appearance."""
+    raw = _result_pick(result_row)
+    pd, pe = _result_context(pick)
+    rd, re = _result_context(raw or result_row)
+    if pd and rd and pd != rd:
+        return False
+    pg, rg = _norm(pick.get("game")), _norm(raw.get("game"))
+    if pg and rg and pg != rg:
+        return False
+    def kickoff(x):
+        nested = x.get("raw") if isinstance(x.get("raw"), dict) else {}
+        value = x.get("commence_time") or nested.get("commence_time")
+        if not value:
+            return None
+        try:
+            dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            return dt.astimezone(timezone.utc) if dt.tzinfo else None
+        except (TypeError, ValueError, OverflowError):
+            return None
+    pt, rt = kickoff(pick), kickoff(raw)
+    if pt is not None and rt is not None and abs((pt - rt).total_seconds()) > 1800:
+        return False
+    if pe and re and pe != re:
+        # Different provider IDs require independent verification of game
+        # AND kickoff. Otherwise same-day fallback could settle a wrong event.
+        return bool(pg and rg and pg == rg and pt is not None and rt is not None)
+    return True
+
+
 def _match_result(pick: dict, by_dedup: dict, by_signature: dict) -> Optional[dict]:
     d, event = _result_context(pick)
     if not d:
@@ -234,25 +264,25 @@ def _match_result(pick: dict, by_dedup: dict, by_signature: dict) -> Optional[di
     dedup = str(pick.get("dedup_key") or "").strip()
     if dedup:
         exact = by_dedup.get((dedup, d, event))
-        if exact:
+        if exact and _fixture_compatible(pick, exact):
             return exact
         # Event ids can differ between a sportsbook and an official stats feed,
         # but the stored result's pick_raw preserves the sportsbook event id.
         # Only allow a date-only fallback when exactly one matching row exists.
         same_day = [row for (dk, rd, _ev), row in by_dedup.items() if dk == dedup and rd == d]
-        if len(same_day) == 1:
+        if len(same_day) == 1 and _fixture_compatible(pick, same_day[0]):
             return same_day[0]
 
     sig = _signature(pick)
     exact = by_signature.get((sig, d, event))
-    if exact:
+    if exact and _fixture_compatible(pick, exact):
         return exact
     same_day = [
         row for (rsig, rd, _ev), row in by_signature.items()
         if rd == d and sig[0] and rsig[0] == sig[0] and rsig[1] == sig[1] and rsig[3] == sig[3]
         and (sig[2] is None or rsig[2] is None or abs(float(sig[2]) - float(rsig[2])) < 1e-9)
     ]
-    return same_day[0] if len(same_day) == 1 else None
+    return same_day[0] if len(same_day) == 1 and _fixture_compatible(pick, same_day[0]) else None
 
 
 def _match_actual_stat(pick: dict, by_signature: dict) -> Optional[dict]:
@@ -271,6 +301,8 @@ def _match_actual_stat(pick: dict, by_signature: dict) -> Optional[dict]:
         if rd != d or rsig[0] != sig[0] or rsig[1] != sig[1]:
             continue
         if _result_status(row) not in CLOSED or row.get("actual_value") is None:
+            continue
+        if not _fixture_compatible(pick, row):
             continue
         candidates.append(row)
     actuals = {_to_float(row.get("actual_value")) for row in candidates}
