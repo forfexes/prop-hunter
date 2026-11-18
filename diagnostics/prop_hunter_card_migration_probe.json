@@ -1,0 +1,23 @@
+{
+  "checked_at": "2026-11-18T00:16:38.291779+00:00",
+  "tests": [
+    {
+      "test": "prop_hunter_media_settlement_test.py",
+      "exit_code": 0,
+      "stdout": "Telegram edit 429: retrying after 2s (2/4)\nMEDIA SETTLEMENT TEST PASSED: render, original ID, no caption, legacy upgrade, 429 retry\nBOUNDED LEGACY PHOTO MIGRATION TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "test": "prop_hunter_card_design_migration_test.py",
+      "exit_code": 0,
+      "stdout": "TELEGRAM TEXT-TO-V3-PHOTO SAFE REPLACEMENT REGRESSION PASSED\n",
+      "stderr": ""
+    },
+    {
+      "test": "prop_hunter_result_date_test.py",
+      "exit_code": 0,
+      "stdout": "US NIGHT-GAME TICKET-DATE SETTLEMENT REGRESSION PASSED\n",
+      "stderr": ""
+    }
+  ]
+}
