@@ -788,6 +788,20 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                     timeout=TIMEOUT,
                 )
             if r.status_code == 200:
+                # A successful request is not sufficient: confirm Telegram's
+                # API result identifies the exact ORIGINAL message and photo.
+                try:
+                    reply = r.json()
+                except (ValueError, AttributeError):
+                    reply = {}
+                result = reply.get("result") if isinstance(reply, dict) else None
+                same_message = isinstance(result, dict) and str(result.get("message_id")) == str(message_id)
+                has_photo = bool(result.get("photo")) if isinstance(result, dict) else False
+                if reply.get("ok") is not True or not same_message or (image_pick and not has_photo):
+                    print(f"Telegram edit unverified: message_id={message_id} api_ok={reply.get('ok')} id_match={same_message} photo={has_photo}", flush=True)
+                    return False
+                if image_pick:
+                    print(f"Telegram photo edit confirmed: message_id={message_id}", flush=True)
                 if base_delay:
                     time.sleep(base_delay)
                 return True
