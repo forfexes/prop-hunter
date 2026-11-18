@@ -285,7 +285,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
     # Portrait-led premium posters, using only the actual pick players.
-    if family in ("single", "lottery", "builder") and rows:
+    if family in ("lottery", "builder") and rows:
         hero_y = 422 if teams else 274
         hero_players = rows[:3] if family == "builder" else rows[:1]
         count = len(hero_players)
