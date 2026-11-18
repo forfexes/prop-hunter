@@ -306,7 +306,7 @@ def _with_kickoff(subtitle: str, pick) -> str:
 
 
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],
-           rows: List[Dict[str, Any]], footer: str = "", settlement: str = "") -> bytes:
+           rows: List[Dict[str, Any]], footer: str = "", settlement: str = "", *, template_sport: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
     # Four distinct poster families; extra header space is reserved for portraits.
     family = "lottery" if kind in ("big", "super", "lottery") else kind
@@ -314,7 +314,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     head_h = ((780 if teams else 650) if family in ("lottery", "single") else (650 if teams else 510)) if family in ("lottery", "builder", "single") else ((580 if teams else 440) if family == "ladder" else (430 if teams else 280))
     # Hero panels extend below the team header; reserve a safe footer gutter.
     h = head_h + row_h * len(rows) + (290 if family in ("lottery", "builder") else 190)
-    img = _original_artwork_background(sport, family, h)
+    img = _original_artwork_background(template_sport or sport, family, h)
     accent = ((193, 65, 250) if kind in ("big", "super", "lottery") else
               (255, 198, 70) if kind in ("ladder", "builder", "single") else CYAN)
     d = ImageDraw.Draw(img, "RGBA")
@@ -565,7 +565,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
-        return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""))
+        return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""), template_sport=("WNBA" if league and league[1]=="wnba" else ""))
     except Exception as exc:
         # Do not silently hide broken historical card data: the migration needs
         # an actionable failure class without exposing player or Telegram data.
