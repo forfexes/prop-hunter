@@ -12,12 +12,12 @@ from pathlib import Path
 
 from prophunter_results import (
     _load_history, _save_history, _card_visual_text, _card_pick, _edit_message,
-    _replace_recent_text_with_photo,
+    _replace_recent_text_with_photo, _EDIT_STATE,
 )
 
 MAX_UPDATES=max(1,min(120,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
 LOOKBACK_DAYS=max(1,min(30,int(os.getenv("PH_CARD_ONLY_LOOKBACK_DAYS","7"))))
-VERSION=7
+VERSION=8
 TARGET_DATE=str(os.getenv("PH_CARD_ONLY_TARGET_DATE","") or "").strip()[:10]
 
 
@@ -74,7 +74,8 @@ def migrate():
                     counts["failed"]+=1
                     counts["failed_cards"].append({"message_id":int(card["message_id"]),
                         "date":entry.get("date"),
-                        "kind":str(card.get("card_kind") or visual.get("type") or "unknown")[:32]})
+                        "kind":str(card.get("card_kind") or visual.get("type") or "unknown")[:32],
+                        "reason":str(_EDIT_STATE.get("reason") or "unclassified")[:180]})
             elif card.get("media_type","text")=="text":
                 ok=_replace_recent_text_with_photo(card,visual,text)
                 if ok:
