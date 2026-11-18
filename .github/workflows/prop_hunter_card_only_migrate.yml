@@ -1,4 +1,4 @@
-name: Prop Hunter v4 Existing Telegram Card Migration
+name: Prop Hunter v6 Existing Telegram Card Migration
 "on":
   push:
     paths:
@@ -28,6 +28,7 @@ jobs:
       - name: Verify original-card editing and rollback safeguards
         run: |
           python -m py_compile prophunter_results.py prop_hunter_image_cards.py prop_hunter_card_only_migrate.py
+          python prop_hunter_results_writer_safety_test.py
           python prop_hunter_media_settlement_test.py
           python prop_hunter_card_design_migration_test.py
           python prop_hunter_card_pending_visual_test.py
@@ -70,7 +71,7 @@ jobs:
             echo "No Telegram card changes to commit"
             exit 0
           fi
-          git commit -m "prop hunter: preserve Telegram v4 card migrations [skip ci]"
+          git commit -m "prop hunter: preserve Telegram v6 card migrations [skip ci]"
           for attempt in 1 2 3; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
