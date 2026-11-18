@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 try:
-    from PIL import Image, ImageDraw, ImageFilter, ImageFont
+    from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 except Exception:  # Pillow fehlt -> Bildkarten aus
     Image = None
 
@@ -197,6 +197,27 @@ def _background(sport: str, h: int) -> "Image.Image":
     return img
 
 
+def _original_artwork_background(sport: str, family: str, height: int) -> "Image.Image":
+    """Load an original-layout, DATA-FREE background when the real asset exists.
+
+    Never use a screenshot with prefilled players and odds as a live background:
+    it would duplicate or falsify the displayed pick data. Assets must first be
+    edited to preserve the reference design but remove all example data.
+    """
+    from prop_hunter_original_template_registry import available_template, template_location
+    path = available_template(sport, family)
+    if path is None:
+        if os.getenv("PH_ORIGINAL_ONLY", "0") == "1":
+            raise FileNotFoundError(f"Required original template not uploaded: {template_location(sport, family)}")
+        return _background(sport, height)
+    source = Image.open(path).convert("RGBA")
+    if source.width < 700 or source.height < 650:
+        raise ValueError(f"Original artwork resolution too small: {path}")
+    # Preserve full original-layout canvas without substituting a new design.
+    # Fit is needed for variable-height Builder/Lottery leg counts.
+    return ImageOps.fit(source, (W, height), method=Image.Resampling.LANCZOS)
+
+
 def _circle(img: Optional["Image.Image"], size: int, label: str) -> "Image.Image":
     out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     mask = Image.new("L", (size, size), 0)
@@ -293,7 +314,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     head_h = ((780 if teams else 650) if family in ("lottery", "single") else (650 if teams else 510)) if family in ("lottery", "builder", "single") else ((580 if teams else 440) if family == "ladder" else (430 if teams else 280))
     # Hero panels extend below the team header; reserve a safe footer gutter.
     h = head_h + row_h * len(rows) + (290 if family in ("lottery", "builder") else 190)
-    img = _background(sport, h)
+    img = _original_artwork_background(sport, family, h)
     accent = ((193, 65, 250) if kind in ("big", "super", "lottery") else
               (255, 198, 70) if kind in ("ladder", "builder", "single") else CYAN)
     d = ImageDraw.Draw(img, "RGBA")
