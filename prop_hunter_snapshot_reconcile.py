@@ -27,9 +27,15 @@ def main():
     current=ids(secondary,sk)
     missing=originals-current
     print(f"RECONCILE: primary={len(originals)} secondary={len(current)} missing={len(missing)}",flush=True)
+    samples={}
     if missing:
         transferred=0
+        seen=0
         for batch in pages(primary,pk,"*"):
+            for i,row in enumerate(batch):
+                if len(samples)<24 and (seen+i)%10000==0:
+                    samples[row["snapshot_id"]]=(row.get("raw"),row.get("player_name"),row.get("odds_decimal"))
+            seen+=len(batch)
             selected=[r for r in batch if r["snapshot_id"] in missing]
             if selected:
                 api("POST",secondary,sk,params={"on_conflict":"snapshot_id"},data=selected)
@@ -40,6 +46,11 @@ def main():
     still_missing=originals-verified
     if still_missing:
         raise RuntimeError(f"RECONCILE FAILED: {len(still_missing)} original IDs still missing")
+    for sid, expected in samples.items():
+        got=api("GET",secondary,sk,params={"select":"raw,player_name,odds_decimal",
+                                        "snapshot_id":"eq."+sid,"limit":"1"}).json()
+        if len(got)!=1 or (got[0].get("raw"),got[0].get("player_name"),got[0].get("odds_decimal"))!=expected:
+            raise RuntimeError("Reconciliation payload sample mismatch")
     if ids(primary,pk)!=originals:
         raise RuntimeError("Primary changed during reconciliation")
     result={
@@ -48,6 +59,7 @@ def main():
         "secondary_count":len(verified),
         "missing_after_repair":0,
         "repaired_count":len(missing),
+        "payload_samples_verified":len(samples),
         "primary_deleted":False,
         "verified_at":datetime.now(timezone.utc).isoformat(),
     }
