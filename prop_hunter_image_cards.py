@@ -256,11 +256,14 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     accent = ((184, 110, 255) if kind in ("big", "super", "lottery") else
               (255, 198, 70) if kind == "ladder" else CYAN)
     d = ImageDraw.Draw(img, "RGBA")
-    d.text((W // 2, 62), "PROP HUNTER", font=_font(62), fill=WHITE, anchor="mm")
-    d.rounded_rectangle([40, 120, W - 40, h - 30], 28, outline=accent + (255,), width=4)
-    d.text((W // 2, 170), title, font=_font(54), fill=accent, anchor="mm")
-    d.text((W // 2, 222), subtitle, font=_font(30, False), fill=MUTED, anchor="mm")
-    y = 262
+    # Card design v3: new NETRATTLER AI identity and clearly separated
+    # tip category, so rerendered old photos actually change visually.
+    d.text((W // 2, 34), "NETRATTLER AI", font=_font(27), fill=accent, anchor="mm")
+    d.text((W // 2, 91), "PROP HUNTER", font=_font(58), fill=WHITE, anchor="mm")
+    d.rounded_rectangle([40, 145, W - 40, h - 30], 28, outline=accent + (255,), width=4)
+    d.text((W // 2, 189), title, font=_font(48), fill=accent, anchor="mm")
+    d.text((W // 2, 239), subtitle, font=_font(28, False), fill=MUTED, anchor="mm")
+    y = 273
     if teams:
         slots = [(W // 2 - 300, teams[0]), (W // 2 + 300, teams[1] if len(teams) > 1 else None)]
         for cx, t in slots:
@@ -273,7 +276,8 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
     for r in rows:
-        d.rounded_rectangle([70, y, W - 70, y + row_h - 12], 22, fill=PANEL, outline=(34, 230, 238, 110), width=2)
+        d.rounded_rectangle([70, y, W - 70, y + row_h - 12], 22, fill=PANEL, outline=accent + (180,), width=2)
+        d.rounded_rectangle([72, y + 16, 79, y + row_h - 28], 3, fill=accent + (255,))
         ph = _circle(r.get("photo"), 112, r.get("name") or "?")
         img.alpha_composite(ph, (92, y + 11))
         d.text((232, y + 38), _fit(d, r.get("name") or "", _font(36), 520), font=_font(36), fill=WHITE, anchor="lm")
