@@ -309,8 +309,18 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
                fill=WHITE if kind == "single" else (4, 20, 28), anchor="lm")
         form = str(r.get("form") or "")
         if form:
-            d.text((x, row_top + 139), _fit(d, form, _font(23, False), 700),
-                   font=_font(23, False), fill=GREEN, anchor="lm")
+            if kind == "single":
+                d.rounded_rectangle([x, row_top + 128, W - 74, row_top + 200], 12,
+                                    fill=(10, 38, 39, 240), outline=GREEN + (220,), width=2)
+                d.text((x + 12, row_top + 148), "FORM & STATS", font=_font(20),
+                       fill=gold, anchor="lm")
+                d.text((x + 12, row_top + 181),
+                       _fit(d, form, _font(23, False), W - x - 110),
+                       font=_font(23, False), fill=GREEN, anchor="lm")
+            else:
+                d.text((x, row_top + 139),
+                       _fit(d, form, _font(23, False), W - x - 110),
+                       font=_font(23, False), fill=GREEN, anchor="lm")
         if r.get("odds"):
             d.rounded_rectangle([W - 280, row_top + 45, W - 73, row_top + 100],
                                 12, fill=(27, 25, 20, 235), outline=gold + (255,), width=3)
