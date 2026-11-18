@@ -249,8 +249,10 @@ def _with_kickoff(subtitle: str, pick) -> str:
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],
            rows: List[Dict[str, Any]], footer: str = "", settlement: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
-    row_h = 250 if kind == 'single' else 195
-    head_h = 430 if teams else 280
+    # Four distinct poster families; extra header space is reserved for portraits.
+    family = "lottery" if kind in ("big", "super", "lottery") else kind
+    row_h = 250 if family == "single" else (215 if family == "ladder" else 195)
+    head_h = (560 if teams else 410) if family in ("single", "lottery", "builder") else (430 if teams else 280)
     h = head_h + row_h * len(rows) + 190
     img = _background(sport, h)
     accent = ((184, 110, 255) if kind in ("big", "super", "lottery") else
@@ -281,6 +283,25 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
             d.text((cx, y + 118), _fit(d, name, team_font, 320), font=team_font, fill=WHITE, anchor="mm")
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
+    # Portrait-led premium posters, using only the actual pick players.
+    if family in ("single", "lottery", "builder") and rows:
+        hero_y = 422 if teams else 274
+        hero_players = rows[:3] if family == "builder" else rows[:1]
+        count = len(hero_players)
+        centers = [W // 2] if count == 1 else ([270, 810] if count == 2 else [210, 540, 870])
+        for cx, item in zip(centers, hero_players):
+            size = 170 if count == 1 else 118
+            portrait = _circle(item.get("photo"), size, item.get("name") or "?")
+            img.alpha_composite(portrait, (cx - size // 2, hero_y - 14))
+            f = _font(21 if count > 1 else 26)
+            d.text((cx, hero_y + size + 8), _fit(d, item.get("name") or "", f, 280),
+                   font=f, fill=WHITE, anchor="mm")
+        y = max(y, hero_y + (170 if count == 1 else 118) + 48)
+    if family == "ladder" and rows:
+        # Ladder stages remain distinct; do not invent a multi-player parlay.
+        d.text((W // 2, y - 14), "VERIFIZIERTE STUFEN", font=_font(24),
+               fill=gold, anchor="mm")
+
     # Different visual hierarchy per card family; keep actual odds/form only.
     if kind == "single" and rows:
         row_h = 250
