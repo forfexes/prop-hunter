@@ -252,9 +252,9 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     # Four distinct poster families; extra header space is reserved for portraits.
     family = "lottery" if kind in ("big", "super", "lottery") else kind
     row_h = 250 if family == "single" else (215 if family == "ladder" else 195)
-    head_h = (560 if teams else 410) if family in ("single", "lottery", "builder") else (430 if teams else 280)
+    head_h = (560 if teams else 410) if family in ("lottery", "builder") else (430 if teams else 280)
     # Hero panels extend below the team header; reserve a safe footer gutter.
-    h = head_h + row_h * len(rows) + (290 if family in ("single", "lottery", "builder") else 190)
+    h = head_h + row_h * len(rows) + (290 if family in ("lottery", "builder") else 190)
     img = _background(sport, h)
     accent = ((184, 110, 255) if kind in ("big", "super", "lottery") else
               (255, 198, 70) if kind == "ladder" else CYAN)
@@ -303,6 +303,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.text((W // 2, y - 14), "VERIFIZIERTE STUFEN", font=_font(24),
                fill=gold, anchor="mm")
 
+    # Poster hierarchy: one portrait per Single, compact stage portraits for Ladder.
     # Different visual hierarchy per card family; keep actual odds/form only.
     if kind == "single" and rows:
         row_h = 250
@@ -312,7 +313,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
                             fill=PANEL, outline=accent + (240,), width=3)
         d.rounded_rectangle([50, row_top + 16, 59, row_top + row_h - 28], 3,
                             fill=gold + (255,))
-        photo_size = 210 if kind == "single" else 112
+        photo_size = 210 if kind == "single" else (148 if family == "ladder" else 112)
         ph = _circle(r.get("photo"), photo_size, r.get("name") or "?")
         img.alpha_composite(ph, (72, row_top + 14))
         x = 312 if kind == 'single' else 242
