@@ -249,7 +249,7 @@ def _with_kickoff(subtitle: str, pick) -> str:
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],
            rows: List[Dict[str, Any]], footer: str = "", settlement: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
-    row_h = 195
+    row_h = 250 if kind == 'single' else 195
     head_h = 430 if teams else 280
     h = head_h + row_h * len(rows) + 190
     img = _background(sport, h)
@@ -283,17 +283,17 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         y += 150
     # Different visual hierarchy per card family; keep actual odds/form only.
     if kind == "single" and rows:
-        row_h = 195
+        row_h = 250
     for idx, r in enumerate(rows):
         row_top = y
         d.rounded_rectangle([48, row_top, W - 48, row_top + row_h - 12], 22,
                             fill=PANEL, outline=accent + (240,), width=3)
         d.rounded_rectangle([50, row_top + 16, 59, row_top + row_h - 28], 3,
                             fill=gold + (255,))
-        photo_size = 138 if kind == "single" else 112
+        photo_size = 210 if kind == "single" else 112
         ph = _circle(r.get("photo"), photo_size, r.get("name") or "?")
-        img.alpha_composite(ph, (78, row_top + 10))
-        x = 242
+        img.alpha_composite(ph, (72, row_top + 14))
+        x = 312 if kind == 'single' else 242
         name_font = _font(37 if kind == "single" else 32)
         d.text((x, row_top + 39), _fit(d, r.get("name") or "", name_font, 520),
                font=name_font, fill=WHITE, anchor="lm")
@@ -318,7 +318,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         if r.get("result"):
             result = str(r["result"])
             result_color = GREEN if "GEWONNEN" in result else RED if "VERLOREN" in result else CYAN
-            d.text((x, row_top + 166), _fit(d, result, _font(22), 650),
+            d.text((x, row_top + (227 if kind == 'single' else 166)), _fit(d, result, _font(22), 650),
                    font=_font(22), fill=result_color, anchor="lm")
         y += row_h
     if footer:
