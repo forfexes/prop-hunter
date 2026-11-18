@@ -49,6 +49,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           SPORTSGAMEODDS_KEY: ${{ secrets.SPORTSGAMEODDS_KEY }}
           SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
           ODDSPAPI_KEYS: ${{ secrets.ODDSPAPI_KEYS }}
