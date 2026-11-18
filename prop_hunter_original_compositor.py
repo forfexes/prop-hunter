@@ -90,7 +90,10 @@ def _portrait(im, person, rect, name=''):
               x1-x0-16, color=GOLD, anchor='mm')
         return
     picture = person.copy().convert('RGBA')
-    # ESPN headshots are often transparent silhouettes; retain their cutout.
+    # Trim transparent padding from published headshots before sizing the hero.
+    alpha_box = picture.getchannel('A').getbbox()
+    if alpha_box and alpha_box != (0, 0, picture.width, picture.height):
+        picture = picture.crop(alpha_box)
     picture.thumbnail((x1-x0-7, y1-y0-7), Image.Resampling.LANCZOS)
     offset = (x0+(x1-x0-picture.width)//2, y1-4-picture.height)
     if picture.getextrema()[3][0] == 255:
@@ -110,7 +113,11 @@ def _team(im, team, center, y, size=64):
         img.thumbnail((size, size), Image.Resampling.LANCZOS)
         im.alpha_composite(img, (cx-img.width//2, y+(size-img.height)//2))
     d = ImageDraw.Draw(im)
-    _text(d, (cx, y+size+9), name, 12, size+60, color=WHITE, anchor='mt')
+    # Short team nicknames fit the original logo frame without ellipsis.
+    compact = str(name or '').strip()
+    if len(compact) > 13:
+        compact = compact.rsplit(' ', 1)[-1]
+    _text(d, (cx, y+size+9), compact, 13, size+60, color=WHITE, anchor='mt')
 
 
 def _row(im, xy, width, name, market, odds, form, result='', no=None,
@@ -196,10 +203,17 @@ def _header(im, family, sport_label, subtitle, teams):
     d = ImageDraw.Draw(im)
     if family == 'builder':
         _text(d, (348, 498), subtitle, 16, 353, WHITE, 'mm')
-    elif family == 'single':
-        _text(d, (602, 172), subtitle, 12, 143, WHITE, 'mt')
-    elif family == 'ladder':
-        _text(d, (584, 185), subtitle, 13, 180, WHITE, 'mt')
+    elif family in ('single', 'ladder'):
+        center_x = 603 if family == 'single' else 587
+        y0 = 159 if family == 'single' else 166
+        _text(d, (center_x, y0), 'SPIEL', 15, 154, GOLD, 'mt')
+        if len(teams) >= 2:
+            for idx, (_, team) in enumerate((('away', teams[0]), ('home', teams[1]))):
+                raw_name = str(team[0] or '').strip()
+                short_name = raw_name.rsplit(' ', 1)[-1] if len(raw_name) > 13 else raw_name
+                _text(d, (center_x, y0 + 27 + idx * 31), short_name, 15, 155, WHITE, 'mt')
+        else:
+            _text(d, (center_x, y0 + 40), subtitle, 13, 155, WHITE, 'mt')
     else:
         _text(d, (600, 144), subtitle, 12, 155, WHITE, 'mt')
 
@@ -258,10 +272,19 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
             _text(d, (48, y), f'L{number}', 19, 56, WHITE)
             _text(d, (232, y), match.group(1) if match else '—', 19, 123, GREEN, 'rt')
         _text(d, (48, 582), 'FORM', 17, 78, WHITE)
-        # Never display a fabricated model probability; identify missing data.
+        # Display only original published metrics; unknown values stay unknown.
         _rect(im, (267, 498, 507, 598), NAVY, 3)
-        _text(d, (386, 535), 'MODELLDATEN', 17, 222, WHITE, 'mm')
-        _text(d, (386, 568), 'nicht verfügbar', 15, 222, GOLD, 'mm')
+        model = item.get('model') or {}
+        metrics = (
+            ('PROB', str(model['prob']) + '%' if model.get('prob') else '—'),
+            ('EDGE', str(model['edge']) + '%' if model.get('edge') else '—'),
+            ('CONF', str(model['confidence']) if model.get('confidence') else '—'),
+        )
+        for j, (metric_name, metric_value) in enumerate(metrics):
+            yy = 512 + 28*j
+            _text(d, (281, yy), metric_name, 14, 80, WHITE)
+            _text(d, (493, yy), metric_value, 16, 118,
+                  GREEN if metric_value != '—' else GOLD, 'rt')
         _rect(im, (526, 518, 666, 594), (17, 18, 24, 255), 5, GOLD, 2)
         # The narrow stake box cannot hold a combined odds+stake sentence.
         stake = re.search(r'Einsatz\s+([\d.,]+u)', str(footer), re.I)
