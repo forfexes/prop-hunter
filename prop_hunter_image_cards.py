@@ -617,9 +617,9 @@ def settled_image(data, text):
         matched=re.search(pattern,text,re.I)
         return matched.group(1).replace(",",".") if matched else None
     obj["_display_model"]={
-        "prob": metric(r"\\bProb\\s+(\\d+(?:[.,]\\d+)?)\\s*%"),
-        "edge": metric(r"\\bEdge\\s+([+-]?\\d+(?:[.,]\\d+)?)\\s*(?:%|pp)"),
-        "confidence": metric(r"\\bConfidence\\s+(\\d+\\s*/\\s*100)"),
+        "prob": metric(r"\bProb\s+(\d+(?:[.,]\d+)?)\s*%"),
+        "edge": metric(r"\bEdge\s+([+-]?\d+(?:[.,]\d+)?)\s*(?:%|pp)"),
+        "confidence": metric(r"\bConfidence\s+(\d+\s*/\s*100)"),
     }
     # This renderer only edits an already-published Telegram photo; it is NOT
     # called by new-pick production. Old combo snapshots may lack quote provenance.
