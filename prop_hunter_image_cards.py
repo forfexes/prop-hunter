@@ -281,22 +281,45 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
             d.text((cx, y + 118), _fit(d, name, team_font, 320), font=team_font, fill=WHITE, anchor="mm")
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
-    for r in rows:
-        d.rounded_rectangle([48, y, W - 48, y + row_h - 12], 22, fill=PANEL, outline=accent + (240,), width=3)
-        d.rounded_rectangle([50, y + 16, 59, y + row_h - 28], 3, fill=gold + (255,))
-        ph = _circle(r.get("photo"), 112, r.get("name") or "?")
-        img.alpha_composite(ph, (92, y + 11))
-        d.text((232, y + 38), _fit(d, r.get("name") or "", _font(36), 520), font=_font(36), fill=WHITE, anchor="lm")
-        d.rounded_rectangle([232, y + 66, 232 + min(560, 24 + int(d.textlength(r.get("label") or "", font=_font(30)))), y + 108], 12, fill=accent + (255,))
-        d.text((244, y + 87), _fit(d, r.get("label") or "", _font(30), 540), font=_font(30), fill=(4, 20, 28), anchor="lm")
-        if r.get("form"):
-            d.text((232, y + 134), _fit(d, r["form"], _font(24, False), 700), font=_font(24, False), fill=GREEN, anchor="lm")
+    # Different visual hierarchy per card family; keep actual odds/form only.
+    if kind == "single" and rows:
+        row_h = 195
+    for idx, r in enumerate(rows):
+        row_top = y
+        d.rounded_rectangle([48, row_top, W - 48, row_top + row_h - 12], 22,
+                            fill=PANEL, outline=accent + (240,), width=3)
+        d.rounded_rectangle([50, row_top + 16, 59, row_top + row_h - 28], 3,
+                            fill=gold + (255,))
+        photo_size = 138 if kind == "single" else 112
+        ph = _circle(r.get("photo"), photo_size, r.get("name") or "?")
+        img.alpha_composite(ph, (78, row_top + 10))
+        x = 242
+        name_font = _font(37 if kind == "single" else 32)
+        d.text((x, row_top + 39), _fit(d, r.get("name") or "", name_font, 520),
+               font=name_font, fill=WHITE, anchor="lm")
+        market = str(r.get("label") or "")
+        market_font = _font(30)
+        market_text = _fit(d, market, market_font, 500)
+        market_w = min(510, 30 + int(d.textlength(market_text, font=market_font)))
+        d.rounded_rectangle([x, row_top + 66, x + market_w, row_top + 112], 12,
+                            fill=(16, 80, 53, 245) if kind == "single" else accent + (255,),
+                            outline=GREEN + (255,) if kind == "single" else accent + (255,), width=2)
+        d.text((x + 12, row_top + 89), market_text, font=market_font,
+               fill=WHITE if kind == "single" else (4, 20, 28), anchor="lm")
+        form = str(r.get("form") or "")
+        if form:
+            d.text((x, row_top + 139), _fit(d, form, _font(23, False), 700),
+                   font=_font(23, False), fill=GREEN, anchor="lm")
         if r.get("odds"):
-            d.text((W - 100, y + 62), r["odds"], font=_font(40), fill=accent, anchor="rm")
+            d.rounded_rectangle([W - 280, row_top + 45, W - 73, row_top + 100],
+                                12, fill=(27, 25, 20, 235), outline=gold + (255,), width=3)
+            d.text((W - 91, row_top + 73), _fit(d, r["odds"], _font(35), 180),
+                   font=_font(35), fill=gold, anchor="rm")
         if r.get("result"):
-            _rt=str(r["result"])
-            _rc=GREEN if "GEWONNEN" in _rt else RED if "VERLOREN" in _rt else CYAN
-            d.text((232,y+164),_fit(d,_rt,_font(23),640),font=_font(23),fill=_rc,anchor="lm")
+            result = str(r["result"])
+            result_color = GREEN if "GEWONNEN" in result else RED if "VERLOREN" in result else CYAN
+            d.text((x, row_top + 166), _fit(d, result, _font(22), 650),
+                   font=_font(22), fill=result_color, anchor="lm")
         y += row_h
     if footer:
         d.text((W // 2, h - 92), _fit(d, footer, _font(30), W - 160), font=_font(30), fill=WHITE, anchor="mm")
