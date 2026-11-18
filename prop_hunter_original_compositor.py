@@ -69,6 +69,28 @@ def _rect(im, xy, color=DARK, radius=7, outline=None, w=2):
                                          outline=outline, width=w)
 
 
+def _erase_single_bridge(im):
+    """Remove the baked-in Warriors bridge art from the owner-supplied single.
+
+    It is a decorative watermark in the background, NOT a participating team.
+    Fade the right arena section instead of replacing the owner's artwork.
+    Dynamic odds boxes and lines are rendered AFTER this masking step.
+    """
+    x0, y0, x1, y1 = (523, 253, im.width, 485)
+    layer = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    for y in range(y0, y1):
+        p = (y - y0) / max(1, y1 - y0)
+        color = (3 + int(2*p), 13 + int(7*p), 27 + int(9*p), 255)
+        d.line((x0, y, x1, y), fill=color, width=1)
+    # Feather the overlay at its upper and left boundary; full opacity on logo.
+    mask = Image.new('L', im.size, 0)
+    md = ImageDraw.Draw(mask)
+    md.rectangle((x0 + 18, y0 + 14, x1 + 28, y1 - 14), fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(15))
+    im.paste(layer, (0, 0), mask)
+
+
 def _clean_hero(im, box):
     """Obscure baked-in example player without touching the original masthead."""
     x0, y0, x1, y1 = box
@@ -248,6 +270,10 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         if len(distinct) != 1 or not next(iter(distinct)):
             raise ValueError('Ladder must use exactly one real athlete, not a builder')
     im = _source(family).copy()
+    # The Golden State bridge in the SINGLE screenshot is misleading for other
+    # matchups; remove it BEFORE painting player, teams, odds and model data.
+    if family == 'single':
+        _erase_single_bridge(im)
     # Source frame and decorative motifs remain pixel-identical outside the dynamic slots.
     _header(im, family, league_name or sport, subtitle, teams)
     d = ImageDraw.Draw(im)
@@ -267,11 +293,12 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _text(d, (545, 408), item.get('odds') or '—', 28, 125, GOLD, 'mm')
         _rect(im, (35, 499, 244, 600), NAVY, 4)
         form = _f(item.get('form'))
-        for number, y in ((10, 516), (15, 550)):
+        # Only real observed windows: no placeholder "FORM" row or invented sample.
+        for number, y in ((5, 516), (10, 550), (15, 582)):
             match = re.search(rf'\bL{number}\s*(\d+/\d+)', form, re.I)
             _text(d, (48, y), f'L{number}', 19, 56, WHITE)
-            _text(d, (232, y), match.group(1) if match else '—', 19, 123, GREEN, 'rt')
-        _text(d, (48, 582), 'FORM', 17, 78, WHITE)
+            _text(d, (232, y), match.group(1) if match else '—', 19, 123,
+                  GREEN if match else GOLD, 'rt')
         # Display only original published metrics; unknown values stay unknown.
         _rect(im, (267, 498, 507, 598), NAVY, 3)
         model = item.get('model') or {}
