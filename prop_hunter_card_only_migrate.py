@@ -15,27 +15,34 @@ from prophunter_results import (
     _replace_recent_text_with_photo,
 )
 
-MAX_UPDATES=max(1,min(60,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
+MAX_UPDATES=max(1,min(120,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
 LOOKBACK_DAYS=max(1,min(30,int(os.getenv("PH_CARD_ONLY_LOOKBACK_DAYS","7"))))
-VERSION=6
+VERSION=7
+TARGET_DATE=str(os.getenv("PH_CARD_ONLY_TARGET_DATE","") or "").strip()[:10]
 
 
 def migrate():
     history=_load_history()
     now=datetime.now(timezone.utc)
     cutoff=(now-timedelta(days=LOOKBACK_DAYS)).date().isoformat()
-    counts={"candidates":0,"photo_updated":0,"text_replaced":0,
-            "skipped":0,"failed":0,"failed_cards":[]}
+    counts={"target_date":TARGET_DATE or None,"design_version":VERSION,
+            "candidates":0,"photo_updated":0,"text_replaced":0,
+            "skipped":0,"skipped_current_version":0,"failed":0,
+            "updated_message_ids":[],"failed_cards":[]}
     for entry in sorted(history,key=lambda x:str(x.get("date") or ""),reverse=True):
-        if str(entry.get("date") or "")[:10] < cutoff:
+        day=str(entry.get("date") or "")[:10]
+        if day < cutoff or (TARGET_DATE and day != TARGET_DATE):
             continue
         picks=entry.get("picks") or []
         combos=entry.get("kombis") or []
         for card in reversed(entry.get("cards") or []):
             if counts["photo_updated"]+counts["text_replaced"] >= MAX_UPDATES:
                 return counts
-            if card.get("tg_gone") or not card.get("message_id") or int(card.get("card_design_version") or 0)>=VERSION:
+            if card.get("tg_gone") or not card.get("message_id"):
                 counts["skipped"]+=1
+                continue
+            if int(card.get("card_design_version") or 0)>=VERSION:
+                counts["skipped_current_version"]+=1
                 continue
             text=_card_visual_text(card,picks,combos)
             visual=card.get("image_pick") or _card_pick(card,picks,combos)
@@ -60,6 +67,8 @@ def migrate():
                     card["settlement_text"]=text
                     card["settlement_updated_at"]=now.isoformat()
                     counts["photo_updated"]+=1
+                    counts["updated_message_ids"].append(int(card["message_id"]))
+                    print(f"TELEGRAM_CARD_REPAINT_OK date={day} message_id={card['message_id']} kind={visual.get('type','?')} version={VERSION}",flush=True)
                     _save_history(history)
                 else:
                     counts["failed"]+=1
@@ -84,4 +93,4 @@ if __name__=="__main__":
     report=Path("diagnostics/prop_hunter_card_only_migration_status.json")
     report.parent.mkdir(parents=True,exist_ok=True)
     report.write_text(json.dumps(status,indent=2),encoding="utf-8")
-    print("PROP HUNTER v4 CARD MIGRATION: "+json.dumps(status,sort_keys=True),flush=True)
+    print(f"PROP HUNTER v{VERSION} CARD MIGRATION: "+json.dumps(status,sort_keys=True),flush=True)
