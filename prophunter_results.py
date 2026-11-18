@@ -1155,7 +1155,7 @@ def main() -> int:
             # One-time design v3 upgrade for already published PHOTO tips, even
             # while result is pending. Keep original message_id and settlement.
             # Never attempt editMessageMedia on a text-only message.
-            CARD_DESIGN_VERSION=3
+            CARD_DESIGN_VERSION=4
             _visual_age=(datetime.now(timezone.utc).date()-timedelta(days=14)).isoformat()
             _today_visual_only=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="today" and day==datetime.now(__import__("zoneinfo").ZoneInfo("Europe/Zurich")).date().isoformat())
             _design_due=((os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" or _today_visual_only) and day>=_visual_age and card.get("media_type")=="photo"
