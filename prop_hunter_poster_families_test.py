@@ -126,3 +126,8 @@ with patch.object(cards, "player_photo", return_value=None), patch.object(cards,
 for hint, expected in [("NHL", "hockey"), ("NFL", "football"), ("WNBA", "basketball")]:
     assert cards.league_of(hint)[0] == expected
 print("NBA ORIGINAL ARTWORK SHARED BY WNBA/NHL/NFL, SPORTS DATA ROUTING PASS")
+
+# Historical two-leg combination cards must use the builder artwork for settlement repaint.
+assert originals._family('kombi2') == 'builder'
+assert originals._family('kombi') == 'builder'
+print('LEGACY KOMBI2 SETTLEMENT FAMILY REGRESSION PASSED')
