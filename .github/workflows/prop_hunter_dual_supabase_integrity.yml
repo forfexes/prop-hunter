@@ -1,0 +1,27 @@
+name: Prop Hunter Dual Supabase Routing Test
+"on":
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_dual_supabase_integrity.yml"
+      - "prop_hunter_shared_utils.py"
+      - "prop_hunter_dual_supabase_test.py"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned requests
+        run: pip install requests==2.32.5
+      - name: Validate routing and Unix timestamp conversion
+        run: |
+          python -m py_compile prop_hunter_shared_utils.py prop_hunter_dual_supabase_test.py
+          python prop_hunter_dual_supabase_test.py
