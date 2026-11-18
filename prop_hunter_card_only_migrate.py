@@ -77,4 +77,8 @@ def migrate():
 
 if __name__=="__main__":
     result=migrate()
-    print("PROP HUNTER v3 CARD MIGRATION: "+json.dumps(result,sort_keys=True),flush=True)
+    status={"checked_at":datetime.now(timezone.utc).isoformat(),**result}
+    report=Path("diagnostics/prop_hunter_card_only_migration_status.json")
+    report.parent.mkdir(parents=True,exist_ok=True)
+    report.write_text(json.dumps(status,indent=2),encoding="utf-8")
+    print("PROP HUNTER v3 CARD MIGRATION: "+json.dumps(status,sort_keys=True),flush=True)
