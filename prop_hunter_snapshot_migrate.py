@@ -97,12 +97,12 @@ def migrate():
     samples = {}
     started = datetime.now(timezone.utc).isoformat()
     for rows in pages(source, sk, "*"):
-        for row in rows:
+        for i, row in enumerate(rows):
             sid = row["snapshot_id"]
             if sid in source_ids:
                 raise RuntimeError("Duplicate snapshot key in source")
             source_ids.add(sid)
-            if len(samples) < 24 and (copied + len(samples)) % 25 == 0:
+            if len(samples) < 24 and (copied + i) % 10000 == 0:
                 samples[sid] = (row.get("raw"), row.get("player_name"), row.get("odds_decimal"))
         api("POST", target, tk, params={"on_conflict": "snapshot_id"}, data=rows)
         copied += len(rows)
