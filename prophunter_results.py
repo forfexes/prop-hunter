@@ -846,7 +846,7 @@ def _replace_recent_text_with_photo(card: dict, visual: dict, text: str) -> bool
         card["message_id"]=int(new_id)
         card["media_type"]="photo"
         card["image_pick"]=visual
-        card["card_design_version"]=3
+        card["card_design_version"]=5 if os.getenv("PH_USE_USER_ORIGINALS","1")!="0" else 3
         card["image_settlement_version"]=1
         card["settlement_text"]=text
         card["settlement_updated_at"]=datetime.now(timezone.utc).isoformat()
