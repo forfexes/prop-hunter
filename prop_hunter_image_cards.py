@@ -308,6 +308,12 @@ def _with_kickoff(subtitle: str, pick) -> str:
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],
            rows: List[Dict[str, Any]], footer: str = "", settlement: str = "", *, template_sport: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
+    # Always use the user's four literal GitHub JPG masters, for every league.
+    # No reconstructed posters and no stale example players/odds are allowed.
+    if os.getenv("PH_USE_USER_ORIGINALS", "1") != "0":
+        from prop_hunter_original_compositor import original_card
+        return original_card(kind, title, subtitle, sport, teams, rows,
+                             footer, settlement, league_name=template_sport or sport)
     # Four distinct poster families; extra header space is reserved for portraits.
     from prop_hunter_original_template_registry import poster_family
     family = poster_family(kind)
@@ -565,7 +571,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
-        return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""), template_sport=("WNBA" if league and league[1]=="wnba" else ""))
+        return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""), template_sport=str(sport_hint or (league[1] if league else "NBA")).upper())
     except Exception as exc:
         # Do not silently hide broken historical card data: the migration needs
         # an actionable failure class without exposing player or Telegram data.
