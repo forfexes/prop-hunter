@@ -64,3 +64,14 @@ assert cards._label({'market':'rushing_attempts Over 15.5','point':15.5,'directi
 with patch.object(results.requests,'post',return_value=N(status_code=200,text='',json=lambda:{'ok':True,'result':{'message_id':123}})), patch.object(results.time,'sleep'):
  assert not results._edit_message(123,'Pending',image_pick=data)
 print('TELEGRAM EXACT MESSAGE / PHOTO ACKNOWLEDGEMENT PASSED')
+
+# Regression: only explicitly published model metrics may be reprinted.
+single={'type':'single','player':'Verified Athlete','sport':'NBA','game':'Away @ Home',
+        'market':'points','direction':'under','point':20.5,'odds':1.77,
+        'features':{'recent_form':{'l10':{'hits':7,'n':9}}},'stake':1}
+with patch.object(cards,'player_photo',return_value=None), patch.object(cards,'team_logo',return_value=None), patch.object(cards,'render',return_value=b'PNG') as draw:
+ assert cards.settled_image(single,'📈 Prob 72% · Edge +20.8% · Confidence 91/100\\n🏁 Auswertung: 1⏳ · +0.00u')==b'PNG'
+ assert draw.call_args.args[5][0]['model']=={'prob':'72','edge':'+20.8','confidence':'91/100'}
+ assert cards.settled_image(single,'🏁 Auswertung: 1⏳ · +0.00u')==b'PNG'
+ assert not any(draw.call_args.args[5][0]['model'].values())
+print('ORIGINAL PUBLISHED MODEL METRICS / MISSING EVIDENCE GUARDS PASSED')
