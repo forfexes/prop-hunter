@@ -141,3 +141,13 @@ for rung_count in (2, 4):
     data = cards.render("ladder", "LADDER", "Verified sample", "basketball", [], rungs)
     assert Image.open(BytesIO(data)).size[0] == 1080
 print('VARIABLE LADDER RUNG COUNT RENDER PASSED')
+
+# Original card clipping regression: source header stays visible and legacy combos render.
+assert originals._family("kombi3") == "builder"
+with patch.object(originals, "_clean_hero", wraps=originals._clean_hero) as clean:
+    test_rows = [{"name":"Test Player","label":"Points Under 20.5","odds":"@1.77","photo":None,"form":"L10 9/10 L15 14/15"}]
+    rendered = originals.original_card("single","SINGLE","Test fixture","NBA",[],test_rows,"Quote @1.77 · Einsatz 1u")
+    assert rendered[:8] == bytes([137,80,78,71,13,10,26,10])
+    cleaned = [call.args[1] for call in clean.call_args_list]
+    assert all(rect[1] >= 137 for rect in cleaned), cleaned
+print("ORIGINAL HEADER MASK / LEGACY KOMBI3 PASS")
