@@ -1149,7 +1149,7 @@ def main() -> int:
             CARD_TIME_VERSION=2
             _img=card.get("image_pick") or {}
             _has_kick=bool(_img.get("commence_time") or _img.get("game_date") or _img.get("date"))
-            _time_upgrade_due=(card.get("media_type")=="photo" and _has_kick
+            _time_upgrade_due=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" and card.get("media_type")=="photo" and _has_kick
                 and int(card.get("card_time_version") or 0)<CARD_TIME_VERSION
                 and image_migrations<migration_limit)
             # One-time design v3 upgrade for already published PHOTO tips, even
@@ -1157,11 +1157,11 @@ def main() -> int:
             # Never attempt editMessageMedia on a text-only message.
             CARD_DESIGN_VERSION=3
             _visual_age=(datetime.now(timezone.utc).date()-timedelta(days=14)).isoformat()
-            _design_due=(day>=_visual_age and card.get("media_type")=="photo"
+            _design_due=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" and day>=_visual_age and card.get("media_type")=="photo"
                 and bool(card.get("image_pick"))
                 and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
                 and image_migrations<migration_limit)
-            _text_design_due=(card.get("media_type","text")=="text" and bool(legacy_source)
+            _text_design_due=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" and card.get("media_type","text")=="text" and bool(legacy_source)
                 and os.getenv("PH_CARD_TEXT_UPGRADE","1")=="1"
                 and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
                 and day>=_visual_age)
@@ -1196,7 +1196,7 @@ def main() -> int:
             # Text messages cannot be converted by editMessageMedia. For recent
             # bot-owned cards only, replace text atomically: send new image, then
             # delete original, with rollback if deletion fails.
-            if (os.getenv("PH_CARD_TEXT_UPGRADE","1")=="1" and legacy_source
+            if (os.getenv("PH_CARD_TEXT_UPGRADE","0")=="1" and legacy_source
                 and card.get("media_type","text")=="text"
                 and _replace_recent_text_with_photo(card,legacy_source,text)):
                 cards_edited += 1
