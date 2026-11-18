@@ -93,3 +93,19 @@ with mock_patch("prop_hunter_original_template_registry.available_template", ret
     else:
         raise AssertionError("PH_ORIGINAL_ONLY must reject missing user artwork")
 print("REAL ARTWORK PATH / FAIL-CLOSED ORIGINAL MODE PASSED")
+
+# Integrity gate for the FOUR actual uploaded user source images, NOT recreated art.
+from hashlib import sha256
+_original_sha256 = {
+    "single": "c2e8b229b060d5b43ed8886ff54d0ef67ef985704d5b37e9de66a486ae60a56c",
+    "ladder": "6575d2eed1ec8a764cefbcfb2fa0e3253cf98f3f1557c3ffbabdd97ebd5c606f",
+    "builder": "7041a9d24a75a275f916f117dd6293fed81684653e09b5a5dcc7f5493552682c",
+    "lottery": "4f131e3fa44ab7f9126c07e34608faa0a3443c8e8c22a884860e3cd03ca0513e",
+}
+for family, fingerprint in _original_sha256.items():
+    src = Path("card_templates") / "originals" / (family + ".jpg")
+    assert src.is_file(), f"Missing ACTUAL user original asset: {src}"
+    assert sha256(src.read_bytes()).hexdigest() == fingerprint, f"Original image changed: {src}"
+    with Image.open(src) as original:
+        assert original.format == "JPEG" and original.size == (691, 1536)
+print("ALL FOUR EXACT USER ORIGINAL JPGS VERIFIED IN GITHUB CHECKOUT")
