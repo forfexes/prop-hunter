@@ -1,5 +1,5 @@
 name: Prop Hunter Telegram Delivery Recovery Audit
-# Migration run verification again after Supabase env fix; no Telegram writes
+# Validate new pending-photo fix run; this audit never edits Telegram
 "on":
   push:
     paths:
