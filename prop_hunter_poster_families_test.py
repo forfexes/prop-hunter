@@ -151,3 +151,20 @@ with patch.object(originals, "_clean_hero", wraps=originals._clean_hero) as clea
     cleaned = [call.args[1] for call in clean.call_args_list]
     assert all(rect[1] >= 137 for rect in cleaned), cleaned
 print("ORIGINAL HEADER MASK / LEGACY KOMBI3 PASS")
+
+# User-required clean single card: no bridge watermark and three observed windows.
+from PIL import Image as PILImage
+original_surface = PILImage.new("RGBA", (691, 758), (245, 245, 245, 255))
+originals._erase_single_bridge(original_surface)
+assert original_surface.getpixel((635, 370))[:3] != (245,245,245)
+assert original_surface.getpixel((250, 370))[:3] == (245,245,245)
+real_form_rows=[{"name":"Verified Player","photo":None,"label":"Under 10.5 Points",
+                 "odds":"@1.77","form":"L5 4/5 · L10 7/9 · L15 12/15"}]
+with patch.object(originals, "_text", wraps=originals._text) as writes:
+    real_png=originals.original_card("single","SINGLE","Test fixture","NBA",[],real_form_rows)
+    drawn=[str(call.args[2]) for call in writes.call_args_list]
+    assert all(f"L{i}" in drawn for i in (5,10,15)), drawn
+    assert "FORM" not in drawn, drawn
+    assert "LETZTE SPIELE" in drawn, drawn
+    assert real_png[:8] == bytes([137,80,78,71,13,10,26,10])
+print("NO BRIDGE / NO FORM ROW / THREE VERIFIED WINDOWS PASS")
