@@ -2,10 +2,14 @@
 from io import BytesIO
 from pathlib import Path
 from PIL import Image
+from unittest.mock import patch
+from types import SimpleNamespace
+import prop_hunter_image_cards as cards
+from prop_hunter_original_template_registry import SPORTS, FAMILIES, template_location, all_required_templates
 from prop_hunter_image_cards import render
 
 def test_family(kind, count):
-    rows = [{"name": "Test Player " + str(i), "label": "Over 20.5 Points",
+    rows = [{"name": ("One Ladder Player" if kind == "ladder" else "Test Player " + str(i)), "label": "Over 20.5 Points",
              "photo": None, "form": "L10 8/10   L15 12/15", "odds": "@1.90"}
             for i in range(count)]
     data = render(kind, kind.upper(), "Verified sample only", "basketball",
@@ -29,3 +33,43 @@ def test_family(kind, count):
 for family, count in [("single",1),("ladder",3),("builder",3),("lottery",3)]:
     test_family(family,count)
 print("FOUR POSTER FAMILIES PNG RENDER PASS")
+
+# League-aware template contract: 4 unique sports environments x 4 ORIGINAL poster families.
+assert len(all_required_templates()) == 16
+assert set(SPORTS) == {"NBA", "WNBA", "NCAAB", "EUROLEAGUE", "NFL", "NCAAF", "NHL", "MLB"}
+for league in SPORTS:
+    for family in FAMILIES:
+        assert template_location(league, family).suffix == ".webp"
+assert template_location("WNBA", "single") == template_location("NBA", "single")
+assert template_location("NCAAF", "builder") == template_location("NFL", "builder")
+for key in SPORTS:
+    assert cards.league_of(key), key
+
+# Rendering a three-rung ladder draws exactly one player portrait.
+orig_circle = cards._circle
+portraits = []
+def record_portrait(im, size, name):
+    if name == "One Ladder Player":
+        portraits.append((size, name))
+    return orig_circle(im, size, name)
+ladder_rows = [{"name": "One Ladder Player", "photo": None,
+                "label": f"Points Over {20+i}.5", "odds": "@1.90",
+                "form": "L10 8/10   L15 12/15"} for i in range(3)]
+with patch.object(cards, "_circle", side_effect=record_portrait):
+    png = cards.render("ladder", "LADDER", "Single athlete / 3 rungs", "basketball", [], ladder_rows)
+assert png.startswith(b"\\x89PNG")
+assert len(portraits) == 1, portraits
+
+# Reject mislabeled multi-player ladders, rather than silently posting a builder.
+ladder_pick = SimpleNamespace(type="ladder", player="Player One", game="Test",
+    source_sport="NBA", features={}, odds=1.9, stake=.25,
+    leg_details=[{"player":"Player One", "market":"Points Over 20.5", "odds":1.90},
+                 {"player":"Player Two", "market":"Points Over 25.5", "odds":2.50}])
+with patch.object(cards, "player_photo", return_value=None):
+    assert cards.build_for_pick(ladder_pick) is None
+ladder_pick.leg_details[1]["player"] = "Player One"
+with patch.object(cards, "player_photo", return_value=None), patch.object(cards, "render", return_value=b"ok") as rr:
+    assert cards.build_for_pick(ladder_pick) == b"ok"
+    assert len(rr.call_args.args[5]) == 2
+    assert {row["name"] for row in rr.call_args.args[5]} == {"Player One"}
+print("EIGHT SPORT ROUTES / SIXTEEN ORIGINAL-LAYOUT SLOTS / SINGLE-PLAYER LADDER PASSED")
