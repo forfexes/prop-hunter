@@ -25,7 +25,7 @@ def migrate():
     now=datetime.now(timezone.utc)
     cutoff=(now-timedelta(days=LOOKBACK_DAYS)).date().isoformat()
     counts={"candidates":0,"photo_updated":0,"text_replaced":0,
-            "skipped":0,"failed":0}
+            "skipped":0,"failed":0,"failed_cards":[]}
     for entry in sorted(history,key=lambda x:str(x.get("date") or ""),reverse=True):
         if str(entry.get("date") or "")[:10] < cutoff:
             continue
@@ -63,6 +63,9 @@ def migrate():
                     _save_history(history)
                 else:
                     counts["failed"]+=1
+                    counts["failed_cards"].append({"message_id":int(card["message_id"]),
+                        "date":entry.get("date"),
+                        "kind":str(card.get("card_kind") or visual.get("type") or "unknown")[:32]})
             elif card.get("media_type","text")=="text":
                 ok=_replace_recent_text_with_photo(card,visual,text)
                 if ok:
