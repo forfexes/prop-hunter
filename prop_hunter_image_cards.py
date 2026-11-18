@@ -566,9 +566,15 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
         combo = typ not in ("single", "ladder")
         verified = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
-        if combo and not verified:
+        if combo and not verified and not getattr(pick, "_repaint_existing_photo", False):
+            # Never publish a new multi-leg quote without an observed bookmaker ticket.
             return None
-        footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
+        if combo and not verified:
+            # Already-published historical photos may be repainted for settlement.
+            # Do not display their old combined price as a VERIFIED bookmaker total.
+            footer = "GESAMTQUOTE UNBESTÄTIGT"
+        else:
+            footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
         return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""), template_sport=str(sport_hint or (league[1] if league else "NBA")).upper())
@@ -603,4 +609,10 @@ def settled_image(data, text):
         if match and int(match[1]):counts.append(f"{match[1]} {label}")
     profit=re.search(r"[+-]\d+\.\d+u",text.split("Auswertung:")[-1])
     obj["settlement_summary"]=" · ".join(counts+([profit[0]] if profit else [])) or summary
+    # This renderer only edits an already-published Telegram photo; it is NOT
+    # called by new-pick production. Old combo snapshots may lack quote provenance.
+    feats = obj.get("features") or {}
+    if (obj.get("type") not in ("single", "ladder")
+            and not (feats.get("combined_odds_observed") is True and feats.get("combined_quote_id"))):
+        obj["_repaint_existing_photo"] = True
     return build_for_pick(SimpleNamespace(**obj))
