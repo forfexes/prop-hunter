@@ -758,11 +758,14 @@ def _card_pick(card,picks,combos):
     return obj
 
 
-_EDIT_STATE = {"gone": False, "reason": ""}
+_EDIT_STATE = {"gone": False, "reason": "", "gateway_unavailable": False}
 
 
 def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=None, fallback_pick=None) -> bool:
     _EDIT_STATE["reason"] = ""
+    if _EDIT_STATE.get("gateway_unavailable"):
+        _EDIT_STATE["reason"] = "telegram_gateway_unavailable_5xx"
+        return False
     if not TG_TOKEN or not message_id:
         _EDIT_STATE["reason"] = "missing_telegram_token_or_message_id"
         return False
@@ -836,6 +839,19 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                 print(f"Telegram edit 429: retrying after {wait_s}s ({attempt+1}/{retries})")
                 time.sleep(wait_s)
                 continue
+            if 500 <= r.status_code < 600:
+                _EDIT_STATE["reason"] = f"telegram_http_{r.status_code}_gateway"
+                if attempt < min(retries, 2):
+                    delay = (5, 12)[attempt]
+                    print(f"Telegram gateway HTTP {r.status_code}; retry {attempt+1}/2 after {delay}s", flush=True)
+                    time.sleep(delay)
+                    continue
+                # 5xx across retries is an external outage, NOT a card error.
+                # Stop trying the remaining cards so the job cannot hammer the
+                # gateway or accidentally declare all images delivered.
+                _EDIT_STATE["gateway_unavailable"] = True
+                print(f"Telegram gateway unavailable HTTP {r.status_code}; halting photo edits safely", flush=True)
+                return False
             error_detail = str(r.text or "")[:150]
             _EDIT_STATE["reason"] = f"telegram_http_{r.status_code}:{error_detail}"
             print(f"Telegram edit {r.status_code}: {error_detail}")
