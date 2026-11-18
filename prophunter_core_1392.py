@@ -495,7 +495,7 @@ def persist(picks, telegram_message_id=None, telegram_text=None, telegram_cards=
                     "card_kind": sent.get("kind") or "main",
                     "media_type": sent.get("media_type", "text"),
                     "image_pick": sent.get("image_pick"),
-                    "card_design_version": 3 if sent.get("media_type")=="photo" else 0,
+                    "card_design_version": (5 if os.getenv("PH_USE_USER_ORIGINALS","1")!="0" else 3) if sent.get("media_type")=="photo" else 0,
                 })
             globals()["_LAST_TELEGRAM_CARDS"] = []
         else:
