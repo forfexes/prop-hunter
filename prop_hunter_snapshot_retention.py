@@ -16,7 +16,7 @@ def cutoff_iso(days: int = DAYS) -> str:
     return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
 
-def apply_retention(days: int = DAYS, batch_size: int = 250, max_batches: int = 100) -> int:
+def apply_retention(days: int = DAYS, batch_size: int = 500, max_batches: int = 120) -> int:
     sb = snapshot_supabase_client()
     if sb is None:
         raise RuntimeError("Supabase missing")
