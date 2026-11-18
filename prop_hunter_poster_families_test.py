@@ -72,3 +72,24 @@ with patch.object(cards, "player_photo", return_value=None), patch.object(cards,
     assert len(rr.call_args.args[5]) == 2
     assert {row["name"] for row in rr.call_args.args[5]} == {"Player One"}
 print("EIGHT SPORT ROUTES / SIXTEEN ORIGINAL-LAYOUT SLOTS / SINGLE-PLAYER LADDER PASSED")
+
+# The generator consumes a real render-ready artwork file when present.
+# It must NOT silently claim that an absent user master exists.
+from tempfile import TemporaryDirectory
+from unittest.mock import patch as mock_patch
+import os
+with TemporaryDirectory() as temp:
+    bgfile = Path(temp) / "football_single.webp"
+    Image.new("RGB", (900, 1100), (19, 42, 61)).save(bgfile, "WEBP")
+    with mock_patch("prop_hunter_original_template_registry.available_template", return_value=bgfile), mock_patch.object(cards, "_background", side_effect=AssertionError("procedural fallback was used")):
+        loaded = cards._original_artwork_background("football", "single", 1000)
+        assert loaded.size == (1080, 1000)
+        assert loaded.getpixel((540, 500))[:3] == (19, 42, 61)
+with mock_patch("prop_hunter_original_template_registry.available_template", return_value=None), mock_patch.dict(os.environ, {"PH_ORIGINAL_ONLY":"1"}):
+    try:
+        cards._original_artwork_background("hockey", "ladder", 1000)
+    except FileNotFoundError:
+        pass
+    else:
+        raise AssertionError("PH_ORIGINAL_ONLY must reject missing user artwork")
+print("REAL ARTWORK PATH / FAIL-CLOSED ORIGINAL MODE PASSED")
