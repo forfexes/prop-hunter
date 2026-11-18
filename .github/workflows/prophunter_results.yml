@@ -10,6 +10,8 @@ name: Prop Hunter Results Autonomous
       - 'prop_hunter_shared_utils.py'
       - 'prophunter_results.py'
       - 'prop_hunter_result_date_test.py'
+      - 'prop_hunter_card_design_migration_test.py'
+      - 'prop_hunter_image_cards.py'
       - 'prophunter_core_1391.py'
       - 'prop_hunter_builder_engine.py'
       - 'prop_hunter_quality_gates_test.py'
@@ -123,6 +125,7 @@ jobs:
           python prop_hunter_euroleague_test.py
           python prop_hunter_card_quality_test.py
           python prop_hunter_media_settlement_test.py
+          python prop_hunter_card_design_migration_test.py
           python prop_hunter_mixed_builders_test.py
           python prop_hunter_decisive_leg_test.py
           python prop_hunter_settler_fast_test.py
