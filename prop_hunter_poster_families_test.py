@@ -131,3 +131,13 @@ print("NBA ORIGINAL ARTWORK SHARED BY WNBA/NHL/NFL, SPORTS DATA ROUTING PASS")
 assert originals._family('kombi2') == 'builder'
 assert originals._family('kombi') == 'builder'
 print('LEGACY KOMBI2 SETTLEMENT FAMILY REGRESSION PASSED')
+
+# Original ladder design must not keep an outdated baked-in 3-LEG heading.
+# Render two and four rungs as well as the three-rung reference.
+for rung_count in (2, 4):
+    rungs = [{"name": "One Ladder Player", "photo": None,
+              "label": f"Points Under {10+i}.5", "odds": "@1.90",
+              "form": "L10 8/10   L15 12/15"} for i in range(rung_count)]
+    data = cards.render("ladder", "LADDER", "Verified sample", "basketball", [], rungs)
+    assert Image.open(BytesIO(data)).size[0] == 1080
+print('VARIABLE LADDER RUNG COUNT RENDER PASSED')
