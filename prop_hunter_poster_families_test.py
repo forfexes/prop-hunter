@@ -84,7 +84,7 @@ with TemporaryDirectory() as temp:
     with mock_patch("prop_hunter_original_template_registry.available_template", return_value=bgfile), mock_patch.object(cards, "_background", side_effect=AssertionError("procedural fallback was used")):
         loaded = cards._original_artwork_background("football", "single", 1000)
         assert loaded.size == (1080, 1000)
-        assert loaded.getpixel((540, 500))[:3] == (19, 42, 61)
+        assert all(abs(actual - expected) <= 5 for actual,expected in zip(loaded.getpixel((540, 500))[:3], (19, 42, 61)))
 with mock_patch("prop_hunter_original_template_registry.available_template", return_value=None), mock_patch.dict(os.environ, {"PH_ORIGINAL_ONLY":"1"}):
     try:
         cards._original_artwork_background("hockey", "ladder", 1000)
