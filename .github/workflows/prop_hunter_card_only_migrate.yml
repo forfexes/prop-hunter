@@ -1,4 +1,4 @@
-name: Prop Hunter v3 Existing Telegram Card Migration
+name: Prop Hunter v4 Existing Telegram Card Migration
 "on":
   push:
     paths:
@@ -70,7 +70,7 @@ jobs:
             echo "No Telegram card changes to commit"
             exit 0
           fi
-          git commit -m "prop hunter: preserve Telegram v3 card migrations [skip ci]"
+          git commit -m "prop hunter: preserve Telegram v4 card migrations [skip ci]"
           for attempt in 1 2 3; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
