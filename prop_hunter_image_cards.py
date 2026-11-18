@@ -253,7 +253,8 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     family = "lottery" if kind in ("big", "super", "lottery") else kind
     row_h = 250 if family == "single" else (215 if family == "ladder" else 195)
     head_h = (560 if teams else 410) if family in ("single", "lottery", "builder") else (430 if teams else 280)
-    h = head_h + row_h * len(rows) + 190
+    # Hero panels extend below the team header; reserve a safe footer gutter.
+    h = head_h + row_h * len(rows) + (290 if family in ("single", "lottery", "builder") else 190)
     img = _background(sport, h)
     accent = ((184, 110, 255) if kind in ("big", "super", "lottery") else
               (255, 198, 70) if kind == "ladder" else CYAN)
