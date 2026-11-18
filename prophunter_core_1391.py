@@ -2797,13 +2797,14 @@ def already_posted():
             pl=(p.get("player") or "").lower()
             if pl: players.add(pl)
     return keys,players
-def persist(picks, telegram_message_id=None, telegram_text=None):
+def persist(picks, telegram_message_id=None, telegram_text=None, telegram_cards=None):
     today=datetime.now(timezone.utc).strftime("%Y-%m-%d")
     h=load_history()
     entry=next((e for e in h if e.get("date")==today),None)
     if entry is None: entry={"date":today,"picks":[],"kombis":[]}; h.append(entry)
     singles=[p for p in picks if p.type=="single"]
     combos=[p for p in picks if p.type in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")]
+    original_combos=list(combos)  # Telegram indices refer to the original delivered sequence.
     # Builder-Dedup nach Leg-Signatur: zwei Builder mit denselben Legs
     # (Spieler+Markt+Linie+Richtung, Reihenfolge egal) sind EIN Tipp. Ohne das
     # landeten identische Same-Game-Builder doppelt auf Telegram, weil die
@@ -2853,6 +2854,8 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
         from prop_hunter_form_quality import evidence
         entry["picks"].append(dict(hp.model_dump(), features=evidence(getattr(p,"features",{}) or {})))
         sb_insert({**hp.model_dump(),"league":real_sport,"features":getattr(p,"features",{}) or {}})
+    _saved_combo_ids_by_object={}
+    _saved_combo_ids_by_signature={}
     for p in combos:
         combo = {"type":p.type,"category":getattr(p,"category",None),"player":p.player or "",
                  "market":p.market or "","sport":_clean_sport(p),"legs":p.legs or [],
@@ -2862,35 +2865,95 @@ def persist(picks, telegram_message_id=None, telegram_text=None):
             combo["ladder_legs"]=[x.model_dump() for x in (p.picks or [])]
             combo["direction"]=p.direction or "over"
             combo["point"]=getattr(p,"point",None)
+        # Assign each persisted combo its immutable identity once and map it to
+        # the exact delivered payload; never attach a later card to the first ID.
+        raw=json.dumps({"type":combo.get("type"),"legs":combo.get("legs"),
+                        "leg_details":combo.get("leg_details"),"odds":combo.get("odds"),
+                        "stake":combo.get("stake"),"created_at":combo.get("created_at")},
+                       sort_keys=True,default=str)
+        combo["combo_id"]=hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
         entry["kombis"].append(combo)
-    # Telegram card metadata: required to edit the ORIGINAL tip message after settlement.
-    # One day can have multiple card runs, so keep one record per sent card.
-    if telegram_message_id:
-        cards = entry.setdefault("cards", [])
-        pick_keys = [
-            dedup_key(p.player or "", p.market or "", getattr(p, "point", None), p.direction)
-            for p in singles
-        ]
-        combo_ids = []
-        for idx, combo in enumerate(entry.get("kombis", [])[-len(combos):] if combos else []):
-            cid = combo.get("combo_id")
-            if not cid:
-                raw = json.dumps({
-                    "type": combo.get("type"), "legs": combo.get("legs"),
-                    "leg_details": combo.get("leg_details"), "odds": combo.get("odds"),
-                    "stake": combo.get("stake"), "created_at": combo.get("created_at"),
-                }, sort_keys=True, default=str)
-                cid = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
-                combo["combo_id"] = cid
-            combo_ids.append(cid)
-        cards.append({
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "message_id": int(telegram_message_id),
-            "chat_id": str(TG_CHAT),
-            "text": telegram_text or "",
-            "pick_keys": pick_keys,
-            "combo_ids": combo_ids,
-        })
+        _saved_combo_ids_by_object[id(p)]=combo["combo_id"]
+        _signature=_combo_sig(p)
+        if _signature[1]:
+            _saved_combo_ids_by_signature[_signature]=combo["combo_id"]
+    # One Telegram message -> one scoped history card. The old implementation
+    # saved only the first message ID, losing every additional Single/Ladder.
+    if telegram_cards is not None:
+        if not isinstance(telegram_cards, (list,tuple)):
+            raise RuntimeError("Telegram delivery manifest must be a list")
+        expected=len(singles)+len(original_combos)
+        if len(telegram_cards)!=expected:
+            raise RuntimeError(f"Telegram manifest incomplete: {len(telegram_cards)}/{expected}; no history write")
+        single_keys=[dedup_key(p.player or "",p.market or "",getattr(p,"point",None),p.direction)
+                     for p in singles]
+        cards=entry.setdefault("cards",[])
+        known_ids={int(c["message_id"]) for e in h for c in (e.get("cards") or []) if c.get("message_id")}
+        seen_ids=set()
+        seen_single=set()
+        seen_combo=set()
+        new_cards=[]
+        for payload in telegram_cards:
+            if not isinstance(payload,dict):
+                raise RuntimeError("Telegram manifest has invalid delivery")
+            mid=int(payload.get("message_id") or 0)
+            if mid<=0 or mid in seen_ids or mid in known_ids:
+                raise RuntimeError("Duplicate/missing Telegram message ID; refusing history write")
+            seen_ids.add(mid)
+            si=payload.get("single_indices") or []
+            ci=payload.get("combo_indices") or []
+            if len(si)+len(ci)!=1:
+                raise RuntimeError("Telegram card must reference exactly one original tip")
+            if si:
+                index=int(si[0])
+                if index<0 or index>=len(single_keys) or index in seen_single:
+                    raise RuntimeError("Invalid/duplicate Telegram single index")
+                seen_single.add(index)
+                pick_keys=[single_keys[index]]
+                combo_ids=[]
+            else:
+                index=int(ci[0])
+                if index<0 or index>=len(original_combos) or index in seen_combo:
+                    raise RuntimeError("Invalid/duplicate Telegram combo index")
+                seen_combo.add(index)
+                combo_pick=original_combos[index]
+                cid=_saved_combo_ids_by_object.get(id(combo_pick))
+                if cid is None:
+                    sig=_combo_sig(combo_pick)
+                    cid=_saved_combo_ids_by_signature.get(sig) if sig[1] else None
+                if not cid:
+                    raise RuntimeError("Unmatched Telegram combo: refusing to invent original ID")
+                pick_keys=[]
+                combo_ids=[cid]
+            is_photo=payload.get("media_type")=="photo"
+            image_pick=payload.get("image_pick")
+            if is_photo and not isinstance(image_pick,dict):
+                raise RuntimeError("Telegram photo lacks its original pick snapshot")
+            item={"created_at":datetime.now(timezone.utc).isoformat(),
+                  "message_id":mid,"chat_id":str(TG_CHAT),
+                  "text":str(payload.get("text") or ""),
+                  "pick_keys":pick_keys,"combo_ids":combo_ids,
+                  "card_kind":str(payload.get("kind") or ""),
+                  "media_type":"photo" if is_photo else "text",
+                  "card_design_version":3 if is_photo else 0}
+            if is_photo:
+                item["image_pick"]=image_pick
+            new_cards.append(item)
+        if len(seen_single)!=len(singles) or len(seen_combo)!=len(original_combos):
+            raise RuntimeError("Telegram card coverage incomplete; no history write")
+        cards.extend(new_cards)
+        log.info("Telegram manifest: persisted %d unique original card IDs",len(new_cards))
+    elif telegram_message_id:
+        if len(singles)+len(original_combos)!=1:
+            raise RuntimeError("Multi-tip Telegram delivery requires individual card manifest")
+        cards=entry.setdefault("cards",[])
+        combo_id=next(iter(_saved_combo_ids_by_object.values()),None)
+        cards.append({"created_at":datetime.now(timezone.utc).isoformat(),
+                      "message_id":int(telegram_message_id),"chat_id":str(TG_CHAT),
+                      "text":telegram_text or "",
+                      "pick_keys":[dedup_key(p.player or "",p.market or "",getattr(p,"point",None),p.direction)
+                                   for p in singles],
+                      "combo_ids":[combo_id] if combo_id else []})
     save_history(h)
     log.info("persisted %d singles + %d combos",len(singles),len(combos))
 
@@ -5367,7 +5430,8 @@ def run(dry_run=False,sport_filter=None):
         primary_text=body
         if _LAST_TELEGRAM_CARDS:
             primary_text=str(_LAST_TELEGRAM_CARDS[0].get("text") or body)
-        persist(picks, telegram_message_id=telegram_message_id, telegram_text=primary_text)
+        persist(picks, telegram_message_id=telegram_message_id, telegram_text=primary_text,
+                telegram_cards=_LAST_TELEGRAM_CARDS)
     log.info("done — %d picks (%d singles)",len(picks),sum(1 for p in picks if p.type=="single"))
 
 
