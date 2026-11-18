@@ -11,16 +11,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent / "card_templates"
 FAMILIES = ("single", "ladder", "builder", "lottery")
+# All leagues use the SAME four original NBA layouts. Do not branch by sport.
+# Actual NHL/NFL/WNBA player photos, crests and labels are dynamic overlays.
 SPORTS = {
     "NBA": "basketball",
-    "WNBA": "wnba",
+    "WNBA": "basketball",
     "NCAAB": "basketball",
     "EUROLEAGUE": "basketball",
-    "NFL": "football",
-    "NCAAF": "football",
-    "NHL": "hockey",
-    "MLB": "baseball",
+    "NFL": "basketball",
+    "NCAAF": "basketball",
+    "NHL": "basketball",
+    "MLB": "basketball",
 }
+
 ORIGINAL_REFERENCE_NAMES = {
     "single": "1000114998.jpg",
     "ladder": "1000114995.jpg",
@@ -29,11 +32,10 @@ ORIGINAL_REFERENCE_NAMES = {
 }
 
 def sport_family(name: str) -> str:
+    """All supported leagues and legacy sport names select NBA original artwork."""
     key = str(name or "").strip().upper()
-    if key in SPORTS:
-        return SPORTS[key]
-    if key.lower() in set(SPORTS.values()):
-        return key.lower()
+    if key in SPORTS or key.lower() in ("basketball", "football", "hockey", "baseball", "wnba"):
+        return "basketball"
     raise ValueError(f"Unsupported sport: {name!r}")
 
 def poster_family(kind: str) -> str:
@@ -55,6 +57,5 @@ def available_template(sport: str, kind: str) -> Path | None:
     return p if p.is_file() else None
 
 def all_required_templates() -> list[Path]:
-    # 5 sport identities (NBA-style basketball / WNBA / NFL / NHL / MLB) x 4 original layouts.
-    return [template_location(s, family) for s in ("basketball", "wnba", "football", "hockey", "baseball")
-            for family in FAMILIES]
+    """Exactly FOUR images, shared by NBA, NHL, NFL, WNBA, MLB, etc."""
+    return [template_location("NBA", family) for family in FAMILIES]
