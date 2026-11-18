@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-18T12:09:41.847552+00:00",
+  "updated_at": "2026-11-18T13:05:55.330299+00:00",
   "groups": {
     "MLB|stolen base": {
       "group_type": "sport_market",
@@ -37,6 +37,15 @@
       "status": "active",
       "min_active_samples": 60
     },
+    "NFL|NFL|receptions": {
+      "group_type": "market",
+      "samples": 60,
+      "roi": 0.20067,
+      "hit_rate": 0.55,
+      "weight": 1.134,
+      "status": "active",
+      "min_active_samples": 60
+    },
     "WNBA|WNBA|rebs asts": {
       "group_type": "market",
       "samples": 2,
@@ -53,15 +62,6 @@
       "hit_rate": 0.5,
       "weight": 1.0,
       "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NFL|NFL|receptions": {
-      "group_type": "market",
-      "samples": 60,
-      "roi": 0.20067,
-      "hit_rate": 0.55,
-      "weight": 1.134,
-      "status": "active",
       "min_active_samples": 60
     },
     "MLB|to hit a double": {
@@ -253,15 +253,6 @@
       "status": "active",
       "min_active_samples": 60
     },
-    "EUROLEAGUE|EUROLEAGUE|points": {
-      "group_type": "market",
-      "samples": 1,
-      "roi": 0.83,
-      "hit_rate": 1,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "NBA|NBA|rebounds": {
       "group_type": "market",
       "samples": 383,
@@ -271,22 +262,13 @@
       "status": "active",
       "min_active_samples": 60
     },
-    "NBA|rebounds": {
-      "group_type": "sport_market",
-      "samples": 383,
-      "roi": 0.38494,
-      "hit_rate": 0.47258,
-      "weight": 1.292,
-      "status": "active",
-      "min_active_samples": 60
-    },
-    "NBA|NBA|assists": {
+    "EUROLEAGUE|EUROLEAGUE|points": {
       "group_type": "market",
-      "samples": 194,
-      "roi": -0.39615,
-      "hit_rate": 0.35567,
-      "weight": 0.707,
-      "status": "degraded",
+      "samples": 1,
+      "roi": 0.83,
+      "hit_rate": 1,
+      "weight": 1.0,
+      "status": "collecting",
       "min_active_samples": 60
     },
     "EUROLEAGUE|points": {
@@ -307,6 +289,33 @@
       "status": "collecting",
       "min_active_samples": 60
     },
+    "NBA|rebounds": {
+      "group_type": "sport_market",
+      "samples": 383,
+      "roi": 0.38494,
+      "hit_rate": 0.47258,
+      "weight": 1.292,
+      "status": "active",
+      "min_active_samples": 60
+    },
+    "NBA|NBA|assists": {
+      "group_type": "market",
+      "samples": 194,
+      "roi": -0.39615,
+      "hit_rate": 0.35567,
+      "weight": 0.707,
+      "status": "degraded",
+      "min_active_samples": 60
+    },
+    "NBA|assists": {
+      "group_type": "sport_market",
+      "samples": 194,
+      "roi": -0.39615,
+      "hit_rate": 0.35567,
+      "weight": 0.707,
+      "status": "degraded",
+      "min_active_samples": 60
+    },
     "BASKETBALL|rebounds": {
       "group_type": "sport_market",
       "samples": 4,
@@ -323,15 +332,6 @@
       "hit_rate": 1,
       "weight": 1.0,
       "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NBA|assists": {
-      "group_type": "sport_market",
-      "samples": 194,
-      "roi": -0.39615,
-      "hit_rate": 0.35567,
-      "weight": 0.707,
-      "status": "degraded",
       "min_active_samples": 60
     },
     "MLB|MLB|to hit a triple": {
@@ -352,15 +352,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "WNBA|WNBA|pt made": {
-      "group_type": "market",
-      "samples": 9,
-      "roi": -0.06027,
-      "hit_rate": 0.55556,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "NFL|receiving yards": {
       "group_type": "sport_market",
       "samples": 54,
@@ -368,6 +359,15 @@
       "hit_rate": 0.48148,
       "weight": 0.93,
       "status": "shadow",
+      "min_active_samples": 60
+    },
+    "WNBA|WNBA|pt made": {
+      "group_type": "market",
+      "samples": 9,
+      "roi": -0.06027,
+      "hit_rate": 0.55556,
+      "weight": 1.0,
+      "status": "collecting",
       "min_active_samples": 60
     },
     "WNBA|pt made": {
@@ -415,6 +415,24 @@
       "status": "collecting",
       "min_active_samples": 60
     },
+    "NBA|NBA|threes": {
+      "group_type": "market",
+      "samples": 129,
+      "roi": -0.23204,
+      "hit_rate": 0.34109,
+      "weight": 0.742,
+      "status": "degraded",
+      "min_active_samples": 60
+    },
+    "NBA|threes": {
+      "group_type": "sport_market",
+      "samples": 129,
+      "roi": -0.23204,
+      "hit_rate": 0.34109,
+      "weight": 0.742,
+      "status": "degraded",
+      "min_active_samples": 60
+    },
     "NCAAF|points": {
       "group_type": "sport_market",
       "samples": 1,
@@ -424,13 +442,13 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NBA|NBA|threes": {
+    "NHL|NHL|shots on goal ladder": {
       "group_type": "market",
-      "samples": 129,
-      "roi": -0.23204,
-      "hit_rate": 0.34109,
-      "weight": 0.742,
-      "status": "degraded",
+      "samples": 1,
+      "roi": 0.41,
+      "hit_rate": 1,
+      "weight": 1.0,
+      "status": "collecting",
       "min_active_samples": 60
     },
     "WNBA|WNBA|pr": {
@@ -442,13 +460,13 @@
       "status": "shadow",
       "min_active_samples": 60
     },
-    "NBA|threes": {
+    "NHL|shots on goal ladder": {
       "group_type": "sport_market",
-      "samples": 129,
-      "roi": -0.23204,
-      "hit_rate": 0.34109,
-      "weight": 0.742,
-      "status": "degraded",
+      "samples": 1,
+      "roi": 0.41,
+      "hit_rate": 1,
+      "weight": 1.0,
+      "status": "collecting",
       "min_active_samples": 60
     },
     "WNBA|pr": {
@@ -469,24 +487,6 @@
       "status": "shadow",
       "min_active_samples": 60
     },
-    "NHL|NHL|shots on goal ladder": {
-      "group_type": "market",
-      "samples": 1,
-      "roi": 0.41,
-      "hit_rate": 1,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NHL|shots on goal ladder": {
-      "group_type": "sport_market",
-      "samples": 1,
-      "roi": 0.41,
-      "hit_rate": 1,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "NHL|NHL|assists": {
       "group_type": "market",
       "samples": 27,
@@ -496,13 +496,22 @@
       "status": "shadow",
       "min_active_samples": 60
     },
-    "WNBA|assists ladder": {
+    "NBA|NBA|steals": {
+      "group_type": "market",
+      "samples": 33,
+      "roi": 0.14038,
+      "hit_rate": 0.51515,
+      "weight": 1.05,
+      "status": "shadow",
+      "min_active_samples": 60
+    },
+    "NBA|steals": {
       "group_type": "sport_market",
-      "samples": 1,
-      "roi": -1.0,
-      "hit_rate": 0,
-      "weight": 1.0,
-      "status": "collecting",
+      "samples": 33,
+      "roi": 0.14038,
+      "hit_rate": 0.51515,
+      "weight": 1.05,
+      "status": "shadow",
       "min_active_samples": 60
     },
     "WNBA|WNBA|points assists": {
@@ -541,6 +550,15 @@
       "status": "collecting",
       "min_active_samples": 60
     },
+    "WNBA|assists ladder": {
+      "group_type": "sport_market",
+      "samples": 1,
+      "roi": -1.0,
+      "hit_rate": 0,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
     "WNBA|WNBA|pts rebs asts": {
       "group_type": "market",
       "samples": 1,
@@ -559,24 +577,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NBA|NBA|steals": {
-      "group_type": "market",
-      "samples": 33,
-      "roi": 0.14038,
-      "hit_rate": 0.51515,
-      "weight": 1.05,
-      "status": "shadow",
-      "min_active_samples": 60
-    },
-    "NBA|steals": {
-      "group_type": "sport_market",
-      "samples": 33,
-      "roi": 0.14038,
-      "hit_rate": 0.51515,
-      "weight": 1.05,
-      "status": "shadow",
-      "min_active_samples": 60
-    },
     "NHL|assists": {
       "group_type": "sport_market",
       "samples": 27,
@@ -584,6 +584,33 @@
       "hit_rate": 0.24,
       "weight": 0.944,
       "status": "shadow",
+      "min_active_samples": 60
+    },
+    "NBA|NBA|blocks": {
+      "group_type": "market",
+      "samples": 223,
+      "roi": 0.61166,
+      "hit_rate": 0.80717,
+      "weight": 1.299,
+      "status": "active",
+      "min_active_samples": 60
+    },
+    "NBA|blocks": {
+      "group_type": "sport_market",
+      "samples": 223,
+      "roi": 0.61166,
+      "hit_rate": 0.80717,
+      "weight": 1.299,
+      "status": "active",
+      "min_active_samples": 60
+    },
+    "WNBA|threes": {
+      "group_type": "sport_market",
+      "samples": 12,
+      "roi": 0.02992,
+      "hit_rate": 0.33333,
+      "weight": 1.001,
+      "status": "collecting",
       "min_active_samples": 60
     },
     "NBA/WNBA|rebounds": {
@@ -640,33 +667,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NBA|NBA|blocks": {
-      "group_type": "market",
-      "samples": 223,
-      "roi": 0.61166,
-      "hit_rate": 0.80717,
-      "weight": 1.299,
-      "status": "active",
-      "min_active_samples": 60
-    },
-    "NBA|blocks": {
-      "group_type": "sport_market",
-      "samples": 223,
-      "roi": 0.61166,
-      "hit_rate": 0.80717,
-      "weight": 1.299,
-      "status": "active",
-      "min_active_samples": 60
-    },
-    "WNBA|threes": {
-      "group_type": "sport_market",
-      "samples": 12,
-      "roi": 0.02992,
-      "hit_rate": 0.33333,
-      "weight": 1.001,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "WNBA|rebounds": {
       "group_type": "sport_market",
       "samples": 26,
@@ -694,15 +694,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "WNBA|WNBA|rebounds": {
-      "group_type": "market",
-      "samples": 26,
-      "roi": 0.84546,
-      "hit_rate": 0.53846,
-      "weight": 1.053,
-      "status": "shadow",
-      "min_active_samples": 60
-    },
     "WNBA|rebounds ladder": {
       "group_type": "sport_market",
       "samples": 2,
@@ -721,13 +712,13 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "WNBA|points ladder": {
-      "group_type": "sport_market",
-      "samples": 3,
-      "roi": 0.706,
-      "hit_rate": 0.66667,
-      "weight": 1.0,
-      "status": "collecting",
+    "WNBA|WNBA|rebounds": {
+      "group_type": "market",
+      "samples": 26,
+      "roi": 0.84546,
+      "hit_rate": 0.53846,
+      "weight": 1.053,
+      "status": "shadow",
       "min_active_samples": 60
     },
     "WNBA|WNBA|points": {
@@ -739,12 +730,30 @@
       "status": "shadow",
       "min_active_samples": 60
     },
+    "WNBA|points ladder": {
+      "group_type": "sport_market",
+      "samples": 3,
+      "roi": 0.706,
+      "hit_rate": 0.66667,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
     "WNBA|points": {
       "group_type": "sport_market",
       "samples": 27,
       "roi": 0.54723,
       "hit_rate": 0.66667,
       "weight": 1.056,
+      "status": "shadow",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|total bases": {
+      "group_type": "market",
+      "samples": 21,
+      "roi": 0.25485,
+      "hit_rate": 0.61905,
+      "weight": 1.033,
       "status": "shadow",
       "min_active_samples": 60
     },
@@ -775,24 +784,6 @@
       "status": "active",
       "min_active_samples": 60
     },
-    "MLB|MLB|total bases": {
-      "group_type": "market",
-      "samples": 21,
-      "roi": 0.25485,
-      "hit_rate": 0.61905,
-      "weight": 1.033,
-      "status": "shadow",
-      "min_active_samples": 60
-    },
-    "MLB|total bases": {
-      "group_type": "sport_market",
-      "samples": 21,
-      "roi": 0.25485,
-      "hit_rate": 0.61905,
-      "weight": 1.033,
-      "status": "shadow",
-      "min_active_samples": 60
-    },
     "NBA|points ladder": {
       "group_type": "sport_market",
       "samples": 71,
@@ -820,13 +811,13 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "NBA|NBA|threes ladder": {
-      "group_type": "market",
-      "samples": 3,
-      "roi": -0.73,
-      "hit_rate": 0.66667,
-      "weight": 1.0,
-      "status": "collecting",
+    "MLB|total bases": {
+      "group_type": "sport_market",
+      "samples": 21,
+      "roi": 0.25485,
+      "hit_rate": 0.61905,
+      "weight": 1.033,
+      "status": "shadow",
       "min_active_samples": 60
     },
     "WNBA|WNBA|ra": {
@@ -847,19 +838,19 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "MLB|MLB|pitcher k": {
+    "NBA|NBA|threes ladder": {
       "group_type": "market",
-      "samples": 1,
-      "roi": 1.14,
-      "hit_rate": 1,
+      "samples": 3,
+      "roi": -0.73,
+      "hit_rate": 0.66667,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
     },
-    "BASKETBALL|assists": {
-      "group_type": "sport_market",
+    "MLB|MLB|pitcher k": {
+      "group_type": "market",
       "samples": 1,
-      "roi": 0.77,
+      "roi": 1.14,
       "hit_rate": 1,
       "weight": 1.0,
       "status": "collecting",
@@ -883,6 +874,15 @@
       "status": "shadow",
       "min_active_samples": 60
     },
+    "BASKETBALL|assists": {
+      "group_type": "sport_market",
+      "samples": 1,
+      "roi": 0.77,
+      "hit_rate": 1,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
     "NFL|NFL|rushing attempts": {
       "group_type": "market",
       "samples": 20,
@@ -899,6 +899,15 @@
       "hit_rate": 0.3,
       "weight": 0.967,
       "status": "shadow",
+      "min_active_samples": 60
+    },
+    "MLB|MLB|to hit a double": {
+      "group_type": "market",
+      "samples": 4,
+      "roi": 0.0,
+      "hit_rate": null,
+      "weight": 1.0,
+      "status": "collecting",
       "min_active_samples": 60
     },
     "NFL|NFL|td": {
@@ -919,38 +928,11 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "MLB|MLB|to hit a double": {
-      "group_type": "market",
-      "samples": 4,
-      "roi": 0.0,
-      "hit_rate": null,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
     "MLB|pitcher k": {
       "group_type": "sport_market",
       "samples": 1,
       "roi": 1.14,
       "hit_rate": 1,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NFL|NFL|pass yds": {
-      "group_type": "market",
-      "samples": 5,
-      "roi": -0.63,
-      "hit_rate": 0.2,
-      "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NFL|pass yds": {
-      "group_type": "sport_market",
-      "samples": 5,
-      "roi": -0.63,
-      "hit_rate": 0.2,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
@@ -969,6 +951,24 @@
       "samples": 6,
       "roi": 0.03914,
       "hit_rate": 0.5,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NFL|NFL|pass yds": {
+      "group_type": "market",
+      "samples": 5,
+      "roi": -0.63,
+      "hit_rate": 0.2,
+      "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NFL|pass yds": {
+      "group_type": "sport_market",
+      "samples": 5,
+      "roi": -0.63,
+      "hit_rate": 0.2,
       "weight": 1.0,
       "status": "collecting",
       "min_active_samples": 60
@@ -1027,15 +1027,6 @@
       "status": "collecting",
       "min_active_samples": 60
     },
-    "MLB|MLB|rbi": {
-      "group_type": "market",
-      "samples": 128,
-      "roi": 0.31736,
-      "hit_rate": 0.60156,
-      "weight": 1.283,
-      "status": "active",
-      "min_active_samples": 60
-    },
     "NFL|NFL|receiving yards ladder": {
       "group_type": "market",
       "samples": 1,
@@ -1081,12 +1072,30 @@
       "status": "collecting",
       "min_active_samples": 60
     },
+    "MLB|MLB|rbi": {
+      "group_type": "market",
+      "samples": 128,
+      "roi": 0.31736,
+      "hit_rate": 0.60156,
+      "weight": 1.283,
+      "status": "active",
+      "min_active_samples": 60
+    },
     "MLB|MLB|stolen base": {
       "group_type": "market",
       "samples": 7,
       "roi": 9.06733,
       "hit_rate": 0.85714,
       "weight": 1.0,
+      "status": "collecting",
+      "min_active_samples": 60
+    },
+    "NFL|anytime td": {
+      "group_type": "sport_market",
+      "samples": 15,
+      "roi": -0.27647,
+      "hit_rate": 0.26667,
+      "weight": 0.985,
       "status": "collecting",
       "min_active_samples": 60
     },
@@ -1105,15 +1114,6 @@
       "roi": -0.06494,
       "hit_rate": 0,
       "weight": 1.0,
-      "status": "collecting",
-      "min_active_samples": 60
-    },
-    "NFL|anytime td": {
-      "group_type": "sport_market",
-      "samples": 15,
-      "roi": -0.27647,
-      "hit_rate": 0.26667,
-      "weight": 0.985,
       "status": "collecting",
       "min_active_samples": 60
     },
@@ -1158,9 +1158,9 @@
     "status": "active",
     "validated_for_live": true,
     "validation": {
-      "brier": 0.24536769670676573,
+      "brier": 0.24536769670676575,
       "baseline_brier": 0.24405000074817554,
-      "log_loss": 0.6836351920815223,
+      "log_loss": 0.6836351920815225,
       "baseline_log_loss": 0.6812792588858233,
       "test_samples": 793,
       "folds": [
@@ -1193,7 +1193,7 @@
     },
     "samples": 972,
     "auc": 0.5513,
-    "trained_at": "2026-11-18T12:09:41.846051+00:00"
+    "trained_at": "2026-11-18T13:05:55.328186+00:00"
   },
   "active_groups": 22
 }
