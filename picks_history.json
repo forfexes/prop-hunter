@@ -34,7 +34,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:07.205503+00:00",
         "actual_value": 17,
-        "settled_at": "2026-10-28T04:29:38.072148+00:00",
+        "settled_at": "2026-10-24T18:53:56.319112+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -69,7 +69,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:08.125513+00:00",
         "actual_value": 3,
-        "settled_at": "2026-10-31T00:25:29.84188+00:00",
+        "settled_at": "2026-10-24T18:53:56.319179+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -104,7 +104,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:08.562544+00:00",
         "actual_value": 7,
-        "settled_at": "2026-10-30T02:14:50.72294+00:00",
+        "settled_at": "2026-10-24T18:53:56.319232+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -209,7 +209,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:09.811711+00:00",
         "actual_value": 12,
-        "settled_at": "2026-10-28T04:29:38.076131+00:00",
+        "settled_at": "2026-10-24T18:53:56.319371+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -244,7 +244,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:10.201879+00:00",
         "actual_value": 10,
-        "settled_at": "2026-10-28T04:11:24.372254+00:00",
+        "settled_at": "2026-10-24T18:53:56.319421+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -279,7 +279,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:10.726729+00:00",
         "actual_value": 3,
-        "settled_at": "2026-10-28T04:29:38.074718+00:00",
+        "settled_at": "2026-10-24T18:53:56.319468+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -378,7 +378,7 @@
           "bookmaker": "betrivers",
           "source": "betrivers_direct"
         },
-        "result": "void",
+        "result": "push",
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
@@ -490,7 +490,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T13:13:13.151535+00:00",
         "actual_value": 6,
-        "settled_at": "2026-10-28T04:29:38.072259+00:00",
+        "settled_at": "2026-10-24T18:53:56.33149+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -700,7 +700,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T20:22:13.912482+00:00",
         "actual_value": 21,
-        "settled_at": "2026-10-28T04:29:38.075277+00:00",
+        "settled_at": "2026-10-24T18:53:56.336043+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -735,7 +735,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T20:22:14.622884+00:00",
         "actual_value": 3,
-        "settled_at": "2026-10-28T04:29:38.074285+00:00",
+        "settled_at": "2026-10-24T18:53:56.336093+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -805,7 +805,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T20:22:15.664069+00:00",
         "actual_value": 12,
-        "settled_at": "2026-10-28T04:29:38.073431+00:00",
+        "settled_at": "2026-10-24T18:53:56.336139+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -840,7 +840,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T20:22:16.345878+00:00",
         "actual_value": 4,
-        "settled_at": "2026-10-28T04:29:38.074063+00:00",
+        "settled_at": "2026-10-24T18:53:56.336186+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -910,7 +910,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T20:22:17.308207+00:00",
         "actual_value": 17,
-        "settled_at": "2026-10-28T04:29:38.074938+00:00",
+        "settled_at": "2026-10-24T18:53:56.33627+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -980,7 +980,7 @@
         "clv_pct": null,
         "created_at": "2026-10-22T20:22:18.511243+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T04:29:38.074182+00:00",
+        "settled_at": "2026-10-24T18:53:56.336352+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -5115,7 +5115,14 @@
             "result": "loss",
             "actual_value": 0
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Marco Rossi",
+          "market": "Shots On Goal Over 1.5",
+          "actual_value": 0,
+          "result_id": "8cd777e621d127c448611c2c68deb5de",
+          "official_game_id": "2026020165"
+        }
       },
       {
         "type": "big",
@@ -9529,7 +9536,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T02:22:13.328462+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-28T04:11:35.804662+00:00",
+        "settled_at": "2026-10-24T18:46:06.788337+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9564,7 +9571,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T02:22:14.685677+00:00",
         "actual_value": 9,
-        "settled_at": "2026-10-28T04:11:24.384482+00:00",
+        "settled_at": "2026-10-24T18:46:01.870953+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9599,7 +9606,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T02:22:15.175763+00:00",
         "actual_value": 5,
-        "settled_at": "2026-10-28T04:11:24.384971+00:00",
+        "settled_at": "2026-10-24T18:46:01.870988+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9634,7 +9641,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T02:22:15.910582+00:00",
         "actual_value": 13,
-        "settled_at": "2026-10-28T04:11:24.385107+00:00",
+        "settled_at": "2026-10-24T18:46:01.871018+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9669,7 +9676,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T02:22:16.355439+00:00",
         "actual_value": 19,
-        "settled_at": "2026-10-28T04:11:24.385415+00:00",
+        "settled_at": "2026-10-24T18:46:01.871053+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9704,7 +9711,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T02:22:16.810499+00:00",
         "actual_value": 25,
-        "settled_at": "2026-10-28T04:11:24.385586+00:00",
+        "settled_at": "2026-10-24T18:46:01.871098+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9739,7 +9746,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:37.760450+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-28T04:29:44.864428+00:00",
+        "settled_at": "2026-10-24T18:46:06.788405+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9774,7 +9781,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:38.526047+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T02:20:07.790875+00:00",
+        "settled_at": "2026-10-24T18:46:01.871171+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9809,7 +9816,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:39.014057+00:00",
         "actual_value": 7,
-        "settled_at": "2026-10-30T02:14:50.724652+00:00",
+        "settled_at": "2026-10-24T18:46:01.8712+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9838,13 +9845,13 @@
           "bookmaker": "betrivers",
           "source": "betrivers_direct"
         },
-        "result": "loss",
-        "profit": -0.34,
+        "result": "win",
+        "profit": 0.63,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:39.391522+00:00",
-        "actual_value": 0,
-        "settled_at": "2026-10-28T02:20:08.097701+00:00",
+        "actual_value": 1,
+        "settled_at": "2026-10-24T18:46:01.871234+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -9914,7 +9921,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:40.109006+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-30T02:14:50.725083+00:00",
+        "settled_at": "2026-10-24T18:46:01.871288+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10019,7 +10026,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:41.190285+00:00",
         "actual_value": 11,
-        "settled_at": "2026-10-28T04:29:38.077723+00:00",
+        "settled_at": "2026-10-24T18:46:01.871347+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10089,7 +10096,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:41.950987+00:00",
         "actual_value": 12,
-        "settled_at": "2026-10-28T04:11:24.386498+00:00",
+        "settled_at": "2026-10-24T18:46:01.87149+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10124,7 +10131,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:42.378900+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-30T02:14:55.310053+00:00",
+        "settled_at": "2026-10-24T18:46:06.788466+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10159,7 +10166,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:42.807339+00:00",
         "actual_value": 5,
-        "settled_at": "2026-10-30T02:14:50.764649+00:00",
+        "settled_at": "2026-10-24T18:46:01.871515+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10194,7 +10201,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:43.171099+00:00",
         "actual_value": 13,
-        "settled_at": "2026-10-28T04:11:24.390928+00:00",
+        "settled_at": "2026-10-24T18:46:01.871541+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10223,13 +10230,13 @@
           "bookmaker": "bovada",
           "source": "bovada_direct"
         },
-        "result": "loss",
-        "profit": -0.34,
+        "result": "win",
+        "profit": 0.36,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:43.503053+00:00",
-        "actual_value": 1,
-        "settled_at": "2026-10-28T02:20:04.492727+00:00",
+        "actual_value": 0,
+        "settled_at": "2026-10-24T18:46:01.871571+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10299,7 +10306,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:44.264819+00:00",
         "actual_value": 4,
-        "settled_at": "2026-10-28T04:29:38.077608+00:00",
+        "settled_at": "2026-10-24T18:46:01.871621+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10334,7 +10341,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:44.625380+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T02:20:05.214377+00:00",
+        "settled_at": "2026-10-24T18:46:01.87141+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10369,7 +10376,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T12:51:44.975714+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T04:11:24.48915+00:00",
+        "settled_at": "2026-10-24T18:46:01.871653+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10439,7 +10446,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:51.891508+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-28T04:11:24.479559+00:00",
+        "settled_at": "2026-10-24T18:46:01.871713+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10474,7 +10481,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:52.764621+00:00",
         "actual_value": 22,
-        "settled_at": "2026-10-28T04:29:38.079034+00:00",
+        "settled_at": "2026-10-24T18:46:01.871738+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10509,7 +10516,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:53.178585+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T04:11:24.480075+00:00",
+        "settled_at": "2026-10-24T18:46:01.871763+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10579,7 +10586,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:53.944227+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T04:11:24.479918+00:00",
+        "settled_at": "2026-10-24T18:46:01.871811+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10614,7 +10621,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:54.351669+00:00",
         "actual_value": 12,
-        "settled_at": "2026-10-30T02:14:50.762894+00:00",
+        "settled_at": "2026-10-24T18:46:01.871859+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10649,7 +10656,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:54.734109+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-30T02:14:50.762715+00:00",
+        "settled_at": "2026-10-24T18:46:01.871887+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10684,7 +10691,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:55.095958+00:00",
         "actual_value": 19,
-        "settled_at": "2026-10-30T02:14:50.763072+00:00",
+        "settled_at": "2026-10-24T18:46:01.871912+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10719,7 +10726,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:55.468906+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T04:11:24.394313+00:00",
+        "settled_at": "2026-10-24T18:46:01.871936+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10748,13 +10755,13 @@
           "bookmaker": "fanduel",
           "source": "fanduel_direct"
         },
-        "result": "win",
-        "profit": 2.0,
+        "result": "loss",
+        "profit": -0.05,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-23T20:11:55.845658+00:00",
-        "actual_value": 1,
-        "settled_at": "2026-10-28T02:20:08.812737+00:00",
+        "actual_value": 0,
+        "settled_at": "2026-10-24T18:46:01.871968+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10824,7 +10831,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T23:53:43.336922+00:00",
         "actual_value": 3,
-        "settled_at": "2026-10-28T04:29:44.864894+00:00",
+        "settled_at": "2026-10-24T18:46:06.788225+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10859,7 +10866,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T23:53:44.051578+00:00",
         "actual_value": 7,
-        "settled_at": "2026-10-28T04:29:38.125176+00:00",
+        "settled_at": "2026-10-24T18:46:01.870864+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10894,7 +10901,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T23:53:44.430169+00:00",
         "actual_value": 10,
-        "settled_at": "2026-10-30T02:14:50.764121+00:00",
+        "settled_at": "2026-10-24T18:46:01.872015+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -10999,7 +11006,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T23:53:45.489237+00:00",
         "actual_value": 19,
-        "settled_at": "2026-10-30T02:14:50.76432+00:00",
+        "settled_at": "2026-10-24T18:46:01.872097+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -11034,7 +11041,7 @@
         "clv_pct": null,
         "created_at": "2026-10-23T23:53:45.841238+00:00",
         "actual_value": 20,
-        "settled_at": "2026-10-28T04:29:38.125842+00:00",
+        "settled_at": "2026-10-24T18:46:01.872122+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -15357,7 +15364,14 @@
             "event_id": "36220980",
             "game_id": "36220980"
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Ja'Kobe Walter",
+          "market": "threes Over 2.5",
+          "actual_value": 2,
+          "result_id": "b55e577a16688a224d5c6f2d71c84605",
+          "official_game_id": "401909846"
+        }
       },
       {
         "type": "big",
@@ -21221,7 +21235,14 @@
             "result": "loss",
             "actual_value": 10
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Zach Edey",
+          "market": "Rebounds Over 13.5",
+          "actual_value": 10,
+          "result_id": "0a5276b32719b95799e740d9caff864b",
+          "official_game_id": "401909850"
+        }
       },
       {
         "type": "big",
@@ -21391,7 +21412,14 @@
             "result": "loss",
             "actual_value": 0
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Sam Rinzel",
+          "market": "Shots On Goal Over 1.5",
+          "actual_value": 0,
+          "result_id": "3923f73bb78ad7f295f3f4a25a0d8255",
+          "official_game_id": "2026020166"
+        }
       },
       {
         "type": "betbuilder",
@@ -22884,8 +22912,9 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 23.10.2026\n\n⚾ Jackson Chourio\n🏟 TB Rays @ MIL Brewers\n\n   ❌ • rbi Over 0.5 @2.85 → 0.34u · Ergebnis 0 · -0.34u\n📈 Prob 66% · Edge +30.8% · Confidence 85/100\n💡 src:betrivers | DB L10 avg 1.0, 65% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.34u\n@prophunter",
-        "settlement_updated_at": "2026-10-25T12:06:35.501289+00:00"
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 23.10.2026\n\n⚾ Jackson Chourio\n🏟 TB Rays @ MIL Brewers\n\n   ✅ • rbi Over 0.5 @2.85 → 0.34u · Ergebnis 1 · +0.63u\n📈 Prob 66% · Edge +30.8% · Confidence 85/100\n💡 src:betrivers | DB L10 avg 1.0, 65% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.63u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:44.370280+00:00",
+        "image_settlement_version": 1
       },
       {
         "created_at": "2026-10-23T12:51:45.707137+00:00",
@@ -23027,8 +23056,9 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 23.10.2026\n\n⚾ David Hamilton\n🏟 Tampa Bay Rays @ Milwaukee Brewers\n\n   ❌ • rbi Under 0.5 @2.05 → 0.34u · Ergebnis 1 · -0.34u\n📈 Prob 74% · Edge +25.5% · Confidence 92/100\n💡 src:bovada | DB L10 avg 0.2, 88% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.34u\n@prophunter",
-        "settlement_updated_at": "2026-10-25T12:06:36.995702+00:00"
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 23.10.2026\n\n⚾ David Hamilton\n🏟 Tampa Bay Rays @ Milwaukee Brewers\n\n   ✅ • rbi Under 0.5 @2.05 → 0.34u · Ergebnis 0 · +0.36u\n📈 Prob 74% · Edge +25.5% · Confidence 92/100\n💡 src:bovada | DB L10 avg 0.2, 88% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.36u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:45.720762+00:00",
+        "image_settlement_version": 1
       },
       {
         "created_at": "2026-10-23T12:51:45.707178+00:00",
@@ -23364,8 +23394,9 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 23.10.2026\n\n⚾ Liam Hicks\n🏟 Tampa Bay Rays @ Milwaukee Brewers\n\n   ✅ • Home Run @41.00 → 0.05u · Ergebnis 1 · +2.00u\n📈 Prob 6% · Edge +150.9% · Confidence 1/100\n💡 Verifizierte fanduel Quote · kalibrierte Modellprob 6.1%\n\n🏁 Auswertung: 1✅ 0❌ · +2.00u\n@prophunter",
-        "settlement_updated_at": "2026-11-01T05:17:30.239250+00:00"
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 23.10.2026\n\n⚾ Liam Hicks\n🏟 Tampa Bay Rays @ Milwaukee Brewers\n\n   ❌ • Home Run @41.00 → 0.05u · Ergebnis 0 · -0.05u\n📈 Prob 6% · Edge +150.9% · Confidence 1/100\n💡 Verifizierte fanduel Quote · kalibrierte Modellprob 6.1%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:47.088806+00:00",
+        "image_settlement_version": 1
       },
       {
         "created_at": "2026-10-23T20:11:56.782098+00:00",
@@ -24052,7 +24083,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:04.857991+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T04:11:24.489583+00:00",
+        "settled_at": "2026-10-25T12:06:24.249731+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24087,7 +24118,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:05.740418+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T02:20:08.097701+00:00",
+        "settled_at": "2026-10-28T04:11:24.488632+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24262,7 +24293,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:07.300656+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T04:29:38.127554+00:00",
+        "settled_at": "2026-10-25T12:06:24.249943+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24297,7 +24328,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:07.607890+00:00",
         "actual_value": 5,
-        "settled_at": "2026-10-28T04:29:38.127969+00:00",
+        "settled_at": "2026-10-25T12:06:24.249975+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24367,7 +24398,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:08.188780+00:00",
         "actual_value": 4,
-        "settled_at": "2026-10-28T04:29:38.127657+00:00",
+        "settled_at": "2026-10-25T12:06:24.250056+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24401,8 +24432,8 @@
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:08.469882+00:00",
-        "actual_value": 2,
-        "settled_at": "2026-10-28T04:11:24.489749+00:00",
+        "actual_value": 1,
+        "settled_at": "2026-10-25T12:06:24.250085+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24437,7 +24468,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:08.802731+00:00",
         "actual_value": 25,
-        "settled_at": "2026-10-28T04:29:38.12787+00:00",
+        "settled_at": "2026-10-25T12:06:24.250116+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24472,7 +24503,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:09.084838+00:00",
         "actual_value": 9,
-        "settled_at": "2026-10-28T04:29:38.127754+00:00",
+        "settled_at": "2026-10-25T12:06:24.250146+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24507,7 +24538,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:09.363068+00:00",
         "actual_value": 9,
-        "settled_at": "2026-10-28T04:29:38.128083+00:00",
+        "settled_at": "2026-10-25T12:06:24.250174+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24647,7 +24678,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:10.532327+00:00",
         "actual_value": 15,
-        "settled_at": "2026-10-28T04:11:24.490055+00:00",
+        "settled_at": "2026-10-25T12:06:24.25028+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -24717,7 +24748,7 @@
         "clv_pct": null,
         "created_at": "2026-10-24T19:06:11.124212+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T02:20:08.812737+00:00",
+        "settled_at": "2026-10-25T12:06:24.250387+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -25597,7 +25628,10 @@
             "created_at": "2026-10-24T19:06:11.702832+00:00",
             "date": "2026-10-24",
             "result": "loss",
-            "actual_value": 0
+            "actual_value": 0,
+            "commence_time": "2026-10-25T00:00:00+00:00",
+            "event_id": "1029561853",
+            "game_id": "1029561853"
           },
           {
             "player": "Jackson Chourio",
@@ -25615,7 +25649,10 @@
             "created_at": "2026-10-24T19:06:11.702832+00:00",
             "date": "2026-10-24",
             "result": "loss",
-            "actual_value": 0
+            "actual_value": 0,
+            "commence_time": "2026-10-25T00:00:00+00:00",
+            "event_id": "1029561853",
+            "game_id": "1029561853"
           }
         ],
         "odds": 2.65,
@@ -25683,7 +25720,10 @@
             "created_at": "2026-10-24T19:06:11.702832+00:00",
             "date": "2026-10-24",
             "result": "loss",
-            "actual_value": 0
+            "actual_value": 0,
+            "commence_time": "2026-10-25T00:00:00+00:00",
+            "event_id": "1029561853",
+            "game_id": "1029561853"
           },
           {
             "player": "Jackson Chourio",
@@ -25701,7 +25741,10 @@
             "created_at": "2026-10-24T19:06:11.702832+00:00",
             "date": "2026-10-24",
             "result": "loss",
-            "actual_value": 0
+            "actual_value": 0,
+            "commence_time": "2026-10-25T00:00:00+00:00",
+            "event_id": "1029561853",
+            "game_id": "1029561853"
           }
         ]
       },
@@ -27877,8 +27920,9 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 24.10.2026\n\n🏀 Jarrett Allen\n🏟 Brooklyn Nets @ Cleveland Cavaliers\n\n   ✅ • blocks Under 2.5 @1.58 → 0.36u · Ergebnis 2 · +0.21u\n📈 Prob 88% · Edge +24.8% · Confidence 99/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L10 avg 1.4, 96% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.21u\n@prophunter",
-        "settlement_updated_at": "2026-11-01T05:17:32.223932+00:00"
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 24.10.2026\n\n🏀 Jarrett Allen\n🏟 Brooklyn Nets @ Cleveland Cavaliers\n\n   ✅ • blocks Under 2.5 @1.58 → 0.36u · Ergebnis 1 · +0.21u\n📈 Prob 88% · Edge +24.8% · Confidence 99/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L10 avg 1.4, 96% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.21u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:41.920815+00:00",
+        "image_settlement_version": 1
       },
       {
         "created_at": "2026-10-24T19:06:11.703537+00:00",
@@ -28176,7 +28220,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:54.657443+00:00",
         "actual_value": 7,
-        "settled_at": "2026-10-28T04:11:24.495223+00:00",
+        "settled_at": "2026-10-26T16:51:58.749853+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28246,7 +28290,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:55.490745+00:00",
         "actual_value": 6,
-        "settled_at": "2026-10-28T04:11:24.495135+00:00",
+        "settled_at": "2026-10-26T16:51:58.749964+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28285,7 +28329,7 @@
         "actual_value": null,
         "settlement_source": "prop_hunter_results",
         "status": "pending",
-        "settlement_invalidated": true
+        "settled_at": "2026-11-03T01:34:03.379869+00:00"
       },
       {
         "date": "2026-10-25",
@@ -28319,7 +28363,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:56.205772+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-28T04:11:24.494828+00:00",
+        "settled_at": "2026-10-26T16:51:58.75007+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28354,7 +28398,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:56.487613+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T04:11:35.807237+00:00",
+        "settled_at": "2026-10-26T16:52:05.557831+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28389,7 +28433,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:56.761939+00:00",
         "actual_value": 20,
-        "settled_at": "2026-10-28T04:11:24.495615+00:00",
+        "settled_at": "2026-10-26T16:51:58.750197+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28494,7 +28538,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:57.614896+00:00",
         "actual_value": 15,
-        "settled_at": "2026-10-28T04:11:24.492334+00:00",
+        "settled_at": "2026-10-26T16:51:58.749783+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28599,7 +28643,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:58.458462+00:00",
         "actual_value": 6,
-        "settled_at": "2026-10-28T04:11:24.493462+00:00",
+        "settled_at": "2026-10-26T16:51:58.750299+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28634,7 +28678,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T12:47:58.747005+00:00",
         "actual_value": 5,
-        "settled_at": "2026-10-28T04:11:24.500463+00:00",
+        "settled_at": "2026-10-26T16:51:58.750351+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28809,7 +28853,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:32.237673+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T04:11:24.499433+00:00",
+        "settled_at": "2026-10-26T01:33:52.913428+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28879,7 +28923,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:33.584571+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T04:11:24.499583+00:00",
+        "settled_at": "2026-10-26T01:33:52.913516+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28914,7 +28958,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:34.000741+00:00",
         "actual_value": 22,
-        "settled_at": "2026-10-28T04:29:38.128661+00:00",
+        "settled_at": "2026-10-26T16:51:58.750694+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -28949,7 +28993,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:34.403835+00:00",
         "actual_value": 6,
-        "settled_at": "2026-10-28T04:29:38.128766+00:00",
+        "settled_at": "2026-10-26T01:29:36.087891+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29054,7 +29098,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:35.620245+00:00",
         "actual_value": 4,
-        "settled_at": "2026-10-28T04:11:24.498583+00:00",
+        "settled_at": "2026-10-26T16:51:58.750787+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29089,7 +29133,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:36.003106+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-28T04:29:38.128871+00:00",
+        "settled_at": "2026-10-26T16:51:58.750839+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29159,7 +29203,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:36.817862+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T04:11:24.500323+00:00",
+        "settled_at": "2026-10-26T16:51:58.750886+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29194,7 +29238,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:37.212990+00:00",
         "actual_value": 6,
-        "settled_at": "2026-10-28T04:29:38.128541+00:00",
+        "settled_at": "2026-10-26T16:51:58.750936+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29229,7 +29273,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T19:21:37.602089+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-28T04:11:24.500193+00:00",
+        "settled_at": "2026-10-26T16:51:58.750983+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29299,7 +29343,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T23:09:14.816970+00:00",
         "actual_value": 13,
-        "settled_at": "2026-10-28T04:11:24.505385+00:00",
+        "settled_at": "2026-10-26T16:51:58.751089+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29334,7 +29378,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T23:09:15.177086+00:00",
         "actual_value": 5,
-        "settled_at": "2026-10-28T04:11:35.809279+00:00",
+        "settled_at": "2026-10-26T16:52:05.558124+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29369,7 +29413,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T23:09:15.568145+00:00",
         "actual_value": 8,
-        "settled_at": "2026-10-28T04:29:38.129896+00:00",
+        "settled_at": "2026-10-26T16:51:58.751191+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29404,7 +29448,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T23:09:15.940985+00:00",
         "actual_value": 6,
-        "settled_at": "2026-10-28T04:11:24.505854+00:00",
+        "settled_at": "2026-10-26T16:51:58.751244+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29474,7 +29518,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T23:09:16.722292+00:00",
         "actual_value": 4,
-        "settled_at": "2026-10-28T04:29:38.129997+00:00",
+        "settled_at": "2026-10-26T16:51:58.751342+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29509,7 +29553,10 @@
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-25T23:09:17.079553+00:00"
+        "created_at": "2026-10-25T23:09:17.079553+00:00",
+        "actual_value": null,
+        "settled_at": "2026-11-03T01:34:03.379861+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-25",
@@ -29578,7 +29625,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T23:09:17.922979+00:00",
         "actual_value": 8,
-        "settled_at": "2026-10-28T04:11:24.502274+00:00",
+        "settled_at": "2026-10-26T16:51:58.751503+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -29613,7 +29660,7 @@
         "clv_pct": null,
         "created_at": "2026-10-25T23:09:18.292361+00:00",
         "actual_value": 19,
-        "settled_at": "2026-10-28T04:29:38.129797+00:00",
+        "settled_at": "2026-10-26T16:51:58.751561+00:00",
         "settlement_source": "prop_hunter_results"
       }
     ],
@@ -33324,7 +33371,14 @@
             "actual_value": 0,
             "commence_time": "2026-10-25T21:00:00+00:00"
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Walker Kessler",
+          "market": "Assists Over 3.5",
+          "actual_value": 0,
+          "result_id": "1d1497b97d6ee1c7c3c6896369c454b9",
+          "official_game_id": "401909861"
+        }
       },
       {
         "type": "big",
@@ -33449,7 +33503,14 @@
             "actual_value": 0,
             "commence_time": "2026-10-25T21:00:00+00:00"
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Walker Kessler",
+          "market": "Assists Over 3.5",
+          "actual_value": 0,
+          "result_id": "1d1497b97d6ee1c7c3c6896369c454b9",
+          "official_game_id": "401909861"
+        }
       },
       {
         "type": "betbuilder",
@@ -36099,11 +36160,19 @@
             "source_market": "points",
             "direction": "under",
             "point": 14.5,
-            "odds": 1.4167,
+            "odds": 1.42,
             "probability": 0.7544,
             "edge_pct": 6.9,
             "bookmaker": "bovada",
-            "game": "Memphis Grizzlies @ Sacramento Kings"
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
           },
           {
             "player": "Keegan Murray",
@@ -36112,11 +36181,19 @@
             "source_market": "points",
             "direction": "under",
             "point": 12.5,
-            "odds": 1.7407,
+            "odds": 1.74,
             "probability": 0.6564,
             "edge_pct": 14.3,
             "bookmaker": "bovada",
-            "game": "Memphis Grizzlies @ Sacramento Kings"
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
           },
           {
             "player": "Keegan Murray",
@@ -36129,7 +36206,15 @@
             "probability": 0.5318,
             "edge_pct": 22.3,
             "bookmaker": "bovada",
-            "game": "Memphis Grizzlies @ Sacramento Kings"
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
           },
           {
             "player": "Keegan Murray",
@@ -36142,13 +36227,21 @@
             "probability": 0.4778,
             "edge_pct": 31.4,
             "bookmaker": "bovada",
-            "game": "Memphis Grizzlies @ Sacramento Kings"
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
           }
         ],
         "odds": 1.42,
         "stake": 1.0,
         "probability": 0.7544,
-        "result": "void",
+        "result": "push",
         "created_at": "2026-10-25T23:09:18.631611+00:00",
         "ladder_legs": [
           {
@@ -36215,9 +36308,94 @@
         "date": "2026-10-25",
         "dedup_key": "5cfd853e2ef2af414caec45d15d45fd44b99876b",
         "profit": 0.0,
-        "settlement_invalidated": true,
         "void_reason": "no_unique_official_game_stale",
-        "settled_at": "2026-11-15T12:30:51.656484+00:00"
+        "settled_at": "2026-11-15T12:30:51.656484+00:00",
+        "settlement_legs": [
+          {
+            "player": "Keegan Murray",
+            "sport": "NBA",
+            "market": "Points Under 14.5",
+            "source_market": "points",
+            "direction": "under",
+            "point": 14.5,
+            "odds": 1.42,
+            "probability": 0.7544,
+            "edge_pct": 6.9,
+            "bookmaker": "bovada",
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
+          },
+          {
+            "player": "Keegan Murray",
+            "sport": "NBA",
+            "market": "Points Under 12.5",
+            "source_market": "points",
+            "direction": "under",
+            "point": 12.5,
+            "odds": 1.74,
+            "probability": 0.6564,
+            "edge_pct": 14.3,
+            "bookmaker": "bovada",
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
+          },
+          {
+            "player": "Keegan Murray",
+            "sport": "NBA",
+            "market": "Points Under 10.5",
+            "source_market": "points",
+            "direction": "under",
+            "point": 10.5,
+            "odds": 2.3,
+            "probability": 0.5318,
+            "edge_pct": 22.3,
+            "bookmaker": "bovada",
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
+          },
+          {
+            "player": "Keegan Murray",
+            "sport": "NBA",
+            "market": "Points Under 9.5",
+            "source_market": "points",
+            "direction": "under",
+            "point": 9.5,
+            "odds": 2.75,
+            "probability": 0.4778,
+            "edge_pct": 31.4,
+            "bookmaker": "bovada",
+            "game": "Memphis Grizzlies @ Sacramento Kings",
+            "stake": 0.25,
+            "date": "2026-10-25",
+            "created_at": "2026-10-25T23:09:18.631611+00:00",
+            "commence_time": "2026-10-26T01:00:00+00:00",
+            "event_id": "32722387",
+            "game_id": "32722387",
+            "result": "void",
+            "actual_value": null
+          }
+        ]
       },
       {
         "type": "big",
@@ -38781,7 +38959,11 @@
         "combo_ids": [
           "a6ac769ede49465b"
         ],
-        "card_kind": "ladder"
+        "card_kind": "ladder",
+        "image_settlement_version": 1,
+        "ladder_rung_version": 2,
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 25.10.2026\n\n🏀 Keegan Murray\n🏟 Memphis Grizzlies @ Sacramento Kings\n\n• Points Under 14.5 @1.42 → 0.25u\n  📈 Prob 75% · Edge +6.9%\n• Points Under 12.5 @1.74 → 0.25u\n  📈 Prob 66% · Edge +14.3%\n• Points Under 10.5 @2.30 → 0.25u\n  📈 Prob 53% · Edge +22.3%\n• Points Under 9.5 @2.75 → 0.25u\n  📈 Prob 48% · Edge +31.4%\n\n\n🏁 Details:\n↔️ Ladder · +0.00u\n🏁 Auswertung: 0✅ 0❌ 1↔️ · +0.00u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:40.182682+00:00"
       },
       {
         "created_at": "2026-10-25T23:09:18.632161+00:00",
@@ -38998,7 +39180,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T00:23:09.620126+00:00",
         "actual_value": 12,
-        "settled_at": "2026-10-30T02:14:50.765726+00:00",
+        "settled_at": "2026-10-27T23:38:56.875904+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -39033,7 +39215,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T00:23:10.090380+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-30T02:14:50.766452+00:00",
+        "settled_at": "2026-10-27T23:38:56.875988+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -39068,7 +39250,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T00:23:10.523779+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-28T02:20:02.280374+00:00",
+        "settled_at": "2026-10-27T23:38:56.876056+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -39103,7 +39285,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T00:23:11.165592+00:00",
         "actual_value": 3,
-        "settled_at": "2026-10-28T04:11:24.510638+00:00",
+        "settled_at": "2026-10-27T23:38:56.876119+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -39167,7 +39349,7 @@
           "bookmaker": "kambi_ub",
           "source": "kambi"
         },
-        "result": "void",
+        "result": "push",
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
@@ -39209,7 +39391,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T00:23:12.416980+00:00",
         "actual_value": 8,
-        "settled_at": "2026-10-28T04:11:24.510804+00:00",
+        "settled_at": "2026-10-27T23:38:56.89208+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -39279,7 +39461,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T00:23:13.280100+00:00",
         "actual_value": 9,
-        "settled_at": "2026-10-28T04:11:24.508361+00:00",
+        "settled_at": "2026-10-27T23:38:56.89222+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -39419,7 +39601,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T00:23:15.336859+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-28T04:11:24.509035+00:00",
+        "settled_at": "2026-10-27T23:38:56.900594+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -39840,7 +40022,7 @@
         "clv_pct": null,
         "created_at": "2026-10-27T21:02:44.549296+00:00",
         "actual_value": 29,
-        "settled_at": "2026-10-28T22:27:22.015295+00:00",
+        "settled_at": "2026-10-28T04:01:26.627094+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -45806,8 +45988,8 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 27.10.2026\n\n🏒 Dylan Larkin\n🏟 Detroit Red Wings @ Edmonton Oilers\n\n• points Under 1 @2.20 → 0.33u\n📈 Prob 66% · Edge +20.9% · Confidence 88/100\n💡 src:kambi_ub | DB L8 avg 0.6, 72% unter Linie\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
-        "settlement_updated_at": "2026-11-10T14:40:17.265545+00:00",
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 27.10.2026\n\n🏒 Dylan Larkin\n🏟 Detroit Red Wings @ Edmonton Oilers\n\n   ↔️ • points Under 1 @2.20 → 0.33u · Ergebnis 1 · +0.00u\n📈 Prob 66% · Edge +20.9% · Confidence 88/100\n💡 src:kambi_ub | DB L8 avg 0.6, 72% unter Linie\n\n🏁 Auswertung: 0✅ 0❌ 1↔️ · +0.00u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:38.281852+00:00",
         "image_settlement_version": 1
       },
       {
@@ -46716,7 +46898,7 @@
         "clv_pct": null,
         "created_at": "2026-10-28T00:26:32.681962+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-30T02:14:50.766741+00:00",
+        "settled_at": "2026-10-28T22:20:09.782193+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -46751,7 +46933,7 @@
         "clv_pct": null,
         "created_at": "2026-10-28T00:26:33.508134+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-28T22:20:09.782413+00:00",
+        "settled_at": "2026-10-28T22:20:09.782095+00:00",
         "settlement_source": "prop_hunter_results",
         "status": "pending"
       },
@@ -46787,7 +46969,7 @@
         "clv_pct": null,
         "created_at": "2026-10-28T00:26:33.914973+00:00",
         "actual_value": 8,
-        "settled_at": "2026-10-28T22:20:09.782295+00:00",
+        "settled_at": "2026-10-28T22:20:09.78197+00:00",
         "settlement_source": "prop_hunter_results",
         "status": "pending"
       },
@@ -47140,7 +47322,7 @@
         "clv_pct": null,
         "created_at": "2026-10-28T21:24:22.316268+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-29T23:48:46.841301+00:00",
+        "settled_at": "2026-10-29T13:24:33.991763+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -47259,7 +47441,7 @@
         "clv_pct": null,
         "created_at": "2026-10-28T21:24:23.623157+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-29T23:48:46.841489+00:00",
+        "settled_at": "2026-10-29T13:24:33.991441+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -49083,7 +49265,14 @@
             "result": "loss",
             "actual_value": 0
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Quentin Grimes",
+          "market": "threes Over 1.5",
+          "actual_value": 0,
+          "result_id": "9ae925f0ef891f03b490e854e212bb00",
+          "official_game_id": "401909880"
+        }
       },
       {
         "type": "big",
@@ -53690,13 +53879,13 @@
           "bookmaker": "bovada",
           "source": "bovada_direct"
         },
-        "result": "loss",
-        "profit": -0.36,
+        "result": "win",
+        "profit": 0.28,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-10-29T00:24:53.252385+00:00",
-        "actual_value": 23,
-        "settled_at": "2026-10-30T02:14:50.766925+00:00",
+        "actual_value": 6,
+        "settled_at": "2026-10-29T12:29:49.504701+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -53731,7 +53920,7 @@
         "clv_pct": null,
         "created_at": "2026-10-29T00:24:54.184144+00:00",
         "actual_value": 21,
-        "settled_at": "2026-10-30T02:14:50.767103+00:00",
+        "settled_at": "2026-10-29T12:29:49.504579+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -53976,7 +54165,7 @@
         "clv_pct": null,
         "created_at": "2026-10-29T00:24:57.247943+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-29T23:48:46.841301+00:00",
+        "settled_at": "2026-10-29T13:24:33.990694+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -54011,7 +54200,7 @@
         "clv_pct": null,
         "created_at": "2026-10-29T00:24:57.643374+00:00",
         "actual_value": 0,
-        "settled_at": "2026-10-29T23:48:46.841489+00:00",
+        "settled_at": "2026-10-29T13:24:33.990525+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -54761,7 +54950,10 @@
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-29T14:42:30.643717+00:00"
+        "created_at": "2026-10-29T14:42:30.643717+00:00",
+        "actual_value": null,
+        "settled_at": "2026-11-03T01:34:03.379849+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-29",
@@ -55247,7 +55439,7 @@
           "bookmaker": "kambi_ub",
           "source": "kambi"
         },
-        "result": "void",
+        "result": "push",
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
@@ -55477,7 +55669,10 @@
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-29T21:29:54.317607+00:00"
+        "created_at": "2026-10-29T21:29:54.317607+00:00",
+        "actual_value": null,
+        "settled_at": "2026-11-03T01:34:03.379835+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-29",
@@ -57133,7 +57328,14 @@
             "result": "loss",
             "actual_value": 23
           }
-        ]
+        ],
+        "settlement_decisive_leg": {
+          "player": "Quentin Grimes",
+          "market": "points Under 12.5",
+          "actual_value": 23,
+          "result_id": "db3262a02d7fddd223deb6bfc28a3298",
+          "official_game_id": "401909892"
+        }
       },
       {
         "type": "betbuilder",
@@ -67146,8 +67348,9 @@
         ],
         "combo_ids": [],
         "card_kind": "single",
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 29.10.2026\n\n🏀 Quentin Grimes\n🏟 Los Angeles Lakers @ L.A. Clippers\n\n   ❌ • points Under 12.5 @1.77 → 0.36u · Ergebnis 23 · -0.36u\n📈 Prob 86% · Edge +29.5% · Confidence 98/100\n💡 src:bovada | DB L15 avg 7.8, 85% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.36u\n@prophunter",
-        "settlement_updated_at": "2026-11-04T14:04:15.714894+00:00"
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 29.10.2026\n\n🏀 Quentin Grimes\n🏟 Los Angeles Lakers @ L.A. Clippers\n\n   ✅ • points Under 12.5 @1.77 → 0.36u · Ergebnis 6 · +0.28u\n📈 Prob 86% · Edge +29.5% · Confidence 98/100\n💡 src:bovada | DB L15 avg 7.8, 85% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.28u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:36.537340+00:00",
+        "image_settlement_version": 1
       },
       {
         "created_at": "2026-10-29T00:25:08.353322+00:00",
@@ -69006,7 +69209,10 @@
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-30T00:44:55.183810+00:00"
+        "created_at": "2026-10-30T00:44:55.183810+00:00",
+        "actual_value": null,
+        "settled_at": "2026-11-03T01:34:03.379827+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-30",
@@ -69040,7 +69246,10 @@
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
-        "created_at": "2026-10-30T00:44:55.995107+00:00"
+        "created_at": "2026-10-30T00:44:55.995107+00:00",
+        "actual_value": null,
+        "settled_at": "2026-11-03T01:34:03.379812+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-10-30",
@@ -69144,7 +69353,7 @@
         "clv_pct": null,
         "created_at": "2026-10-30T00:44:56.965471+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-30T06:28:44.717576+00:00",
+        "settled_at": "2026-10-30T06:28:44.691822+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -69179,7 +69388,7 @@
         "clv_pct": null,
         "created_at": "2026-10-30T00:44:57.287534+00:00",
         "actual_value": 2,
-        "settled_at": "2026-10-30T06:28:44.717406+00:00",
+        "settled_at": "2026-10-30T06:28:44.691605+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -69284,7 +69493,7 @@
         "clv_pct": null,
         "created_at": "2026-10-30T00:44:58.231032+00:00",
         "actual_value": 1,
-        "settled_at": "2026-10-30T06:28:44.716878+00:00",
+        "settled_at": "2026-10-30T06:28:44.691095+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -69319,7 +69528,7 @@
         "clv_pct": null,
         "created_at": "2026-10-30T00:44:58.530828+00:00",
         "actual_value": 6,
-        "settled_at": "2026-10-30T06:28:44.734321+00:00",
+        "settled_at": "2026-10-30T06:28:44.690912+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -72393,7 +72602,10 @@
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-11-01T05:37:28.094471+00:00",
-        "settle_note": "void: Spiel nicht eindeutig im Web auflösbar (Datum/Jahr-Kollision)"
+        "settle_note": "void: Spiel nicht eindeutig im Web auflösbar (Datum/Jahr-Kollision)",
+        "actual_value": null,
+        "settled_at": "2026-11-04T14:04:12.132895+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-11-01",
@@ -73092,7 +73304,7 @@
         "clv_pct": null,
         "created_at": "2026-11-01T14:29:42.124148+00:00",
         "actual_value": 4,
-        "settled_at": "2026-11-02T22:42:56.924125+00:00",
+        "settled_at": "2026-11-02T19:06:37.755304+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -73162,7 +73374,7 @@
         "clv_pct": null,
         "created_at": "2026-11-01T14:29:43.091985+00:00",
         "actual_value": 4,
-        "settled_at": "2026-11-02T22:42:56.924383+00:00",
+        "settled_at": "2026-11-02T19:06:37.75506+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -73547,7 +73759,7 @@
         "clv_pct": null,
         "created_at": "2026-11-01T20:49:47.264373+00:00",
         "actual_value": 1,
-        "settled_at": "2026-11-02T22:42:56.924776+00:00",
+        "settled_at": "2026-11-02T19:06:37.753514+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -75298,7 +75510,7 @@
         "clv_pct": null,
         "created_at": "2026-11-02T00:27:30.495344+00:00",
         "actual_value": 0,
-        "settled_at": "2026-11-02T19:06:37.754618+00:00",
+        "settled_at": "2026-11-02T19:06:37.752755+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -75403,7 +75615,7 @@
         "clv_pct": null,
         "created_at": "2026-11-02T00:27:32.402716+00:00",
         "actual_value": 4,
-        "settled_at": "2026-11-02T19:06:37.754488+00:00",
+        "settled_at": "2026-11-02T19:06:37.752383+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -75579,7 +75791,7 @@
         "clv_pct": null,
         "created_at": "2026-11-02T00:27:34.164559+00:00",
         "actual_value": 0,
-        "settled_at": "2026-11-02T19:06:37.754241+00:00",
+        "settled_at": "2026-11-02T19:06:37.751784+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -75719,7 +75931,7 @@
         "clv_pct": null,
         "created_at": "2026-11-02T00:27:35.539144+00:00",
         "actual_value": 0,
-        "settled_at": "2026-11-02T19:06:37.753851+00:00",
+        "settled_at": "2026-11-02T19:06:37.751239+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -75789,7 +76001,7 @@
         "clv_pct": null,
         "created_at": "2026-11-02T00:27:36.188778+00:00",
         "actual_value": 4,
-        "settled_at": "2026-11-02T22:42:56.924383+00:00",
+        "settled_at": "2026-11-02T19:06:37.750949+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -77769,7 +77981,7 @@
         "clv_pct": null,
         "created_at": "2026-11-03T02:51:57.435947+00:00",
         "actual_value": 8,
-        "settled_at": "2026-11-03T13:54:48.607646+00:00",
+        "settled_at": "2026-11-03T13:54:48.606407+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -78709,7 +78921,7 @@
           "bookmaker": "kambi_ub",
           "source": "kambi"
         },
-        "result": "void",
+        "result": "push",
         "profit": 0.0,
         "closing_odds": null,
         "clv_pct": null,
@@ -79377,7 +79589,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 03.11.2026\n\n🏒 Kirill Kaprizov\n🏟 Minnesota Wild @ Philadelphia Flyers\n\n• points Over 1 @2.65 → 0.33u\n📈 Prob 57% · Edge +19.7% · Confidence 81/100\n💡 src:kambi_ub | DB L15 avg 1.6, 53% über Linie\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
         "settlement_updated_at": "2026-11-10T14:40:18.982092+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-03T21:59:33.488687+00:00",
@@ -80029,7 +80242,7 @@
         "clv_pct": null,
         "created_at": "2026-11-04T15:43:51.526282+00:00",
         "actual_value": 0,
-        "settled_at": "2026-11-05T16:38:56.472126+00:00",
+        "settled_at": "2026-11-05T11:21:20.151449+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -80064,7 +80277,7 @@
         "clv_pct": null,
         "created_at": "2026-11-04T15:43:51.898308+00:00",
         "actual_value": 4,
-        "settled_at": "2026-11-05T16:38:56.47232+00:00",
+        "settled_at": "2026-11-05T11:21:20.151257+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -81544,11 +81757,11 @@
           }
         ],
         "settlement_decisive_leg": {
-          "player": "Jared McCain",
-          "market": "Threes Over 5.5",
-          "actual_value": 1,
-          "result_id": "74f205d11ad4bdba7bf2a324e0cd8c52",
-          "official_game_id": "401909929"
+          "player": "Tre Jones",
+          "market": "Assists Over 6.5",
+          "actual_value": 4,
+          "result_id": "f76d198f2ffb9b866d92184d7fd4c8c1",
+          "official_game_id": "401909926"
         }
       },
       {
@@ -81896,11 +82109,11 @@
           }
         ],
         "settlement_decisive_leg": {
-          "player": "Jared McCain",
-          "market": "Threes Over 5.5",
-          "actual_value": 1,
-          "result_id": "74f205d11ad4bdba7bf2a324e0cd8c52",
-          "official_game_id": "401909929"
+          "player": "Tre Jones",
+          "market": "Assists Over 6.5",
+          "actual_value": 4,
+          "result_id": "f76d198f2ffb9b866d92184d7fd4c8c1",
+          "official_game_id": "401909926"
         }
       },
       {
@@ -82522,7 +82735,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 LeBron James\n🏟 Philadelphia 76ers @ Detroit Pistons\n\n   ✅ • assists Over 4.5 @1.32 → 0.38u · Ergebnis 8 · +0.12u\n📈 Prob 96% · Edge +20.3% · Confidence 99/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L6 avg 6.5, 100% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.12u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:11.554612+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669727+00:00",
@@ -82536,7 +82750,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Aaron Wiggins\n🏟 Atlanta Hawks @ Washington Wizards\n\n   ✅ • threes Over 1.5 @1.50 → 0.36u · Ergebnis 3 · +0.18u\n📈 Prob 90% · Edge +23.2% · Confidence 99/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | DB L8 avg 2.8, 87% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.18u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:11.931122+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669731+00:00",
@@ -82564,7 +82779,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Jaylen Brown\n🏟 PHI 76ers @ DET Pistons\n\n   ✅ • points Over 17.5 @1.61 → 0.36u · Ergebnis 30 · +0.22u\n📈 Prob 86% · Edge +23.8% · Confidence 98/100\n💡 src:betrivers | DATA+: Basket Line vorhanden | DB L8 avg 20.4, 87% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.22u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:12.345037+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669741+00:00",
@@ -82578,7 +82794,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Tre Jones\n🏟 CHI Bulls @ NY Knicks\n\n   ✅ • assists Over 2.5 @1.60 → 0.35u · Ergebnis 4 · +0.21u\n📈 Prob 85% · Edge +22.8% · Confidence 98/100\n💡 src:betrivers | DATA+: Basket Line vorhanden | DB L7 avg 4.4, 85% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.21u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:12.725337+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669745+00:00",
@@ -82631,7 +82848,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Josh Giddey\n🏟 Chicago Bulls @ New York Knicks\n\n   ✅ • points Under 12.5 @1.77 → 0.34u · Ergebnis 10 · +0.26u\n📈 Prob 78% · Edge +21.2% · Confidence 94/100\n💡 src:bovada | DATA+: Basket Line vorhanden | DB L9 avg 8.3, 77% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.26u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:13.116749+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669764+00:00",
@@ -82673,7 +82891,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏒 Ryan Strome\n🏟 Calgary Flames @ Seattle Kraken\n\n   ❌ • shots_on_goal Over 1.5 @2.05 → 0.33u · Ergebnis 1 · -0.33u\n📈 Prob 68% · Edge +18.8% · Confidence 87/100\n💡 O/U6.3 | DB L12 avg 2.5, 66% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:19.558255+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669776+00:00",
@@ -82687,7 +82906,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 De'Aaron Fox\n🏟 Dallas Mavericks @ San Antonio Spurs\n\n   ❌ • threes Over 1.5 @2.22 → 0.33u · Ergebnis 0 · -0.33u\n📈 Prob 64% · Edge +19.4% · Confidence 86/100\n💡 src:fanduel | DATA+: Basket Line vorhanden | DB L6 avg 1.5, 66% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:20.217032+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669780+00:00",
@@ -82729,7 +82949,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏒 Joel Farabee\n🏟 Calgary Flames @ Seattle Kraken\n\n   ❌ • assists Over 0.5 @2.65 → 0.33u · Ergebnis 0 · -0.33u\n📈 Prob 59% · Edge +20.9% · Confidence 82/100\n💡 O/U6.3 | DB L12 avg 0.7, 58% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:20.599492+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T15:43:52.669792+00:00",
@@ -82757,7 +82978,8 @@
         "card_kind": "big",
         "image_settlement_version": 1,
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 04.11.2026\n\n🏟 RISK\n❌ 3-Leg RISK @14.75 → 0.05u · -0.05u\n  ├ Both Teams Total Points Over 112.5 @2.10\n  ├ Joel Farabee Assists Over 0.5 @2.65\n  └ Ivica Zubac Rebounds Over 10.5 @2.65\n📈 Prob 27.5% · EV +305.4%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
-        "settlement_updated_at": "2026-11-05T16:39:14.414185+00:00"
+        "settlement_updated_at": "2026-11-05T16:39:14.414185+00:00",
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T19:17:45.497181+00:00",
@@ -82771,7 +82993,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Jaylen Brown\n🏟 Philadelphia 76ers @ Detroit Pistons\n\n   ✅ • points Over 15.5 @1.40 → 0.39u · Ergebnis 30 · +0.16u\n📈 Prob 96% · Edge +24.6% · Confidence 99/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | Form L5 5/5 · L8 avg 20.4, 100% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.16u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:21.834129+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T19:17:45.497202+00:00",
@@ -82995,7 +83218,8 @@
         "card_kind": "big",
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 04.11.2026\n\n🏟 RISK\n❌ 2-Leg RISK @181.44 → 0.05u · -0.05u\n  ├ Myles Turner Blocks Over 4.5 @12.60\n  └ Jared McCain Threes Over 5.5 @14.40\n📈 Prob 7.0% · EV +1168.6%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:22.222640+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T19:17:45.497258+00:00",
@@ -83009,7 +83233,8 @@
         "card_kind": "big",
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 04.11.2026\n\n🏟 LOTTERY\n❌ 3-Leg LOTTERY @4354.56 → 0.05u · -0.05u\n  ├ Dyson Daniels Steals Over 6.5 @24.00\n  ├ Myles Turner Blocks Over 4.5 @12.60\n  └ Jared McCain Threes Over 5.5 @14.40\n📈 Prob 1.1% · EV +4750.3%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:25.608526+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T19:56:21.562024+00:00",
@@ -83079,7 +83304,8 @@
         "card_kind": "big",
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 04.11.2026\n\n🏟 RISK\n❌ 2-Leg RISK @155.52 → 0.05u · -0.05u\n  ├ Jared McCain Threes Over 5.5 @14.40\n  └ Tre Jones Assists Over 6.5 @10.80\n📈 Prob 6.6% · EV +920.3%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:28.773121+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T19:56:21.562060+00:00",
@@ -83093,7 +83319,8 @@
         "card_kind": "big",
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 04.11.2026\n\n🏟 LOTTERY\n❌ 3-Leg LOTTERY @3732.48 → 0.05u · -0.05u\n  ├ Dyson Daniels Steals Over 6.5 @24.00\n  ├ Jared McCain Threes Over 5.5 @14.40\n  └ Tre Jones Assists Over 6.5 @10.80\n📈 Prob 1.1% · EV +3800.8%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:31.604871+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287733+00:00",
@@ -83107,7 +83334,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Cade Cunningham\n🏟 PHI 76ers @ DET Pistons\n\n   ✅ • steals Over 0.5 @1.42 → 0.39u · Ergebnis 2 · +0.16u\n📈 Prob 96% · Edge +25.6% · Confidence 99/100\n💡 src:betrivers | DATA+: Basket Line vorhanden | Form L5 5/5 · L7 avg 1.3, 100% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.16u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:34.279226+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287755+00:00",
@@ -83121,7 +83349,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Ayo Dosunmu\n🏟 Minnesota Timberwolves @ Houston Rockets\n\n   ❌ • assists Under 4.5 @1.77 → 0.36u · Ergebnis 6 · -0.36u\n📈 Prob 88% · Edge +31.6% · Confidence 99/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L9 avg 3.0, 88% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.36u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:37.252091+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287760+00:00",
@@ -83135,7 +83364,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Jaden McDaniels\n🏟 Minnesota Timberwolves @ Houston Rockets\n\n   ✅ • points Under 17.5 @1.77 → 0.36u · Ergebnis 14 · +0.28u\n📈 Prob 88% · Edge +31.5% · Confidence 99/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 5/5 · L8 avg 14.8, 87% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.28u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:39.905378+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287765+00:00",
@@ -83177,7 +83407,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Jrue Holiday\n🏟 Portland Trail Blazers @ Phoenix Suns\n\n   ❌ • points Under 13.5 @1.77 → 0.36u · Ergebnis 15 · -0.36u\n📈 Prob 84% · Edge +27.4% · Confidence 97/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L7 avg 10.0, 85% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.36u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:42.729388+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287779+00:00",
@@ -83205,7 +83436,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 Mikal Bridges\n🏟 Chicago Bulls @ New York Knicks\n\n   ✅ • blocks Under 1.5 @1.82 → 0.35u · Ergebnis 0 · +0.29u\n📈 Prob 83% · Edge +27.7% · Confidence 96/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | Form L5 4/5 · L8 avg 0.6, 87% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.29u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:45.706139+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287788+00:00",
@@ -83219,7 +83451,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 VJ Edgecombe\n🏟 Philadelphia 76ers @ Detroit Pistons\n\n   ✅ • blocks Under 1.5 @1.93 → 0.35u · Ergebnis 0 · +0.33u\n📈 Prob 80% · Edge +28.2% · Confidence 95/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | Form L5 4/5 · L7 avg 0.4, 85% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:48.673548+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287792+00:00",
@@ -83289,7 +83522,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 04.11.2026\n\n🏀 LeBron James\n🏟 Philadelphia 76ers @ Detroit Pistons\n\n   ✅ • blocks Under 1.5 @2.18 → 0.34u · Ergebnis 1 · +0.40u\n📈 Prob 73% · Edge +27.4% · Confidence 91/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | Form L5 4/5 · L6 avg 0.7, 83% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.40u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:51:51.341966+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287812+00:00",
@@ -83359,7 +83593,8 @@
         "card_kind": "big",
         "image_settlement_version": 1,
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 04.11.2026\n\n🏟 RISK\n❌ 2-Leg RISK @137.20 → 0.05u · -0.05u\n  ├ Jared McCain Threes Over 5.5 @14.00\n  └ Precious Achiuwa Player To Record A Three In The First Minutes Over 0 @9.80\n📈 Prob 7.0% · EV +863.3%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
-        "settlement_updated_at": "2026-11-05T16:39:16.776375+00:00"
+        "settlement_updated_at": "2026-11-05T16:39:16.776375+00:00",
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-04T22:15:32.287833+00:00",
@@ -83373,7 +83608,8 @@
         "card_kind": "big",
         "image_settlement_version": 1,
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 04.11.2026\n\n🏟 LOTTERY\n❌ 3-Leg LOTTERY @4253.20 → 0.05u · -0.05u\n  ├ Caleb Wilson Rebounds Over 13.5 @31.00\n  ├ Jared McCain Threes Over 5.5 @14.00\n  └ Precious Achiuwa Player To Record A Three In The First Minutes Over 0 @9.80\n📈 Prob 0.9% · EV +3644.6%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
-        "settlement_updated_at": "2026-11-05T16:39:19.220407+00:00"
+        "settlement_updated_at": "2026-11-05T16:39:19.220407+00:00",
+        "tg_gone": true
       }
     ]
   },
@@ -83412,7 +83648,7 @@
         "clv_pct": null,
         "created_at": "2026-11-05T01:26:53.921854+00:00",
         "actual_value": 0,
-        "settled_at": "2026-11-05T11:21:20.17808+00:00",
+        "settled_at": "2026-11-05T11:21:20.147396+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -83447,7 +83683,7 @@
         "clv_pct": null,
         "created_at": "2026-11-05T01:26:54.805381+00:00",
         "actual_value": 3,
-        "settled_at": "2026-11-05T11:21:20.152869+00:00",
+        "settled_at": "2026-11-05T11:21:20.147218+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -83552,7 +83788,7 @@
         "clv_pct": null,
         "created_at": "2026-11-05T01:26:55.871178+00:00",
         "actual_value": 14,
-        "settled_at": "2026-11-05T11:21:20.148558+00:00",
+        "settled_at": "2026-11-05T11:21:20.146668+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -83657,7 +83893,7 @@
         "clv_pct": null,
         "created_at": "2026-11-05T01:26:56.904512+00:00",
         "actual_value": 0,
-        "settled_at": "2026-11-05T11:21:20.151811+00:00",
+        "settled_at": "2026-11-05T11:21:20.146116+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -88057,7 +88293,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Julian Champagnie\n🏟 Dallas Mavericks @ San Antonio Spurs\n\n   ❌ • threes Over 1.5 @1.38 → 0.38u · Ergebnis 0 · -0.38u\n📈 Prob 96% · Edge +23.8% · Confidence 99/100\n💡 src:fanduel | DATA+: Basket Line vorhanden | Form L5 5/5 · L8 avg 3.1, 100% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.38u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:14.276669+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429452+00:00",
@@ -88071,7 +88308,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Andrew Wiggins\n🏟 Miami Heat @ Los Angeles Clippers\n\n   ❌ • points Over 11.5 @1.77 → 0.35u · Ergebnis 3 · -0.35u\n📈 Prob 81% · Edge +24.9% · Confidence 96/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L6 avg 13.3, 83% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.35u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:17.085348+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429456+00:00",
@@ -88085,7 +88323,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Ayo Dosunmu\n🏟 Minnesota Timberwolves @ Houston Rockets\n\n   ❌ • points Under 17.5 @1.67 → 0.33u · Ergebnis 21 · -0.33u\n📈 Prob 76% · Edge +16.2% · Confidence 89/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 5/5 · L9 avg 11.9, 100% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:19.637188+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429460+00:00",
@@ -88099,7 +88338,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Sandro Mamukelashvili\n🏟 Los Angeles Lakers @ Sacramento Kings\n\n   ❌ • threes Over 1.5 @2.68 → 0.35u · Ergebnis 0 · -0.35u\n📈 Prob 72% · Edge +34.6% · Confidence 89/100\n💡 src:fanduel | DATA+: Basket Line vorhanden | Form L5 3/5 · L11 avg 2.0, 72% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.35u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:22.510899+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429463+00:00",
@@ -88113,7 +88353,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Jaden McDaniels\n🏟 Minnesota Timberwolves @ Houston Rockets\n\n   ✅ • points Under 17.5 @1.77 → 0.33u · Ergebnis 14 · +0.25u\n📈 Prob 67% · Edge +10.9% · Confidence 80/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 5/5 · L8 avg 14.8, 87% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.25u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:24.756811+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429466+00:00",
@@ -88127,7 +88368,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Scottie Barnes\n🏟 Toronto Raptors @ Denver Nuggets\n\n   ❌ • assists Under 5.5 @2.05 → 0.33u · Ergebnis 6 · -0.33u\n📈 Prob 66% · Edge +17.2% · Confidence 85/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 5/5 · L8 avg 3.9, 100% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:27.752393+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429469+00:00",
@@ -88141,7 +88383,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Joan Beringer\n🏟 Minnesota Timberwolves @ Houston Rockets\n\n   ✅ • rebounds Over 5.5 @2.30 → 0.33u · Ergebnis 7 · +0.43u\n📈 Prob 65% · Edge +21.6% · Confidence 87/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 5/5 · L9 avg 6.7, 88% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.43u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:30.540986+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429473+00:00",
@@ -88155,7 +88398,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 De'Aaron Fox\n🏟 Dallas Mavericks @ San Antonio Spurs\n\n   ❌ • threes Over 1.5 @2.22 → 0.33u · Ergebnis 0 · -0.33u\n📈 Prob 64% · Edge +19.4% · Confidence 86/100\n💡 src:fanduel | DATA+: Basket Line vorhanden | Form L5 3/5 · L6 avg 1.5, 66% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:33.119290+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429476+00:00",
@@ -88169,7 +88413,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Darius Acuff Jr.\n🏟 Los Angeles Lakers @ Sacramento Kings\n\n   ✅ • rebounds Under 3.5 @1.91 → 0.33u · Ergebnis 3 · +0.30u\n📈 Prob 64% · Edge +11.8% · Confidence 79/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L7 avg 2.1, 85% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.30u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:35.817545+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429479+00:00",
@@ -88183,7 +88428,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Ja'Kobe Walter\n🏟 TOR Raptors @ DEN Nuggets\n\n   ✅ • points Under 11.5 @2.00 → 0.33u · Ergebnis 8 · +0.33u\n📈 Prob 63% · Edge +13.3% · Confidence 80/100\n💡 src:draftkings | DATA+: Basket Line vorhanden | Form L5 4/5 · L10 avg 9.8, 80% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T15:52:38.511332+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429481+00:00",
@@ -88197,7 +88443,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Rudy Gobert\n🏟 MIN Timberwolves @ HOU Rockets\n\n   ✅ • points Under 8.5 @1.98 → 0.33u · Ergebnis 8 · +0.32u\n📈 Prob 63% · Edge +12.7% · Confidence 79/100\n💡 src:draftkings | DATA+: Basket Line vorhanden | Form L5 4/5 · L8 avg 6.9, 87% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.32u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:22.345169+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429484+00:00",
@@ -88211,7 +88458,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Cameron Johnson\n🏟 TOR Raptors @ DEN Nuggets\n\n   ✅ • rebounds Under 3.5 @1.99 → 0.33u · Ergebnis 2 · +0.33u\n📈 Prob 62% · Edge +11.8% · Confidence 78/100\n💡 src:draftkings | DATA+: Basket Line vorhanden | Form L5 5/5 · L6 avg 2.2, 100% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:24.680241+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429486+00:00",
@@ -88225,7 +88473,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Scoot Henderson\n🏟 POR Trail Blazers @ PHO Suns\n\n   ✅ • rebounds Under 2.5 @2.00 → 0.33u · Ergebnis 2 · +0.33u\n📈 Prob 62% · Edge +11.6% · Confidence 77/100\n💡 src:draftkings | DATA+: Basket Line vorhanden | Form L5 5/5 · L7 avg 1.4, 85% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:26.908863+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429489+00:00",
@@ -88239,7 +88488,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Damian Lillard\n🏟 Portland Trail Blazers @ Phoenix Suns\n\n   ❌ • assists Under 4.5 @2.15 → 0.33u · Ergebnis 5 · -0.33u\n📈 Prob 61% · Edge +14.5% · Confidence 80/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L7 avg 3.1, 85% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:29.307901+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429492+00:00",
@@ -88253,7 +88503,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Nikola Jokic\n🏟 Toronto Raptors @ Denver Nuggets\n\n   ✅ • rebounds Under 10.5 @2.40 → 0.33u · Ergebnis 10 · +0.46u\n📈 Prob 60% · Edge +18.7% · Confidence 83/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L10 avg 7.5, 80% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.46u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:31.572309+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429495+00:00",
@@ -88267,7 +88518,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Zaccharie Risacher\n🏟 Dallas Mavericks @ San Antonio Spurs\n\n   ❌ • points Over 9.5 @2.90 → 0.33u · Ergebnis 2 · -0.33u\n📈 Prob 59% · Edge +24.6% · Confidence 82/100\n💡 src:fanduel | DATA+: Basket Line vorhanden | Form L5 3/5 · L7 avg 10.7, 57% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:33.899534+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429497+00:00",
@@ -88281,7 +88533,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Donovan Clingan\n🏟 Portland Trail Blazers @ Phoenix Suns\n\n   ❌ • rebounds Under 10.5 @2.15 → 0.33u · Ergebnis 11 · -0.33u\n📈 Prob 59% · Edge +12.4% · Confidence 76/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L7 avg 8.3, 85% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:36.388533+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429500+00:00",
@@ -88295,7 +88548,8 @@
         "card_kind": "single",
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 05.11.2026\n\n🏀 Precious Achiuwa\n🏟 Los Angeles Lakers @ Sacramento Kings\n\n   ❌ • points Over 10.5 @2.10 → 0.33u · Ergebnis 7 · -0.33u\n📈 Prob 59% · Edge +11.0% · Confidence 75/100\n💡 src:bovada | DATA+: Basket Line vorhanden | Form L5 4/5 · L10 avg 12.2, 70% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:38.628042+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T01:27:02.429503+00:00",
@@ -88369,7 +88623,8 @@
         "card_kind": "big",
         "settlement_text": "💣 PROP HUNTER PRO TIP — LOTTERY — 05.11.2026\n\n🏟 RISK\n❌ 2-Leg RISK @245.52 → 0.05u · -0.05u\n  ├ Cooper Flagg Steals Over 4.5 @19.80\n  └ Trevon Brazile Rebounds Over 8.5 @12.40\n📈 Prob 6.4% · EV +1477.2%\n\n🏁 Auswertung: 0✅ 1❌ · -0.05u\n@prophunter",
         "settlement_updated_at": "2026-11-05T16:39:50.489960+00:00",
-        "image_settlement_version": 1
+        "image_settlement_version": 1,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-05T15:43:04.579921+00:00",
@@ -94140,7 +94395,7 @@
           "gamelog_n": 10
         },
         "actual_value": 3,
-        "settled_at": "2026-11-06T07:08:44.303798+00:00",
+        "settled_at": "2026-11-06T07:08:44.303372+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94210,7 +94465,7 @@
           "gamelog_n": 9
         },
         "actual_value": 9,
-        "settled_at": "2026-11-06T07:08:44.304579+00:00",
+        "settled_at": "2026-11-06T07:08:44.303234+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94280,7 +94535,7 @@
           "gamelog_n": 6
         },
         "actual_value": 1,
-        "settled_at": "2026-11-06T07:08:44.304325+00:00",
+        "settled_at": "2026-11-06T07:08:44.303085+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94350,7 +94605,7 @@
           "gamelog_n": 7
         },
         "actual_value": 0,
-        "settled_at": "2026-11-06T06:06:59.23581+00:00",
+        "settled_at": "2026-11-06T06:06:59.234623+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94420,7 +94675,7 @@
           "gamelog_n": 7
         },
         "actual_value": 1,
-        "settled_at": "2026-11-06T07:08:44.303666+00:00",
+        "settled_at": "2026-11-06T07:08:44.30296+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94490,7 +94745,7 @@
           "gamelog_n": 7
         },
         "actual_value": 0,
-        "settled_at": "2026-11-06T06:06:59.23567+00:00",
+        "settled_at": "2026-11-06T06:06:59.234392+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94560,7 +94815,7 @@
           "gamelog_n": 11
         },
         "actual_value": 6,
-        "settled_at": "2026-11-06T07:08:44.304928+00:00",
+        "settled_at": "2026-11-06T07:08:44.302822+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94630,7 +94885,7 @@
           "gamelog_n": 7
         },
         "actual_value": 15,
-        "settled_at": "2026-11-06T06:06:59.236884+00:00",
+        "settled_at": "2026-11-06T06:06:59.234157+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94700,7 +94955,7 @@
           "gamelog_n": 9
         },
         "actual_value": 29,
-        "settled_at": "2026-11-06T07:08:44.303995+00:00",
+        "settled_at": "2026-11-06T07:08:44.30268+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94840,7 +95095,7 @@
           "gamelog_n": 7
         },
         "actual_value": 3,
-        "settled_at": "2026-11-06T06:06:59.235456+00:00",
+        "settled_at": "2026-11-06T06:06:59.233793+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94910,7 +95165,7 @@
           "gamelog_n": 7
         },
         "actual_value": 6,
-        "settled_at": "2026-11-06T06:06:59.236545+00:00",
+        "settled_at": "2026-11-06T06:06:59.233602+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -94980,7 +95235,7 @@
           "gamelog_n": 10
         },
         "actual_value": 4,
-        "settled_at": "2026-11-06T06:06:59.236439+00:00",
+        "settled_at": "2026-11-06T06:06:59.233455+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -109130,7 +109385,7 @@
           "gamelog_n": 15
         },
         "actual_value": 2,
-        "settled_at": "2026-11-07T11:07:19.019089+00:00",
+        "settled_at": "2026-11-07T11:07:19.013645+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -109200,7 +109455,7 @@
           "gamelog_n": 15
         },
         "actual_value": 1,
-        "settled_at": "2026-11-07T11:07:19.016508+00:00",
+        "settled_at": "2026-11-07T11:07:19.013521+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -109340,7 +109595,7 @@
           "gamelog_n": 15
         },
         "actual_value": 17,
-        "settled_at": "2026-11-07T11:07:19.014946+00:00",
+        "settled_at": "2026-11-07T11:07:19.01328+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -109760,7 +110015,7 @@
           "gamelog_n": 14
         },
         "actual_value": 53,
-        "settled_at": "2026-11-07T11:07:19.016152+00:00",
+        "settled_at": "2026-11-07T11:07:19.012484+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -110040,7 +110295,7 @@
           "gamelog_n": 13
         },
         "actual_value": 1,
-        "settled_at": "2026-11-07T11:07:19.01462+00:00",
+        "settled_at": "2026-11-07T11:07:19.011966+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -110250,7 +110505,7 @@
           "gamelog_n": 13
         },
         "actual_value": 8,
-        "settled_at": "2026-11-07T11:07:19.014516+00:00",
+        "settled_at": "2026-11-07T11:07:19.011555+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -126598,7 +126853,7 @@
           "gamelog_n": 15
         },
         "actual_value": 0,
-        "settled_at": "2026-11-08T04:57:45.398905+00:00",
+        "settled_at": "2026-11-08T04:57:45.395368+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -126668,7 +126923,7 @@
           "gamelog_n": 15
         },
         "actual_value": 0,
-        "settled_at": "2026-11-08T04:57:45.39873+00:00",
+        "settled_at": "2026-11-08T04:57:45.395182+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -126738,7 +126993,7 @@
           "gamelog_n": 15
         },
         "actual_value": 4,
-        "settled_at": "2026-11-08T04:57:45.398401+00:00",
+        "settled_at": "2026-11-08T04:57:45.394992+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -126878,7 +127133,7 @@
           "gamelog_n": 15
         },
         "actual_value": 0,
-        "settled_at": "2026-11-08T04:57:45.398061+00:00",
+        "settled_at": "2026-11-08T04:57:45.39469+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -127298,7 +127553,7 @@
           "gamelog_n": 15
         },
         "actual_value": 30,
-        "settled_at": "2026-11-08T05:44:44.285811+00:00",
+        "settled_at": "2026-11-08T05:44:44.284495+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -165518,7 +165773,7 @@
           "gamelog_n": 13
         },
         "actual_value": 2,
-        "settled_at": "2026-11-09T10:01:12.68592+00:00",
+        "settled_at": "2026-11-09T10:01:12.679532+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -210134,7 +210389,7 @@
           "gamelog_n": 7
         },
         "actual_value": 4,
-        "settled_at": "2026-11-10T10:31:14.876534+00:00",
+        "settled_at": "2026-11-10T10:31:14.87541+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -210204,7 +210459,7 @@
           "gamelog_n": 7
         },
         "actual_value": 1,
-        "settled_at": "2026-11-10T10:31:14.875699+00:00",
+        "settled_at": "2026-11-10T10:31:14.875313+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -210274,7 +210529,7 @@
           "gamelog_n": 7
         },
         "actual_value": 0,
-        "settled_at": "2026-11-10T10:31:14.875605+00:00",
+        "settled_at": "2026-11-10T10:31:14.875199+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -210554,7 +210809,7 @@
           "gamelog_n": 15
         },
         "actual_value": 1,
-        "settled_at": "2026-11-10T10:31:14.87589+00:00",
+        "settled_at": "2026-11-10T10:31:14.874877+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -210975,7 +211230,7 @@
           "gamelog_n": 15
         },
         "actual_value": 25,
-        "settled_at": "2026-11-10T10:31:14.876139+00:00",
+        "settled_at": "2026-11-10T10:31:14.874251+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -211325,7 +211580,7 @@
           "gamelog_n": 7
         },
         "actual_value": 0,
-        "settled_at": "2026-11-10T10:31:14.875508+00:00",
+        "settled_at": "2026-11-10T10:31:14.873746+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -212447,7 +212702,7 @@
           "gamelog_n": 15
         },
         "actual_value": 4,
-        "settled_at": "2026-11-11T13:27:41.430434+00:00",
+        "settled_at": "2026-11-11T06:28:24.404869+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -215821,7 +216076,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -215878,7 +216133,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -215935,7 +216190,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -215992,7 +216247,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           }
         ],
         "odds": 1.41,
@@ -216123,7 +216378,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -216180,7 +216435,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -216237,7 +216492,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -216294,7 +216549,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T15:49:14.274078+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           }
         ]
       },
@@ -218034,7 +218289,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -218091,7 +218346,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -218148,7 +218403,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -218205,7 +218460,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           }
         ],
         "odds": 1.36,
@@ -218336,7 +218591,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -218393,7 +218648,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -218450,7 +218705,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -218507,7 +218762,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.042483+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           }
         ]
       },
@@ -218866,7 +219121,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.907463+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -218923,7 +219178,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.907463+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           }
         ],
         "odds": 1.81,
@@ -219034,7 +219289,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.907463+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           },
           {
             "player": "Franz Wagner",
@@ -219091,7 +219346,7 @@
             "date": "2026-11-10",
             "created_at": "2026-11-10T22:02:21.907463+00:00",
             "result": "loss",
-            "actual_value": 38
+            "actual_value": 33
           }
         ]
       },
@@ -229377,7 +229632,7 @@
               "date": "2026-11-10",
               "created_at": "2026-11-10T22:02:21.042483+00:00",
               "result": "loss",
-              "actual_value": 38
+              "actual_value": 33
             },
             {
               "player": "Franz Wagner",
@@ -229434,7 +229689,7 @@
               "date": "2026-11-10",
               "created_at": "2026-11-10T22:02:21.042483+00:00",
               "result": "loss",
-              "actual_value": 38
+              "actual_value": 33
             },
             {
               "player": "Franz Wagner",
@@ -229491,7 +229746,7 @@
               "date": "2026-11-10",
               "created_at": "2026-11-10T22:02:21.042483+00:00",
               "result": "loss",
-              "actual_value": 38
+              "actual_value": 33
             },
             {
               "player": "Franz Wagner",
@@ -229548,7 +229803,7 @@
               "date": "2026-11-10",
               "created_at": "2026-11-10T22:02:21.042483+00:00",
               "result": "loss",
-              "actual_value": 38
+              "actual_value": 33
             }
           ],
           "result": "loss",
@@ -229645,7 +229900,8 @@
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 10.11.2026\n\n🏀 Franz Wagner\n🏟 Orlando Magic @ Sacramento Kings\n\n❌ Points Under 28.5 @1.36 → 0.04u · Ergebnis 38 · -0.04u\n  📈 Prob konservativ 80% · EV konservativ +8.7% · L15 14/15\n❌ Points Under 22.5 @2.20 → 0.07u · Ergebnis 38 · -0.07u\n  📈 Prob konservativ 72% · EV konservativ +57.9% · L15 13/15\n❌ Points Under 21.5 @2.50 → 0.06u · Ergebnis 38 · -0.06u\n  📈 Prob konservativ 64% · EV konservativ +60.3% · L15 12/15\n❌ Points Under 20.5 @2.85 → 0.07u · Ergebnis 38 · -0.07u\n  📈 Prob konservativ 64% · EV konservativ +82.8% · L15 12/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.24u\n@prophunter",
         "settlement_updated_at": "2026-11-17T15:50:20.663949+00:00",
         "ladder_rung_version": 2,
-        "card_time_version": 2
+        "card_time_version": 2,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-10T22:02:23.835507+00:00",
@@ -229927,7 +230183,7 @@
               "date": "2026-11-10",
               "created_at": "2026-11-10T22:02:21.907463+00:00",
               "result": "loss",
-              "actual_value": 38
+              "actual_value": 33
             },
             {
               "player": "Franz Wagner",
@@ -229984,7 +230240,7 @@
               "date": "2026-11-10",
               "created_at": "2026-11-10T22:02:21.907463+00:00",
               "result": "loss",
-              "actual_value": 38
+              "actual_value": 33
             }
           ],
           "result": "loss",
@@ -230041,7 +230297,8 @@
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 10.11.2026\n\n🏀 Franz Wagner\n🏟 ORL Magic @ SAC Kings\n\n❌ Points Under 24.5 @1.81 → 0.08u · Ergebnis 38 · -0.08u\n  📈 Prob konservativ 80% · EV konservativ +44.8% · L15 14/15\n❌ Points Under 23.5 @1.96 → 0.09u · Ergebnis 38 · -0.09u\n  📈 Prob konservativ 80% · EV konservativ +57.2% · L15 14/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.17u\n@prophunter",
         "settlement_updated_at": "2026-11-17T15:50:21.636987+00:00",
         "ladder_rung_version": 2,
-        "card_time_version": 2
+        "card_time_version": 2,
+        "tg_gone": true
       },
       {
         "created_at": "2026-11-10T22:02:23.835514+00:00",
@@ -245490,7 +245747,7 @@
           "gamelog_n": 15
         },
         "actual_value": 5,
-        "settled_at": "2026-11-12T10:26:54.870259+00:00",
+        "settled_at": "2026-11-12T10:26:54.864738+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -245560,7 +245817,7 @@
           "gamelog_n": 15
         },
         "actual_value": 1,
-        "settled_at": "2026-11-12T10:26:54.870081+00:00",
+        "settled_at": "2026-11-12T10:26:54.864554+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -246330,7 +246587,7 @@
           "gamelog_n": 15
         },
         "actual_value": 1,
-        "settled_at": "2026-11-12T10:26:54.868835+00:00",
+        "settled_at": "2026-11-12T10:26:54.862552+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -251836,7 +252093,9 @@
             "date": "2026-11-12",
             "created_at": "2026-11-12T16:13:35.123031+00:00",
             "event_id": "1028754068",
-            "game_id": "1028754068"
+            "game_id": "1028754068",
+            "result": "loss",
+            "actual_value": 3
           }
         ],
         "odds": 96.0,
@@ -251965,15 +252224,17 @@
             "date": "2026-11-12",
             "created_at": "2026-11-12T16:13:35.123031+00:00",
             "event_id": "1028754068",
-            "game_id": "1028754068"
+            "game_id": "1028754068",
+            "result": "loss",
+            "actual_value": 3
           }
         ],
         "settlement_decisive_leg": {
-          "player": "Khaman Maluach",
-          "market": "Rebounds Over 11.5",
-          "actual_value": 2,
-          "result_id": "73232033df0b5f8f19152deae1db6e49",
-          "official_game_id": "401909979"
+          "player": "Joel Embiid",
+          "market": "Assists Over 5.5",
+          "actual_value": 3,
+          "result_id": "b3a7cbc4bdcc9360d8b718f539c01437",
+          "official_game_id": "401909976"
         }
       }
     ],
@@ -263872,7 +264133,7 @@
             "date": "2026-11-13",
             "created_at": "2026-11-13T22:15:03.316508+00:00",
             "result": "win",
-            "actual_value": 8
+            "actual_value": 15
           },
           {
             "player": "Josh Giddey",
@@ -264174,7 +264435,7 @@
             "date": "2026-11-13",
             "created_at": "2026-11-13T22:15:03.316508+00:00",
             "result": "win",
-            "actual_value": 8
+            "actual_value": 15
           },
           {
             "player": "Josh Giddey",
@@ -270261,7 +270522,7 @@
               "date": "2026-11-13",
               "created_at": "2026-11-13T22:15:03.316508+00:00",
               "result": "win",
-              "actual_value": 8
+              "actual_value": 15
             },
             {
               "player": "Josh Giddey",
@@ -270522,11 +270783,12 @@
               "edge_pct": 73.7,
               "bookmaker": "bovada"
             }
-          ]
+          ],
+          "date": "2026-11-13"
         },
         "image_settlement_version": 1,
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 13.11.2026\n\n🏀 Josh Giddey\n🏟 Atlanta Hawks @ Chicago Bulls\n\n✅ Points Under 16.5 @1.40 → 0.05u · Ergebnis 8 · +0.02u\n  📈 Prob konservativ 80% · EV konservativ +12.2% · L15 14/15\n❌ Points Under 13.5 @1.87 → 0.09u · Ergebnis 15 · -0.09u\n  📈 Prob konservativ 80% · EV konservativ +49.8% · L15 14/15\n❌ Points Under 11.5 @2.50 → 0.04u · Ergebnis 15 · -0.04u\n  📈 Prob konservativ 57% · EV konservativ +42.4% · L15 11/15\n❌ Points Under 10.5 @3.05 → 0.05u · Ergebnis 15 · -0.05u\n  📈 Prob konservativ 57% · EV konservativ +73.7% · L15 11/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.16u\n@prophunter",
-        "settlement_updated_at": "2026-11-15T09:32:59.956052+00:00",
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 13.11.2026\n\n🏀 Josh Giddey\n🏟 Atlanta Hawks @ Chicago Bulls\n\n✅ Points Under 16.5 @1.40 → 0.05u · Ergebnis 15 · +0.02u\n  📈 Prob konservativ 80% · EV konservativ +12.2% · L15 14/15\n❌ Points Under 13.5 @1.87 → 0.09u · Ergebnis 15 · -0.09u\n  📈 Prob konservativ 80% · EV konservativ +49.8% · L15 14/15\n❌ Points Under 11.5 @2.50 → 0.04u · Ergebnis 15 · -0.04u\n  📈 Prob konservativ 57% · EV konservativ +42.4% · L15 11/15\n❌ Points Under 10.5 @3.05 → 0.05u · Ergebnis 15 · -0.05u\n  📈 Prob konservativ 57% · EV konservativ +73.7% · L15 11/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.16u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:15.652781+00:00",
         "ladder_rung_version": 2
       },
       {
@@ -271569,7 +271831,7 @@
           "gamelog_n": 15
         },
         "actual_value": 1,
-        "settled_at": "2026-11-14T07:39:16.751102+00:00",
+        "settled_at": "2026-11-14T07:39:16.748858+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -271709,7 +271971,7 @@
           "gamelog_n": 15
         },
         "actual_value": 13,
-        "settled_at": "2026-11-14T07:39:16.750983+00:00",
+        "settled_at": "2026-11-14T07:39:16.748583+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -271989,7 +272251,7 @@
           "gamelog_n": 15
         },
         "actual_value": 18,
-        "settled_at": "2026-11-14T07:39:16.750741+00:00",
+        "settled_at": "2026-11-14T07:39:16.748038+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -293795,7 +294057,7 @@
           "gamelog_n": 7
         },
         "actual_value": 2,
-        "settled_at": "2026-11-15T09:30:04.879526+00:00",
+        "settled_at": "2026-11-15T09:30:04.877393+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -294005,7 +294267,7 @@
           "gamelog_n": 15
         },
         "actual_value": 11,
-        "settled_at": "2026-11-15T09:30:04.879036+00:00",
+        "settled_at": "2026-11-15T09:30:04.877128+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -294215,7 +294477,7 @@
           "gamelog_n": 15
         },
         "actual_value": 0,
-        "settled_at": "2026-11-15T09:30:04.878879+00:00",
+        "settled_at": "2026-11-15T09:30:04.876734+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -294285,7 +294547,7 @@
           "gamelog_n": 15
         },
         "actual_value": 2,
-        "settled_at": "2026-11-15T09:30:04.882365+00:00",
+        "settled_at": "2026-11-15T09:30:04.876575+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -316485,7 +316747,7 @@
           "gamelog_n": 15
         },
         "actual_value": 2,
-        "settled_at": "2026-11-16T05:59:28.095653+00:00",
+        "settled_at": "2026-11-16T05:59:28.092007+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -316625,7 +316887,7 @@
           "gamelog_n": 15
         },
         "actual_value": 0,
-        "settled_at": "2026-11-16T05:59:28.095581+00:00",
+        "settled_at": "2026-11-16T05:59:28.091865+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -316765,7 +317027,7 @@
           "gamelog_n": 15
         },
         "actual_value": 14,
-        "settled_at": "2026-11-16T05:59:28.093016+00:00",
+        "settled_at": "2026-11-16T05:59:28.091646+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -317185,7 +317447,7 @@
           "gamelog_n": 15
         },
         "actual_value": 1,
-        "settled_at": "2026-11-16T05:59:28.095173+00:00",
+        "settled_at": "2026-11-16T05:59:28.091153+00:00",
         "settlement_source": "prop_hunter_results"
       },
       {
@@ -324904,8 +325166,8 @@
             "stake": 0.08,
             "date": "2026-11-16",
             "created_at": "2026-11-16T10:44:54.200825+00:00",
-            "result": "loss",
-            "actual_value": 11
+            "result": "win",
+            "actual_value": 5
           },
           {
             "player": "Jalen Smith",
@@ -324961,8 +325223,8 @@
             "stake": 0.04,
             "date": "2026-11-16",
             "created_at": "2026-11-16T10:44:54.200825+00:00",
-            "result": "loss",
-            "actual_value": 11
+            "result": "win",
+            "actual_value": 5
           }
         ],
         "odds": 1.75,
@@ -324977,7 +325239,7 @@
         "commence_time": null,
         "event_id": null,
         "probability": 0.8013,
-        "result": "loss",
+        "result": "win",
         "created_at": "2026-11-16T10:44:54.200825+00:00",
         "ladder_legs": [
           {
@@ -325016,7 +325278,7 @@
         "combo_scope": null,
         "same_player_multistat": false,
         "date": "2026-11-16",
-        "profit": -0.12,
+        "profit": 0.1,
         "settlement_legs": [
           {
             "player": "Jalen Smith",
@@ -325072,8 +325334,8 @@
             "stake": 0.08,
             "date": "2026-11-16",
             "created_at": "2026-11-16T10:44:54.200825+00:00",
-            "result": "loss",
-            "actual_value": 11
+            "result": "win",
+            "actual_value": 5
           },
           {
             "player": "Jalen Smith",
@@ -325129,8 +325391,8 @@
             "stake": 0.04,
             "date": "2026-11-16",
             "created_at": "2026-11-16T10:44:54.200825+00:00",
-            "result": "loss",
-            "actual_value": 11
+            "result": "win",
+            "actual_value": 5
           }
         ]
       },
@@ -325732,7 +325994,13 @@
               },
               "gamelog_n": 7
             },
-            "commence_time": null
+            "commence_time": "2026-11-17T01:15:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T10:44:55.395055+00:00",
+            "event_id": "34118177",
+            "game_id": "34118177",
+            "result": "win",
+            "actual_value": 340
           },
           {
             "player": "Gui Santos",
@@ -325778,7 +326046,13 @@
               },
               "gamelog_n": 14
             },
-            "commence_time": null
+            "commence_time": "2026-11-17T01:10:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T10:44:55.395055+00:00",
+            "event_id": "36319060",
+            "game_id": "36319060",
+            "result": "win",
+            "actual_value": 12
           }
         ],
         "odds": 6.68,
@@ -325793,7 +326067,7 @@
         "commence_time": null,
         "event_id": null,
         "probability": 0.4673,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-11-16T10:44:55.395055+00:00",
         "dedup_key": "5393979a6633bce68f55f194128206f6ffd54a4d",
         "combo_id": "a547f0a331425663",
@@ -325807,7 +326081,114 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": "cross_game",
         "same_player_multistat": false,
-        "date": "2026-11-16"
+        "date": "2026-11-16",
+        "profit": 0.57,
+        "settlement_legs": [
+          {
+            "player": "Jacoby Brissett",
+            "sport": "NFL",
+            "market": "passing_yards Over 259.5",
+            "direction": "over",
+            "point": 259.5,
+            "odds": 3.48,
+            "bookmaker": "draftkings",
+            "game": "LA Chargers @ BAL Ravens",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-17",
+              "form_season_start": "2026-07-01",
+              "form_last_game_date": "2026-10-25",
+              "gamelog_l15_hits": 4,
+              "gamelog_l15_n": 7,
+              "gamelog_l15_line": 259.5,
+              "gamelog_l15_direction": "over",
+              "recent_form": {
+                "version": 1,
+                "line": 259.5,
+                "direction": "over",
+                "l5": {
+                  "n": 5,
+                  "hits": 3,
+                  "avg": 245.6
+                },
+                "l10": {
+                  "n": 7,
+                  "hits": 4,
+                  "avg": 228.5714
+                },
+                "l15": {
+                  "n": 7,
+                  "hits": 4,
+                  "avg": 228.5714
+                },
+                "previous": {
+                  "n": 2,
+                  "hits": 1
+                }
+              },
+              "gamelog_n": 7
+            },
+            "commence_time": "2026-11-17T01:15:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T10:44:55.395055+00:00",
+            "event_id": "34118177",
+            "game_id": "34118177",
+            "result": "win",
+            "actual_value": 340
+          },
+          {
+            "player": "Gui Santos",
+            "sport": "NBA",
+            "market": "Points Over 6.5",
+            "direction": "over",
+            "point": 6.5,
+            "odds": 1.92,
+            "bookmaker": "draftkings",
+            "game": "GS Warriors @ NO Pelicans",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-17",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-11",
+              "gamelog_l15_hits": 12,
+              "gamelog_l15_n": 14,
+              "gamelog_l15_line": 6.5,
+              "gamelog_l15_direction": "over",
+              "recent_form": {
+                "version": 1,
+                "line": 6.5,
+                "direction": "over",
+                "l5": {
+                  "n": 5,
+                  "hits": 3,
+                  "avg": 6.2
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 8,
+                  "avg": 8.1
+                },
+                "l15": {
+                  "n": 14,
+                  "hits": 12,
+                  "avg": 9.2857
+                },
+                "previous": {
+                  "n": 9,
+                  "hits": 9
+                }
+              },
+              "gamelog_n": 14
+            },
+            "commence_time": "2026-11-17T01:10:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T10:44:55.395055+00:00",
+            "event_id": "36319060",
+            "game_id": "36319060",
+            "result": "win",
+            "actual_value": 12
+          }
+        ]
       },
       {
         "type": "ladder",
@@ -328192,7 +328573,13 @@
               },
               "gamelog_n": 15
             },
-            "commence_time": null
+            "commence_time": "2026-11-17T01:10:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T21:30:04.048817+00:00",
+            "event_id": "35020951",
+            "game_id": "35020951",
+            "result": "win",
+            "actual_value": 4
           },
           {
             "player": "Gui Santos",
@@ -328238,7 +328625,13 @@
               },
               "gamelog_n": 14
             },
-            "commence_time": null
+            "commence_time": "2026-11-17T01:10:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T21:30:04.048817+00:00",
+            "event_id": "36319060",
+            "game_id": "36319060",
+            "result": "win",
+            "actual_value": 12
           }
         ],
         "odds": 3.66,
@@ -328253,7 +328646,7 @@
         "commence_time": null,
         "event_id": null,
         "probability": 0.6974,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-11-16T21:30:04.048817+00:00",
         "dedup_key": "f3aed5819778f551acfcc9b646537c3c4901aaf5",
         "combo_id": "fbe7d1fce9a939d2",
@@ -328267,7 +328660,114 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": "cross_game",
         "same_player_multistat": false,
-        "date": "2026-11-16"
+        "date": "2026-11-16",
+        "profit": 0.37,
+        "settlement_legs": [
+          {
+            "player": "Jrue Holiday",
+            "sport": "NBA",
+            "market": "Rebounds Over 3.5",
+            "direction": "over",
+            "point": 3.5,
+            "odds": 1.98,
+            "bookmaker": "draftkings",
+            "game": "POR Trail Blazers @ MIN Timberwolves",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-17",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-13",
+              "gamelog_l15_hits": 13,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 3.5,
+              "gamelog_l15_direction": "over",
+              "recent_form": {
+                "version": 1,
+                "line": 3.5,
+                "direction": "over",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 4.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 8,
+                  "avg": 4.4
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 13,
+                  "avg": 4.7333
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 9
+                }
+              },
+              "gamelog_n": 15
+            },
+            "commence_time": "2026-11-17T01:10:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T21:30:04.048817+00:00",
+            "event_id": "35020951",
+            "game_id": "35020951",
+            "result": "win",
+            "actual_value": 4
+          },
+          {
+            "player": "Gui Santos",
+            "sport": "NBA",
+            "market": "Points Over 6.5",
+            "direction": "over",
+            "point": 6.5,
+            "odds": 1.85,
+            "bookmaker": "draftkings",
+            "game": "GS Warriors @ NO Pelicans",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-17",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-11",
+              "gamelog_l15_hits": 12,
+              "gamelog_l15_n": 14,
+              "gamelog_l15_line": 6.5,
+              "gamelog_l15_direction": "over",
+              "recent_form": {
+                "version": 1,
+                "line": 6.5,
+                "direction": "over",
+                "l5": {
+                  "n": 5,
+                  "hits": 3,
+                  "avg": 6.2
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 8,
+                  "avg": 8.1
+                },
+                "l15": {
+                  "n": 14,
+                  "hits": 12,
+                  "avg": 9.2857
+                },
+                "previous": {
+                  "n": 9,
+                  "hits": 9
+                }
+              },
+              "gamelog_n": 14
+            },
+            "commence_time": "2026-11-17T01:10:00+00:00",
+            "date": "2026-11-16",
+            "created_at": "2026-11-16T21:30:04.048817+00:00",
+            "event_id": "36319060",
+            "game_id": "36319060",
+            "result": "win",
+            "actual_value": 12
+          }
+        ]
       }
     ],
     "cards": [
@@ -328378,8 +328878,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏒 Sam Reinhart\n🏟 Florida Panthers @ Dallas Stars\n\n   ✅ • shots_on_goal Over 1.5 @1.41 → 0.38u · Ergebnis 2 · +0.16u\n📈 Prob 94% · Edge +23.1% · Confidence 99/100\n💡 src:fanduel | Form L5 5/5 · L15 avg 3.6, 93% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.16u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:07:49.951950+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:27:52.880334+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250468+00:00",
@@ -328488,8 +328989,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏒 Roman Josi\n🏟 Nashville Predators @ San Jose Sharks\n\n   ✅ • shots_on_goal Over 1.5 @1.38 → 0.34u · Ergebnis 3 · +0.13u\n📈 Prob 87% · Edge +13.9% · Confidence 92/100\n💡 src:fanduel | Form L5 4/5 · L15 avg 3.1, 86% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.13u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:05.826631+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:27:55.329028+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250473+00:00",
@@ -328598,8 +329100,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏒 Matthew Tkachuk\n🏟 Florida Panthers @ Dallas Stars\n\n   ❌ • assists Over 0.5 @1.96 → 0.35u · Ergebnis 0 · -0.35u\n📈 Prob 81% · Edge +29.6% · Confidence 95/100\n💡 src:fanduel | Form L5 5/5 · L15 avg 1.5, 80% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.35u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:07.847563+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:27:57.512119+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250478+00:00",
@@ -328710,8 +329213,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Shai Gilgeous-Alexander\n🏟 Oklahoma City Thunder @ Sacramento Kings\n\n   ❌ • points Under 35.5 @1.59 → 0.33u · Ergebnis 37 · -0.33u\n📈 Prob 76% · Edge +13.3% · Confidence 86/100\n💡 src:bovada | Form L5 4/5 · L15(+8 Vorsaison) avg 25.3, 93% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:09.716162+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:27:59.895046+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250482+00:00",
@@ -328821,8 +329325,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Jalen Johnson\n🏟 Atlanta Hawks @ Milwaukee Bucks\n\n   ✅ • points Under 22.5 @1.77 → 0.33u · Ergebnis 14 · +0.25u\n📈 Prob 74% · Edge +17.4% · Confidence 89/100\n💡 src:bovada | Form L5 3/5 · L15(+9 Vorsaison) avg 19.3, 73% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.25u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:11.425496+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:02.409578+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250487+00:00",
@@ -328933,8 +329438,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Luguentz Dort\n🏟 Atlanta Hawks @ Milwaukee Bucks\n\n   ✅ • points Under 8.5 @1.74 → 0.33u · Ergebnis 3 · +0.24u\n📈 Prob 70% · Edge +12.4% · Confidence 82/100\n💡 src:bovada | Form L5 4/5 · L15(+11 Vorsaison) avg 5.9, 86% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.24u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:13.274037+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:04.631378+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250491+00:00",
@@ -329043,8 +329549,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏈 Ja'Marr Chase\n🏟 PIT Steelers @ CIN Bengals\n\n   ❌ • anytime_td Over 0.5 @1.81 → 0.33u · Ergebnis 0 · -0.33u\n📈 Prob 69% · Edge +14.0% · Confidence 84/100\n💡 src:betrivers | Form L5 4/5 · L6 avg 0.8, 66% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:15.416428+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:07.151225+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250495+00:00",
@@ -329154,8 +329661,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏒 Yegor Sharangovich\n🏟 Calgary Flames @ Anaheim Ducks\n\n   ✅ • shots_on_goal Under 1.5 @1.79 → 0.33u · Ergebnis 1 · +0.26u\n📈 Prob 67% · Edge +10.8% · Confidence 79/100\n💡 src:kambi_ub | Form L5 5/5 · L15 avg 1.3, 80% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.26u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:17.552368+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:09.475519+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250499+00:00",
@@ -329264,8 +329772,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏈 Joe Burrow\n🏟 Pittsburgh Steelers @ Cincinnati Bengals\n\n   ❌ • rushing_yards Over 9.5 @2.32 → 0.33u · Ergebnis 8 · -0.33u\n📈 Prob 67% · Edge +23.5% · Confidence 87/100\n💡 src:kambi_ub | Form L5 3/5 · L6 avg 10.0, 66% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:19.414348+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:11.746831+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250503+00:00",
@@ -329374,8 +329883,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏈 Jaylen Warren\n🏟 Pittsburgh Steelers @ Cincinnati Bengals\n\n   ❌ • rushing_yards Over 79.5 @2.80 → 0.34u · Ergebnis 15 · -0.34u\n📈 Prob 65% · Edge +29.6% · Confidence 85/100\n💡 src:kambi_ub | Form L5 4/5 · L8 avg 88.0, 62% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.34u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:21.305843+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:13.833887+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250506+00:00",
@@ -329484,8 +329994,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏒 Seth Jones\n🏟 Florida Panthers @ Dallas Stars\n\n   ✅ • assists Over 0.5 @2.26 → 0.33u · Ergebnis 1 · +0.42u\n📈 Prob 65% · Edge +20.6% · Confidence 87/100\n💡 src:fanduel | Form L5 3/5 · L15 avg 1.1, 66% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.42u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:23.345262+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:15.983865+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250511+00:00",
@@ -329594,8 +330105,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏈 Tee Higgins\n🏟 Pittsburgh Steelers @ Cincinnati Bengals\n\n   ❌ • receiving_yards Over 89.5 @2.35 → 0.33u · Ergebnis 66 · -0.33u\n📈 Prob 61% · Edge +18.3% · Confidence 83/100\n💡 src:kambi_ub | Form L5 3/5 · L8 avg 94.8, 62% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:25.312247+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:18.090295+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250514+00:00",
@@ -329706,8 +330218,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Nickeil Alexander-Walker\n🏟 Atlanta Hawks @ Milwaukee Bucks\n\n   ✅ • points Under 20.5 @2.20 → 0.33u · Ergebnis 20 · +0.40u\n📈 Prob 60% · Edge +14.9% · Confidence 80/100\n💡 src:bovada | Form L5 4/5 · L15(+8 Vorsaison) avg 17.1, 80% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.40u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:27.339990+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:20.341306+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250518+00:00",
@@ -329817,8 +330330,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏒 Matt Coronato\n🏟 Calgary Flames @ Anaheim Ducks\n\n   ✅ • points Under 1 @2.14 → 0.33u · Ergebnis 0 · +0.38u\n📈 Prob 60% · Edge +13.6% · Confidence 78/100\n💡 src:kambi_ub | Form L5 4/5 · L15 avg 0.8, 53% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.38u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T12:08:29.234474+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:22.574423+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250522+00:00",
@@ -329929,8 +330443,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Kenrich Williams\n🏟 Oklahoma City Thunder @ Sacramento Kings\n\n   ✅ • rebounds Under 4.5 @2.20 → 0.33u · Ergebnis 1 · +0.40u\n📈 Prob 59% · Edge +13.5% · Confidence 77/100\n💡 src:bovada | Form L5 5/5 · L15(+9 Vorsaison) avg 3.3, 73% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.40u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:24.098168+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:24.734043+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250526+00:00",
@@ -330041,8 +330556,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Jared McCain\n🏟 Oklahoma City Thunder @ Sacramento Kings\n\n   ✅ • points Under 14.5 @2.20 → 0.33u · Ergebnis 12 · +0.40u\n📈 Prob 58% · Edge +12.2% · Confidence 75/100\n💡 src:bovada | Form L5 4/5 · L15(+8 Vorsaison) avg 11.9, 73% unter Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.40u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:26.268000+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:26.875981+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250530+00:00",
@@ -330151,8 +330667,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏈 Darnell Washington\n🏟 PIT Steelers @ CIN Bengals\n\n   ❌ • anytime_td Over 0.5 @3.35 → 0.33u · Ergebnis 0 · -0.33u\n📈 Prob 47% · Edge +16.9% · Confidence 71/100\n💡 src:betrivers | Form L5 3/5 · L7 avg 0.4, 42% über Linie\n\n🏁 Auswertung: 0✅ 1❌ · -0.33u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:28.766536+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:29.144951+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250533+00:00",
@@ -330261,8 +330778,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏈 Pat Freiermuth\n🏟 PIT Steelers @ CIN Bengals\n\n   ✅ • anytime_td Over 0.5 @3.85 → 0.33u · Ergebnis 1 · +0.94u\n📈 Prob 41% · Edge +15.2% · Confidence 65/100\n💡 src:betrivers | Form L5 2/5 · L7 avg 0.6, 42% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.94u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:31.144515+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:31.291616+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250537+00:00",
@@ -330539,8 +331057,9 @@
         "image_settlement_version": 1,
         "ladder_rung_version": 2,
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏒 Sam Reinhart\n🏟 Florida Panthers @ Dallas Stars\n\n✅ 2+ Shots On Goal @1.41 → 0.05u · Ergebnis 2 · +0.02u\n  📈 Prob konservativ 80% · EV konservativ +12.8% · L15 14/15\n❌ 3+ Shots On Goal @2.28 → 0.03u · Ergebnis 2 · -0.03u\n  📈 Prob konservativ 57% · EV konservativ +29.8% · L15 11/15\n❌ 4+ Shots On Goal @4.25 → 0.01u · Ergebnis 2 · -0.01u\n  📈 Prob konservativ 31% · EV konservativ +33.1% · L15 7/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.02u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:33.662783+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:33.270736+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250541+00:00",
@@ -330817,8 +331336,9 @@
         "image_settlement_version": 1,
         "ladder_rung_version": 2,
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏀 Isaiah Hartenstein\n🏟 Oklahoma City Thunder @ Sacramento Kings\n\n✅ Points Under 12.5 @1.42 → 0.05u · Ergebnis 3 · +0.02u\n  📈 Prob konservativ 80% · EV konservativ +13.5% · L15 14/15\n✅ Points Under 8.5 @2.45 → 0.01u · Ergebnis 3 · +0.01u\n  📈 Prob konservativ 44% · EV konservativ +6.8% · L15 9/15\n✅ Points Under 7.5 @3.05 → 0.02u · Ergebnis 3 · +0.04u\n  📈 Prob konservativ 44% · EV konservativ +33.0% · L15 9/15\n\n\n🏁 Auswertung: 1✅ 0❌ · +0.07u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:35.905041+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:35.667789+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250545+00:00",
@@ -331095,8 +331615,9 @@
         "image_settlement_version": 1,
         "ladder_rung_version": 2,
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏀 Shai Gilgeous-Alexander\n🏟 Oklahoma City Thunder @ Sacramento Kings\n\n❌ Points Under 30.5 @2.45 → 0.01u · Ergebnis 37 · -0.01u\n  📈 Prob konservativ 44% · EV konservativ +6.8% · L15 9/15\n❌ Points Under 35.5 @1.59 → 0.07u · Ergebnis 37 · -0.07u\n  📈 Prob konservativ 80% · EV konservativ +27.3% · L15 14/15\n✅ Points Under 37.5 @1.42 → 0.05u · Ergebnis 37 · +0.02u\n  📈 Prob konservativ 80% · EV konservativ +13.5% · L15 14/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.06u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:38.184915+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:54.679748+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250549+00:00",
@@ -331373,8 +331894,9 @@
         "image_settlement_version": 1,
         "ladder_rung_version": 2,
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏀 Luguentz Dort\n🏟 Atlanta Hawks @ Milwaukee Bucks\n\n✅ Points Under 10.5 @1.38 → 0.07u · Ergebnis 3 · +0.03u\n  📈 Prob konservativ 86% · EV konservativ +19.1% · L15 15/15\n✅ Points Under 9.5 @1.54 → 0.07u · Ergebnis 3 · +0.04u\n  📈 Prob konservativ 80% · EV konservativ +23.4% · L15 14/15\n✅ Points Under 8.5 @1.74 → 0.05u · Ergebnis 3 · +0.04u\n  📈 Prob konservativ 72% · EV konservativ +24.9% · L15 13/15\n\n\n🏁 Auswertung: 1✅ 0❌ · +0.11u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:40.725472+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:56.649507+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250553+00:00",
@@ -331728,8 +332250,9 @@
         "image_settlement_version": 1,
         "ladder_rung_version": 2,
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏀 Kenrich Williams\n🏟 Oklahoma City Thunder @ Sacramento Kings\n\n✅ Points Under 11.5 @1.38 → 0.04u · Ergebnis 10 · +0.02u\n  📈 Prob konservativ 80% · EV konservativ +10.9% · L15 14/15\n✅ Points Under 10.5 @1.53 → 0.03u · Ergebnis 10 · +0.02u\n  📈 Prob konservativ 72% · EV konservativ +9.5% · L15 13/15\n❌ Points Under 9.5 @1.74 → 0.02u · Ergebnis 10 · -0.02u\n  📈 Prob konservativ 64% · EV konservativ +11.6% · L15 12/15\n❌ Points Under 7.5 @2.40 → 0.02u · Ergebnis 10 · -0.02u\n  📈 Prob konservativ 50% · EV konservativ +20.3% · L15 10/15\n\n\n🏁 Auswertung: 0✅ 0❌ 1↔️ · +0.00u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:42.811092+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:28:58.776295+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250556+00:00",
@@ -332006,8 +332529,9 @@
         "image_settlement_version": 1,
         "ladder_rung_version": 2,
         "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏀 Jalen Johnson\n🏟 Atlanta Hawks @ Milwaukee Bucks\n\n❌ Rebounds Under 10.5 @1.67 → 0.04u · Ergebnis 11 · -0.04u\n  📈 Prob konservativ 72% · EV konservativ +19.6% · L15 13/15\n❌ Rebounds Under 9.5 @2.05 → 0.02u · Ergebnis 11 · -0.02u\n  📈 Prob konservativ 57% · EV konservativ +16.7% · L15 11/15\n❌ Rebounds Under 8.5 @2.70 → 0.02u · Ergebnis 11 · -0.02u\n  📈 Prob konservativ 44% · EV konservativ +17.7% · L15 9/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.08u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:45.143880+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:29:00.731823+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T00:56:52.250560+00:00",
@@ -332391,8 +332915,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Desmond Bane\n🏟 Orlando Magic @ Boston Celtics\n\n   ✅ • threes Over 2.5 @1.52 → 0.35u · Ergebnis 3 · +0.18u\n📈 Prob 86% · Edge +20.4% · Confidence 98/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | Form L5 5/5 · L15(+8 Vorsaison) avg 4.3, 86% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.18u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:46.398257+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:29:03.499988+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T06:20:36.412355+00:00",
@@ -332506,8 +333031,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Jalen Suggs\n🏟 Orlando Magic @ Boston Celtics\n\n   ✅ • assists Over 2.5 @1.44 → 0.34u · Ergebnis 4 · +0.15u\n📈 Prob 86% · Edge +16.2% · Confidence 94/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | Form L5 5/5 · L14(+10 Vorsaison) avg 4.4, 85% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.15u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:47.600871+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:29:05.730482+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T06:20:36.412361+00:00",
@@ -332621,8 +333147,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Paul George\n🏟 Orlando Magic @ Boston Celtics\n\n   ✅ • rebounds Over 3.5 @1.55 → 0.34u · Ergebnis 7 · +0.19u\n📈 Prob 82% · Edge +17.1% · Confidence 93/100\n💡 src:kambi_ub | DATA+: Basket Line vorhanden | Form L5 5/5 · L15(+10 Vorsaison) avg 5.0, 80% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.19u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:48.788495+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:29:07.839506+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T06:20:36.412367+00:00",
@@ -332736,8 +333263,9 @@
         },
         "image_settlement_version": 1,
         "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 16.11.2026\n\n🏀 Wendell Carter Jr.\n🏟 ORL Magic @ BOS Celtics\n\n   ✅ • points Over 7.5 @1.32 → 0.33u · Ergebnis 10 · +0.11u\n📈 Prob 80% · Edge +3.8% · Confidence 79/100\n💡 src:betrivers | DATA+: Basket Line vorhanden | Form L5 5/5 · L15(+9 Vorsaison) avg 11.3, 80% über Linie\n\n🏁 Auswertung: 1✅ 0❌ · +0.11u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T15:50:50.048037+00:00",
-        "card_time_version": 2
+        "settlement_updated_at": "2026-11-18T00:29:10.025520+00:00",
+        "card_time_version": 2,
+        "card_design_version": 3
       },
       {
         "created_at": "2026-11-16T06:20:36.412372+00:00",
@@ -336798,8 +337326,8 @@
               "stake": 0.08,
               "date": "2026-11-16",
               "created_at": "2026-11-16T10:44:54.200825+00:00",
-              "result": "loss",
-              "actual_value": 11
+              "result": "win",
+              "actual_value": 5
             },
             {
               "player": "Jalen Smith",
@@ -336855,13 +337383,13 @@
               "stake": 0.04,
               "date": "2026-11-16",
               "created_at": "2026-11-16T10:44:54.200825+00:00",
-              "result": "loss",
-              "actual_value": 11
+              "result": "win",
+              "actual_value": 5
             }
           ],
-          "result": "loss",
+          "result": "win",
           "actual_value": null,
-          "profit": -0.12,
+          "profit": 0.1,
           "stake": 0.12,
           "commence_time": null,
           "game_date": null,
@@ -336913,8 +337441,8 @@
         },
         "image_settlement_version": 1,
         "ladder_rung_version": 2,
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏀 Jalen Smith\n🏟 CHI Bulls @ CLE Cavaliers\n\n❌ Rebounds Under 8.5 @1.75 → 0.08u · Ergebnis 11 · -0.08u\n  📈 Prob konservativ 80% · EV konservativ +39.9% · L15 14/15\n❌ Rebounds Under 7.5 @2.05 → 0.04u · Ergebnis 11 · -0.04u\n  📈 Prob konservativ 64% · EV konservativ +31.5% · L15 12/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.12u\n@prophunter",
-        "settlement_updated_at": "2026-11-17T17:26:49.277312+00:00",
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 16.11.2026\n\n🏀 Jalen Smith\n🏟 CHI Bulls @ CLE Cavaliers\n\n✅ Rebounds Under 8.5 @1.75 → 0.08u · Ergebnis 5 · +0.06u\n  📈 Prob konservativ 80% · EV konservativ +39.9% · L15 14/15\n✅ Rebounds Under 7.5 @2.05 → 0.04u · Ergebnis 5 · +0.04u\n  📈 Prob konservativ 64% · EV konservativ +31.5% · L15 12/15\n\n\n🏁 Auswertung: 1✅ 0❌ · +0.10u\n@prophunter",
+        "settlement_updated_at": "2026-11-18T00:29:12.343885+00:00",
         "card_time_version": 2
       },
       {
@@ -337337,7 +337865,13 @@
                 },
                 "gamelog_n": 7
               },
-              "commence_time": null
+              "commence_time": "2026-11-17T01:15:00+00:00",
+              "date": "2026-11-16",
+              "created_at": "2026-11-16T10:44:55.395055+00:00",
+              "event_id": "34118177",
+              "game_id": "34118177",
+              "result": "win",
+              "actual_value": 340
             },
             {
               "player": "Gui Santos",
@@ -337383,16 +337917,22 @@
                 },
                 "gamelog_n": 14
               },
-              "commence_time": null
+              "commence_time": "2026-11-17T01:10:00+00:00",
+              "date": "2026-11-16",
+              "created_at": "2026-11-16T10:44:55.395055+00:00",
+              "event_id": "36319060",
+              "game_id": "36319060",
+              "result": "win",
+              "actual_value": 12
             }
           ],
-          "result": null,
+          "result": "win",
           "actual_value": null,
-          "profit": null,
+          "profit": 0.57,
           "stake": 0.1,
           "commence_time": null,
           "game_date": null,
-          "date": null,
+          "date": "2026-11-16",
           "picks": []
         }
       },
@@ -340829,7 +341369,13 @@
                 },
                 "gamelog_n": 15
               },
-              "commence_time": null
+              "commence_time": "2026-11-17T01:10:00+00:00",
+              "date": "2026-11-16",
+              "created_at": "2026-11-16T21:30:04.048817+00:00",
+              "event_id": "35020951",
+              "game_id": "35020951",
+              "result": "win",
+              "actual_value": 4
             },
             {
               "player": "Gui Santos",
@@ -340875,16 +341421,22 @@
                 },
                 "gamelog_n": 14
               },
-              "commence_time": null
+              "commence_time": "2026-11-17T01:10:00+00:00",
+              "date": "2026-11-16",
+              "created_at": "2026-11-16T21:30:04.048817+00:00",
+              "event_id": "36319060",
+              "game_id": "36319060",
+              "result": "win",
+              "actual_value": 12
             }
           ],
-          "result": null,
+          "result": "win",
           "actual_value": null,
-          "profit": null,
+          "profit": 0.37,
           "stake": 0.14,
           "commence_time": null,
           "game_date": null,
-          "date": null,
+          "date": "2026-11-16",
           "picks": []
         }
       },
