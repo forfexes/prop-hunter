@@ -14,6 +14,10 @@ def test_family(kind, count):
     assert image.width == 1080 and image.height >= 800
     assert image.height >= (430 + 195 * count + 190)
     image.verify()
+    # The poster must contain real drawn content in both the header and pick region.
+    image = Image.open(BytesIO(data)).convert("RGB")
+    assert image.getpixel((540, 53)) != image.getpixel((540, image.height - 25))
+    assert len(image.getcolors(maxcolors=1_000_000) or []) > 100
 
 for family, count in [("single",1),("ladder",3),("builder",3),("lottery",3)]:
     test_family(family,count)
