@@ -1,0 +1,30 @@
+name: Prop Hunter Telegram Card Integrity
+"on":
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_telegram_integrity_check.yml"
+      - "prophunter_core_1391.py"
+      - "prophunter_core_1392.py"
+      - "prop_hunter_card_history_integrity_test.py"
+      - "prop_hunter_card_formatter.py"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: prop-hunter-telegram-integrity-check
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify Python syntax
+        run: python -m py_compile prophunter_core_1391.py prophunter_core_1392.py prop_hunter_card_formatter.py prop_hunter_card_history_integrity_test.py
+      - name: Verify every original Telegram card ID and partial delivery
+        run: python prop_hunter_card_history_integrity_test.py
