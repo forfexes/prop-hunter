@@ -41,6 +41,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           PH_SHL_LAST_N: '40'
           PH_SHL_MAX_EVENTS: '320'
           PH_SHL_INCREMENTAL_DAYS: '7'
