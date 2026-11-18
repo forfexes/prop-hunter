@@ -63,7 +63,8 @@ def fetch_snapshot_props(sport_filter=None) -> list:
     Props. Pick'em/fantasy rows without a standalone price stay in the database for
     analysis but are never disguised as @1.85 bets.
     """
-    c = _sb_read()
+    from prop_hunter_shared_utils import snapshot_supabase_client
+    c = snapshot_supabase_client()
     if c is None:
         return []
     out = []
