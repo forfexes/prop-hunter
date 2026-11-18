@@ -132,6 +132,30 @@ def supabase_client():
         warn(f"Supabase client failed: {e}")
         return None
 
+def snapshot_supabase_client():
+    """Dedicated snapshots project; never fall back to an over-limit primary.
+
+    Other tables continue to use the original primary client.
+    """
+    url=os.getenv("SUPABASE_SECONDARY_URL","").strip()
+    key=os.getenv("SUPABASE_SECONDARY_SERVICE_ROLE_KEY","").strip()
+    if not url or not key:
+        warn("secondary Supabase snapshot credentials missing; snapshots disabled")
+        return None
+    if create_client is None:
+        return None
+    try:
+        return create_client(url,key)
+    except Exception as exc:
+        warn(f"secondary snapshot client unavailable: {type(exc).__name__}")
+        return None
+
+
+def table_supabase_client(table: str):
+    if table == "prop_hunter_prop_snapshots":
+        return snapshot_supabase_client()
+    return supabase_client()
+
 def _json_clean(value: Any) -> Any:
     """Convert pandas/numpy NA + non-finite floats into JSON-safe values."""
     if value is None:
@@ -192,7 +216,7 @@ def upsert_rows(table: str, rows: List[Dict[str, Any]], conflict: Optional[str] 
                 log(f"{table}: deduped {len(clean_rows)} -> {len(deduped)} rows before upsert")
             clean_rows = list(deduped.values())
 
-    sb = supabase_client()
+    sb = table_supabase_client(table)
     if sb is None:
         warn(f"Supabase missing; skip {table}: {len(clean_rows)} rows")
         return
@@ -240,7 +264,7 @@ def select_rows(
     deterministic order_by column (normally a unique id) so inserts/updates
     cannot reshuffle pages and create duplicate/missing rows.
     """
-    sb = supabase_client()
+    sb = table_supabase_client(table)
     if sb is None:
         return []
     wanted = None if limit is None else max(0, int(limit))
