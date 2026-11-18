@@ -309,14 +309,14 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
            rows: List[Dict[str, Any]], footer: str = "", settlement: str = "", *, template_sport: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
     # Four distinct poster families; extra header space is reserved for portraits.
-    family = "lottery" if kind in ("big", "super", "lottery") else kind
+    from prop_hunter_original_template_registry import poster_family
+    family = poster_family(kind)
     row_h = 250 if family == "single" else (215 if family == "ladder" else 195)
     head_h = ((780 if teams else 650) if family in ("lottery", "single") else (650 if teams else 510)) if family in ("lottery", "builder", "single") else ((580 if teams else 440) if family == "ladder" else (430 if teams else 280))
     # Hero panels extend below the team header; reserve a safe footer gutter.
     h = head_h + row_h * len(rows) + (290 if family in ("lottery", "builder") else 190)
     img = _original_artwork_background(template_sport or sport, family, h)
-    accent = ((193, 65, 250) if kind in ("big", "super", "lottery") else
-              (255, 198, 70) if kind in ("ladder", "builder", "single") else CYAN)
+    accent = (193, 65, 250) if family == "lottery" else (255, 198, 70)
     d = ImageDraw.Draw(img, "RGBA")
     # Premium dark sports-dashboard identity: match approved visual references.
     gold = (255, 204, 78)
@@ -328,9 +328,9 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
                (W // 2 + 25, 29), (W // 2 - 25, 29)], fill=gold + (245,))
     d.line([(245, 111), (W - 245, 111)], fill=gold + (230,), width=4)
     d.rounded_rectangle([150, 133, W - 150, 213], 15, fill=(26, 22, 21, 240), outline=accent + (255,), width=5)
-    category = ("PRO TIP - LADDERS" if kind == "ladder" else
-                "LOTTERY" if kind in ("big", "super", "lottery") else
-                "PRO TIP - BUILDER" if kind not in ("single",) else "PRO TIP - SINGLE")
+    category = ("PRO TIP - LADDERS" if family == "ladder" else
+                "LOTTERY" if family == "lottery" else
+                "PRO TIP - BUILDER" if family == "builder" else "PRO TIP - SINGLE")
     d.text((W // 2, 172), category, font=_font(42), fill=gold if kind not in ("big", "super", "lottery") else accent, anchor="mm")
     d.text((W // 2, 241), _fit(d, subtitle, _font(25, False), W - 150),
            font=_font(25, False), fill=WHITE, anchor="mm")
