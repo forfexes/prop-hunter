@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent / "card_templates"
 FAMILIES = ("single", "ladder", "builder", "lottery")
 SPORTS = {
     "NBA": "basketball",
-    "WNBA": "basketball",
+    "WNBA": "wnba",
     "NCAAB": "basketball",
     "EUROLEAGUE": "basketball",
     "NFL": "football",
@@ -55,6 +55,6 @@ def available_template(sport: str, kind: str) -> Path | None:
     return p if p.is_file() else None
 
 def all_required_templates() -> list[Path]:
-    # 4 sports arenas (basketball/football/hockey/baseball) x 4 original layouts.
-    return [template_location(s, family) for s in ("basketball", "football", "hockey", "baseball")
+    # 5 sport identities (NBA-style basketball / WNBA / NFL / NHL / MLB) x 4 original layouts.
+    return [template_location(s, family) for s in ("basketball", "wnba", "football", "hockey", "baseball")
             for family in FAMILIES]
