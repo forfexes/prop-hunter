@@ -154,8 +154,41 @@ def _background(sport: str, h: int) -> "Image.Image":
     elif motif == "ice":
         g.ellipse([W // 2 - 200, h - 320, W // 2 + 200, h + 80], outline=(34, 230, 238, 55), width=5)
         g.line([(0, h - 120), (W, h - 120)], fill=(34, 230, 238, 40), width=4)
+    # Premium arena atmosphere: roof lights, crowd stands and glossy playing floor.
+    # Fully procedural: no copyrighted venue photography and no baked-in sample stats.
+    stadium = Image.new("RGBA", (W, h), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(stadium, "RGBA")
+    floor_y = max(300, h - 235)
+    sd.polygon([(0, 100), (W, 100), (W, floor_y), (0, floor_y)],
+               fill=(4, 10, 23, 75))
+    for ring in range(5):
+        yy = int(h * .27) + ring * 55
+        if yy >= floor_y:
+            break
+        sd.arc((-240, yy - 140, W + 240, yy + 230), 0, 180,
+               fill=(35 + ring * 8, 74 + ring * 7, 113 + ring * 5, 90), width=8)
+    for row in range(max(0, (floor_y - 310) // 28)):
+        yy = 315 + row * 28
+        for col in range(0, W, 23):
+            # Deterministic crowd lights; no randomness or external assets.
+            if ((row * 37 + col * 13) % 11) < 4:
+                sd.ellipse((col, yy, col + 3, yy + 3),
+                           fill=(236, 179, 87, 50 + ((row + col) % 3) * 18))
+    sd.polygon([(0, floor_y), (W, floor_y), (W, h), (0, h)],
+               fill=(16, 30, 51, 190))
+    for i in range(13):
+        x = i * (W // 12)
+        sd.line([(W // 2, floor_y), (x, h)], fill=(255, 197, 95, 28), width=3)
+    for i in range(1, 6):
+        yy = floor_y + int((h - floor_y) * i / 6)
+        sd.line([(0, yy), (W, yy)], fill=(106, 169, 221, 24), width=3)
+    for cx in (70, 235, 845, 1010):
+        sd.ellipse((cx - 13, 65, cx + 13, 91), fill=(241, 249, 255, 230))
+        sd.ellipse((cx - 37, 42, cx + 37, 114), outline=(102, 198, 255, 120), width=5)
+    stadium = stadium.filter(ImageFilter.GaussianBlur(1.5))
+    img = Image.alpha_composite(img.convert("RGBA"), stadium)
     glow = glow.filter(ImageFilter.GaussianBlur(6))
-    img = Image.alpha_composite(img.convert("RGBA"), glow)
+    img = Image.alpha_composite(img, glow)
     return img
 
 
@@ -252,19 +285,23 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     # Four distinct poster families; extra header space is reserved for portraits.
     family = "lottery" if kind in ("big", "super", "lottery") else kind
     row_h = 250 if family == "single" else (215 if family == "ladder" else 195)
-    head_h = (560 if teams else 410) if family in ("lottery", "builder") else (430 if teams else 280)
+    head_h = (650 if teams else 510) if family in ("lottery", "builder", "single") else (430 if teams else 280)
     # Hero panels extend below the team header; reserve a safe footer gutter.
     h = head_h + row_h * len(rows) + (290 if family in ("lottery", "builder") else 190)
     img = _background(sport, h)
-    accent = ((184, 110, 255) if kind in ("big", "super", "lottery") else
-              (255, 198, 70) if kind == "ladder" else CYAN)
+    accent = ((193, 65, 250) if kind in ("big", "super", "lottery") else
+              (255, 198, 70) if kind in ("ladder", "builder", "single") else CYAN)
     d = ImageDraw.Draw(img, "RGBA")
     # Premium dark sports-dashboard identity: match approved visual references.
     gold = (255, 204, 78)
     d.rounded_rectangle([22, 18, W - 22, h - 18], 30, outline=accent + (255,), width=5)
+    d.text((W // 2 + 3, 56), "PROP HUNTER", font=_font(69), fill=(184, 118, 39), anchor="mm")
     d.text((W // 2, 53), "PROP HUNTER", font=_font(69), fill=WHITE, anchor="mm")
+    d.polygon([(W // 2 - 33, 12), (W // 2 - 17, 2), (W // 2, 15),
+               (W // 2 + 17, 2), (W // 2 + 33, 12),
+               (W // 2 + 25, 29), (W // 2 - 25, 29)], fill=gold + (245,))
     d.line([(245, 111), (W - 245, 111)], fill=gold + (230,), width=4)
-    d.rounded_rectangle([150, 133, W - 150, 213], 15, fill=(8, 16, 28, 240), outline=gold + (255,), width=4)
+    d.rounded_rectangle([150, 133, W - 150, 213], 15, fill=(26, 22, 21, 240), outline=accent + (255,), width=5)
     category = ("PRO TIP - LADDERS" if kind == "ladder" else
                 "LOTTERY" if kind in ("big", "super", "lottery") else
                 "PRO TIP - BUILDER" if kind not in ("single",) else "PRO TIP - SINGLE")
@@ -285,19 +322,19 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
     # Portrait-led premium posters, using only the actual pick players.
-    if family in ("lottery", "builder") and rows:
+    if family in ("lottery", "builder", "single") and rows:
         hero_y = 422 if teams else 274
         hero_players = rows[:3] if family == "builder" else rows[:1]
         count = len(hero_players)
         centers = [W // 2] if count == 1 else ([270, 810] if count == 2 else [210, 540, 870])
         for cx, item in zip(centers, hero_players):
-            size = 170 if count == 1 else 118
+            size = 170 if count == 1 else 154
             portrait = _circle(item.get("photo"), size, item.get("name") or "?")
             img.alpha_composite(portrait, (cx - size // 2, hero_y - 14))
             f = _font(21 if count > 1 else 26)
             d.text((cx, hero_y + size + 8), _fit(d, item.get("name") or "", f, 280),
                    font=f, fill=WHITE, anchor="mm")
-        y = max(y, hero_y + (170 if count == 1 else 118) + 48)
+        y = max(y, hero_y + (170 if count == 1 else 154) + 48)
     if family == "ladder" and rows:
         # Ladder stages remain distinct; do not invent a multi-player parlay.
         d.text((W // 2, y - 14), "VERIFIZIERTE STUFEN", font=_font(24),
@@ -314,9 +351,10 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.rounded_rectangle([50, row_top + 16, 59, row_top + row_h - 28], 3,
                             fill=gold + (255,))
         photo_size = 210 if kind == "single" else (148 if family == "ladder" else 112)
-        ph = _circle(r.get("photo"), photo_size, r.get("name") or "?")
-        img.alpha_composite(ph, (72, row_top + 14))
-        x = 312 if kind == 'single' else 242
+        if kind != "single":
+            ph = _circle(r.get("photo"), photo_size, r.get("name") or "?")
+            img.alpha_composite(ph, (72, row_top + 14))
+        x = 90 if kind == 'single' else 242
         name_font = _font(37 if kind == "single" else 32)
         d.text((x, row_top + 39), _fit(d, r.get("name") or "", name_font, 520),
                font=name_font, fill=WHITE, anchor="lm")
@@ -356,7 +394,10 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
                    font=_font(22), fill=result_color, anchor="lm")
         y += row_h
     if footer:
-        d.text((W // 2, h - 92), _fit(d, footer, _font(30), W - 160), font=_font(30), fill=WHITE, anchor="mm")
+        d.rounded_rectangle([80, h - 125, W - 80, h - 74], 10,
+                            fill=(8, 17, 29, 230), outline=gold + (255,), width=2)
+        d.text((W // 2, h - 99), _fit(d, footer, _font(28), W - 190),
+               font=_font(28), fill=WHITE, anchor="mm")
     if settlement:
         _sl=settlement.lower()
         _sc=(GREEN if ("gewonnen" in _sl or "+" in settlement) and "verloren" not in _sl
