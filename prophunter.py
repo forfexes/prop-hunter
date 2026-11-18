@@ -77,7 +77,8 @@ def _snapshot_event_key(row):
         return _event_key(row)
     except Exception:return str(row.get('source_event_id') or '')
 def fetch_snapshot_props(sport_filter=None):
-    c=_sb_read()
+    from prop_hunter_shared_utils import snapshot_supabase_client
+    c=snapshot_supabase_client()
     if c is None:return []
     try:
         now_utc=datetime.now(timezone.utc)
