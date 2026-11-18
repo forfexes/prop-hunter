@@ -1,0 +1,52 @@
+name: Prop Hunter Card Migration Independent Diagnostic
+"on":
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_card_migration_probe.yml"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  offline_card_probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install image test dependencies
+        run: python -m pip install "requests>=2.31" "Pillow>=10"
+      - name: Execute card tests and write exact traceback to a repo diagnostic
+        run: |
+          python - <<'PY'
+          import json,subprocess,sys,datetime,pathlib
+          tests=[
+             "prop_hunter_media_settlement_test.py",
+             "prop_hunter_card_design_migration_test.py",
+             "prop_hunter_result_date_test.py",
+          ]
+          out={"checked_at":datetime.datetime.now(datetime.timezone.utc).isoformat(),"tests":[]}
+          for f in tests:
+              p=subprocess.run([sys.executable,f],text=True,capture_output=True,timeout=90)
+              out["tests"].append({"test":f,"exit_code":p.returncode,
+                                   "stdout":p.stdout[-6000:],"stderr":p.stderr[-12000:]})
+          root=pathlib.Path("diagnostics")
+          root.mkdir(exist_ok=True)
+          (root/"prop_hunter_card_migration_probe.json").write_text(
+              json.dumps(out,indent=2),encoding="utf8")
+          for item in out["tests"]:
+              print(item["test"],"PASS" if item["exit_code"]==0 else "FAIL")
+          PY
+      - name: Preserve diagnostic regardless of test pass/fail
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/prop_hunter_card_migration_probe.json
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "diagnostics: isolated Telegram card migration test report [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
