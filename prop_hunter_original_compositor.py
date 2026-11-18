@@ -291,6 +291,9 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _text(d, (322, 407), item.get('label'), 30, 272, WHITE, 'mm')
         _rect(im, (475, 380, 614, 438), (65, 39, 5, 255), 10, GOLD, 2)
         _text(d, (545, 408), item.get('odds') or '—', 28, 125, GOLD, 'mm')
+        # Hide baked-in 'FORM & STATS' heading, keep the original icon/frame.
+        _rect(im, (71, 461, 245, 499), NAVY, 4)
+        _text(ImageDraw.Draw(im), (78, 471), 'LETZTE SPIELE', 17, 158, WHITE)
         _rect(im, (35, 499, 244, 600), NAVY, 4)
         form = _f(item.get('form'))
         # Only real observed windows: no placeholder "FORM" row or invented sample.
