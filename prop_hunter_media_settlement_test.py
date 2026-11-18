@@ -28,7 +28,10 @@ with patch.object(cards,'player_photo',return_value=None),patch.object(cards,'te
  Image.open(io.BytesIO(closed)).save('/tmp/prop-hunter-settled-preview.png')
  sent=[]
  def post(url,**kw):
-  sent.append((url,kw));return N(status_code=200,text='',content=b'{}')
+  sent.append((url,kw))
+  mid=(kw.get('data') or kw.get('json') or {}).get('message_id')
+  return N(status_code=200,text='',content=b'{}',
+           json=lambda:{'ok':True,'result':{'message_id':mid,'photo':[{'file_id':'new-photo'}]}})
  results.TG_TOKEN='TEST';results.TG_CHAT='TEST'
  with patch.object(results.requests,'post',side_effect=post),patch.object(results.time,'sleep'):
   assert results._edit_message(123,'🏁 Auswertung: 0✅ 1❌ · -0.05u',image_pick=data)
@@ -36,7 +39,7 @@ with patch.object(cards,'player_photo',return_value=None),patch.object(cards,'te
  assert sent[0][1]['data']['message_id']==123
  assert json.loads(sent[0][1]['data']['media'])['caption']==''
  assert sent[0][1]['files']['card'][1].startswith(b'\x89PNG')
- sent.clear();responses=[N(status_code=400,text='Bad Request: there is no text in the message to edit'),N(status_code=429,text='Too Many Requests',json=lambda:{'parameters':{'retry_after':1}}),N(status_code=200,text='')]
+ sent.clear();responses=[N(status_code=400,text='Bad Request: there is no text in the message to edit'),N(status_code=429,text='Too Many Requests',json=lambda:{'parameters':{'retry_after':1}}),N(status_code=200,text='',json=lambda:{'ok':True,'result':{'message_id':123,'photo':[{'file_id':'new-photo'}]}})]
  def retry(url,**kw):sent.append(url);return responses.pop(0)
  with patch.object(results.requests,'post',side_effect=retry),patch.object(results.time,'sleep'):
   assert results._edit_message(123,'🏁 Auswertung: 1✅ 0❌ · +0.12u',fallback_pick=data)
@@ -56,3 +59,8 @@ assert not results._image_upgrade_due({'media_type':'photo','image_settlement_ve
 print('BOUNDED LEGACY PHOTO MIGRATION TEST PASSED')
 
 assert cards._label({'market':'rushing_attempts Over 15.5','point':15.5,'direction':'over'})=='Over 15.5 rushing attempts'
+
+# An HTTP 200 alone is not a valid photo-edit acknowledgement.
+with patch.object(results.requests,'post',return_value=N(status_code=200,text='',json=lambda:{'ok':True,'result':{'message_id':123}})), patch.object(results.time,'sleep'):
+ assert not results._edit_message(123,'Pending',image_pick=data)
+print('TELEGRAM EXACT MESSAGE / PHOTO ACKNOWLEDGEMENT PASSED')
