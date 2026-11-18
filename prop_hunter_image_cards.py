@@ -34,7 +34,8 @@ HEADERS = {"User-Agent": "PropHunter-Cards/1.0 (+https://github.com/forfexes/pro
 
 # ESPN: (sport, league) je Prop-Hunter-Sportschluessel
 LEAGUES = {
-    "nba": ("basketball", "nba"), "wnba": ("basketball", "wnba"), "nfl": ("football", "nfl"),
+    "nba": ("basketball", "nba"), "wnba": ("basketball", "wnba"), "ncaab": ("basketball", "mens-college-basketball"),
+    "euroleague": ("basketball", "euroleague"), "nfl": ("football", "nfl"), "ncaaf": ("football", "college-football"),
     "mlb": ("baseball", "mlb"), "nhl": ("hockey", "nhl"),
 }
 THEMES = {  # Hintergrundfarbe oben/unten + Linienmotiv
@@ -62,9 +63,13 @@ def _norm(s: Any) -> str:
 
 def league_of(value: Any) -> Optional[Tuple[str, str]]:
     v = str(value or "").lower().replace("_", " ")
-    for key in ("wnba", "nba", "nfl", "mlb", "nhl"):
+    for key in ("wnba", "ncaab", "ncaaf", "euroleague", "nba", "nfl", "mlb", "nhl"):
         if re.search(rf"\b{key}\b", v) or f"basketball {key}" in v or f"{key}" == v.strip():
             return LEAGUES[key]
+    if "college football" in v:
+        return LEAGUES["ncaaf"]
+    if "college basketball" in v or "ncaa basketball" in v:
+        return LEAGUES["ncaab"]
     if "basketball" in v:
         return LEAGUES["nba"]
     return None
@@ -285,7 +290,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     # Four distinct poster families; extra header space is reserved for portraits.
     family = "lottery" if kind in ("big", "super", "lottery") else kind
     row_h = 250 if family == "single" else (215 if family == "ladder" else 195)
-    head_h = ((780 if teams else 650) if family in ("lottery", "single") else (650 if teams else 510)) if family in ("lottery", "builder", "single") else (430 if teams else 280)
+    head_h = ((780 if teams else 650) if family in ("lottery", "single") else (650 if teams else 510)) if family in ("lottery", "builder", "single") else ((580 if teams else 440) if family == "ladder" else (430 if teams else 280))
     # Hero panels extend below the team header; reserve a safe footer gutter.
     h = head_h + row_h * len(rows) + (290 if family in ("lottery", "builder") else 190)
     img = _background(sport, h)
@@ -322,8 +327,9 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
     # Portrait-led premium posters, using only the actual pick players.
-    if family in ("lottery", "builder", "single") and rows:
+    if family in ("lottery", "builder", "single", "ladder") and rows:
         hero_y = 422 if teams else 274
+        # Ladder is one player with multiple price/line steps, NEVER a multi-player builder.
         hero_players = rows[:3] if family == "builder" else rows[:1]
         count = len(hero_players)
         centers = ([235] if family in ("single", "lottery") else [W // 2]) if count == 1 else ([270, 810] if count == 2 else [210, 540, 870])
@@ -340,8 +346,8 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.text((W // 2, y - 14), "VERIFIZIERTE STUFEN", font=_font(24),
                fill=gold, anchor="mm")
 
-    # Poster hierarchy: one portrait per Single, compact stage portraits for Ladder.
-    # Different visual hierarchy per card family; keep actual odds/form only.
+    # The Ladder uses one hero portrait; each row is a STAGE, not another player.
+    # Keep the independently verified bookmaker price/form for every rung.
     if kind == "single" and rows:
         row_h = 250
     for idx, r in enumerate(rows):
@@ -350,14 +356,15 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
                             fill=PANEL, outline=accent + (240,), width=3)
         d.rounded_rectangle([50, row_top + 16, 59, row_top + row_h - 28], 3,
                             fill=gold + (255,))
-        photo_size = 210 if kind == "single" else (148 if family == "ladder" else 112)
-        if kind != "single":
+        photo_size = 112
+        if family not in ("single", "ladder"):
             ph = _circle(r.get("photo"), photo_size, r.get("name") or "?")
             img.alpha_composite(ph, (72, row_top + 14))
-        x = 90 if kind == 'single' else 242
-        name_font = _font(37 if kind == "single" else 32)
-        d.text((x, row_top + 39), _fit(d, r.get("name") or "", name_font, 520),
-               font=name_font, fill=WHITE, anchor="lm")
+        x = 90 if family in ('single', 'ladder') else 242
+        name_font = _font(37 if family == "single" else 32)
+        display_name = (f"STUFE {idx + 1}" if family == "ladder" else (r.get("name") or ""))
+        d.text((x, row_top + 39), _fit(d, display_name, name_font, 520),
+               font=name_font, fill=gold if family == "ladder" else WHITE, anchor="lm")
         market = str(r.get("label") or "")
         market_font = _font(30)
         # Reserve the right column for the bookmaker price; never overprint the market.
@@ -478,7 +485,13 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
                 teams = [(parts[0].strip(), team_logo(parts[0].strip(), league)), (parts[1].strip(), team_logo(parts[1].strip(), league))]
         rows: List[Dict[str, Any]] = []
         if typ == "ladder":
-            name = str(getattr(pick, "player", "") or "")
+            name = str(getattr(pick, "player", "") or (details[0].get("player") if details else "") or "").strip()
+            if not name:
+                return None
+            # Never publish a supposed one-player ladder that mixes athletes.
+            if any(_norm(det.get("player")) != _norm(name) for det in details if det.get("player")):
+                print("LADDER_REJECTED_MIXED_PLAYERS", flush=True)
+                return None
             photo = player_photo(name, league)
             # Pro Stufe aus leg_details rendern: DORT stehen result + actual_value
             # nach dem Settlement (z.B. "Ist: 14 · GEWONNEN"). picks/ladder_legs
