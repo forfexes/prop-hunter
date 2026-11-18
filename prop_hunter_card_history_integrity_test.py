@@ -71,7 +71,7 @@ with tempfile.TemporaryDirectory() as tmp:
         assert [c["pick_keys"] for c in entry["cards"]]==[[key("Player A","Rebounds Under 7.5",7.5,"under")],[],[]]
         assert [len(c["combo_ids"]) for c in entry["cards"]]==[0,1,1]
         assert entry["cards"][1]["combo_ids"]!=entry["cards"][2]["combo_ids"]
-        assert all(c["card_design_version"]==3 and c["media_type"]=="photo" for c in entry["cards"])
+        assert all(c["card_design_version"]==5 and c["media_type"]=="photo" for c in entry["cards"])
         assert all(c["image_pick"]["player"] in {"Player A","Player B","Player C"} for c in entry["cards"])
         original=filename.read_bytes()
         try:scope["persist"](picks,telegram_cards=cards)
@@ -118,7 +118,7 @@ with tempfile.TemporaryDirectory() as tmp:
         assert [x["message_id"] for x in entry["cards"]]==[301,302,303]
         assert [x["image_pick"]["player"] for x in entry["cards"]]==[
             "Player A","Player B","Player C"]
-        assert all(x["card_design_version"]==3 for x in entry["cards"])
+        assert all(x["card_design_version"]==5 for x in entry["cards"])
         assert entry["cards"][0]["pick_keys"] and not entry["cards"][0]["combo_ids"]
         assert entry["cards"][1]["combo_ids"]!=entry["cards"][2]["combo_ids"]
         before=filename.read_bytes()
