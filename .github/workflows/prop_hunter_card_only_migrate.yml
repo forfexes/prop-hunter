@@ -1,0 +1,58 @@
+name: Prop Hunter v3 Existing Telegram Card Migration
+"on":
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_card_only_migrate.yml"
+      - ".github/card-only-migrate-trigger"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: prop-hunter-history-writer
+  cancel-in-progress: false
+jobs:
+  migrate_existing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install minimal image dependencies
+        run: python -m pip install "requests>=2.31" "Pillow>=10"
+      - name: Verify original-card editing and rollback safeguards
+        run: |
+          python -m py_compile prophunter_results.py prop_hunter_image_cards.py prop_hunter_card_only_migrate.py
+          python prop_hunter_media_settlement_test.py
+          python prop_hunter_card_design_migration_test.py
+          python prop_hunter_decisive_leg_test.py
+      - name: Edit existing Telegram cards only
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PH_CARD_ONLY_MAX_UPDATES: '35'
+          PH_CARD_ONLY_LOOKBACK_DAYS: '7'
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secrets missing; refusing migration"
+            exit 1
+          fi
+          python -u prop_hunter_card_only_migrate.py
+      - name: Save updated original card IDs to history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python -m json.tool picks_history.json >/dev/null
+          git add picks_history.json
+          if git diff --staged --quiet; then
+            echo "No Telegram card changes to commit"
+            exit 0
+          fi
+          git commit -m "prop hunter: preserve Telegram v3 card migrations [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
