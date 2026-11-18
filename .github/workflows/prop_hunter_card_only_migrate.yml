@@ -75,3 +75,15 @@ jobs:
             sleep $((attempt * 3))
           done
           exit 1
+      - name: Fail visibly if original photos remain unconverted
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          status=json.loads(Path("diagnostics/prop_hunter_card_only_migration_status.json").read_text())
+          failed=int(status.get("failed") or 0)
+          print(f"Card migration: updated={status.get('photo_updated',0)} failed={failed}")
+          if failed:
+              print(f"::error::{failed} original Telegram photos could not be upgraded; see failed_cards and render errors")
+              raise SystemExit(1)
+          PY
