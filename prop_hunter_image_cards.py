@@ -285,7 +285,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     # Four distinct poster families; extra header space is reserved for portraits.
     family = "lottery" if kind in ("big", "super", "lottery") else kind
     row_h = 250 if family == "single" else (215 if family == "ladder" else 195)
-    head_h = (650 if teams else 510) if family in ("lottery", "builder", "single") else (430 if teams else 280)
+    head_h = ((780 if teams else 650) if family in ("lottery", "single") else (650 if teams else 510)) if family in ("lottery", "builder", "single") else (430 if teams else 280)
     # Hero panels extend below the team header; reserve a safe footer gutter.
     h = head_h + row_h * len(rows) + (290 if family in ("lottery", "builder") else 190)
     img = _background(sport, h)
@@ -326,15 +326,15 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         hero_y = 422 if teams else 274
         hero_players = rows[:3] if family == "builder" else rows[:1]
         count = len(hero_players)
-        centers = [W // 2] if count == 1 else ([270, 810] if count == 2 else [210, 540, 870])
+        centers = ([235] if family in ("single", "lottery") else [W // 2]) if count == 1 else ([270, 810] if count == 2 else [210, 540, 870])
         for cx, item in zip(centers, hero_players):
-            size = 170 if count == 1 else 154
+            size = (295 if family in ("single", "lottery") else 170) if count == 1 else 154
             portrait = _circle(item.get("photo"), size, item.get("name") or "?")
             img.alpha_composite(portrait, (cx - size // 2, hero_y - 14))
             f = _font(21 if count > 1 else 26)
             d.text((cx, hero_y + size + 8), _fit(d, item.get("name") or "", f, 280),
                    font=f, fill=WHITE, anchor="mm")
-        y = max(y, hero_y + (170 if count == 1 else 154) + 48)
+        y = max(y, hero_y + ((295 if family in ("single", "lottery") else 170) if count == 1 else 154) + 48)
     if family == "ladder" and rows:
         # Ladder stages remain distinct; do not invent a multi-player parlay.
         d.text((W // 2, y - 14), "VERIFIZIERTE STUFEN", font=_font(24),
