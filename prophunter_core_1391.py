@@ -2781,11 +2781,33 @@ def sb_insert(row):
 # ─────────────────────────────────────────────
 def load_history():
     if not os.path.exists(HISTORY_FILE): return []
-    try: return json.load(open(HISTORY_FILE))
-    except: return []
+    try:
+        with open(HISTORY_FILE, encoding="utf-8") as fh:
+            data=json.load(fh)
+        if not isinstance(data,list):
+            raise ValueError("history root must be a list")
+        return data
+    except Exception as exc:
+        # Never replace an unreadable saved history with an empty file.
+        raise RuntimeError("History unreadable: refusing to overwrite Telegram IDs") from exc
+
 def save_history(h):
-    try: json.dump(h,open(HISTORY_FILE,"w"),indent=2,default=str)
-    except Exception as e: log.warning("history save: %s",e)
+    import tempfile
+    tmp_name=None
+    try:
+        folder=os.path.dirname(os.path.abspath(HISTORY_FILE))
+        with tempfile.NamedTemporaryFile(mode="w",dir=folder,
+                                         prefix=".prop_hunter_history_",suffix=".tmp",
+                                         encoding="utf-8",delete=False) as fh:
+            tmp_name=fh.name
+            json.dump(h,fh,ensure_ascii=False,indent=2,default=str)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name,HISTORY_FILE)
+    except Exception as exc:
+        if tmp_name and os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+        raise RuntimeError("History write failed: preserving previous Telegram IDs") from exc
 def already_posted():
     today=datetime.now(timezone.utc).strftime("%Y-%m-%d")
     keys=set(); players=set()
