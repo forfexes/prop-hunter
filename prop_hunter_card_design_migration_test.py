@@ -29,7 +29,7 @@ with patch.object(images,"settled_image",return_value=b"PNG"),patch.object(resul
     card=fresh()
     assert results._replace_recent_text_with_photo(card,visual,"pending")
     assert card["message_id"]==222 and card["media_type"]=="photo"
-    assert card["card_design_version"]==3
+    assert card["card_design_version"]==5
     assert calls[-2][0].endswith("/sendPhoto") and calls[-1][0].endswith("/deleteMessage")
     assert calls[-1][1]["json"]["message_id"]==111
 
@@ -49,4 +49,4 @@ with patch.object(results.requests,"post",side_effect=AssertionError("must not s
     assert not results._replace_recent_text_with_photo(card,visual,"pending")
     card=fresh();card["media_type"]="photo"
     assert not results._replace_recent_text_with_photo(card,visual,"pending")
-print("TELEGRAM TEXT-TO-V3-PHOTO SAFE REPLACEMENT REGRESSION PASSED")
+print("TELEGRAM TEXT-TO-ORIGINAL-V5-PHOTO SAFE REPLACEMENT REGRESSION PASSED")
