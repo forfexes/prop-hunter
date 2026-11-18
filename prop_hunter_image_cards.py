@@ -272,7 +272,8 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
             name, logo = t
             c = _circle(logo, 110, name)
             img.alpha_composite(c, (cx - 55, y - 10))
-            d.text((cx, y + 118), _fit(d, name, _font(26), 260), font=_font(26), fill=WHITE, anchor="mm")
+            team_font = _font(21 if len(name) > 16 else 24)
+            d.text((cx, y + 118), _fit(d, name, team_font, 320), font=team_font, fill=WHITE, anchor="mm")
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
     for r in rows:
@@ -390,9 +391,9 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
                 rows.append({"name": name, "photo": photo,
                              "label": str(det.get("market", "")).replace("_", " "),
                              "result": _result_text(det),
-                             "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])}" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
+                             "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])} verfügbare Spiele" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
                              "odds": f"@{float(_odds):.2f}" if _odds else ""})
-            title, subtitle = "PLAYER LADDER", "Ein Spieler · mehrere Stufen"
+            title, subtitle = "LADDER", f"{name} · {len(rows)} Stufen"
             if not teams and game and game.lower() != "verified ladder":
                 subtitle = game[:60]
         elif typ == "single":
