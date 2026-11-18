@@ -42,6 +42,17 @@ jobs:
             echo "Telegram secrets missing; refusing migration"
             exit 1
           fi
+          # Restore only independently proven lost message IDs from run
+          # 44199830731; refuse mismatched DB rows/events and duplicates.
+          python - <<'PY'
+          import json,subprocess,sys
+          from pathlib import Path
+          history=json.loads(Path("picks_history.json").read_text(encoding="utf8"))
+          if any(e.get("date")=="2026-11-17" and e.get("cards") for e in history):
+              print("Card recovery already completed; not rebuilding")
+          else:
+              subprocess.run([sys.executable,"prop_hunter_restore_verified_20261117_cards.py"],check=True)
+          PY
           python -u prop_hunter_card_only_migrate.py
       - name: Save updated original card IDs to history
         run: |
@@ -54,5 +65,9 @@ jobs:
             exit 0
           fi
           git commit -m "prop hunter: preserve Telegram v3 card migrations [skip ci]"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 3))
+          done
+          exit 1
