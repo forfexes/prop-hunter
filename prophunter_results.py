@@ -59,14 +59,38 @@ def _load_history() -> list:
         return []
     try:
         data = json.loads(HISTORY.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else []
     except Exception as exc:
-        print(f"history load failed: {exc}")
-        return []
+        # Never interpret a broken history file as an empty history and then
+        # overwrite the Telegram IDs from a successful earlier delivery.
+        raise RuntimeError("PROP HUNTER history is unreadable; refusing to overwrite it") from exc
+    if not isinstance(data, list):
+        raise RuntimeError("PROP HUNTER history must be a JSON list; refusing to overwrite it")
+    return data
 
 
 def _save_history(history: list) -> None:
-    HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    """Commit a complete valid JSON snapshot atomically in the same directory."""
+    import tempfile
+    if not isinstance(history, list):
+        raise TypeError("PROP HUNTER history must be a list")
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=str(HISTORY.parent),
+            prefix=f".{HISTORY.name}.", suffix=".tmp", delete=False,
+        ) as handle:
+            temporary = handle.name
+            json.dump(history, handle, ensure_ascii=False, indent=2, default=str)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, HISTORY)
+    except Exception:
+        if temporary is not None:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+        raise
 
 
 def _fetch_results() -> list:
