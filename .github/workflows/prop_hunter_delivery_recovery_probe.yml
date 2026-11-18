@@ -1,5 +1,5 @@
 name: Prop Hunter Telegram Delivery Recovery Audit
-# Validate new pending-photo fix run; this audit never edits Telegram
+# Recheck queued pending-photo fix after Results shared-writer slot; read-only
 "on":
   push:
     paths:
