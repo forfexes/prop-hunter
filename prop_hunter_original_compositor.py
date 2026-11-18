@@ -275,6 +275,9 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
                  _f(r.get('form')), r.get('result'), no=index, color=CYAN)
         _rect(im, (53, 670, 290, 741), NAVY, 8, CYAN, 1)
         _text(d, (169, 704), '1 SPIELER · MEHRERE STUFEN', 16, 217, GOLD, 'mm')
+        # Hide the baked-in '(3-LEG)' label: the actual ladder can have 2-5 rungs.
+        _rect(im, (319, 615, 670, 656), NAVY, 7, CYAN, 1)
+        _text(ImageDraw.Draw(im), (494, 635), f'LADDERS ({len(rows)} STUFEN)', 19, 335, WHITE, 'mm')
         _rect(im, (321, 657, 670, 742), NAVY, 7, CYAN, 1)
         for i, row in enumerate(rows[:3]):
             _text(d, (341, 666+i*23), f'{i+1}. {row.get("label") or ""} {row.get("odds") or ""}', 14, 314, WHITE)
