@@ -192,7 +192,7 @@ def _snapshot_temporal_fields(row: Dict[str, Any]) -> Dict[str, Any]:
         if val is None or isinstance(val, bool):
             continue
         numeric = isinstance(val, (int, float)) or (
-            isinstance(val, str) and re.fullmatch(r"\\d{9,13}(?:\\.\\d+)?", val.strip()) is not None
+            isinstance(val, str) and re.fullmatch(r"\d{9,13}(?:\.\d+)?", val.strip()) is not None
         )
         if not numeric:
             continue
