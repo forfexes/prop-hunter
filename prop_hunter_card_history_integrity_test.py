@@ -13,8 +13,8 @@ from unittest.mock import patch
 
 source=ast.parse(Path("prophunter_core_1391.py").read_text(encoding="utf-8"))
 functions=[node for node in source.body if isinstance(node,ast.FunctionDef)
-           and node.name in {"load_history","save_history","persist"}]
-assert len(functions)==3
+           and node.name in {"load_history","save_history","persist","persist_confirmed_telegram_cards"}]
+assert len(functions)==4
 
 class HistoricalPick:
     def __init__(self,**values): self.values=values
@@ -87,4 +87,10 @@ with tempfile.TemporaryDirectory() as tmp:
         except RuntimeError:pass
         else:raise AssertionError("Corrupted history must not silently reset to []")
         assert filename.read_text(encoding="utf-8")=="not valid JSON"
+        filename.unlink()
+        assert scope["persist_confirmed_telegram_cards"](picks,cards[:2])==2
+        partial=scope["load_history"]()[0]
+        assert [x["message_id"] for x in partial["cards"]]==[301,302]
+        assert len(partial["picks"])==1 and len(partial["kombis"])==1
+        assert partial["cards"][1]["combo_ids"]==[partial["kombis"][0]["combo_id"]]
 print("TELEGRAM PER-CARD ID / LADDER MAPPING / ATOMIC HISTORY REGRESSIONS PASSED")
