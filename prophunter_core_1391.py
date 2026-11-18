@@ -3592,6 +3592,54 @@ def send_telegram(text,dry_run=False,picks=None):
     return first
 
 
+
+def persist_confirmed_telegram_cards(picks, delivered):
+    """Persist only proven Telegram sends if a later card in the batch fails.
+
+    Transport failure may happen after multiple successful sendPhoto calls.
+    Each confirmed message ID and its precise original pick must survive, while
+    unsent picks must NOT be inserted or marked posted.
+    """
+    if not delivered:
+        return 0
+    singles=[p for p in picks if p.type=="single"]
+    combos=[p for p in picks if p.type in ("kombi2","kombi3","big","super",
+                                           "lottery","betbuilder","ladder")]
+    selected=[]
+    manifest=[]
+    seen=set()
+    single_count=0
+    combo_count=0
+    for delivery in delivered:
+        si=delivery.get("single_indices") or []
+        ci=delivery.get("combo_indices") or []
+        if len(si)+len(ci)!=1:
+            raise RuntimeError("Partial Telegram delivery has ambiguous pick identity")
+        d=dict(delivery)
+        if si:
+            index=int(si[0])
+            if index<0 or index>=len(singles) or ("s",index) in seen:
+                raise RuntimeError("Invalid partial Telegram single index")
+            seen.add(("s",index))
+            selected.append(singles[index])
+            d["single_indices"]=[single_count]
+            d["combo_indices"]=[]
+            single_count+=1
+        else:
+            index=int(ci[0])
+            if index<0 or index>=len(combos) or ("c",index) in seen:
+                raise RuntimeError("Invalid partial Telegram combo index")
+            seen.add(("c",index))
+            selected.append(combos[index])
+            d["single_indices"]=[]
+            d["combo_indices"]=[combo_count]
+            combo_count+=1
+        manifest.append(d)
+    persist(selected,telegram_cards=manifest)
+    log.warning("Saved %d confirmed Telegram cards despite later transport failure",
+                len(manifest))
+    return len(manifest)
+
 # ─────────────────────────────────────────────
 # GATHER (main data pipeline)
 # ─────────────────────────────────────────────
@@ -5447,7 +5495,9 @@ def run(dry_run=False,sport_filter=None):
             # Never let GitHub report a green card run when Telegram delivery failed.
             # Also do not persist phantom "posted" picks, otherwise dedup would hide
             # them from the next successful run.
-            log.error("card delivery failed — Telegram returned no message_id; picks NOT persisted")
+            log.error("card delivery failed — Telegram returned no complete batch message_id")
+            if _LAST_TELEGRAM_CARDS:
+                persist_confirmed_telegram_cards(picks,_LAST_TELEGRAM_CARDS)
             raise RuntimeError("PROP HUNTER Telegram delivery failed")
         primary_text=body
         if _LAST_TELEGRAM_CARDS:
