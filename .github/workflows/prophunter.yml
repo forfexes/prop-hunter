@@ -104,6 +104,15 @@ jobs:
           python prop_hunter_ladder_l15_test.py
           python prop_hunter_runtime_guard.py
 
+      - name: Upload four rendered card previews for visual inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prop-hunter-four-poster-previews
+          path: poster_previews/*.png
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Fast source/bookmaker collection
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
