@@ -1,0 +1,93 @@
+{
+  "checked_at": "2026-11-18T00:18:04.264428+00:00",
+  "checks": [
+    {
+      "cmd": "python -m py_compile prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_settler_extras.py prop_hunter_feature_builder.py prop_hunter_gamelog_retention.py",
+      "code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cmd": "python -m py_compile prop_hunter_results_mlb.py prop_hunter_results_mlb_extras.py prop_hunter_results_nba.py prop_hunter_results_wnba.py prop_hunter_results_nfl.py prop_hunter_results_nhl.py prop_hunter_results_ncaa.py prop_hunter_results_euroleague.py",
+      "code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cmd": "python -m py_compile prop_hunter_learning_update.py prop_hunter_source_manager.py prop_hunter_model_registry.py",
+      "code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cmd": "python -m py_compile prop_hunter_coverage_watchdog.py prop_hunter_market_discovery.py prop_hunter_identity_hub.py prop_hunter_expansion_test.py prop_hunter_euroleague_test.py",
+      "code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_combo_prices_test.py",
+      "code": 0,
+      "stdout": "COMBO PRICE REGRESSIONS PASSED; retained unpriced SGPs=0\nPRODUCTION DELIVERY PRICE GATE PASSED\nPRODUCTION FINAL PRICE FENCE PASSED\nCROSS-GAME NOT INVALIDATED / UNPRICED SGP GATE PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_quote_incidents_test.py",
+      "code": 0,
+      "stdout": "QUOTE INCIDENT TEST OK; retained affected tickets=0\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_market_regression_test.py",
+      "code": 0,
+      "stdout": "MARKET REGRESSION OK: threshold lines + single/double/triple mapping + probability guard\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_expansion_test.py",
+      "code": 0,
+      "stdout": "EXPANSION TEST OK: test_ncaab\nEXPANSION TEST OK: test_ncaaf\nEXPANSION TEST OK: test_mlb_extra\nEXPANSION TEST OK: test_nba_wnba_nfl_nhl_guards\nEXPANSION TEST OK: test_all_sports_sources\nEXPANSION TEST OK: test_builder_profiles_and_market_guard\nEXPANSION TEST OK: test_keyless_extension_and_card_formatter\nEXPANSION TEST OK: test_delivery_failure_and_team_identity_guards\nEXPANSION TEST OK: test_supabase_select_rows_paginates\nEXPANSION TEST OK: test_telegram_pro_tip_window_contract\nEXPANSION TEST OK: test_builder_persistence_and_learning_loop\nEXPANSION TEST OK: test_binary_enrichment_and_cross_game_pool\nEXPANSION TEST OK: test_odds_api_observed_sides\nEXPANSION TEST OK: test_dedicated_ladders_and_single_selection\nEXPANSION TEST PASSED: 14/14 suites\nEVENT SCOPE FAIL-CLOSED TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_euroleague_test.py",
+      "code": 0,
+      "stdout": "EUROLEAGUE TEST PASSED\nEUROLEAGUE PERSISTENCE TEST PASSED\nEUROLEAGUE NATIVE NAME / FINAL-GAME TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_card_quality_test.py",
+      "code": 0,
+      "stdout": "Builder diagnostics: props=0 pool=0 rows_ge10_games=0 qualified_rungs=0 ladders=1 raw_tickets=1\nFINAL LONGSHOT GATE / TOUCHDOWN LABEL / VERIFIED LOGO ALIASES / QUALITY WITHDRAWAL / LADDER INDEPENDENCE PASSED\nMIXED BUILDER FAILURE ISOLATION CONTRACT PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_media_settlement_test.py",
+      "code": 0,
+      "stdout": "Telegram edit 429: retrying after 2s (2/4)\nMEDIA SETTLEMENT TEST PASSED: render, original ID, no caption, legacy upgrade, 429 retry\nBOUNDED LEGACY PHOTO MIGRATION TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_card_design_migration_test.py",
+      "code": 0,
+      "stdout": "TELEGRAM TEXT-TO-V3-PHOTO SAFE REPLACEMENT REGRESSION PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_mixed_builders_test.py",
+      "code": 0,
+      "stdout": "MIXED BUILDER TEST PASSED: observed prices, form, expiry, selection identity, moneyline, both-over, final scope\nMIXED BUILDER RESULT INDEX / COMBINED PRICE PROFIT TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_decisive_leg_test.py",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"/home/runner/work/prop-hunter/prop-hunter/prop_hunter_decisive_leg_test.py\", line 20, in <module>\n    c=deepcopy(base);assert not r._settle_combo(c,*r._index_results([modified]));assert c['result']=='pending'\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+    }
+  ],
+  "preflight": {
+    "status": "http",
+    "code": 200
+  }
+}
