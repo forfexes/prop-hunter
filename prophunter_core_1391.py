@@ -2957,7 +2957,7 @@ def persist(picks, telegram_message_id=None, telegram_text=None, telegram_cards=
                   "pick_keys":pick_keys,"combo_ids":combo_ids,
                   "card_kind":str(payload.get("kind") or ""),
                   "media_type":"photo" if is_photo else "text",
-                  "card_design_version":3 if is_photo else 0}
+                  "card_design_version":(5 if os.getenv("PH_USE_USER_ORIGINALS","1")!="0" else 3) if is_photo else 0}
             if is_photo:
                 item["image_pick"]=image_pick
             new_cards.append(item)
