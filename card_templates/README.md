@@ -11,18 +11,19 @@
 
 Die Screenshots enthalten Beispielspieler/Quoten sowie Handy-Bedienelemente; für eine dynamische Karte müssen erst die eigentlichen Bilder freigestellt und die Beispieldaten entfernt werden. Die unveränderten Quelldateien bleiben separat als Referenz erhalten.
 
-## Vier Sportumgebungen, vier Original-Layouts = 16 Templates
+## Genau vier Original-Layouts — für ALLE Sportarten
 
-- **Basketball:** NBA, WNBA, NCAAB, Euroleague
-- **American Football:** NFL, NCAAF
-- **Eishockey:** NHL
-- **Baseball:** MLB
+**Keine neue Sport-Vorlage und kein anderes Design.** NBA, WNBA, NFL, NHL, MLB, NCAAB, NCAAF und Euroleague verwenden **dieselben vier von dir gelieferten NBA-Layouts**: Single, Ladder, Builder und Lottery. Lediglich Sportlogo, Foto des richtigen Spielers, Teamwappen, Marktdaten, echte Quoten, L10/L15 und Ergebnis werden dynamisch ersetzt.
 
-Jeder Sportbereich braucht die vier Dateien unter
-`card_templates/render_ready/{basketball|football|hockey|baseball}/{single|ladder|builder|lottery}.webp`.
+Zielpfade für die bereinigten, automatisch befüllbaren Original-Layouts:
+
+- `card_templates/render_ready/basketball/single.webp`
+- `card_templates/render_ready/basketball/ladder.webp`
+- `card_templates/render_ready/basketball/builder.webp`
+- `card_templates/render_ready/basketball/lottery.webp`
 
 Alle Vorlagen behalten die jeweilige **Originalanordnung**, Branding und @prophunter. Nur Sportlogo, Teamwappen, Spielerporträt, Spielort, echte Quote, L10/L15 und später Ergebnis ändern sich.
 
 **Ladder:** Immer **genau ein Spielerbild**, ein Spieler, mehrere Schwellen/Quoten; nie mehrere verschiedene Spieler wie bei Builder.
 
-**Stand 18.11.2026:** Die vier **unveränderten** Nutzer-JPGs sind in `card_templates/originals/` als Binärdateien auf GitHub vorhanden und überprüft: `single.jpg`, `ladder.jpg`, `builder.jpg`, `lottery.jpg` (Commit `3efd5c8e`). Die 16 datenfreien, sportbezogenen `render_ready`-WEBPs sind **noch nicht** hochgeladen. Der Generator verwendet daher weiterhin seinen bisherigen Hintergrund-Fallback. Weder eine pixelgenaue Originaldarstellung mit wechselnden echten Spieldaten noch der Telegram-Originalvorlagen-Versand sind nachgewiesen. Die Originalscreenshots enthalten beispielhafte Quoten/Spieler und dürfen vor Datenbereinigung NICHT als ungefilterte Live-Pick-Hintergründe benutzt werden.
+**Stand 18.11.2026:** Die vier **unveränderten** Nutzer-JPGs sind in `card_templates/originals/` als Binärdateien auf GitHub vorhanden und überprüft: `single.jpg`, `ladder.jpg`, `builder.jpg`, `lottery.jpg` (Commit `3efd5c8e`). Die vier datenfreien `render_ready`-WEBPs sind **noch nicht** hochgeladen. Der Generator verwendet daher weiterhin seinen bisherigen Hintergrund-Fallback. Weder eine pixelgenaue Originaldarstellung mit wechselnden echten Spieldaten noch der Telegram-Originalvorlagen-Versand sind nachgewiesen. Die Originalscreenshots enthalten beispielhafte Quoten/Spieler und dürfen vor Datenbereinigung NICHT als ungefilterte Live-Pick-Hintergründe benutzt werden.
