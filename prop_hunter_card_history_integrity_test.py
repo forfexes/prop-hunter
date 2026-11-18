@@ -31,7 +31,7 @@ scope={
     "HistoricalPick":HistoricalPick,"dedup_key":key,
     "sb_insert":lambda row:db_rows.append(row),
     "TG_CHAT":"verified-test-chat",
-    "log":N(info=lambda *args,**kw:None),
+    "log":N(info=lambda *args,**kw:None,warning=lambda *args,**kw:None),
 }
 exec(compile(ast.Module(body=functions,type_ignores=[]),"<history integrity>","exec"),scope)
 
