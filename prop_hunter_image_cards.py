@@ -256,13 +256,18 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
     accent = ((184, 110, 255) if kind in ("big", "super", "lottery") else
               (255, 198, 70) if kind == "ladder" else CYAN)
     d = ImageDraw.Draw(img, "RGBA")
-    # Card design v3: new NETRATTLER AI identity and clearly separated
-    # tip category, so rerendered old photos actually change visually.
-    d.text((W // 2, 34), "NETRATTLER AI", font=_font(27), fill=accent, anchor="mm")
-    d.text((W // 2, 91), "PROP HUNTER", font=_font(58), fill=WHITE, anchor="mm")
-    d.rounded_rectangle([40, 145, W - 40, h - 30], 28, outline=accent + (255,), width=4)
-    d.text((W // 2, 189), title, font=_font(48), fill=accent, anchor="mm")
-    d.text((W // 2, 239), subtitle, font=_font(28, False), fill=MUTED, anchor="mm")
+    # Premium dark sports-dashboard identity: match approved visual references.
+    gold = (255, 204, 78)
+    d.rounded_rectangle([22, 18, W - 22, h - 18], 30, outline=accent + (255,), width=5)
+    d.text((W // 2, 53), "PROP HUNTER", font=_font(69), fill=WHITE, anchor="mm")
+    d.line([(245, 111), (W - 245, 111)], fill=gold + (230,), width=4)
+    d.rounded_rectangle([150, 133, W - 150, 213], 15, fill=(8, 16, 28, 240), outline=gold + (255,), width=4)
+    category = ("PRO TIP - LADDERS" if kind == "ladder" else
+                "LOTTERY" if kind in ("big", "super", "lottery") else
+                "PRO TIP - BUILDER" if kind not in ("single",) else "PRO TIP - SINGLE")
+    d.text((W // 2, 172), category, font=_font(42), fill=gold if kind not in ("big", "super", "lottery") else accent, anchor="mm")
+    d.text((W // 2, 241), _fit(d, subtitle, _font(25, False), W - 150),
+           font=_font(25, False), fill=WHITE, anchor="mm")
     y = 273
     if teams:
         slots = [(W // 2 - 300, teams[0]), (W // 2 + 300, teams[1] if len(teams) > 1 else None)]
@@ -277,15 +282,15 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
         d.text((W // 2, y + 45), "VS", font=_font(48), fill=CYAN, anchor="mm")
         y += 150
     for r in rows:
-        d.rounded_rectangle([70, y, W - 70, y + row_h - 12], 22, fill=PANEL, outline=accent + (180,), width=2)
-        d.rounded_rectangle([72, y + 16, 79, y + row_h - 28], 3, fill=accent + (255,))
+        d.rounded_rectangle([48, y, W - 48, y + row_h - 12], 22, fill=PANEL, outline=accent + (240,), width=3)
+        d.rounded_rectangle([50, y + 16, 59, y + row_h - 28], 3, fill=gold + (255,))
         ph = _circle(r.get("photo"), 112, r.get("name") or "?")
         img.alpha_composite(ph, (92, y + 11))
         d.text((232, y + 38), _fit(d, r.get("name") or "", _font(36), 520), font=_font(36), fill=WHITE, anchor="lm")
         d.rounded_rectangle([232, y + 66, 232 + min(560, 24 + int(d.textlength(r.get("label") or "", font=_font(30)))), y + 108], 12, fill=accent + (255,))
         d.text((244, y + 87), _fit(d, r.get("label") or "", _font(30), 540), font=_font(30), fill=(4, 20, 28), anchor="lm")
         if r.get("form"):
-            d.text((232, y + 134), r["form"], font=_font(24, False), fill=MUTED, anchor="lm")
+            d.text((232, y + 134), _fit(d, r["form"], _font(24, False), 700), font=_font(24, False), fill=GREEN, anchor="lm")
         if r.get("odds"):
             d.text((W - 100, y + 62), r["odds"], font=_font(40), fill=accent, anchor="rm")
         if r.get("result"):
@@ -302,7 +307,7 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
              else MUTED)
         d.text((W // 2, h - 56), _fit(d, settlement, _font(24), W - 150), font=_font(24, False), fill=_sc, anchor="mm")
     else:
-        d.text((W // 2, h - 56), "Auswertung: offen", font=_font(24, False), fill=MUTED, anchor="mm")
+        d.text((W // 2, h - 56), "AUSWERTUNG: OFFEN  ·  @prophunter", font=_font(24), fill=gold, anchor="mm")
     buf = io.BytesIO()
     img.convert("RGB").save(buf, "PNG", optimize=True)
     return buf.getvalue()
