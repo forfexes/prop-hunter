@@ -11,7 +11,7 @@ name: Prop Hunter Results Autonomous
       - 'prophunter_results.py'
       - 'prop_hunter_result_date_test.py'
       - 'prop_hunter_card_design_migration_test.py'
-      - 'prop_hunter_image_cards.py'
+      # Visual changes belong to production card generation, not the slow settlement writer.
       - 'prophunter_core_1391.py'
       - 'prop_hunter_builder_engine.py'
       - 'prop_hunter_quality_gates_test.py'
