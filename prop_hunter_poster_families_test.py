@@ -12,6 +12,7 @@ def test_family(kind, count):
     assert data[:8] == bytes([137,80,78,71,13,10,26,10])
     image = Image.open(BytesIO(data))
     assert image.width == 1080 and image.height >= 800
+    assert image.height >= (430 + 195 * count + 190)
     image.verify()
 
 for family, count in [("single",1),("ladder",3),("builder",3),("lottery",3)]:
