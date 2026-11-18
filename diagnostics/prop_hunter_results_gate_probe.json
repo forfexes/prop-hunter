@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-18T00:18:04.264428+00:00",
+  "checked_at": "2026-11-18T00:21:04.915506+00:00",
   "checks": [
     {
       "cmd": "python -m py_compile prophunter_results.py prop_hunter_shared_utils.py prop_hunter_settler.py prop_hunter_settler_extras.py prop_hunter_feature_builder.py prop_hunter_gamelog_retention.py",
@@ -81,9 +81,99 @@
     },
     {
       "cmd": "python prop_hunter_decisive_leg_test.py",
-      "code": 1,
-      "stdout": "",
-      "stderr": "Traceback (most recent call last):\n  File \"/home/runner/work/prop-hunter/prop-hunter/prop_hunter_decisive_leg_test.py\", line 20, in <module>\n    c=deepcopy(base);assert not r._settle_combo(c,*r._index_results([modified]));assert c['result']=='pending'\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      "code": 0,
+      "stdout": "DECISIVE LOSS / UNKNOWN LEG / LADDER / IDENTITY / TIMED MARKET TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_settler_fast_test.py",
+      "code": 0,
+      "stdout": "SETTLER FAST INDEX TEST PASSED\nSETTLEMENT IDENTITY/DATE GUARDS PASSED\nNFL SETTLEMENT MARKET/LOCAL-DATE TEST PASSED\nOFFICIAL NHL GOALIE SAVES TEST PASSED\nNFL OBSERVED KICKER SCORING TEST PASSED\nNFL LATE-WEEK ROW BUDGET TEST PASSED\nPENDING AUDIT SCOPE / EVIDENCE TEST PASSED\nWARNING: MLB player identity ambiguous: Max Muncy ids=['571970', '691777']\nMLB UNIQUE IDENTITY / EVENT-DATE TEST PASSED\nWITHDRAWN PERFORMANCE ACCOUNTING TEST PASSED\nWORKFLOW CONFLICT MARKER TEST PASSED\nAUTO-VOID SAFETY GUARDS PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_settler_extras_test.py",
+      "code": 0,
+      "stdout": "Touchdown settlement missing-data guard passed\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_settlement_backlog_test.py",
+      "code": 0,
+      "stdout": "SETTLEMENT BACKLOG REGRESSIONS PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_nba_api_test.py",
+      "code": 0,
+      "stdout": "NBA API COLLECTOR REGRESSION PASSED\nNBA FINAL BOXSCORE COLLECTION GUARD PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_nfl_espn_test.py",
+      "code": 0,
+      "stdout": "NFL ESPN fallback: picks=1 events=1 added=1\nNFL ESPN fallback: picks=1 events=1 added=0\nNFL ESPN fallback: picks=1 events=0 added=0\nNFL ESPN fallback: picks=1 events=0 added=0\nNFL ESPN fallback: picks=0 events=0 added=0\nNFL ESPN FINAL / IDENTITY / CATEGORY MERGE / NATIVE PRESERVATION PASSED\nNFL ESPN fallback: picks=1 events=0 added=0\nNFL SAME-KICKOFF EVENT DISAMBIGUATION / MISSING VALUE GUARDS PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_scan_dates_test.py",
+      "code": 0,
+      "stdout": "WNBA results done: pending=31 events=0 rows=0\nSCOREBOARD DATE FAIRNESS REGRESSIONS PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_team_settler_test.py",
+      "code": 0,
+      "stdout": "EXACT FINAL TEAM TOTAL TEST PASSED\nFULL-GAME SCORE SCOPE TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_snapshot_retention_test.py",
+      "code": 0,
+      "stdout": "SNAPSHOT RETENTION TEST PASSED\nsnapshot retention complete requested=2 cutoff=2026-11-11T00:21:10.423623+00:00\nBOUNDED SNAPSHOT RETENTION TEST PASSED\nsnapshot retention batch budget reached requested=2; remaining stale rows deferred to next run\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_daily_control.py --check",
+      "code": 0,
+      "stdout": "DAILY CONTROL: runtime=13.10.1-KEYLESS-HARDENED workflows=25\nDAILY CONTROL: no safe repairs needed\nDAILY CONTROL OK: all workflows structurally consistent\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_gamelog_retention_test.py",
+      "code": 0,
+      "stdout": "RETENTION TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_basketball_boxscore_test.py",
+      "code": 0,
+      "stdout": "BASKETBALL OFFICIAL DATE / OBSERVED BOXSCORE TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_binary_enrichment_test.py",
+      "code": 0,
+      "stdout": "BINARY DD/TD REAL L15 ENRICHMENT TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_form_windows_test.py",
+      "code": 0,
+      "stdout": "feature builder saved batch=1 rows=1 progress=1/1\nfeature builder done players=1\nCURRENT SEASON FORM / NO FABRICATED EDGE REGRESSIONS PASSED\nfeature builder saved batch=1 rows=1 progress=1/1\nfeature builder done players=1\nLEAGUE-SCOPED FEATURE WRITE GUARD PASSED\nFEATURE KEYSET PAGINATION / CONCURRENT PRUNING REGRESSION PASSED\nROLE / SHOOTING VOLUME OPTIONAL L5-L10-L15 REGRESSIONS PASSED\nESPN NESTED SHOOTING ATTEMPTS REGRESSION PASSED\nPRODUCTION PLAYER ML L15 / MISSING STATS REGRESSION PASSED\nPLAYER ML VENUE MISSING-STAT / L15 GUARDS PASSED\nPLAYER ML VENUE FALLBACK REGRESSION PASSED\nNBA PRESEASON BACKFILL EXCLUSION PASSED\nINSUFFICIENT L15 EVIDENCE FAIL-CLOSED REGRESSION PASSED\nPREV SEASON PADDING TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_form_quality_test.py",
+      "code": 0,
+      "stdout": "RECENT FORM / EXACT LINE / BUILDER MODEL WIRING / ALL-TICKET DELIVERY GUARDS PASSED\nBINARY DD/TD FORM GUARD PASSED\n",
+      "stderr": ""
+    },
+    {
+      "cmd": "python prop_hunter_quality_gates_test.py",
+      "code": 0,
+      "stdout": "Quality gates OK: HR probability, builder sample size, and collector failures\n",
+      "stderr": ""
     }
   ],
   "preflight": {
