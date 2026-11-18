@@ -110,7 +110,7 @@ def _team(im, team, center, y, size=64):
         img.thumbnail((size, size), Image.Resampling.LANCZOS)
         im.alpha_composite(img, (cx-img.width//2, y+(size-img.height)//2))
     d = ImageDraw.Draw(im)
-    _text(d, (cx, y+size+9), name, 14, size+38, color=WHITE, anchor='mt')
+    _text(d, (cx, y+size+9), name, 12, size+60, color=WHITE, anchor='mt')
 
 
 def _row(im, xy, width, name, market, odds, form, result='', no=None,
@@ -141,7 +141,7 @@ def _row(im, xy, width, name, market, odds, form, result='', no=None,
 def _family(kind):
     v = str(kind or '').lower()
     if v in ('big','super','lottery'): return 'lottery'
-    if v in ('betbuilder','builder','combo','kombi','kombi2','cross','same_game'): return 'builder'
+    if v in ('betbuilder','builder','combo','kombi','kombi2','kombi3','cross','same_game'): return 'builder'
     if v in ('single','ladder'): return v
     raise ValueError(f'Unsupported card family: {kind}')
 
@@ -239,7 +239,9 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
     d = ImageDraw.Draw(im)
     if family == 'single':
         item = rows[0]
-        _clean_hero(im, (95, 83, 239, 458))
+        # The old mask started at y=83 and erased the gold PRO TIP header.
+        # Restrict cleaning to the portrait area below the header.
+        _clean_hero(im, (95, 140, 239, 458))
         _clean_hero(im, (0, 137, 100, 458))
         _portrait(im, item.get('photo'), (3, 139, 235, 457), item.get('name') or '')
         _rect(im, (250, 287, 556, 377), NAVY, 5)
@@ -256,10 +258,14 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
             _text(d, (48, y), f'L{number}', 19, 56, WHITE)
             _text(d, (232, y), match.group(1) if match else '—', 19, 123, GREEN, 'rt')
         _text(d, (48, 582), 'FORM', 17, 78, WHITE)
-        _rect(im, (402, 500, 506, 597), NAVY, 3)
-        _text(d, (451, 537), '—', 26, 95, WHITE, 'mm')
+        # Never display a fabricated model probability; identify missing data.
+        _rect(im, (267, 498, 507, 598), NAVY, 3)
+        _text(d, (386, 535), 'MODELLDATEN', 17, 222, WHITE, 'mm')
+        _text(d, (386, 568), 'nicht verfügbar', 15, 222, GOLD, 'mm')
         _rect(im, (526, 518, 666, 594), (17, 18, 24, 255), 5, GOLD, 2)
-        _text(d, (594, 552), footer or '—', 20, 130, GOLD, 'mm')
+        # The narrow stake box cannot hold a combined odds+stake sentence.
+        stake = re.search(r'Einsatz\s+([\d.,]+u)', str(footer), re.I)
+        _text(d, (594, 552), stake.group(1) if stake else '—', 22, 130, GOLD, 'mm')
     elif family == 'ladder':
         # Remove all THREE old athletes and badges, then draw ONE hero photograph.
         _clean_hero(im, (0, 270, 247, 621))
@@ -269,7 +275,8 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _text(d, (515, 317), footer or 'LADDER', 22, 254, GOLD, 'mm')
         if len(rows) > 5:
             raise ValueError('Ladder has more than five rungs; cannot fit faithfully')
-        ys = [355 + i * (max(50, 246 // len(rows))) for i in range(len(rows))]
+        # Compact rungs; a 2-rung ladder must not have a huge empty gap.
+        ys = [355 + i * 59 for i in range(len(rows))]
         for index, (y, r) in enumerate(zip(ys, rows), 1):
             _row(im, (204, y), 480, r.get('name'), r.get('label'), r.get('odds'),
                  _f(r.get('form')), r.get('result'), no=index, color=CYAN)
