@@ -12,6 +12,15 @@ with patch.object(cards,'player_photo',return_value=None),patch.object(cards,'te
  unverified=N(**dict(vars(pick),features={}))
  assert cards.build_for_pick(unverified) is None
  data=cards.snapshot(pick)
+ # Previously published legacy photos may lack provenance for their historical
+ # combined quote; re-render their official result but NEVER invent/reverify it.
+ legacy=dict(data,features={})
+ with patch.object(cards,'render',return_value=b'LEGACY') as draw:
+  assert cards.settled_image(legacy,'🏁 Auswertung: 1✅ 0❌ · +0.12u')==b'LEGACY'
+  assert 'GESAMTQUOTE UNBESTÄTIGT' in draw.call_args.args[6]
+  assert '@3.40' not in draw.call_args.args[6]
+ # The exact same unverified combo must still fail the NEW production photo gate.
+ assert cards.build_for_pick(N(**dict(vars(pick),features={}))) is None
  opened=cards.build_for_pick(pick)
  closed=cards.settled_image(data,'🏁 Auswertung: 1✅ 0❌ · +0.12u')
  assert opened and closed and opened!=closed
