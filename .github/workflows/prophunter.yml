@@ -89,6 +89,7 @@ jobs:
           python -m compileall -q .
           python prop_hunter_combo_prices_test.py
           python prop_hunter_card_quality_test.py
+          python prop_hunter_poster_families_test.py
           python prop_hunter_card_design_migration_test.py
           python prop_hunter_card_pending_visual_test.py
           python prop_hunter_form_windows_test.py
