@@ -741,6 +741,64 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
     return False
 
 
+def _replace_recent_text_with_photo(card: dict, visual: dict, text: str) -> bool:
+    """Safely replace a bot-owned TEXT tip with a PHOTO card in Telegram.
+
+    editMessageMedia cannot convert text to photo. Send the photo first,
+    delete the old text only after success, and roll back the new photo if
+    deleting the old one fails. Never touch messages >=40 hours old.
+    """
+    if not TG_TOKEN or not visual or str(card.get("media_type") or "text") != "text":
+        return False
+    created=card.get("created_at")
+    try:
+        stamp=datetime.fromisoformat(str(created).replace("Z","+00:00"))
+        if stamp.tzinfo is None: stamp=stamp.replace(tzinfo=timezone.utc)
+        age=(datetime.now(timezone.utc)-stamp.astimezone(timezone.utc)).total_seconds()
+        if not 0 <= age < 40*3600:
+            return False
+    except (ValueError,TypeError):
+        return False
+    chat=str(card.get("chat_id") or TG_CHAT or "").strip()
+    old_id=card.get("message_id")
+    if not chat or not old_id:
+        return False
+    from prop_hunter_image_cards import settled_image
+    png=settled_image(visual,text)
+    if not png:
+        return False
+    try:
+        sent=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendPhoto",
+            data={"chat_id":chat},files={"photo":("card-v3.png",png,"image/png")},
+            timeout=max(TIMEOUT,30))
+        if sent.status_code!=200:
+            print(f"Photo upgrade send rejected HTTP {sent.status_code}")
+            return False
+        new_id=(sent.json().get("result") or {}).get("message_id")
+        if not new_id:
+            return False
+        deleted=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/deleteMessage",
+            json={"chat_id":chat,"message_id":int(old_id)},timeout=TIMEOUT)
+        if deleted.status_code!=200:
+            # Prevent duplicates if old text cannot be removed.
+            rollback=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/deleteMessage",
+                json={"chat_id":chat,"message_id":int(new_id)},timeout=TIMEOUT)
+            if rollback.status_code!=200:
+                print(f"ALERT: photo upgrade rollback failed for old={old_id} new={new_id}")
+            return False
+        card["message_id"]=int(new_id)
+        card["media_type"]="photo"
+        card["image_pick"]=visual
+        card["card_design_version"]=3
+        card["image_settlement_version"]=1
+        card["settlement_text"]=text
+        card["settlement_updated_at"]=datetime.now(timezone.utc).isoformat()
+        return True
+    except (requests.RequestException,ValueError,TypeError) as exc:
+        print(f"Text/photo upgrade unavailable: {type(exc).__name__}")
+        return False
+
+
 def _performance_rows(history: list) -> list:
     """Flatten settled selections for performance accounting.
 
@@ -1070,6 +1128,15 @@ def main() -> int:
                     elif legacy_source.get("ladder_legs"):
                         visual["leg_details"]=legacy_source["ladder_legs"]
                 card["image_pick"]=visual
+            # Text messages cannot be converted by editMessageMedia. For recent
+            # bot-owned cards only, replace text atomically: send new image, then
+            # delete original, with rollback if deletion fails.
+            if (os.getenv("PH_CARD_TEXT_UPGRADE","1")=="1" and legacy_source
+                and card.get("media_type","text")=="text"
+                and _replace_recent_text_with_photo(card,legacy_source,text)):
+                cards_edited += 1
+                changed = True
+                continue
             _EDIT_STATE["gone"] = False
             _edit_ok = _edit_message(card.get("message_id"), text, card.get("chat_id"), **({"image_pick":card["image_pick"]} if card.get("media_type")=="photo" and card.get("image_pick") else {"fallback_pick":legacy_source} if legacy_source else {}))
             if not _edit_ok and _EDIT_STATE["gone"]:
