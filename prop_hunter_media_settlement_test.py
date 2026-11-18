@@ -75,3 +75,16 @@ with patch.object(cards,'player_photo',return_value=None), patch.object(cards,'t
  assert cards.settled_image(single,'🏁 Auswertung: 1⏳ · +0.00u')==b'PNG'
  assert not any(draw.call_args.args[5][0]['model'].values())
 print('ORIGINAL PUBLISHED MODEL METRICS / MISSING EVIDENCE GUARDS PASSED')
+
+# Sustained Telegram HTTP 502 must not trigger 35 futile requests.
+results._EDIT_STATE["gateway_unavailable"] = False
+with patch.object(cards, "settled_image", return_value=b"VALID-PNG"), \
+     patch.object(results.requests, "post", return_value=N(status_code=502, text='{"description":"Bad Gateway"}')) as posts, \
+     patch.object(results.time, "sleep"):
+    assert not results._edit_message(123, 'Pending', image_pick=data)
+    assert posts.call_count == 3, posts.call_count
+    assert results._EDIT_STATE["gateway_unavailable"] is True
+    assert not results._edit_message(124, 'Pending', image_pick=data)
+    assert posts.call_count == 3
+results._EDIT_STATE["gateway_unavailable"] = False
+print("TELEGRAM GATEWAY 502 BACKOFF / SAFETY CIRCUIT PASS")
