@@ -299,8 +299,9 @@ def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[s
                font=name_font, fill=WHITE, anchor="lm")
         market = str(r.get("label") or "")
         market_font = _font(30)
-        market_text = _fit(d, market, market_font, 500)
-        market_w = min(510, 30 + int(d.textlength(market_text, font=market_font)))
+        # Reserve the right column for the bookmaker price; never overprint the market.
+        market_text = _fit(d, market, market_font, max(130, W - 320 - x))
+        market_w = min(W - 315 - x, 30 + int(d.textlength(market_text, font=market_font)))
         d.rounded_rectangle([x, row_top + 66, x + market_w, row_top + 112], 12,
                             fill=(16, 80, 53, 245) if kind == "single" else accent + (255,),
                             outline=GREEN + (255,) if kind == "single" else accent + (255,), width=2)
