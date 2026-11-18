@@ -17,7 +17,7 @@ from prophunter_results import (
 
 MAX_UPDATES=max(1,min(60,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
 LOOKBACK_DAYS=max(1,min(30,int(os.getenv("PH_CARD_ONLY_LOOKBACK_DAYS","7"))))
-VERSION=3
+VERSION=4
 
 
 def migrate():
@@ -84,4 +84,4 @@ if __name__=="__main__":
     report=Path("diagnostics/prop_hunter_card_only_migration_status.json")
     report.parent.mkdir(parents=True,exist_ok=True)
     report.write_text(json.dumps(status,indent=2),encoding="utf-8")
-    print("PROP HUNTER v3 CARD MIGRATION: "+json.dumps(status,sort_keys=True),flush=True)
+    print("PROP HUNTER v4 CARD MIGRATION: "+json.dumps(status,sort_keys=True),flush=True)
