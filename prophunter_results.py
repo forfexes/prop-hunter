@@ -1082,7 +1082,7 @@ def main() -> int:
     merged = 0
     cards_edited = 0
     image_migrations = 0
-    migration_limit = max(0,min(100,int(os.getenv("PH_IMAGE_MIGRATION_LIMIT","30"))))
+    migration_limit = max(0,min(100,int(os.getenv("PH_IMAGE_MIGRATION_LIMIT","0"))))
     cards_ready = 0
     changed = False
     fallback_lines = []
@@ -1162,7 +1162,7 @@ def main() -> int:
                 and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
                 and image_migrations<migration_limit)
             _text_design_due=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" and card.get("media_type","text")=="text" and bool(legacy_source)
-                and os.getenv("PH_CARD_TEXT_UPGRADE","1")=="1"
+                and os.getenv("PH_CARD_TEXT_UPGRADE","0")=="1"
                 and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
                 and day>=_visual_age)
             if text == card.get("settlement_text") and not _rung_upgrade_due and not _time_upgrade_due and not _design_due and not _text_design_due:
