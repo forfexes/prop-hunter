@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install image test dependencies
-        run: python -m pip install "requests>=2.31" "Pillow>=10"
+        run: python -m pip install -r requirements_results.txt
       - name: Execute card tests and write exact traceback to a repo diagnostic
         run: |
           python - <<'PY'
@@ -40,12 +40,52 @@ jobs:
           for item in out["tests"]:
               print(item["test"],"PASS" if item["exit_code"]==0 else "FAIL")
           PY
+      - name: Isolate every production settlement offline gate and Supabase preflight
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python - <<'PY'
+          import json,subprocess,sys,pathlib,urllib.request,urllib.error,os,datetime
+          root=pathlib.Path("diagnostics");root.mkdir(exist_ok=True)
+          result={"checked_at":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                  "checks":[],"preflight":{}}
+          yaml=pathlib.Path(".github/workflows/prophunter_results.yml").read_text()
+          section=yaml.split("      - name: Compile and offline settlement regression",1)[1].split("      - name: Fetch official results and gamelogs",1)[0]
+          commands=[line.strip() for line in section.splitlines() if line.startswith("          python ")]
+          for command in commands:
+              try:
+                  p=subprocess.run(command,shell=True,text=True,capture_output=True,timeout=95)
+                  item={"cmd":command,"code":p.returncode,"stdout":p.stdout[-2000:],"stderr":p.stderr[-6500:]}
+              except subprocess.TimeoutExpired:
+                  item={"cmd":command,"code":124,"stderr":"timeout"}
+              result["checks"].append(item)
+              print("OFFLINE",item["code"],command,flush=True)
+              if item["code"]!=0:
+                  break
+          url=os.getenv("SUPABASE_URL","").rstrip("/")
+          key=os.getenv("SUPABASE_KEY","")
+          if not url or not key:
+              result["preflight"]={"status":"missing_secrets"}
+          else:
+              try:
+                  req=urllib.request.Request(url+"/rest/v1/prop_hunter_results?select=result_id&limit=1",
+                      headers={"apikey":key})
+                  with urllib.request.urlopen(req,timeout=15) as resp:
+                      result["preflight"]={"status":"http","code":resp.status}
+              except urllib.error.HTTPError as exc:
+                  result["preflight"]={"status":"http_error","code":exc.code}
+              except Exception as exc:
+                  result["preflight"]={"status":"network_error","type":type(exc).__name__}
+          (root/"prop_hunter_results_gate_probe.json").write_text(json.dumps(result,indent=2),encoding="utf8")
+          print("PREFLIGHT",result["preflight"],flush=True)
+          PY
       - name: Preserve diagnostic regardless of test pass/fail
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add diagnostics/prop_hunter_card_migration_probe.json
+          git add diagnostics/prop_hunter_card_migration_probe.json diagnostics/prop_hunter_results_gate_probe.json
           if git diff --staged --quiet; then exit 0; fi
           git commit -m "diagnostics: isolated Telegram card migration test report [skip ci]"
           git pull --rebase origin main
