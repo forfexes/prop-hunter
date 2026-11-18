@@ -1,4 +1,4 @@
-name: Prop Hunter v6 Existing Telegram Card Migration
+name: Prop Hunter v7 Targeted Telegram Card Repair
 "on":
   push:
     paths:
@@ -13,7 +13,7 @@ concurrency:
 jobs:
   migrate_existing:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,6 +28,7 @@ jobs:
       - name: Verify original-card editing and rollback safeguards
         run: |
           python -m py_compile prophunter_results.py prop_hunter_image_cards.py prop_hunter_card_only_migrate.py
+          python prop_hunter_card_only_targeted_test.py
           python prop_hunter_results_writer_safety_test.py
           python prop_hunter_media_settlement_test.py
           python prop_hunter_card_design_migration_test.py
@@ -42,8 +43,9 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
           SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
-          PH_CARD_ONLY_MAX_UPDATES: '35'
+          PH_CARD_ONLY_MAX_UPDATES: '100'
           PH_CARD_ONLY_LOOKBACK_DAYS: '7'
+          PH_CARD_ONLY_TARGET_DATE: ${{ contains(github.event.head_commit.message, '[repair-18]') && '2026-11-18' || '' }}
         run: |
           if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
             echo "Telegram secrets missing; refusing migration"
@@ -71,7 +73,7 @@ jobs:
             echo "No Telegram card changes to commit"
             exit 0
           fi
-          git commit -m "prop hunter: preserve Telegram v6 card migrations [skip ci]"
+          git commit -m "prop hunter: preserve Telegram v7 card migrations [skip ci]"
           for attempt in 1 2 3; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
@@ -88,5 +90,8 @@ jobs:
           print(f"Card migration: updated={status.get('photo_updated',0)} failed={failed}")
           if failed:
               print(f"::error::{failed} original Telegram photos could not be upgraded; see failed_cards and render errors")
+              raise SystemExit(1)
+          if status.get("target_date") and not int(status.get("photo_updated") or 0):
+              print("::error::Targeted Telegram repaint updated zero photos; no success claim")
               raise SystemExit(1)
           PY
