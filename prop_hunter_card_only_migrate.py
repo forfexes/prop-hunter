@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from prophunter_results import (
-    _load_history, _save_history, _decorate_card, _card_pick, _edit_message,
+    _load_history, _save_history, _card_visual_text, _card_pick, _edit_message,
     _replace_recent_text_with_photo,
 )
 
@@ -37,7 +37,7 @@ def migrate():
             if card.get("tg_gone") or not card.get("message_id") or int(card.get("card_design_version") or 0)>=VERSION:
                 counts["skipped"]+=1
                 continue
-            text=_decorate_card(card,picks,combos)
+            text=_card_visual_text(card,picks,combos)
             visual=card.get("image_pick") or _card_pick(card,picks,combos)
             if not text or not visual:
                 counts["skipped"]+=1
