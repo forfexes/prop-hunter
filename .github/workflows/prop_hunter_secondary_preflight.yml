@@ -1,0 +1,44 @@
+name: Prop Hunter Secondary Supabase Preflight
+"on":
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_secondary_preflight.yml"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install database client
+        run: pip install -r requirements.txt
+      - name: Check routing without credentials
+        run: python prop_hunter_dual_supabase_test.py
+      - name: Check actual secondary secrets and snapshot table read
+        env:
+          SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
+          SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
+        run: |
+          python - <<'PY'
+          import os,urllib.request,urllib.error
+          url=os.getenv("SUPABASE_SECONDARY_URL","").rstrip("/")
+          key=os.getenv("SUPABASE_SECONDARY_SERVICE_ROLE_KEY","")
+          if not url or not key:
+              raise SystemExit("SECONDARY SECRET MISSING: add both GitHub Actions secrets")
+          req=urllib.request.Request(
+              url+"/rest/v1/prop_hunter_prop_snapshots?select=snapshot_id&limit=1",
+              headers={"apikey":key,"Authorization":"Bearer "+key})
+          try:
+              with urllib.request.urlopen(req,timeout=20) as resp:
+                  if resp.status!=200: raise SystemExit("secondary snapshot table unavailable")
+          except urllib.error.HTTPError as exc:
+              raise SystemExit(f"secondary snapshot API HTTP {exc.code}") from None
+          print("SECONDARY SUPABASE: credentials and snapshot table verified; no data changed")
+          PY
