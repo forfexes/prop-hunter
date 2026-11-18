@@ -29,3 +29,23 @@ with patch.object(u,"create_client",side_effect=factory):
         assert u.table_supabase_client("prop_hunter_prop_snapshots") is None
         assert u.table_supabase_client("prop_hunter_picks").label=="https://primary.example"
 print("SUPABASE TWO-PROJECT ROUTING: PASS")
+
+# Regression: bookmaker event times sometimes arrive as Unix seconds/milliseconds.
+from datetime import datetime, timezone
+stamp=1794972600
+iso=datetime.fromtimestamp(stamp,timezone.utc).isoformat()
+clean=u._snapshot_temporal_fields({
+    "commence_time":str(stamp),
+    "snapshot_ts":stamp*1000,
+    "game_date":str(stamp),
+    "date":stamp,
+    "created_at":"2026-11-18T02:00:00+00:00",
+    "raw":{"original_timestamp":stamp},
+})
+assert clean["commence_time"]==iso
+assert clean["snapshot_ts"]==iso
+assert clean["game_date"]==iso[:10]
+assert clean["date"]==iso[:10]
+assert clean["created_at"]=="2026-11-18T02:00:00+00:00"
+assert clean["raw"]=={"original_timestamp":stamp}
+print("SUPABASE SNAPSHOT UNIX TIMESTAMP NORMALIZATION: PASS")
