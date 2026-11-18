@@ -141,7 +141,7 @@ def _row(im, xy, width, name, market, odds, form, result='', no=None,
 def _family(kind):
     v = str(kind or '').lower()
     if v in ('big','super','lottery'): return 'lottery'
-    if v in ('betbuilder','builder','combo','kombi','cross','same_game'): return 'builder'
+    if v in ('betbuilder','builder','combo','kombi','kombi2','cross','same_game'): return 'builder'
     if v in ('single','ladder'): return v
     raise ValueError(f'Unsupported card family: {kind}')
 
