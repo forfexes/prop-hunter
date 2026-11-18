@@ -1014,10 +1014,12 @@ def main() -> int:
     print(f"Verified quote withdrawals={quote_repairs}")
     rows = _fetch_results()
     print(f"Settlement reporter: history_days={len(history)} results={len(rows)} lookback={LOOKBACK_DAYS}d")
-    if not history or not rows:
-        print("Nothing to publish")
+    if not history:
+        print("No saved Telegram cards to update")
         return 0
-
+    # Photo design migrations do not depend on a game being settled today.
+    if not rows:
+        print("No new settlement rows; checking existing Telegram card design")
     by_dedup, by_signature = _index_results(rows)
     cutoff = (datetime.now(timezone.utc).date() - timedelta(days=LOOKBACK_DAYS)).isoformat()
     merged = 0
@@ -1028,7 +1030,9 @@ def main() -> int:
     changed = False
     fallback_lines = []
 
-    for entry in history:
+    # Refresh latest cards first; the migration limit must not be exhausted
+    # by historical cards before this week's user-visible tips.
+    for entry in sorted(history, key=lambda e: str(e.get("date") or ""), reverse=True):
         day = str(entry.get("date") or "")[:10]
         # Retained history can still contain unresolved ladders older than the
         # notification lookback. Merge them using newly verified results too.
@@ -1100,7 +1104,11 @@ def main() -> int:
                 and bool(card.get("image_pick"))
                 and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
                 and image_migrations<migration_limit)
-            if text == card.get("settlement_text") and not _rung_upgrade_due and not _time_upgrade_due and not _design_due:
+            _text_design_due=(card.get("media_type","text")=="text" and bool(legacy_source)
+                and os.getenv("PH_CARD_TEXT_UPGRADE","1")=="1"
+                and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
+                and day>=_visual_age)
+            if text == card.get("settlement_text") and not _rung_upgrade_due and not _time_upgrade_due and not _design_due and not _text_design_due:
                 if not legacy_source or not _image_upgrade_due(card,day) or image_migrations>=migration_limit:
                     continue
                 image_migrations += 1
