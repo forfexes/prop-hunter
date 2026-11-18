@@ -1033,12 +1033,21 @@ def main() -> int:
             _time_upgrade_due=(card.get("media_type")=="photo" and _has_kick
                 and int(card.get("card_time_version") or 0)<CARD_TIME_VERSION
                 and image_migrations<migration_limit)
-            if text == card.get("settlement_text") and not _rung_upgrade_due and not _time_upgrade_due:
+            # One-time design v3 upgrade for already published PHOTO tips, even
+            # while result is pending. Keep original message_id and settlement.
+            # Never attempt editMessageMedia on a text-only message.
+            CARD_DESIGN_VERSION=3
+            _visual_age=(datetime.now(timezone.utc).date()-timedelta(days=14)).isoformat()
+            _design_due=(day>=_visual_age and card.get("media_type")=="photo"
+                and bool(card.get("image_pick"))
+                and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
+                and image_migrations<migration_limit)
+            if text == card.get("settlement_text") and not _rung_upgrade_due and not _time_upgrade_due and not _design_due:
                 if not legacy_source or not _image_upgrade_due(card,day) or image_migrations>=migration_limit:
                     continue
                 image_migrations += 1
-            elif _time_upgrade_due and text == card.get("settlement_text"):
-                # reiner Zeit-Refresh ohne Settlement-Aenderung zaehlt zum Migrations-Budget
+            elif (_time_upgrade_due or _design_due) and text == card.get("settlement_text"):
+                # Visual-only refresh (time or design) counts against migration limit.
                 image_migrations += 1
             if card.get("image_pick") and legacy_source:
                 # Keep original presentation, overlay official settled values.
@@ -1073,6 +1082,8 @@ def main() -> int:
                     card["ladder_rung_version"] = LADDER_RUNG_CARD_VERSION
                 if _time_upgrade_due:
                     card["card_time_version"] = CARD_TIME_VERSION
+                if _design_due:
+                    card["card_design_version"] = CARD_DESIGN_VERSION
                 card["settlement_text"] = text
                 card["settlement_updated_at"] = datetime.now(timezone.utc).isoformat()
                 cards_edited += 1
