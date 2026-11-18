@@ -758,14 +758,17 @@ def _card_pick(card,picks,combos):
     return obj
 
 
-_EDIT_STATE = {"gone": False}
+_EDIT_STATE = {"gone": False, "reason": ""}
 
 
 def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=None, fallback_pick=None) -> bool:
+    _EDIT_STATE["reason"] = ""
     if not TG_TOKEN or not message_id:
+        _EDIT_STATE["reason"] = "missing_telegram_token_or_message_id"
         return False
     target = str(chat_id or TG_CHAT or "").strip()
     if not target:
+        _EDIT_STATE["reason"] = "missing_target_chat"
         return False
     retries=max(1,min(6,int(os.getenv("PH_TELEGRAM_EDIT_429_RETRIES","4"))))
     base_delay=max(0.0,min(5.0,float(os.getenv("PH_TELEGRAM_EDIT_DELAY","1.0"))))
@@ -776,6 +779,7 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                 from prop_hunter_image_cards import settled_image
                 png=settled_image(image_pick,text)
                 if not png:
+                    _EDIT_STATE["reason"] = "image_render_failed"
                     print("Telegram image settlement render failed; retry next run")
                     return False
                 r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/editMessageMedia",
@@ -800,7 +804,11 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                 same_message = isinstance(result, dict) and str(result.get("message_id")) == str(message_id)
                 has_photo = bool(result.get("photo")) if isinstance(result, dict) else False
                 if reply.get("ok") is not True or not same_message or (image_pick and not has_photo):
-                    print(f"Telegram edit unverified: message_id={message_id} api_ok={reply.get('ok')} id_match={same_message} photo={has_photo}", flush=True)
+                    _EDIT_STATE["reason"] = (
+                        f"telegram_ack_invalid:ok={reply.get('ok')},"
+                        f"id_match={same_message},photo={has_photo},"
+                        f"result_type={type(result).__name__}")
+                    print(f"Telegram edit unverified: message_id={message_id} {_EDIT_STATE['reason']}", flush=True)
                     return False
                 if image_pick:
                     print(f"Telegram photo edit confirmed: message_id={message_id}", flush=True)
@@ -821,18 +829,22 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                 except Exception:
                     pass
                 if attempt>=retries:
+                    _EDIT_STATE["reason"] = f"telegram_429_retry_exhausted:{retry_after}"
                     print(f"Telegram edit 429 exhausted: retry_after={retry_after}")
                     return False
                 wait_s=max(1,min(90,retry_after+1))
                 print(f"Telegram edit 429: retrying after {wait_s}s ({attempt+1}/{retries})")
                 time.sleep(wait_s)
                 continue
-            print(f"Telegram edit {r.status_code}: {r.text[:200]}")
+            error_detail = str(r.text or "")[:150]
+            _EDIT_STATE["reason"] = f"telegram_http_{r.status_code}:{error_detail}"
+            print(f"Telegram edit {r.status_code}: {error_detail}")
             _EDIT_STATE["gone"] = bool(r.status_code == 400 and "message to edit not found" in r.text.lower())
             return False
         except Exception as exc:
             if attempt>=retries:
-                print(f"Telegram edit failed: {exc}")
+                _EDIT_STATE["reason"] = f"edit_exception:{type(exc).__name__}:{str(exc)[:120]}"
+                print(f"Telegram edit failed: {type(exc).__name__}")
                 return False
             time.sleep(min(3,attempt+1))
     return False
