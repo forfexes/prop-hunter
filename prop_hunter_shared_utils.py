@@ -180,10 +180,41 @@ def _json_clean(value: Any) -> Any:
         return [_json_clean(v) for v in value]
     return value
 
+def _snapshot_temporal_fields(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert observed Unix seconds/milliseconds to Postgres date/timestamptz.
+
+    Some keyless bookmakers send event times as 10-digit strings; passing
+    them directly to PostgREST raises SQLSTATE 22008 and loses the whole batch.
+    """
+    out = dict(row)
+    for field in ("commence_time", "created_at", "updated_at", "snapshot_ts", "game_date", "date"):
+        val = out.get(field)
+        if val is None or isinstance(val, bool):
+            continue
+        numeric = isinstance(val, (int, float)) or (
+            isinstance(val, str) and re.fullmatch(r"\\d{9,13}(?:\\.\\d+)?", val.strip()) is not None
+        )
+        if not numeric:
+            continue
+        try:
+            seconds = float(val)
+            if seconds > 100_000_000_000:
+                seconds /= 1000.0
+            if not (946684800 <= seconds <= 4102444800):
+                raise ValueError("out-of-range timestamp")
+            dt = datetime.fromtimestamp(seconds, tz=timezone.utc)
+            out[field] = dt.date().isoformat() if field in ("game_date", "date") else dt.isoformat()
+        except (ValueError, OverflowError, OSError):
+            out.pop(field, None)
+    return out
+
+
 def upsert_rows(table: str, rows: List[Dict[str, Any]], conflict: Optional[str] = None):
     if not rows:
         return
     clean_rows = [_json_clean(dict(r)) for r in rows if isinstance(r, dict)]
+    if table == "prop_hunter_prop_snapshots":
+        clean_rows = [_snapshot_temporal_fields(r) for r in clean_rows]
     if table == "prop_hunter_player_gamelogs":
         # This table is player-granular and normalized_name is NOT NULL. Scoreboard
         # event rows belong in raw files, not in player_gamelogs.
