@@ -200,8 +200,12 @@ def install_persistence(module: Any) -> bool:
     if not all(hasattr(module,name) for name in ("persist","load_history","save_history")):return False
     base_persist=module.persist
 
-    def wrapped(picks,telegram_message_id=None,telegram_text=None):
-        result=base_persist(picks,telegram_message_id,telegram_text)
+    def wrapped(picks,telegram_message_id=None,telegram_text=None,telegram_cards=None):
+        if telegram_cards is None:
+            result=base_persist(picks,telegram_message_id,telegram_text)
+        else:
+            result=base_persist(picks,telegram_message_id,telegram_text,
+                                telegram_cards=telegram_cards)
         try:
             all_picks=list(picks or []);combos=[p for p in all_picks if getattr(p,"type",None) in _COMBO_TYPES]
             euro=[p for p in all_picks if _is_euroleague_pick(p)]
