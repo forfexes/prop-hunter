@@ -198,7 +198,10 @@ def test_keyless_extension_and_card_formatter():
 def test_delivery_failure_and_team_identity_guards():
     core = Path("prophunter_core_1391.py").read_text(encoding="utf-8")
     check('raise RuntimeError("PROP HUNTER Telegram delivery failed")' in core, "Telegram delivery failure does not fail the card run")
-    check('picks NOT persisted' in core, "Telegram failure persistence guard missing")
+    check('persist_confirmed_telegram_cards(picks,_LAST_TELEGRAM_CARDS)' in core,
+          "Telegram partial-delivery IDs are not preserved")
+    check('raise RuntimeError("PROP HUNTER Telegram delivery failed")' in core,
+          "Telegram partial failure is not reported")
     start = core.find("def _source_prop_team")
     end = core.find("def _source_prop_game", start)
     block = core[start:end]
