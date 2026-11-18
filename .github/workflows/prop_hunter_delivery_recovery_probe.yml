@@ -1,0 +1,38 @@
+name: Prop Hunter Telegram Delivery Recovery Audit
+"on":
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_delivery_recovery_probe.yml"
+  workflow_dispatch: {}
+permissions:
+  actions: read
+  contents: write
+concurrency:
+  group: prop-hunter-telegram-recovery-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Audit actual bot send IDs and card workflow save failures
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python prop_hunter_delivery_recovery_probe.py
+      - name: Save redacted ID audit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/prop_hunter_delivery_recovery_probe.json
+          git diff --cached --quiet && exit 0
+          git commit -m "diagnostics: exact card deliveries and workflow failures [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
