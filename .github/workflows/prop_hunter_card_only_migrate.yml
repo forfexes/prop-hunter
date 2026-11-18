@@ -32,6 +32,7 @@ jobs:
           python prop_hunter_card_design_migration_test.py
           python prop_hunter_card_pending_visual_test.py
           python prop_hunter_decisive_leg_test.py
+          python prop_hunter_card_history_integrity_test.py
       - name: Edit existing Telegram cards only
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
