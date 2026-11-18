@@ -6,7 +6,7 @@ import argparse
 import os
 from datetime import datetime, timedelta, timezone
 
-from prop_hunter_shared_utils import log, supabase_client
+from prop_hunter_shared_utils import log, snapshot_supabase_client
 
 TABLE = "prop_hunter_prop_snapshots"
 DAYS = max(3, int(os.getenv("PH_SNAPSHOT_RETENTION_DAYS", "7")))
@@ -17,7 +17,7 @@ def cutoff_iso(days: int = DAYS) -> str:
 
 
 def apply_retention(days: int = DAYS, batch_size: int = 250, max_batches: int = 100) -> int:
-    sb = supabase_client()
+    sb = snapshot_supabase_client()
     if sb is None:
         raise RuntimeError("Supabase missing")
     cutoff = cutoff_iso(max(3, int(days)))
