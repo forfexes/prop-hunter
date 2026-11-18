@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-18T00:47:24.638723+00:00",
+  "checked_at": "2026-11-18T00:50:43.529999+00:00",
   "runs": [
     {
       "run_id": 44201751706,
@@ -270,5 +270,36 @@
       "deliveries": []
     }
   ],
-  "errors": []
+  "errors": [],
+  "migration_runs": [
+    {
+      "id": 44211013249,
+      "conclusion": "failure",
+      "created_at": "2026-11-18T00:49:53Z",
+      "jobs": [
+        {
+          "id": 134489057542,
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Edit existing Telegram cards only",
+              "conclusion": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 44207480024,
+      "conclusion": "cancelled",
+      "created_at": "2026-11-18T00:23:53Z",
+      "jobs": []
+    },
+    {
+      "id": 44207401173,
+      "conclusion": "cancelled",
+      "created_at": "2026-11-18T00:23:19Z",
+      "jobs": []
+    }
+  ]
 }
