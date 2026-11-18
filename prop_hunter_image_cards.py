@@ -543,7 +543,9 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             name = str(getattr(pick, "player", "") or "")
             rows.append({"name": name, "photo": player_photo(name, league),
                          "label": _label({"market":getattr(pick,"market","") or "","direction":getattr(pick,"direction","over"),"point":getattr(pick,"point",None)}),
-                         "form": _form_text(feats), "result":_result_text(vars(pick)), "odds": f"@{float(getattr(pick, 'odds', 0) or 0):.2f}"})
+                         "form": _form_text(feats), "result":_result_text(vars(pick)),
+                         "model": getattr(pick, "_display_model", None) or {},
+                         "odds": f"@{float(getattr(pick, 'odds', 0) or 0):.2f}"})
             title, subtitle = "SINGLE", game[:60] or "Pro Tip"
         else:
             if not details:
@@ -609,6 +611,16 @@ def settled_image(data, text):
         if match and int(match[1]):counts.append(f"{match[1]} {label}")
     profit=re.search(r"[+-]\d+\.\d+u",text.split("Auswertung:")[-1])
     obj["settlement_summary"]=" · ".join(counts+([profit[0]] if profit else [])) or summary
+    # Show only the original published model numbers (if present). Do not
+    # infer probabilities or edges from the odds or settlement outcomes.
+    def metric(pattern):
+        matched=re.search(pattern,text,re.I)
+        return matched.group(1).replace(",",".") if matched else None
+    obj["_display_model"]={
+        "prob": metric(r"\\bProb\\s+(\\d+(?:[.,]\\d+)?)\\s*%"),
+        "edge": metric(r"\\bEdge\\s+([+-]?\\d+(?:[.,]\\d+)?)\\s*(?:%|pp)"),
+        "confidence": metric(r"\\bConfidence\\s+(\\d+\\s*/\\s*100)"),
+    }
     # This renderer only edits an already-published Telegram photo; it is NOT
     # called by new-pick production. Old combo snapshots may lack quote provenance.
     feats = obj.get("features") or {}
