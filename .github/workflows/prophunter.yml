@@ -213,19 +213,35 @@ jobs:
           python prophunter.py
 
       - name: Save card state
+        if: always()
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git stash push -u -m prop-hunter-card-runtime
-          git pull --rebase origin main
-          git stash pop
+          # A tip already published to Telegram MUST keep its message_id.
+          # Commit history before pulling: stash/pop previously lost this
+          # critical state if another harmless GitHub commit landed during send.
+          python -m json.tool picks_history.json >/dev/null
           if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' picks_history.json; then
             echo "Refusing to commit conflicted picks_history.json"
             exit 1
           fi
-          python -m json.tool picks_history.json >/dev/null
-          git add picks_history.json odds_cache.json ml_model.pkl prop_hunter_identity_cache.json 2>/dev/null || true
-          git diff --staged --quiet && exit 0
-          git commit -m "prop hunter card $(date -u +%F-%H%M)"
-          git push origin main
+          git add picks_history.json
+          if git diff --staged --quiet; then
+            echo "No history changes"
+            exit 0
+          fi
+          git commit -m "prop hunter card history $(date -u +%F-%H%M)"
+          # Other workflows may update unrelated files while card sends.
+          # Rebase committed history without stashing it or losing message IDs.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              echo "Card history and Telegram message IDs saved"
+              exit 0
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "CRITICAL: Telegram card history was not pushed"
+          exit 1
 
