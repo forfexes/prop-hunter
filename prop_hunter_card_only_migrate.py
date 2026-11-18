@@ -17,7 +17,7 @@ from prophunter_results import (
 
 MAX_UPDATES=max(1,min(60,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
 LOOKBACK_DAYS=max(1,min(30,int(os.getenv("PH_CARD_ONLY_LOOKBACK_DAYS","7"))))
-VERSION=4
+VERSION=5
 
 
 def migrate():
