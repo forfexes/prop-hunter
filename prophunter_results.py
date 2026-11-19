@@ -791,7 +791,7 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                     # needlessly large, leading to gateway timeouts. Encode it
                     # once as a high-quality JPEG, preserve all poster content,
                     # and reuse identical bytes on retries.
-                    if png.startswith(b"\\x89PNG"):
+                    if png.startswith(b"\x89PNG"):
                         import io
                         from PIL import Image
                         out=io.BytesIO()
