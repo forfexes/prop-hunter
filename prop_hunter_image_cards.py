@@ -129,11 +129,27 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
             for name in (t.get("name"),t.get("nickname")):
                 if name and t.get("abbreviation"):names.add(_norm(f"{t['abbreviation']} {name}"))
             teams.append({"names": names,
+                          "abbreviation": _norm(t.get("abbreviation")),
+                          "nickname": _norm(t.get("nickname") or t.get("name")),
                           "logo": logos[0].get("href") if logos else None})
         _CACHE[tkey] = teams
     want = _norm(team)
     matches=[t for t in _CACHE[tkey] if want in t["names"]]
-    return _get_image(matches[0]["logo"]) if len(matches)==1 else None
+    if len(matches)!=1 and league[1]=="nba":
+        # Some bookmaker feeds use PHO Suns whereas ESPN calls the same
+        # team PHX Suns. A nickname alone would risk the WRONG crest:
+        # accept only a verified abbreviation alias + matching nickname.
+        tokens = str(team).strip().split()
+        alias = {"pho":"phx", "gsw":"gs", "nyk":"ny", "nop":"no", "sas":"sa"}
+        if len(tokens)>=2:
+            prefix=_norm(tokens[0])
+            expected=alias.get(prefix)
+            nickname=_norm(" ".join(tokens[1:]))
+            if expected:
+                matches=[t for t in _CACHE[tkey]
+                         if t["abbreviation"]==expected and
+                         (nickname==t["nickname"] or nickname in t["names"])]
+    return _get_image(matches[0]["logo"]) if len(matches)==1 and matches[0].get("logo") else None
 
 
 # ----------------------------------------------------------------------------------------------------------------- Zeichnen
@@ -492,6 +508,44 @@ def _label(detail: Dict[str, Any]) -> str:
     return f"{sign} {pt:g} {rest}".strip()
 
 
+def _display_model_evidence(pick: Any) -> Dict[str, str]:
+    """Format real saved model outputs, never calculate predictions from odds.
+
+    Probabilities and edge_pct originate with the exact published pick.
+    Confidence is shown only when it was actually provided by the model.
+    Previously published text metrics, when present, take precedence.
+    """
+    def _get(key):
+        return pick.get(key) if isinstance(pick,dict) else getattr(pick,key,None)
+    explicit = _get("_display_model") or {}
+    if not isinstance(explicit,dict):
+        explicit = {}
+    result={key:str(explicit[key]).strip() if explicit.get(key) not in (None,"") else ""
+            for key in ("prob","edge","confidence")}
+    def number(raw):
+        try:
+            value=float(raw)
+            return value if math.isfinite(value) else None
+        except (ValueError,TypeError):
+            return None
+    if not result["prob"]:
+        probability=number(_get("probability"))
+        if probability is not None and 0 <= probability <= 1:
+            pct=probability*100
+            result["prob"]=f"{pct:.0f}" if abs(pct-round(pct))<0.05 else f"{pct:.1f}"
+    if not result["edge"]:
+        edge=number(_get("edge_pct"))
+        if edge is not None:
+            result["edge"]=f"{edge:+.1f}"
+    if not result["confidence"]:
+        confidence=number(_get("confidence_score"))
+        if confidence is None:
+            confidence=number(_get("model_confidence"))
+        if confidence is not None and 0 <= confidence <= 100:
+            result["confidence"]=f"{round(confidence)}/100"
+    return result
+
+
 def build_for_pick(pick: Any) -> Optional[bytes]:
     """PNG-Bytes fuer einen Pick (single/ladder/betbuilder/kombi) oder None."""
     if not ON:
@@ -544,7 +598,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             rows.append({"name": name, "photo": player_photo(name, league),
                          "label": _label({"market":getattr(pick,"market","") or "","direction":getattr(pick,"direction","over"),"point":getattr(pick,"point",None)}),
                          "form": _form_text(feats), "result":_result_text(vars(pick)),
-                         "model": getattr(pick, "_display_model", None) or {},
+                         "model": _display_model_evidence(pick),
                          "odds": f"@{float(getattr(pick, 'odds', 0) or 0):.2f}"})
             title, subtitle = "SINGLE", game[:60] or "Pro Tip"
         else:
@@ -592,7 +646,7 @@ def snapshot(pick):
     """JSON-safe presentation evidence for editing the original photo later."""
     import json
     from types import SimpleNamespace
-    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit","stake","commence_time","game_date","date")}
+    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit","stake","commence_time","game_date","date","probability","edge_pct","confidence_score","model_confidence")}
     data["picks"]=[vars(x) if isinstance(x,SimpleNamespace) else (x.model_dump() if hasattr(x,"model_dump") else dict(x) if isinstance(x,dict) else {"market":getattr(x,"market", ""),"odds":getattr(x,"odds",None)}) for x in (getattr(pick,"picks",None) or [])]
     return json.loads(json.dumps(data,default=str))
 
