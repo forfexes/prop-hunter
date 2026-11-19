@@ -1,4 +1,4 @@
-name: Prop Hunter v10 Original Card Visual QA
+name: Prop Hunter v11 Clean Single and Ladder Cards
 "on":
   push:
     paths:
@@ -48,6 +48,7 @@ jobs:
           SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
           SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
           PH_CARD_ONLY_MAX_UPDATES: '150'
+          PH_CARD_ONLY_FAMILIES: 'single,ladder'
           PH_CARD_ONLY_LOOKBACK_DAYS: '7'
           PH_CARD_ONLY_TARGET_DATE: ${{ contains(github.event.head_commit.message, '[repair-18]') && '2026-11-18' || '' }}
           PH_CARD_ONLY_TARGET_DATES: ${{ contains(github.event.head_commit.message, '[repair-18-19]') && '2026-11-18,2026-11-19' || '' }}
@@ -78,7 +79,7 @@ jobs:
             echo "No Telegram card changes to commit"
             exit 0
           fi
-          git commit -m "prop hunter: preserve Telegram v10 card migrations [skip ci]"
+          git commit -m "prop hunter: preserve Telegram v11 card migrations [skip ci]"
           for attempt in 1 2 3; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
