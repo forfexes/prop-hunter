@@ -211,7 +211,7 @@ for variant, count in [("ladder",2),("ladder",4),("ladder",5),
     out_file=Path('poster_previews')/f'{variant}_{count}.png'
     rendered=originals.original_card(
         variant,variant.upper(),"Verified visual fixture","NBA",
-        [("HOME",None),("AWAY",None)],fixture,"Quote @1.85","OFFEN")
+        [("HOME",None),("AWAY",None)],fixture,"Quote @1.85 · Einsatz 1u","OFFEN")
     out_file.write_bytes(rendered)
     assert Image.open(BytesIO(rendered)).size[0]==1080
 
@@ -260,3 +260,22 @@ for family, check_xy in (("builder",(112,119)),("lottery",(116,57))):
     assert cleaned.getpixel(check_xy) != source.getpixel(check_xy),(family,check_xy)
     assert cleaned.getpixel((50,30)) == source.getpixel((50,30)),family
 print("VISUAL QA: 4-6 REAL BUILDER PORTRAITS, 2-5 LADDER SPACING, 2-9 LOTTERY LEGS, TEMPLATE HEAD REMNANTS PASS")
+
+# Single with a visible supplied portrait: detect sample face over the banner.
+single_photo=originals.original_card(
+    "single","SINGLE","Photo fixture","NBA",
+    [("HOME",None),("AWAY",None)],_fixture_rows("single",1),
+    "Quote @1.90 · Einsatz 1u","OFFEN")
+(Path("poster_previews")/"single_photo.png").write_bytes(single_photo)
+
+# Real lottery odds remain entirely legible; no clipped L10/L15 fragments,
+# and the stake box shows the stake, not the total bookmaker quote again.
+with patch.object(originals,"_text",wraps=originals._text) as written:
+    originals.original_card("lottery","LOTTERY","Fixture","NBA",[],
+                            _fixture_rows("lottery",9),
+                            "Quote @1.85 · Einsatz 1u","OFFEN")
+    fields=[str(c.args[2]) for c in written.call_args_list]
+    assert "1u" in fields, fields
+    assert "@1.85" in fields, fields
+    assert not any("L5 " in v or "L10 " in v or "L15 " in v for v in fields),fields
+print("LOTTERY ODDS NOT TRUNCATED, REAL STAKE ONLY, PLAYER PHOTO SINGLE PASS")
