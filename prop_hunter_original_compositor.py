@@ -122,7 +122,7 @@ def _erase_redundant_match_box(im, family):
         # example bridge. Reuse that quiet dark arena texture, not a second
         # copy of roof floodlights.
         x0,y0,x1,y1 = 511, 136, 691, 287
-        donor_box = (523, 294, 690, 426)
+        donor_box = (563, 298, 681, 423)
     elif family == 'ladder':
         # The original header text extends into x490..610. Only the far-right
         # skyline x616..690 is free of letters, preventing an 'R/S' ghost.
