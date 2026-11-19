@@ -124,9 +124,9 @@ def _erase_template_head_remnants(im, family):
         # The original card has three example athletes (Tatum / Doncic /
         # Sabonis) whose hair begins above the new player-photo slots.
         zones = (
-            (62, 104, 173, 135),    # left of gold banner
-            (282, 126, 408, 142),   # below the banner lettering
-            (519, 105, 631, 135),   # right of gold banner
+            (62, 91, 164, 141),     # left player hair, outside title banner
+            (280, 115, 406, 143),   # centre hair below gold heading glyphs
+            (526, 91, 631, 141),    # right hair, outside title banner
         )
     elif family == 'lottery':
         # Brunson's original face extends above the replacement hero frame.
@@ -470,34 +470,47 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _text(d, (252, 553), f'{n}-LEG BUILDER', 23, 315, WHITE, 'mm')
         _rect(im, (423, 527, 662, 580), (55, 35, 8, 255), 7, GOLD, 2)
         _text(d, (540, 549), footer or '—', 19, 228, GOLD, 'mm')
+        # Example player/team icon protrudes just above the list border.
+        _rect(im, (82, 579, 150, 597), NAVY, 3)
         _rect(im, (82, 590, 646, 710), NAVY, 5, CYAN, 1)
         for i, r in enumerate(rows[:6]):
             _text(d, (103, 597+i*18),
                   f'{i+1}. {r.get("name") or ""} · {r.get("label") or ""}',
                   15, 530, GOLD)
-        _rect(im, (83, 735, 320, 779), NAVY, 5)
-        _text(d, (195, 755), f'{len(rows)} LEGS', 18, 205, GREEN, 'mm')
+        # Cover the whole baked-in probability/EV digits, not just their
+        # left side. The original was leaking green percentage glyphs.
+        _rect(im, (78, 731, 338, 782), NAVY, 5)
+        _text(d, (206, 755), f'{len(rows)} LEGS', 18, 236, GREEN, 'mm')
     elif family == 'lottery':
         _clean_hero(im, (0, 83, 202, 287))
-        _clean_hero(im, (0, 287, 93, 337))
+        # Do not blank the left stadium at y=287..337: the old mask was
+        # leaving a conspicuous square black bar below the purple heading.
         _portrait(im, rows[0].get('photo'), (6, 62, 197, 280), rows[0].get('name') or '')
         _rect(im, (462, 280, 654, 335), (50, 18, 70, 255), 6, VIOLET, 2)
-        _text(d, (559, 305), footer or '—', 24, 182, GOLD, 'mm')
+        total_quote=re.search(r'Quote\s*(@[\d.,]+)', str(footer), re.I)
+        _text(d, (559, 305), total_quote.group(1) if total_quote else '—',
+              23, 182, GOLD, 'mm')
         _rect(im, (183, 282, 435, 326), (40, 15, 56, 255), 7, VIOLET, 2)
         _text(d, (311, 302), f'{len(rows)}-LEG LOTTERY', 22, 239, WHITE, 'mm')
         _rect(im, (46, 336, 646, 527), NAVY, 7, VIOLET, 2)
         n = min(len(rows), 9)
         rh = max(19, 180 // n)
-        for i, row in enumerate(rows[:9]):
+        for i, row in enumerate(rows):
             yy = 338 + i * rh
-            _text(d, (59, yy+4), f'{i+1}. {row.get("name") or ""} · {row.get("label") or ""}',
+            _text(d, (59, yy+4),
+                  f'{i+1}. {row.get("name") or ""} · {row.get("label") or ""}',
                   16, 420, GOLD)
-            _text(d, (637, yy+4), (row.get('odds') or '') + '  ' + _f(row.get('form')),
-                  12, 160, GREEN, 'rt')
+            # Never print a truncated "L5 ... L10 ... L15 ..." fragment.
+            # The list is narrow, especially on nine-leg lottery posters.
+            # Preserve the real observed per-leg bookmaker price here.
+            _text(d, (637, yy+4), row.get('odds') or '—',
+                  15, 116, GREEN, 'rt')
         _rect(im, (39, 560, 363, 629), NAVY, 5)
         _text(d, (195, 592), f'{len(rows)} LEGS · HOHES RISIKO', 16, 309, VIOLET, 'mm')
         _rect(im, (417, 570, 610, 632), (34, 20, 44, 255), 7, VIOLET, 2)
-        _text(d, (513, 601), footer or '—', 20, 180, GOLD, 'mm')
+        stake = re.search(r'Einsatz\s+([\d.,]+u)', str(footer), re.I)
+        _text(d, (513, 601), stake.group(1) if stake else '—',
+              22, 176, GOLD, 'mm')
     _result(im, family, settlement)
     buf = io.BytesIO()
     im = im.convert('RGB')
