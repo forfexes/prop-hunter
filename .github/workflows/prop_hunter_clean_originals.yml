@@ -1,0 +1,49 @@
+name: PROP HUNTER Clean Owner Original Templates
+"on":
+  push:
+    paths:
+      - 'prop_hunter_clean_templates.py'
+      - '.github/workflows/prop_hunter_clean_originals.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install exact image cleaning dependencies
+        run: python -m pip install 'numpy>=1.26,<3' 'Pillow>=10' 'opencv-python-headless>=4.9,<5'
+      - name: Reconstruct the four owner source plates
+        run: python -u prop_hunter_clean_templates.py
+      - name: Assert original screenshots are retained and branding untouched
+        run: |
+          python - <<'PY'
+          import numpy as np
+          from PIL import Image
+          from pathlib import Path
+          from prop_hunter_original_compositor import CROP,FAMILIES
+          for name in FAMILIES:
+              src=np.asarray(Image.open(Path('card_templates/originals')/(name+'.jpg')).convert('RGB').crop(CROP[name]))
+              dst=np.asarray(Image.open(Path('card_templates/cleaned')/(name+'.png')).convert('RGB'))
+              mask=np.asarray(Image.open(Path('diagnostics')/('template_cleanup_mask_'+name+'.png')))
+              assert dst.shape==src.shape and np.any(dst!=src)
+              assert np.array_equal(dst[mask==0],src[mask==0])
+              # The original NBA/PROP-HUNTER branding stays byte-identical.
+              assert np.array_equal(dst[2:30,270:420],src[2:30,270:420])
+              print(name,'cleaned-source OK',flush=True)
+          PY
+      - name: Export clean image plates and masks for visual QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleaned-prop-hunter-owner-template-qa
+          path: |
+            card_templates/cleaned/*.png
+            diagnostics/template_cleanup_mask_*.png
+            diagnostics/template_cleanup_report.json
+          retention-days: 7
+          if-no-files-found: error
