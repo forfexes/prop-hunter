@@ -29,14 +29,14 @@ def migrate():
         # 100 unrelated historical Telegram messages.
         print("CARD_REPAINT_SKIPPED: no explicit target date",flush=True)
         return {"target_date":None,"target_dates":[],"design_version":VERSION,
-                "candidates":0,"photo_updated":0,"text_replaced":0,
+                "candidates":0,"photo_updated":0,"photo_unchanged":0,"text_replaced":0,
                 "skipped":0,"skipped_current_version":0,
                 "failed":0,"updated_message_ids":[],"failed_cards":[]}
     history=_load_history()
     now=datetime.now(timezone.utc)
     cutoff=(now-timedelta(days=LOOKBACK_DAYS)).date().isoformat()
     counts={"target_date":TARGET_DATE or None,"target_dates":sorted(targets),"design_version":VERSION,
-            "candidates":0,"photo_updated":0,"text_replaced":0,
+            "candidates":0,"photo_updated":0,"photo_unchanged":0,"text_replaced":0,
             "skipped":0,"skipped_current_version":0,"failed":0,
             "updated_message_ids":[],"failed_cards":[]}
     for entry in sorted(history,key=lambda x:str(x.get("date") or ""),reverse=True):
@@ -46,7 +46,7 @@ def migrate():
         picks=entry.get("picks") or []
         combos=entry.get("kombis") or []
         for card in reversed(entry.get("cards") or []):
-            if counts["photo_updated"]+counts["text_replaced"] >= MAX_UPDATES:
+            if counts["photo_updated"]+counts["photo_unchanged"]+counts["text_replaced"] >= MAX_UPDATES:
                 return counts
             if card.get("tg_gone") or not card.get("message_id"):
                 counts["skipped"]+=1
@@ -76,9 +76,13 @@ def migrate():
                     card["image_pick"]=visual
                     card["settlement_text"]=text
                     card["settlement_updated_at"]=now.isoformat()
-                    counts["photo_updated"]+=1
-                    counts["updated_message_ids"].append(int(card["message_id"]))
-                    print(f"TELEGRAM_CARD_REPAINT_OK date={day} message_id={card['message_id']} kind={visual.get('type','?')} version={VERSION}",flush=True)
+                    if _EDIT_STATE.get("unchanged"):
+                        counts["photo_unchanged"]+=1
+                        print(f"TELEGRAM_CARD_ALREADY_IDENTICAL date={day} message_id={card['message_id']} version={VERSION}",flush=True)
+                    else:
+                        counts["photo_updated"]+=1
+                        counts["updated_message_ids"].append(int(card["message_id"]))
+                        print(f"TELEGRAM_CARD_REPAINT_OK date={day} message_id={card['message_id']} kind={visual.get('type','?')} version={VERSION}",flush=True)
                     _save_history(history)
                 else:
                     counts["failed"]+=1
