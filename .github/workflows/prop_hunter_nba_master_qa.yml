@@ -1,0 +1,33 @@
+name: PROP HUNTER NBA Master Templates QA
+"on":
+  push:
+    paths:
+      - 'card_templates/nba_masters/**'
+      - 'prop_hunter_nba_master_renderer.py'
+      - 'prop_hunter_nba_master_qa.py'
+      - '.github/workflows/prop_hunter_nba_master_qa.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  check-masters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install isolated preview dependencies
+        run: python -m pip install 'Pillow>=10' 'cairosvg>=2.7'
+      - name: Validate 52 layered SVGs and render visual contact sheet
+        run: |
+          python -m py_compile prop_hunter_nba_master_renderer.py prop_hunter_nba_master_qa.py
+          python -u prop_hunter_nba_master_qa.py
+      - name: Upload exact master previews for human approval
+        uses: actions/upload-artifact@v4
+        with:
+          name: prop-hunter-nba-master-preview-15
+          path: diagnostics/nba_master_visual_qa.png
+          retention-days: 14
+          if-no-files-found: error
