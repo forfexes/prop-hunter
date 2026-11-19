@@ -89,3 +89,15 @@ with patch.object(cards, "settled_image", return_value=b"VALID-PNG"), \
     assert posts.call_count == 3
 results._EDIT_STATE["gateway_unavailable"] = False
 print("TELEGRAM GATEWAY 502 BACKOFF / SAFETY CIRCUIT PASS")
+
+# A 400 'message is not modified' is a safe, already-identical photo,
+# NOT an actual photo replacement. The writer must count it separately.
+with patch.object(cards,"settled_image",return_value=b"VALID-PNG"), \
+     patch.object(results.requests,"post",return_value=N(
+         status_code=400,text="Bad Request: message is not modified")), \
+     patch.object(results.time,"sleep"):
+    assert results._edit_message(123,"Pending",image_pick=data)
+    assert results._EDIT_STATE["unchanged"] is True
+    assert results._EDIT_STATE["reason"]=="telegram_media_already_identical"
+results._EDIT_STATE["unchanged"]=False
+print("TELEGRAM 400 ALREADY-IDENTICAL IS NOT COUNTED AS A REPLACED PHOTO")
