@@ -1,4 +1,4 @@
-name: Prop Hunter v9 Original Headshot Repair
+name: Prop Hunter v10 Original Card Visual QA
 "on":
   push:
     paths:
@@ -78,7 +78,7 @@ jobs:
             echo "No Telegram card changes to commit"
             exit 0
           fi
-          git commit -m "prop hunter: preserve Telegram v9 card migrations [skip ci]"
+          git commit -m "prop hunter: preserve Telegram v10 card migrations [skip ci]"
           for attempt in 1 2 3; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
