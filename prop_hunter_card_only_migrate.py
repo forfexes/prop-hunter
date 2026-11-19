@@ -15,31 +15,33 @@ from prophunter_results import (
     _replace_recent_text_with_photo, _EDIT_STATE,
 )
 
-MAX_UPDATES=max(1,min(120,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
+MAX_UPDATES=max(1,min(180,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
 LOOKBACK_DAYS=max(1,min(30,int(os.getenv("PH_CARD_ONLY_LOOKBACK_DAYS","7"))))
-VERSION=8
+VERSION=9
 TARGET_DATE=str(os.getenv("PH_CARD_ONLY_TARGET_DATE","") or "").strip()[:10]
 
 
 def migrate():
-    if not TARGET_DATE and os.getenv("PH_CARD_ONLY_ALLOW_UNSCOPED") != "1":
+    explicit_days=str(os.getenv("PH_CARD_ONLY_TARGET_DATES") or "").strip()
+    targets={d.strip()[:10] for d in explicit_days.split(",") if len(d.strip()) >= 10} if explicit_days else ({TARGET_DATE} if TARGET_DATE else set())
+    if not targets and os.getenv("PH_CARD_ONLY_ALLOW_UNSCOPED") != "1":
         # A push to the workflow file must never accidentally repaint up to
         # 100 unrelated historical Telegram messages.
         print("CARD_REPAINT_SKIPPED: no explicit target date",flush=True)
-        return {"target_date":None,"design_version":VERSION,
+        return {"target_date":None,"target_dates":[],"design_version":VERSION,
                 "candidates":0,"photo_updated":0,"text_replaced":0,
                 "skipped":0,"skipped_current_version":0,
                 "failed":0,"updated_message_ids":[],"failed_cards":[]}
     history=_load_history()
     now=datetime.now(timezone.utc)
     cutoff=(now-timedelta(days=LOOKBACK_DAYS)).date().isoformat()
-    counts={"target_date":TARGET_DATE or None,"design_version":VERSION,
+    counts={"target_date":TARGET_DATE or None,"target_dates":sorted(targets),"design_version":VERSION,
             "candidates":0,"photo_updated":0,"text_replaced":0,
             "skipped":0,"skipped_current_version":0,"failed":0,
             "updated_message_ids":[],"failed_cards":[]}
     for entry in sorted(history,key=lambda x:str(x.get("date") or ""),reverse=True):
         day=str(entry.get("date") or "")[:10]
-        if day < cutoff or (TARGET_DATE and day != TARGET_DATE):
+        if day < cutoff or (targets and day not in targets):
             continue
         picks=entry.get("picks") or []
         combos=entry.get("kombis") or []
