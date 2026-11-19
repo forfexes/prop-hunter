@@ -293,3 +293,18 @@ for family, point in (("lottery",(52,310)),("builder",(347,120))):
     assert before.getpixel(point)!=after.getpixel(point),(family,point)
     assert before.getpixel((470,50))==after.getpixel((470,50)),family
 print("SOURCE ATHLETE GHOST REGRESSION / ORIGINAL TOP BRANDING PRESERVED")
+
+# The small athlete pictures from the actual lottery master are restored
+# on readable 2-6-leg formats; 9-leg lottery is kept spacious and text-first.
+for count in (3,6,9):
+    photos=[]
+    old_portrait=originals._portrait
+    def trace_hero(im,person,rect,name='',prominent=False):
+        photos.append(name)
+        return old_portrait(im,person,rect,name,prominent=prominent)
+    with patch.object(originals,"_portrait",side_effect=trace_hero):
+        originals.original_card("lottery","LOTTERY","Fixture","NBA",[],
+                                _fixture_rows("lottery",count),
+                                "Quote @2.15 · Einsatz 1u")
+    assert len(photos)==(1+count if count<=6 else 1),(count,photos)
+print("LOTTERY REAL LEG PORTRAITS / TEXT-ONLY HIGH-DENSITY LAYOUT PASS")
