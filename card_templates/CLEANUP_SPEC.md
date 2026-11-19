@@ -35,3 +35,27 @@ wurden nicht nach `main/card_templates/cleaned` committed. Der
 Testworkflow erstellt nur Vorschau-Artefakte; die echten Original-JPGs
 sind unverändert und der aktuelle Telegram-Generator wurde dadurch
 nicht umgestellt.
+
+## Freigegebenes Layout – Spieler ohne Rahmen (19.11.2026)
+
+Der Nutzer hat die neue **Single-Referenz mit rahmenlosem, grossflächigem
+Spielerfoto direkt im Stadionhintergrund** ausdrücklich freigegeben.
+
+- Ein freigestelltes Spielerfoto als **separate transparente Ebene** links,
+  ohne Goldrahmen, dunkles Portrait-Rechteck oder sichtbare Kachel.
+- Weiche Übergänge am rechten und unteren Rand, damit der Spieler optisch
+  im Stadion steht. Keine Überdeckung der Teamwappen oder Tippfelder.
+- Logo, Liga, Teams/VS, **verifizierte** Spielzeit, Spielername, Markt,
+  Original-Buchmacherquote, L5/L10/L15, Modellwerte, Einsatz und
+  Auswertung bleiben lesbar.
+- Keine erfundenen Form-, Wahrscheinlichkeits-, Quoten- oder Ergebniswerte.
+- Ladders: **ein** Spieler, 2–5 Stufen. Builder: 2–6 echte Legs und
+  entsprechend mehrere Spieler; kein Darts-Design.
+- Technische Implementierung: `_background_portrait` in
+  `prop_hunter_original_compositor.py`. Diese wird erst verwendet, wenn
+  eine **visuell geprüfte, wirklich saubere** Quelle unter
+  `card_templates/approved/single.png` existiert.
+- Bis dahin **keine** automatische Umstellung bestehender Telegram-Karten
+  auf eine nur simulierte, unbereinigte oder dunkel übermalte Vorlage.
+  Die Tests in `prop_hunter_borderless_portrait_test.py` prüfen den
+  neuen Layer isoliert, ohne echte Tipps zu posten.
