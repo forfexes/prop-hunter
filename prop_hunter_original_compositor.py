@@ -287,6 +287,9 @@ def _team(im, team, center, y, size=64):
     d = ImageDraw.Draw(im)
     # Short team nicknames fit the original logo frame without ellipsis.
     compact = str(name or '').strip()
+    _parts = compact.split(' ', 1)
+    if len(_parts) == 2 and _parts[0].isupper() and 2 <= len(_parts[0]) <= 4:
+        compact = _parts[1]
     if len(compact) > 13:
         compact = compact.rsplit(' ', 1)[-1]
     _text(d, (cx, y+size+9), compact, 13, size+60, color=WHITE, anchor='mt')
@@ -310,11 +313,17 @@ def _row(im, xy, width, name, market, odds, form, result='', no=None,
         _text(d, (x+5+shift, y+23), market, 18, width-155-shift, GOLD)
     if odds:
         _text(d, (x+width-10, y+5), odds, 19, 90, GOLD, 'rt')
-    if form:
-        _text(d, (x+width-10, y+28), form, 12, 144, GREEN, 'rt')
-    if result:
+    if form and result:
+        # Zeile ist nur 49 px hoch: Form kurz (n steckt schon in "hits/n") + Ergebnis darunter.
+        form = str(form).replace(' verfügbare Spiele', '').replace(' verfuegbare Spiele', '')
+        _text(d, (x+width-10, y+24), form, 11, 144, GREEN, 'rt')
         status_col = RED if 'VERLOREN' in result.upper() else GREEN if 'GEWONNEN' in result.upper() else WHITE
-        _text(d, (x+width-10, y+42), result, 10, 122, status_col, 'rb')
+        _text(d, (x+width-10, y+46), result, 10, 150, status_col, 'rb')
+    elif form:
+        _text(d, (x+width-10, y+28), form, 12, 144, GREEN, 'rt')
+    elif result:
+        status_col = RED if 'VERLOREN' in result.upper() else GREEN if 'GEWONNEN' in result.upper() else WHITE
+        _text(d, (x+width-10, y+42), result, 10, 150, status_col, 'rb')
 
 
 def _family(kind):
@@ -398,6 +407,18 @@ def _result(im, family, settlement):
     _rect(im, bottom, (6, 19, 31, 255), 3)
     red = 'verloren' in label.lower() or '−' in label or '-0' in label
     green = 'gewonnen' in label.lower() and not red
+    if red or green:
+        # Sanduhr der Vorlage ueberdecken und Haken/Kreuz zeichnen.
+        cx, cy = x0 - 20, (y0 + y1) // 2
+        bg = im.getpixel((max(0, cx - 24), cy))
+        dd = ImageDraw.Draw(im)
+        dd.ellipse((cx-22, cy-25, cx+22, cy+19), fill=(bg[0], bg[1], bg[2], 255))
+        col = RED if red else GREEN
+        if green:
+            dd.line([(cx-9, cy), (cx-3, cy+7), (cx+10, cy-8)], fill=col, width=5, joint='curve')
+        else:
+            dd.line([(cx-8, cy-8), (cx+8, cy+8)], fill=col, width=5)
+            dd.line([(cx-8, cy+8), (cx+8, cy-8)], fill=col, width=5)
     _text(ImageDraw.Draw(im), ((x0+x1)//2, (y0+y1)//2), label,
           18 if len(label)<26 else 13, x1-x0-7,
           RED if red else GREEN if green else GOLD, 'mm')

@@ -1240,7 +1240,7 @@ def main() -> int:
             # Einmaliges Re-Render fuer Datum+Anstoss auf der Karte (auch OFFENE):
             # alte Karten zeigen noch keine Kickoff-Zeit. Nur Foto-Karten, deren
             # image_pick eine commence_time/game_date traegt, kommen in Frage.
-            CARD_TIME_VERSION=2
+            CARD_TIME_VERSION=3
             _img=card.get("image_pick") or {}
             _has_kick=bool(_img.get("commence_time") or _img.get("game_date") or _img.get("date"))
             _time_upgrade_due=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" and card.get("media_type")=="photo" and _has_kick
