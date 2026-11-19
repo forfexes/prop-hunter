@@ -620,7 +620,9 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         if approved_single:
             # Approved look: the athlete is an independent, frameless cutout
             # on the stadium layer. No dark box and no golden photo border.
-            _background_portrait(im, item.get('photo'), (0, 131, 246, 518))
+            cutout = _background_portrait(im, item.get('photo'), (0, 131, 246, 518))
+            if item.get('photo') is not None and not cutout:
+                raise ValueError('Borderless portrait requires a real transparent player cutout')
         else:
             # Legacy JPG contains an embedded example player. Keep the
             # previous safe renderer until a CLEAN plate is approved.
