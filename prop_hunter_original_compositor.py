@@ -98,16 +98,16 @@ def _hide_baked_single_head(im):
     the affected LEFT sky. No solid navy rectangle and no synthetic face.
     The NBA badge and gold header sit outside the masked region.
     """
-    x0, y0, x1, y1 = 77, 67, 202, 141
-    # In the owner's exact JPEG, right-upper sky at x=536..682 and y=19..116
-    # is clean arena lighting. The old opaque dark patch was a visible bar.
+    x0, y0, x1, y1 = 73, 60, 205, 165
+    # Cover the sample hair down to the portrait border. Any lower seam
+    # is subsequently hidden by the newly rendered portrait itself.
     donor = im.crop((536, 19, 682, 116)).resize(
         (x1-x0, y1-y0), Image.Resampling.LANCZOS)
     donor = donor.filter(ImageFilter.GaussianBlur(1.1))
     feather = Image.new('L', donor.size, 0)
     md = ImageDraw.Draw(feather)
-    md.rectangle((9, 9, donor.width-9, donor.height-7), fill=255)
-    feather = feather.filter(ImageFilter.GaussianBlur(6))
+    md.rectangle((7, 6, donor.width-4, donor.height), fill=255)
+    feather = feather.filter(ImageFilter.GaussianBlur(4))
     im.paste(donor, (x0, y0), feather)
 
 
@@ -118,11 +118,16 @@ def _erase_redundant_match_box(im, family):
     A small kickoff label may be painted later ONLY with supplied timestamp.
     """
     if family == 'single':
-        x0,y0,x1,y1 = 514, 139, 691, 269
-        donor_box = (526, 16, 688, 137)
+        # The source section below this area was already cleaned of its
+        # example bridge. Reuse that quiet dark arena texture, not a second
+        # copy of roof floodlights.
+        x0,y0,x1,y1 = 511, 136, 691, 287
+        donor_box = (523, 294, 690, 426)
     elif family == 'ladder':
-        x0,y0,x1,y1 = 488, 147, 691, 286
-        donor_box = (490, 18, 681, 142)
+        # The original header text extends into x490..610. Only the far-right
+        # skyline x616..690 is free of letters, preventing an 'R/S' ghost.
+        x0,y0,x1,y1 = 488, 145, 691, 287
+        donor_box = (615, 17, 688, 143)
     else:
         return
     donor = im.crop(donor_box).resize((x1-x0,y1-y0),Image.Resampling.LANCZOS)
@@ -130,12 +135,15 @@ def _erase_redundant_match_box(im, family):
     # Preserve natural header boundary with a soft left and top transition.
     mask = Image.new('L', donor.size, 255)
     mm = ImageDraw.Draw(mask)
-    for x in range(14):
-        alpha=int(255*x/14)
+    for x in range(9):
+        alpha=int(255*x/9)
         mm.line((x,0,x,donor.height),fill=alpha)
-    for y in range(7):
-        alpha=int(255*y/7)
+    for y in range(9):
+        alpha=int(255*y/9)
         mm.line((0,y,donor.width,y),fill=alpha)
+    for y in range(10):
+        alpha=int(255*y/10)
+        mm.line((0,donor.height-1-y,donor.width,donor.height-1-y),fill=alpha)
     im.paste(donor, (x0,y0), mask)
 
 
