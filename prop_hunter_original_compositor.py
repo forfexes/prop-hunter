@@ -165,6 +165,81 @@ def _paint_kickoff_label(im, family, subtitle):
     _text(d,(cx,cy+17),when,17,182,WHITE,'mm')
 
 
+_DE_WD = {'Mo': 'Mo', 'Di': 'Di', 'Mi': 'Mi', 'Do': 'Do', 'Fr': 'Fr', 'Sa': 'Sa', 'So': 'So'}
+_DE_MON = ('Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez')
+
+
+def _panel_fields(subtitle):
+    """(Datum, Uhrzeit, Venue1, Venue2) aus dem Untertitel; unbekannt -> ''."""
+    import datetime as _dt
+    text = str(subtitle or '')
+    venue = ''
+    if ' @@ ' in text:
+        text, venue = text.split(' @@ ', 1)
+    m = re.search(r'\b(Mo|Di|Mi|Do|Fr|Sa|So)\s+(\d{2})\.(\d{2})\.(?:\s*·\s*(\d{2}:\d{2}))?', text)
+    date_s = time_s = ''
+    if m:
+        wd, dd, mm, hhmm = m.group(1), int(m.group(2)), int(m.group(3)), m.group(4)
+        today = _dt.date.today()
+        year = today.year + (1 if mm < today.month - 6 else -1 if mm > today.month + 6 else 0)
+        date_s = f'{wd}, {dd}. {_DE_MON[mm-1]} {year}'
+        time_s = f'{hhmm} Uhr' if hhmm else ''
+    v1 = v2 = ''
+    if venue:
+        name, _, city = venue.partition('|')
+        v1 = name.strip()
+        v2 = f'({city.strip()})' if city.strip() else ''
+    return date_s, time_s, v1, v2
+
+
+def _squeezed(im, x, cy, text, size, width, color=WHITE, bold=True):
+    """Text linksbuendig, bei Platzmangel horizontal gestaucht (wie die schmale Vorlagenschrift)."""
+    value = str(text or '').strip()
+    if not value:
+        return
+    d0 = ImageDraw.Draw(im)
+    n = size
+    while True:
+        f = _font(n, bold)
+        w = int(d0.textlength(value, font=f))
+        if w <= width / 0.72 or n <= 11:
+            break
+        n -= 1
+    h = int(n * 1.5)
+    layer = Image.new('RGBA', (max(w, 1) + 4, h), (0, 0, 0, 0))
+    ImageDraw.Draw(layer).text((2, h // 2), value, font=f, fill=color, anchor='lm')
+    if w > width:
+        layer = layer.resize((max(1, int(layer.width * width / w)), h), Image.Resampling.LANCZOS)
+    im.alpha_composite(layer, (x - 2, cy - h // 2))
+
+
+def _paint_match_panel(im, family, subtitle):
+    """Original-Vorlage behalten (Icons, Rahmen) und nur die Beispieltexte ersetzen."""
+    date_s, time_s, v1, v2 = _panel_fields(subtitle)
+    if family == 'single':
+        x, xr = 574, 674
+        rows = ((152, 178, 165), (186, 214, 200), (222, 260, None))
+        gap_x = 568
+    else:
+        x, xr = 544, 668
+        rows = ((162, 189, 176), (196, 224, 210), (231, 272, None))
+        gap_x = 538
+    d = ImageDraw.Draw(im)
+    for (y0, y1, cy), kind in zip(rows, ('date', 'time', 'venue')):
+        bg = im.getpixel((gap_x, (y0 + y1) // 2))
+        d.rectangle((x - 2, y0, xr + 2, y1), fill=(bg[0], bg[1], bg[2], 255))
+    w = xr - x
+    _squeezed(im, x, rows[0][2], date_s or '—', 21, w)
+    _squeezed(im, x, rows[1][2], time_s or '—', 21, w)
+    mid = (rows[2][0] + rows[2][1]) // 2
+    if v1:
+        _squeezed(im, x, mid - 9, v1, 17, w)
+        if v2:
+            _squeezed(im, x, mid + 11, v2, 15, w, bold=False)
+    else:
+        _squeezed(im, x, mid, '—', 21, w)
+
+
 def _erase_template_head_remnants(im, family):
     """Remove the sample athletes protruding above the new photo frames.
 
@@ -384,8 +459,7 @@ def _header(im, family, sport_label, subtitle, teams):
     # Eliminate duplicated team names in the right field.
     # Match names/logos stay next to VS. Only an evidence-backed kickoff appears.
     if family in ('single','ladder'):
-        _erase_redundant_match_box(im, family)
-        _paint_kickoff_label(im, family, subtitle)
+        _paint_match_panel(im, family, subtitle)
     else:
         d = ImageDraw.Draw(im)
         if family == 'builder':
@@ -441,6 +515,8 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         raise ValueError('Builder has more than six legs; cannot silently hide picks')
     if family == 'lottery' and len(rows) > 9:
         raise ValueError('Lottery has more than nine legs; cannot silently hide picks')
+    if family in ('builder', 'lottery'):
+        subtitle = str(subtitle or '').split(' @@ ')[0]
     im = _source(family).copy()
     if family in ('builder','lottery'):
         _erase_template_head_remnants(im, family)

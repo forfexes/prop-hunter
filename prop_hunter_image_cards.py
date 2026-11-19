@@ -318,9 +318,29 @@ def _with_kickoff(subtitle: str, pick) -> str:
     if not ko:
         return subtitle
     base = (subtitle or "").strip()
+    if " @@ " not in base:
+        venue = _venue_text(pick)
+        if venue:
+            base_ko = base if ko in base else (f"{base[:46]} · {ko}" if base else ko)
+            return f"{base_ko} @@ {venue}"
     if ko in base:
         return base
     return f"{base[:46]} · {ko}" if base else ko
+
+
+def _venue_text(pick) -> str:
+    """'Halle|Stadt' aus features['venue'] (Pick oder erstes Leg); '' wenn unbekannt."""
+    def _get(obj, key):
+        return obj.get(key) if isinstance(obj, dict) else getattr(obj, key, None)
+    feats = _get(pick, "features") or {}
+    v = feats.get("venue") if isinstance(feats, dict) else None
+    if not v:
+        for leg in (_get(pick, "leg_details") or []):
+            lf = (leg or {}).get("features") or {}
+            if isinstance(lf, dict) and lf.get("venue"):
+                v = lf["venue"]
+                break
+    return str(v) if v else ""
 
 
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],

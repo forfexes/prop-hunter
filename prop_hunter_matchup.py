@@ -478,6 +478,7 @@ if __name__ == "__main__":
 
 # ── Spielplan: Anstoss-Zeiten fuer Props ohne commence_time ──────────────────
 _SCHED: Dict[str, Dict[str, str]] = {}
+_VENUE: Dict[str, Dict[str, str]] = {}
 
 
 def _load_schedule(sport: str) -> Dict[str, str]:
@@ -500,11 +501,16 @@ def _load_schedule(sport: str) -> Dict[str, str]:
                 st = ev.get("date")
                 if not st:
                     continue
+                ven = ((ev.get("competitions") or [{}])[0].get("venue") or {})
+                vtxt = (str(ven.get("fullName") or "") + "|" +
+                        str((ven.get("address") or {}).get("city") or "")) if ven.get("fullName") else ""
                 for c in (ev.get("competitions") or [{}])[0].get("competitors") or []:
                     t = c.get("team") or {}
                     for f in ("displayName", "shortDisplayName", "name", "location"):
                         if t.get(f):
                             out.setdefault(_norm(t[f]), st)
+                            if vtxt:
+                                _VENUE.setdefault(key, {}).setdefault(_norm(t[f]), vtxt)
     print(f"matchup: schedule {key} teams={len(out)}", flush=True)
     _SCHED[key] = out
     return out
@@ -524,4 +530,20 @@ def game_start(sport: str, game: str) -> Optional[str]:
         for w in reversed(part.split()):
             if _norm(w) in sched:
                 return sched[_norm(w)]
+    return None
+
+
+def game_venue(sport: str, game: str) -> Optional[str]:
+    """'Halle|Stadt' fuer 'Away @ Home'; None wenn unbekannt."""
+    if not game:
+        return None
+    _load_schedule(sport)
+    ven = _VENUE.get(sport.upper()) or {}
+    for part in str(game).replace(" vs. ", "@").replace(" vs ", "@").split("@"):
+        n = _norm(part)
+        if n in ven:
+            return ven[n]
+        for w in reversed(part.split()):
+            if _norm(w) in ven:
+                return ven[_norm(w)]
     return None
