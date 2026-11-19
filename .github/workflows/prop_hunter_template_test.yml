@@ -7,6 +7,8 @@ name: PROP HUNTER Original Template and Ladder Check
       - 'prop_hunter_image_cards.py'
       - 'prop_hunter_original_template_registry.py'
       - 'prop_hunter_poster_families_test.py'
+      - 'prop_hunter_media_settlement_test.py'
+      - 'prop_hunter_card_only_targeted_test.py'
       - '.github/workflows/prop_hunter_template_test.yml'
 
 permissions:
@@ -27,6 +29,8 @@ jobs:
         run: |
           python -m py_compile prop_hunter_image_cards.py prop_hunter_original_template_registry.py prop_hunter_poster_families_test.py
           python prop_hunter_poster_families_test.py
+          python prop_hunter_media_settlement_test.py
+          python prop_hunter_card_only_targeted_test.py
       - name: Save all rendered test cards
         if: always()
         uses: actions/upload-artifact@v4
