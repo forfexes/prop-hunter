@@ -339,6 +339,13 @@ clean=sky.copy()
 originals._erase_redundant_match_box(clean,"single")
 assert clean.getpixel((609,204))!=sky.getpixel((609,204))
 assert clean.getpixel((320,204))==sky.getpixel((320,204))
+# The old sample bookmaker price must NOT reappear inside the erased field.
+# Detect any bright white/yellow source glyphs in this date-free area.
+clear_single=originals._source("single").copy()
+originals._erase_single_bridge(clear_single)
+originals._erase_redundant_match_box(clear_single,"single")
+clear_region=clear_single.crop((558,174,677,247)).convert("RGB")
+assert max(max(p) for p in clear_region.getdata()) < 115, "Old sample odds or lettering leaked into right slot"
 print("SINGLE + LADDER REDUNDANT MATCH PANEL REMOVAL AND VERIFIED KICKOFF TEST PASS")
 
 # Exact-model evidence: neither prices nor recent form may manufacture a
