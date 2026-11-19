@@ -327,10 +327,14 @@ for kind in ("single","ladder"):
                         "NBA",match_teams,rows,"Quote @1.75 · Einsatz 1u")
             fields=[str(c.args[2]) for c in texts.call_args_list]
             assert "SPIEL" not in fields,fields
-            assert fields.count("BOS Celtics")==1,fields
-            assert fields.count("DEN Nuggets")==1,fields
-            assert ("SPIELBEGINN" in fields)==bool(extra_time),fields
-            assert ("Do 19.11. · 18:30" in fields)==bool(extra_time),fields
+            # Kuerzel (BOS/DEN) werden bewusst nicht gedruckt (Logo-Rahmen schneidet sie ab).
+            assert fields.count("Celtics")==1,fields
+            assert fields.count("Nuggets")==1,fields
+            assert "SPIELBEGINN" not in fields,fields   # Vorlagen-Box mit Icons bleibt erhalten
+            df,tf,v1,v2=originals._panel_fields("BOS Celtics @ DEN Nuggets"+extra_time+" @@ Ball Arena|Denver")
+            assert (tf=="18:30 Uhr")==bool(extra_time),(df,tf)
+            assert (df.startswith("Do, 19. Nov"))==bool(extra_time),df
+            assert (v1,v2)==("Ball Arena","(Denver)")
         out=Path("poster_previews")/f"{kind}_clean_match_{'kickoff' if extra_time else 'no_time'}.png"
         out.write_bytes(png)
 
