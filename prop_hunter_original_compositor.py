@@ -17,9 +17,12 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 MASTER = Path(__file__).resolve().parent / 'card_templates' / 'originals'
+# Opt in only after a human-reviewed CLEAN source plate is committed.
+# Never use the experimental inpainting previews as production artwork.
+APPROVED_MASTER = Path(__file__).resolve().parent / 'card_templates' / 'approved'
 FAMILIES = ('single', 'ladder', 'builder', 'lottery')
 CROP = {
     'single': (0, 390, 691, 1148),
@@ -371,6 +374,61 @@ def _portrait(im, person, rect, name='', prominent=False):
     im.alpha_composite(picture, offset)
 
 
+def _single_clean_master():
+    """The approved, sample-free user artwork. Absent until visual QA passes."""
+    return APPROVED_MASTER / 'single.png'
+
+
+def _background_portrait(im, person, rect):
+    """Composite an alpha-cutout athlete into the arena WITHOUT a photo frame.
+
+    Unlike _portrait(), this never draws a box or a border. The cutout's right
+    and bottom edges fade into the original stadium background. An opaque JPEG
+    is deliberately rejected: without an alpha cutout it would leave another
+    visible rectangular block. Return True only when a real cutout was drawn.
+    """
+    if person is None:
+        return False
+    picture = person.copy().convert('RGBA')
+    a = picture.getchannel('A')
+    if a.getextrema()[0] >= 255:
+        return False
+    bbox = a.getbbox()
+    if not bbox:
+        return False
+    picture = picture.crop(bbox)
+    x0, y0, x1, y1 = [int(v) for v in rect]
+    w, h = x1-x0, y1-y0
+    if w < 20 or h < 20:
+        return False
+    # Preserve the entire face/torso silhouette, cropping only at the edges
+    # of the left stadium zone. The player is anchored to the lower edge.
+    scale = max((h * 0.98) / picture.height, (w * 0.94) / picture.width)
+    nw = max(1, round(picture.width * scale))
+    nh = max(1, round(picture.height * scale))
+    picture = picture.resize((nw, nh), Image.Resampling.LANCZOS)
+    tile = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    tile.paste(picture, ((w-nw)//2, h-nh))
+    # Fade the cutout at the right and bottom into the arena; never mask
+    # the head with a rectangular navy patch.
+    fade = Image.new('L', (w, h), 255)
+    fd = ImageDraw.Draw(fade)
+    edge_w = min(42, w//4)
+    for xx in range(w-edge_w, w):
+        alpha = round(255 * (w-1-xx) / max(1,edge_w-1))
+        fd.line((xx,0,xx,h-1), fill=alpha)
+    edge_h = min(45, h//5)
+    for yy in range(h-edge_h, h):
+        alpha = round(255 * (h-1-yy) / max(1,edge_h-1))
+        # Multiplicative fade so corners are feathered in both directions.
+        row = Image.new('L',(w,1),alpha)
+        row = ImageChops.multiply(fade.crop((0,yy,w,yy+1)),row)
+        fade.paste(row,(0,yy))
+    tile.putalpha(ImageChops.multiply(tile.getchannel('A'),fade))
+    im.alpha_composite(tile, (x0, y0))
+    return True
+
+
 def _team(im, team, center, y, size=64):
     if not team:
         return
@@ -433,6 +491,13 @@ def _family(kind):
 
 @lru_cache(maxsize=4)
 def _source(family):
+    if family == 'single' and _single_clean_master().is_file():
+        # This file must contain only the stadium and permanent decorations:
+        # NO baked sample athlete, name, crest, price or statistics.
+        source = Image.open(_single_clean_master()).convert('RGBA')
+        if source.size != (691, CROP['single'][3]-CROP['single'][1]):
+            raise ValueError('Approved clean single plate has incorrect dimensions')
+        return source
     path = MASTER / (family + '.jpg')
     if not path.is_file():
         raise FileNotFoundError(f'User original JPG not in repo: {path}')
@@ -539,25 +604,31 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         raise ValueError('Lottery has more than nine legs; cannot silently hide picks')
     if family in ('builder', 'lottery'):
         subtitle = str(subtitle or '').split(' @@ ')[0]
+    approved_single = family == 'single' and _single_clean_master().is_file()
     im = _source(family).copy()
     if family in ('builder','lottery'):
         _erase_template_head_remnants(im, family)
     # The Golden State bridge in the SINGLE screenshot is misleading for other
     # matchups; remove it BEFORE painting player, teams, odds and model data.
-    if family == 'single':
+    if family == 'single' and not approved_single:
         _erase_single_bridge(im)
     # Source frame and decorative motifs remain pixel-identical outside the dynamic slots.
     _header(im, family, league_name or sport, subtitle, teams)
     d = ImageDraw.Draw(im)
     if family == 'single':
         item = rows[0]
-        # The source athlete's hair is visible above the portrait frame.
-        _hide_baked_single_head(im)
-        # The old mask started at y=83 and erased the gold PRO TIP header.
-        # Restrict cleaning to the portrait area below the header.
-        _clean_hero(im, (95, 140, 239, 458))
-        _clean_hero(im, (0, 137, 100, 458))
-        _portrait(im, item.get('photo'), (3, 139, 235, 457), item.get('name') or '', prominent=True)
+        if approved_single:
+            # Approved look: the athlete is an independent, frameless cutout
+            # on the stadium layer. No dark box and no golden photo border.
+            _background_portrait(im, item.get('photo'), (0, 131, 246, 518))
+        else:
+            # Legacy JPG contains an embedded example player. Keep the
+            # previous safe renderer until a CLEAN plate is approved.
+            _hide_baked_single_head(im)
+            _clean_hero(im, (95, 140, 239, 458))
+            _clean_hero(im, (0, 137, 100, 458))
+            _portrait(im, item.get('photo'), (3, 139, 235, 457),
+                      item.get('name') or '', prominent=True)
         _blend_fill(im, (250, 287, 556, 377))
         _text(d, (395, 301), item.get('name'), 29, 280, WHITE, 'mt')
         _text(d, (395, 339), title if title not in ('SINGLE','') else 'PRO TIP', 19, 275, GOLD, 'mt')
