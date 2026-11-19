@@ -1,4 +1,4 @@
-name: PROP HUNTER Historical Telegram Photo Repair
+name: PROP HUNTER Historical Photo Repair (STOPPED)
 "on":
   push:
     paths:
@@ -15,7 +15,9 @@ jobs:
   repaint:
     # The first run is explicitly activated by a trigger commit.
     # Further runs are requested only while the last batch filled its cap.
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[backlog-photos]') }}
+    # Disabled at user request: only tips dated 2026-11-17 through 2026-11-19.
+    # Never resume historical backfill without a new explicit user request.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -79,20 +81,3 @@ jobs:
           if int(r.get('failed') or 0):
               raise SystemExit('Telegram rejected photo edits: stop automatic follow-up for investigation')
           PY
-      - name: Queue next bounded batch only if there are more older photos
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          remaining=$(python - <<'PY'
-          import json
-          from pathlib import Path
-          r=json.loads(Path('diagnostics/prop_hunter_card_only_migration_status.json').read_text())
-          print('yes' if r.get('batch_limit_reached') and not r.get('failed') else 'no')
-          PY
-          )
-          if [ "$remaining" = yes ]; then
-            echo 'Checkpoint saved; queuing next capped PHOTO-only batch'
-            gh workflow run prop_hunter_card_backlog_migrate.yml --repo "$GITHUB_REPOSITORY" --ref main
-          else
-            echo 'Photo-only backlog finished or blocked by a reported error; no further job queued'
-          fi
