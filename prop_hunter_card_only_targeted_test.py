@@ -42,3 +42,25 @@ assert history[0]["cards"][0]["card_design_version"] == 7
 assert history[0]["cards"][2]["card_design_version"] == 7
 assert history[1]["cards"][0]["card_design_version"] == 4
 print("TELEGRAM TARGET-DATE REPAINT / ORIGINAL MESSAGE ID TEST PASSED")
+
+# Confirmed Telegram no-op must count as identical, not a new photo edit.
+unchanged_history=[{"date":today,"picks":[],"kombis":[],
+                    "cards":[card(7100,9)]}]
+def unchanged_edit(message_id,text,chat_id=None,image_pick=None):
+    migrate._EDIT_STATE["unchanged"]=True
+    return True
+with patch.object(migrate,"TARGET_DATE",today), \
+     patch.object(migrate,"VERSION",10), \
+     patch.object(migrate,"MAX_UPDATES",100), \
+     patch.object(migrate,"_load_history",return_value=unchanged_history), \
+     patch.object(migrate,"_save_history"), \
+     patch.object(migrate,"_card_visual_text",return_value="Pending"), \
+     patch.object(migrate,"_card_pick",side_effect=lambda c,p,co:c["image_pick"]), \
+     patch.object(migrate,"_edit_message",side_effect=unchanged_edit):
+    report=migrate.migrate()
+assert report["photo_updated"]==0, report
+assert report["photo_unchanged"]==1, report
+assert report["updated_message_ids"]==[], report
+assert unchanged_history[0]["cards"][0]["card_design_version"]==10
+migrate._EDIT_STATE["unchanged"]=False
+print("MIGRATION ACK-NOOP IS RECORDED AS ALREADY-IDENTICAL, NOT AS EDITED")
