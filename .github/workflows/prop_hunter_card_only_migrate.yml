@@ -92,11 +92,11 @@ jobs:
           from pathlib import Path
           status=json.loads(Path("diagnostics/prop_hunter_card_only_migration_status.json").read_text())
           failed=int(status.get("failed") or 0)
-          print(f"Card migration: updated={status.get('photo_updated',0)} failed={failed}")
+          print(f"Card migration: changed={status.get('photo_updated',0)} unchanged={status.get('photo_unchanged',0)} failed={failed}")
           if failed:
               print(f"::error::{failed} original Telegram photos could not be upgraded; see failed_cards and render errors")
               raise SystemExit(1)
-          if (status.get("target_date") or status.get("target_dates")) and int(status.get("candidates") or 0) and not int(status.get("photo_updated") or 0):
+          if (status.get("target_date") or status.get("target_dates")) and int(status.get("candidates") or 0) and not (int(status.get("photo_updated") or 0) + int(status.get("photo_unchanged") or 0)):
               print("::error::Targeted Telegram repaint could not update its outstanding photos")
               raise SystemExit(1)
           if (status.get("target_date") or status.get("target_dates")) and not int(status.get("candidates") or 0):
