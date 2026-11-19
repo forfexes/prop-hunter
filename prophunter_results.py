@@ -775,19 +775,39 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
         return False
     retries=max(1,min(6,int(os.getenv("PH_TELEGRAM_EDIT_429_RETRIES","4"))))
     base_delay=max(0.0,min(5.0,float(os.getenv("PH_TELEGRAM_EDIT_DELAY","1.0"))))
+    media_payload = None
     for attempt in range(retries+1):
         try:
             if image_pick:
                 import json
-                from prop_hunter_image_cards import settled_image
-                png=settled_image(image_pick,text)
-                if not png:
-                    _EDIT_STATE["reason"] = "image_render_failed"
-                    print("Telegram image settlement render failed; retry next run")
-                    return False
+                if media_payload is None:
+                    from prop_hunter_image_cards import settled_image
+                    png=settled_image(image_pick,text)
+                    if not png:
+                        _EDIT_STATE["reason"] = "image_render_failed"
+                        print("Telegram image settlement render failed; retry next run")
+                        return False
+                    # For Telegram PHOTO media the original RGBA PNG can be
+                    # needlessly large, leading to gateway timeouts. Encode it
+                    # once as a high-quality JPEG, preserve all poster content,
+                    # and reuse identical bytes on retries.
+                    if png.startswith(b"\\x89PNG"):
+                        import io
+                        from PIL import Image
+                        out=io.BytesIO()
+                        with Image.open(io.BytesIO(png)) as im:
+                            im.convert("RGB").save(out,"JPEG",quality=92,
+                                                   subsampling=0,optimize=True)
+                        media_payload=("card.jpg",out.getvalue(),"image/jpeg")
+                    else:
+                        media_payload=("card.png",png,"image/png")
+                    if len(media_payload[1])>10_000_000:
+                        _EDIT_STATE["reason"]="telegram_photo_exceeds_10mb"
+                        return False
+                    print(f"Telegram photo upload payload: {len(media_payload[1])} bytes ({media_payload[2]})",flush=True)
                 r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/editMessageMedia",
                     data={"chat_id":target,"message_id":int(message_id),"media":json.dumps({"type":"photo","media":"attach://card","caption":""})},
-                    files={"card":("card.png",png,"image/png")},timeout=max(TIMEOUT,30))
+                    files={"card":media_payload},timeout=max(TIMEOUT,30))
             else:
                 r = requests.post(
                     f"https://api.telegram.org/bot{TG_TOKEN}/editMessageText",
