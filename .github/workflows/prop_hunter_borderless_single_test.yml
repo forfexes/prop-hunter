@@ -1,0 +1,24 @@
+name: PROP HUNTER Borderless Single Safety Test
+"on":
+  push:
+    paths:
+      - 'prop_hunter_borderless_portrait_test.py'
+      - '.github/workflows/prop_hunter_borderless_single_test.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install offline rendering dependencies
+        run: python -m pip install 'Pillow>=10' 'numpy>=1.26,<3'
+      - name: Compile and validate frame-free athlete rendering
+        run: |
+          python -m py_compile prop_hunter_original_compositor.py prop_hunter_borderless_portrait_test.py
+          python -u prop_hunter_borderless_portrait_test.py
