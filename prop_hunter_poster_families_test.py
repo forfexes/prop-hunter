@@ -168,3 +168,19 @@ with patch.object(originals, "_text", wraps=originals._text) as writes:
     assert "LETZTE SPIELE" in drawn, drawn
     assert real_png[:8] == bytes([137,80,78,71,13,10,26,10])
 print("NO BRIDGE / NO FORM ROW / THREE VERIFIED WINDOWS PASS")
+
+# Regression: no original Stephen Curry face may leak above the gold single banner.
+source = originals._source("single")
+cleaned = source.copy()
+originals._hide_baked_single_head(cleaned)
+assert cleaned.getpixel((135, 110)) != source.getpixel((135, 110)), "Baked-in head still visible"
+assert cleaned.getpixel((50, 80)) == source.getpixel((50, 80)), "NBA badge should remain unchanged"
+assert cleaned.getpixel((245, 110)) == source.getpixel((245, 110)), "Gold header should remain unchanged"
+# A transparent athlete portrait is rendered noticeably taller without stretching it.
+dummy = Image.new("RGBA", (240, 170), (0,0,0,0))
+ImageDraw = __import__("PIL.ImageDraw",fromlist=["Draw"])
+ImageDraw.Draw(dummy).ellipse((60, 5, 180, 165), fill=(255,190,115,255))
+hero = Image.new("RGBA", (250, 330), (8,22,40,255))
+originals._portrait(hero,dummy,(4,4,244,324),"Example",prominent=True)
+assert hero.getpixel((125, 70))[0] > 50, "Player portrait is still stuck at the bottom"
+print("ORIGINAL BAKED HEAD REMOVED / PORTRAIT ENLARGED / NBA HEADER SAFE")
