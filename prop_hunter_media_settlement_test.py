@@ -38,7 +38,8 @@ with patch.object(cards,'player_photo',return_value=None),patch.object(cards,'te
  assert sent[0][0].endswith('/editMessageMedia')
  assert sent[0][1]['data']['message_id']==123
  assert json.loads(sent[0][1]['data']['media'])['caption']==''
- assert sent[0][1]['files']['card'][1].startswith(b'\x89PNG')
+ assert sent[0][1]['files']['card'][1].startswith(b'\xff\xd8')
+ assert sent[0][1]['files']['card'][2]=='image/jpeg'
  sent.clear();responses=[N(status_code=400,text='Bad Request: there is no text in the message to edit'),N(status_code=429,text='Too Many Requests',json=lambda:{'parameters':{'retry_after':1}}),N(status_code=200,text='',json=lambda:{'ok':True,'result':{'message_id':123,'photo':[{'file_id':'new-photo'}]}})]
  def retry(url,**kw):sent.append(url);return responses.pop(0)
  with patch.object(results.requests,'post',side_effect=retry),patch.object(results.time,'sleep'):
