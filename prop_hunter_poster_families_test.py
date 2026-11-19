@@ -379,3 +379,13 @@ with patch.object(cards,"_get_json",return_value=fake_teams), \
     assert cards.team_logo("XYZ Suns",("basketball","nba")) is None
 cards._CACHE.pop("teams:nba",None)
 print("PHO SUNS ESPN LOGO ALIAS MATCH / NO WRONG CRESTS PASS")
+
+# Never turn the tip publication date into an invented kickoff date.
+assert cards._kickoff_text(NS(date="2026-11-19"))==""
+assert cards._kickoff_text(NS(game_date="2026-11-19")).startswith("Do 19.11.")
+# Erase the original broken 'ADDERS' fragment instead of reusing its pixels.
+with patch.object(originals,"_text",wraps=originals._text) as textcalls:
+    originals.original_card("ladder","LADDER","Verified fixture","NBA",[],
+                            _fixture_rows("ladder",3),"Quote @2.00")
+    assert any(call.args[2]=="STUFEN" for call in textcalls.call_args_list)
+print("NO POST-DATE FAKE KICKOFF / CLEAN LADDER LABEL TEST PASS")
