@@ -21,6 +21,7 @@ VERSION=11
 FAMILY_FILTER={x.strip().lower() for x in
                str(os.getenv("PH_CARD_ONLY_FAMILIES") or "").split(",") if x.strip()}
 TARGET_DATE=str(os.getenv("PH_CARD_ONLY_TARGET_DATE","") or "").strip()[:10]
+PHOTO_ONLY=str(os.getenv("PH_CARD_ONLY_PHOTOS_ONLY","0")).strip()=="1"
 
 
 def migrate():
@@ -33,6 +34,7 @@ def migrate():
         return {"target_date":None,"target_dates":[],"design_version":VERSION,
                 "candidates":0,"photo_updated":0,"photo_unchanged":0,"text_replaced":0,
                 "skipped":0,"skipped_current_version":0,
+                "batch_limit_reached":False,
                 "failed":0,"updated_message_ids":[],"failed_cards":[]}
     history=_load_history()
     now=datetime.now(timezone.utc)
@@ -40,6 +42,7 @@ def migrate():
     counts={"target_date":TARGET_DATE or None,"target_dates":sorted(targets),"design_version":VERSION,
             "candidates":0,"photo_updated":0,"photo_unchanged":0,"text_replaced":0,
             "skipped":0,"skipped_current_version":0,"failed":0,
+            "batch_limit_reached":False,
             "updated_message_ids":[],"failed_cards":[]}
     for entry in sorted(history,key=lambda x:str(x.get("date") or ""),reverse=True):
         day=str(entry.get("date") or "")[:10]
@@ -48,9 +51,15 @@ def migrate():
         picks=entry.get("picks") or []
         combos=entry.get("kombis") or []
         for card in reversed(entry.get("cards") or []):
-            if counts["photo_updated"]+counts["photo_unchanged"]+counts["text_replaced"] >= MAX_UPDATES:
+            # Bound attempted Telegram calls, including failures. Otherwise a
+            # gateway outage could cause hundreds of unnecessary retries.
+            if counts["candidates"] >= MAX_UPDATES:
+                counts["batch_limit_reached"]=True
                 return counts
             if card.get("tg_gone") or not card.get("message_id"):
+                counts["skipped"]+=1
+                continue
+            if PHOTO_ONLY and card.get("media_type")!="photo":
                 counts["skipped"]+=1
                 continue
             if int(card.get("card_design_version") or 0)>=VERSION:
