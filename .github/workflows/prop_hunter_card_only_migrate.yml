@@ -1,4 +1,4 @@
-name: Prop Hunter v8 Original Cards L5-L15 No Bridge
+name: Prop Hunter v9 Original Headshot Repair
 "on":
   push:
     paths:
@@ -14,7 +14,7 @@ jobs:
   migrate_existing:
     # Workflow-definition pushes are CI-only; never edit older Telegram posts
     # unless an explicit dated repair was requested.
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[repair-18]') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[repair-18]') || contains(github.event.head_commit.message, '[repair-18-19]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -47,9 +47,10 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
           SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
-          PH_CARD_ONLY_MAX_UPDATES: '100'
+          PH_CARD_ONLY_MAX_UPDATES: '150'
           PH_CARD_ONLY_LOOKBACK_DAYS: '7'
           PH_CARD_ONLY_TARGET_DATE: ${{ contains(github.event.head_commit.message, '[repair-18]') && '2026-11-18' || '' }}
+          PH_CARD_ONLY_TARGET_DATES: ${{ contains(github.event.head_commit.message, '[repair-18-19]') && '2026-11-18,2026-11-19' || '' }}
         run: |
           if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
             echo "Telegram secrets missing; refusing migration"
@@ -77,7 +78,7 @@ jobs:
             echo "No Telegram card changes to commit"
             exit 0
           fi
-          git commit -m "prop hunter: preserve Telegram v8 card migrations [skip ci]"
+          git commit -m "prop hunter: preserve Telegram v9 card migrations [skip ci]"
           for attempt in 1 2 3; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
@@ -95,9 +96,9 @@ jobs:
           if failed:
               print(f"::error::{failed} original Telegram photos could not be upgraded; see failed_cards and render errors")
               raise SystemExit(1)
-          if status.get("target_date") and int(status.get("candidates") or 0) and not int(status.get("photo_updated") or 0):
+          if (status.get("target_date") or status.get("target_dates")) and int(status.get("candidates") or 0) and not int(status.get("photo_updated") or 0):
               print("::error::Targeted Telegram repaint could not update its outstanding photos")
               raise SystemExit(1)
-          if status.get("target_date") and not int(status.get("candidates") or 0):
+          if (status.get("target_date") or status.get("target_dates")) and not int(status.get("candidates") or 0):
               print("All target-date cards already match the current design version; no duplicate edits")
           PY
