@@ -506,6 +506,13 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
     elif family == 'lottery':
         _clean_hero(im, (0, 83, 202, 287))
         _fade_baked_lottery_arm(im)
+        # Join the violet ticket artwork under the hero instead of exposing a
+        # black rectangular patch where the original athlete's jersey was.
+        ribbon=ImageDraw.Draw(im)
+        ribbon.polygon(((0,285),(113,285),(77,336),(0,336)),
+                       fill=(35,13,59,255))
+        ribbon.line(((0,285),(113,285),(77,336),(0,336)),
+                    fill=(148,62,197,255),width=2)
         _portrait(im, rows[0].get('photo'), (6, 62, 197, 280), rows[0].get('name') or '')
         _rect(im, (462, 280, 654, 335), (50, 18, 70, 255), 6, VIOLET, 2)
         total_quote=re.search(r'Quote\s*(@[\d.,]+)', str(footer), re.I)
@@ -518,9 +525,19 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         rh = max(19, 180 // n)
         for i, row in enumerate(rows):
             yy = 338 + i * rh
-            _text(d, (59, yy+4),
+            shift = 0
+            # The user's lottery original uses individual player portraits.
+            # Keep miniature photos where rows are tall enough; nine-leg cards
+            # stay text-first so neither names nor odds are hidden.
+            if n <= 6 and row.get('photo') is not None:
+                icon_size = min(40, rh-5)
+                _portrait(im,row.get('photo'),
+                          (55, yy+2, 55+icon_size, yy+2+icon_size),
+                          row.get('name') or '')
+                shift = icon_size + 7
+            _text(d, (59+shift, yy+4),
                   f'{i+1}. {row.get("name") or ""} · {row.get("label") or ""}',
-                  16, 420, GOLD)
+                  16, 420-shift, GOLD)
             # Never print a truncated "L5 ... L10 ... L15 ..." fragment.
             # The list is narrow, especially on nine-leg lottery posters.
             # Preserve the real observed per-leg bookmaker price here.
