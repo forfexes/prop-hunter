@@ -1,3 +1,24 @@
+# PROP HUNTER — Mastervorlagen-Stand 19.11.2026
+
+**Neue Entscheidung des Nutzers:** Wie bei NETRATTLER gibt es jetzt eine
+**vollständige NBA-Premiumkollektion mit 52 datenfreien, editierbaren
+SVG-Mastern** unter [nba_masters](./nba_masters). Sie umfasst Single-Props
+(21 Marktvarianten), Longshot, Ladder, Builder, Same-Player-Builder,
+Cross-Game-Builder, Combo/Multi und Lottery, jeweils 2–6 Legs.
+Alle Spielerfotos werden als **freigestellte, rahmenlose Ebenen**
+eingesetzt; Namen, Wappen, Uhrzeiten, Quoten, L5/L10/L15 und Auswertung
+sind getrennte Text-/Bildslots. Es wird nichts überklebt.
+
+**Abgrenzung:** Die vier historischen JPGs in `originals/` bleiben
+unverändert als **Referenzbilder**, nicht als live nutzbare Datenmaster.
+Die neuen 52 SVGs sind ein **neues, sauberes Layoutsystem**, das sich
+am freigegebenen blau-goldenen Originalstil und der NETRATTLER-
+Masterkollektion orientiert. Es ist **noch nicht produktiv aktiviert**;
+vor Telegram-Einsatz sind visuelle Freigabe, echte Datenzuordnung und
+Integration des neuen SVG-Renderers erforderlich.
+
+---
+
 # PROP HUNTER — Originalbilder und Sportvorlagen
 
 **Verbindlich:** Die vier vom Nutzer gelieferten Original-Layouts müssen als Binärdateien (JPG/WEBP) im Repository liegen. Keine nachgebauten Ersatzlayouts als Originale deklarieren.
