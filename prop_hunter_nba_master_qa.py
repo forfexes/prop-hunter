@@ -21,10 +21,10 @@ for key,item in templates.items():
     assert 'data:image/' not in raw,key
     for sample in ('Stephen Curry','Nikola Jokic','Golden State Warriors','1.90','1 offen · +0.00u'):
         assert sample not in raw,(key,sample)
-    if item['family']=='ladder':
+    if item['family'] in ('ladder','same_player'):
         assert slots.count('player_photo')==1
         assert not any(s.endswith('_photo') and s!='player_photo' for s in slots)
-    if item['family'] in ('builder','same_player','cross_game'):
+    if item['family'] in ('builder','cross_game'):
         assert sum(s.endswith('_photo') for s in slots)==item['legs'],key
     if item['family'] in ('single','longshot'):
         assert {'player_photo','home_logo','away_logo'}.issubset(slots),key
