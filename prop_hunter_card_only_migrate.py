@@ -66,8 +66,11 @@ def migrate():
                 for k in ("result","actual_value","profit","leg_details","ladder_legs"):
                     if k in latest:
                         visual[k]=latest[k]
-                for k in ("commence_time","game_date","date"):
-                    if not visual.get(k) and latest.get(k):
+                # Enrich only from the exact linked historical pick, never
+                # estimate model values from odds or another player's card.
+                for k in ("commence_time","game_date","date","probability",
+                          "edge_pct","confidence_score","model_confidence"):
+                    if visual.get(k) in (None,"") and latest.get(k) not in (None,""):
                         visual[k]=latest[k]
             if card.get("media_type")=="photo":
                 ok=_edit_message(card["message_id"],text,card.get("chat_id"),image_pick=visual)
