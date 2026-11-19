@@ -22,6 +22,14 @@ TARGET_DATE=str(os.getenv("PH_CARD_ONLY_TARGET_DATE","") or "").strip()[:10]
 
 
 def migrate():
+    if not TARGET_DATE and os.getenv("PH_CARD_ONLY_ALLOW_UNSCOPED") != "1":
+        # A push to the workflow file must never accidentally repaint up to
+        # 100 unrelated historical Telegram messages.
+        print("CARD_REPAINT_SKIPPED: no explicit target date",flush=True)
+        return {"target_date":None,"design_version":VERSION,
+                "candidates":0,"photo_updated":0,"text_replaced":0,
+                "skipped":0,"skipped_current_version":0,
+                "failed":0,"updated_message_ids":[],"failed_cards":[]}
     history=_load_history()
     now=datetime.now(timezone.utc)
     cutoff=(now-timedelta(days=LOOKBACK_DAYS)).date().isoformat()
