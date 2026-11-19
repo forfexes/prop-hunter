@@ -290,7 +290,9 @@ def _kickoff_text(pick) -> str:
         raw = feats.get("commence_time") or feats.get("start_time_utc")
     has_time = bool(raw)
     if not raw:
-        raw = _get(pick, "game_date") or _get(pick, "date")
+        # 'date' is often the DATE THE TIP WAS PUBLISHED, not game day.
+        # A match panel must not label the posting date as the kickoff.
+        raw = _get(pick, "game_date")
     if not raw:
         return ""
     try:
