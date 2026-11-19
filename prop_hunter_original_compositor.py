@@ -64,6 +64,28 @@ def _text(d: ImageDraw.ImageDraw, xy, text, size=24, width=400,
            stroke_width=stroke, stroke_fill=(0, 0, 0) if stroke else None)
 
 
+def _blend_fill(im, box):
+    """Flaeche mit dem Hintergrundverlauf der Vorlage fuellen (statt flachem Rechteck)."""
+    import numpy as np
+    x0, y0, x1, y1 = [int(v) for v in box]
+    W, H = im.size
+    x0, y0, x1, y1 = max(3, x0), max(3, y0), min(W - 4, x1), min(H - 4, y1)
+    if x1 <= x0 or y1 <= y0:
+        return
+    a = np.asarray(im.convert('RGB'), dtype=np.float32)
+    top = a[y0 - 3:y0 - 1, x0:x1].mean(axis=0)          # (w,3)
+    bot = a[y1 + 1:y1 + 3, x0:x1].mean(axis=0)
+    lef = a[y0:y1, x0 - 3:x0 - 1].mean(axis=1)          # (h,3)
+    rig = a[y0:y1, x1 + 1:x1 + 3].mean(axis=1)
+    h, w = y1 - y0, x1 - x0
+    ty = np.linspace(0, 1, h)[:, None, None]
+    tx = np.linspace(0, 1, w)[None, :, None]
+    vert = top[None, :, :] * (1 - ty) + bot[None, :, :] * ty
+    hor = lef[:, None, :] * (1 - tx) + rig[:, None, :] * tx
+    patch = ((vert + hor) / 2.0).clip(0, 255).astype('uint8')
+    im.paste(Image.fromarray(patch, 'RGB'), (x0, y0))
+
+
 def _rect(im, xy, color=DARK, radius=7, outline=None, w=2):
     ImageDraw.Draw(im).rounded_rectangle(xy, radius=radius, fill=color,
                                          outline=outline, width=w)
@@ -478,7 +500,7 @@ def _result(im, family, settlement):
               'builder':(586, 735, 670, 780),'lottery':(380, 655, 504, 694)}[family]
     x0,y0,x1,y1 = bottom
     label = str(settlement or 'OFFEN')
-    _rect(im, bottom, (6, 19, 31, 255), 3)
+    _blend_fill(im, bottom)
     red = 'verloren' in label.lower() or '−' in label or '-0' in label
     green = 'gewonnen' in label.lower() and not red
     if red or green:
@@ -536,7 +558,7 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _clean_hero(im, (95, 140, 239, 458))
         _clean_hero(im, (0, 137, 100, 458))
         _portrait(im, item.get('photo'), (3, 139, 235, 457), item.get('name') or '', prominent=True)
-        _rect(im, (250, 287, 556, 377), NAVY, 5)
+        _blend_fill(im, (250, 287, 556, 377))
         _text(d, (395, 301), item.get('name'), 29, 280, WHITE, 'mt')
         _text(d, (395, 339), title if title not in ('SINGLE','') else 'PRO TIP', 19, 275, GOLD, 'mt')
         _rect(im, (170, 378, 468, 439), (4, 44, 35, 255), 10, GREEN, 3)
