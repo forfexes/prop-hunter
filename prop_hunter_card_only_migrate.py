@@ -17,7 +17,9 @@ from prophunter_results import (
 
 MAX_UPDATES=max(1,min(180,int(os.getenv("PH_CARD_ONLY_MAX_UPDATES","30"))))
 LOOKBACK_DAYS=max(1,min(30,int(os.getenv("PH_CARD_ONLY_LOOKBACK_DAYS","7"))))
-VERSION=10
+VERSION=11
+FAMILY_FILTER={x.strip().lower() for x in
+               str(os.getenv("PH_CARD_ONLY_FAMILIES") or "").split(",") if x.strip()}
 TARGET_DATE=str(os.getenv("PH_CARD_ONLY_TARGET_DATE","") or "").strip()[:10]
 
 
@@ -57,6 +59,10 @@ def migrate():
             text=_card_visual_text(card,picks,combos)
             visual=card.get("image_pick") or _card_pick(card,picks,combos)
             if not text or not visual:
+                counts["skipped"]+=1
+                continue
+            kind=str(visual.get("type") or card.get("card_kind") or "").lower()
+            if FAMILY_FILTER and kind not in FAMILY_FILTER:
                 counts["skipped"]+=1
                 continue
             counts["candidates"]+=1
