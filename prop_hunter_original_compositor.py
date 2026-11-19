@@ -91,6 +91,29 @@ def _erase_single_bridge(im):
     im.paste(layer, (0, 0), mask)
 
 
+def _hide_baked_single_head(im):
+    """Erase the example athlete above the new single-card portrait frame.
+
+    Keep the NBA badge, gold header and original source artwork untouched.
+    """
+    x0, y0, x1, y1 = 77, 67, 202, 141
+    patch = Image.new("RGBA", (x1-x0, y1-y0))
+    pixels = patch.load()
+    for y in range(y1-y0):
+        t = y/max(1,y1-y0-1)
+        color = (3+int(3*t), 12+int(8*t), 27+int(14*t), 255)
+        for x in range(x1-x0):
+            pixels[x,y] = color
+    mask = Image.new("L", patch.size, 0)
+    m = mask.load()
+    w, h = patch.size
+    for y in range(h):
+        for x in range(w):
+            edge = min(x, y, w-1-x, h-1-y)
+            m[x,y] = int(255*min(1.,edge/7.))
+    im.paste(patch,(x0,y0),mask)
+
+
 def _clean_hero(im, box):
     """Obscure baked-in example player without touching the original masthead."""
     x0, y0, x1, y1 = box
@@ -103,7 +126,7 @@ def _clean_hero(im, box):
     im.paste(patch, (x0, y0))
 
 
-def _portrait(im, person, rect, name=''):
+def _portrait(im, person, rect, name='', prominent=False):
     x0, y0, x1, y1 = rect
     _rect(im, (x0, y0, x1, y1), NAVY, 9, GOLD, 2)
     if person is None:
@@ -116,6 +139,18 @@ def _portrait(im, person, rect, name=''):
     alpha_box = picture.getchannel('A').getbbox()
     if alpha_box and alpha_box != (0, 0, picture.width, picture.height):
         picture = picture.crop(alpha_box)
+    if prominent and picture.getextrema()[3][0] < 255:
+        # Transparent portrait cutouts are often much shorter than the frame.
+        # Enlarge proportionally, cropping only side/shoulder overflow.
+        target_w, target_h = x1-x0-8, y1-y0-8
+        scale = max(target_h*0.88/max(1,picture.height),
+                    target_w*0.88/max(1,picture.width))
+        nw, nh = max(1,round(picture.width*scale)), max(1,round(picture.height*scale))
+        picture = picture.resize((nw,nh), Image.Resampling.LANCZOS)
+        tile = Image.new('RGBA',(target_w,target_h),(0,0,0,0))
+        tile.paste(picture,((target_w-nw)//2,target_h-nh),picture.getchannel('A'))
+        im.alpha_composite(tile,(x0+4,y0+4))
+        return
     picture.thumbnail((x1-x0-7, y1-y0-7), Image.Resampling.LANCZOS)
     offset = (x0+(x1-x0-picture.width)//2, y1-4-picture.height)
     if picture.getextrema()[3][0] == 255:
@@ -279,11 +314,13 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
     d = ImageDraw.Draw(im)
     if family == 'single':
         item = rows[0]
+        # The source athlete's hair is visible above the portrait frame.
+        _hide_baked_single_head(im)
         # The old mask started at y=83 and erased the gold PRO TIP header.
         # Restrict cleaning to the portrait area below the header.
         _clean_hero(im, (95, 140, 239, 458))
         _clean_hero(im, (0, 137, 100, 458))
-        _portrait(im, item.get('photo'), (3, 139, 235, 457), item.get('name') or '')
+        _portrait(im, item.get('photo'), (3, 139, 235, 457), item.get('name') or '', prominent=True)
         _rect(im, (250, 287, 556, 377), NAVY, 5)
         _text(d, (395, 301), item.get('name'), 29, 280, WHITE, 'mt')
         _text(d, (395, 339), title if title not in ('SINGLE','') else 'PRO TIP', 19, 275, GOLD, 'mt')
