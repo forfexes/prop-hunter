@@ -92,7 +92,9 @@ jobs:
           if failed:
               print(f"::error::{failed} original Telegram photos could not be upgraded; see failed_cards and render errors")
               raise SystemExit(1)
-          if status.get("target_date") and not int(status.get("photo_updated") or 0):
-              print("::error::Targeted Telegram repaint updated zero photos; no success claim")
+          if status.get("target_date") and int(status.get("candidates") or 0) and not int(status.get("photo_updated") or 0):
+              print("::error::Targeted Telegram repaint could not update its outstanding photos")
               raise SystemExit(1)
+          if status.get("target_date") and not int(status.get("candidates") or 0):
+              print("All target-date cards already match the current design version; no duplicate edits")
           PY
