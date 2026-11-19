@@ -479,6 +479,10 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _clean_hero(im, (0, 270, 247, 621))
         _rect(im, (202, 352, 685, 615), NAVY, 6)
         _portrait(im, rows[0].get('photo'), (15, 300, 197, 606), rows[0].get('name') or '')
+        # The owner JPEG has an old white 'LADDERS' legend behind this row.
+        # Fully erase it before adding the clean dynamic stage heading.
+        _rect(im, (246, 286, 383, 347), NAVY, 5)
+        _text(ImageDraw.Draw(im), (313, 315), 'STUFEN', 22, 127, WHITE, 'mm')
         _rect(im, (379, 290, 660, 343), NAVY, 5, CYAN, 2)
         _text(d, (515, 317), footer or 'LADDER', 22, 254, GOLD, 'mm')
         # Keep every rung above the fixed footer (starts at y=615).
