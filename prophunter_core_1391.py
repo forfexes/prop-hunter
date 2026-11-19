@@ -4815,6 +4815,55 @@ def limit_total_singles(picks, max_singles=0):
         log.warning("total singles cap skipped: %s", e)
         return picks
 
+def _rescue_select_diverse(candidates, max_picks, min_per_sport=1):
+    """Select only pre-qualified props, without allowing NBA to occupy every slot.
+
+    The upstream source-prop rescue has ALREADY verified real price, line,
+    modeled probability, minimum edge and sport-specific L15 gates. This
+    function never introduces a pick that failed those gates. Reweighting only
+    applies when multiple eligible sports genuinely exist.
+    """
+    max_picks = max(0, int(max_picks))
+    min_per_sport = max(0, min(2, int(min_per_sport)))
+    chosen, seen_players, per_game = [], set(), defaultdict(int)
+
+    def _sport(p):
+        return str(getattr(p, "sport", None) or getattr(p, "source_sport", None) or "UNKNOWN").upper()
+
+    def _add(p):
+        if len(chosen) >= max_picks:
+            return False
+        name = str(getattr(p, "player", "") or "").casefold().strip()
+        game = str(getattr(p, "game", None) or getattr(p, "team", None) or "unknown").strip()
+        if not name or name in seen_players or per_game[game] >= 3:
+            return False
+        chosen.append(p)
+        seen_players.add(name)
+        per_game[game] += 1
+        return True
+
+    # Each sport can claim up to one slot, but ONLY from its already qualified
+    # ranked candidate list. These slots are not forced when no pick qualifies.
+    if min_per_sport and max_picks:
+        sports = list(dict.fromkeys(_sport(p) for p in candidates))
+        for sport in sports:
+            filled = 0
+            for p in candidates:
+                if _sport(p) == sport and _add(p):
+                    filled += 1
+                    if filled >= min_per_sport:
+                        break
+            if len(chosen) >= max_picks:
+                break
+
+    # Remaining slots use the existing global edge/probability ordering.
+    for p in candidates:
+        if len(chosen) >= max_picks:
+            break
+        _add(p)
+    return chosen
+
+
 def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
     """
     Baut konservative Singles direkt aus Source-Props, wenn LLM/Filter 0 Picks liefern.
@@ -5128,21 +5177,12 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         except Exception:
             rejected["hr_build_error"] += 1
 
-    out = []
-    players = set()
-    for pk in candidates:
-        name = (pk.player or "").lower().strip()
-        if not name or name in players:
-            continue
-        g = (getattr(pk, "game", None) or getattr(pk, "team", None) or "unknown").strip()
-        if per_game[g] >= 3:
-            continue
-        out.append(pk)
-        players.add(name)
-        per_game[g] += 1
-        if len(out) >= max_picks:
-            break
-
+    diversity = os.getenv("PH_RESCUE_SPORT_MIN", "1")
+    out = _rescue_select_diverse(candidates, max_picks, min_per_sport=diversity)
+    from collections import Counter
+    eligible_by_sport = dict(Counter(str(getattr(p, "sport", "") or getattr(p, "source_sport", "") or "?").upper() for p in candidates))
+    selected_by_sport = dict(Counter(str(getattr(p, "sport", "") or getattr(p, "source_sport", "") or "?").upper() for p in out))
+    log.info("source-prop rescue sports: qualified=%s published=%s", eligible_by_sport, selected_by_sport)
     log.info("source-prop rescue: %d candidates → %d picks | rejected=%s", len(candidates), len(out), dict(rejected))
     return out
 
