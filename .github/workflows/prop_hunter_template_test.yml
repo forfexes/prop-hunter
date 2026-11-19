@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install renderer dependencies
-        run: python -m pip install pillow requests
+        run: python -m pip install pillow requests numpy
       - name: Validate single-player Ladder and sport/format routing
         run: |
           python -m py_compile prop_hunter_original_compositor.py prop_hunter_image_cards.py prop_hunter_original_template_registry.py prop_hunter_poster_families_test.py
