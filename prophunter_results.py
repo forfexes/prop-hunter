@@ -758,11 +758,12 @@ def _card_pick(card,picks,combos):
     return obj
 
 
-_EDIT_STATE = {"gone": False, "reason": "", "gateway_unavailable": False}
+_EDIT_STATE = {"gone": False, "reason": "", "gateway_unavailable": False, "unchanged": False}
 
 
 def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=None, fallback_pick=None) -> bool:
     _EDIT_STATE["reason"] = ""
+    _EDIT_STATE["unchanged"] = False
     if _EDIT_STATE.get("gateway_unavailable"):
         _EDIT_STATE["reason"] = "telegram_gateway_unavailable_5xx"
         return False
@@ -839,6 +840,11 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                     time.sleep(base_delay)
                 return True
             if r.status_code == 400 and "message is not modified" in r.text.lower():
+                # The request was accepted, but NO Telegram image was changed.
+                # Do not count a no-op as a confirmed replacement.
+                _EDIT_STATE["unchanged"] = True
+                _EDIT_STATE["reason"] = "telegram_media_already_identical"
+                print(f"Telegram photo unchanged: message_id={message_id}", flush=True)
                 return True
             if r.status_code == 400 and "no text in the message" in r.text.lower() and fallback_pick:
                 # Legacy photo cards have no media metadata. Upgrade only after
