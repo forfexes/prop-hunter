@@ -94,3 +94,33 @@ assert result["photo_updated"]==2 and result["failed"]==0,result
 assert cases[1]["card_design_version"]==10
 assert all(visual["probability"]==.65 and visual["edge_pct"]==26.1 for mid,visual in calls)
 print("TARGETED V11 PHOTO REPAINT: SINGLE+LADDER ONLY / LINKED MODEL FIELDS PASS")
+
+# Historical backlog: do not touch text-only tips or bypass attempted-call
+# limits when Telegram rejects every photo edit.
+backlog_date=today
+old_photo_cards=[card(8201,3),card(8202,3),card(8203,3)]
+text_card=card(8299,0)
+text_card["media_type"]="text"
+backlog=[{"date":backlog_date,"picks":[],"kombis":[],
+          "cards":[text_card]+old_photo_cards}]
+attempts=[]
+def failed_photo(mid,text,chat_id=None,image_pick=None):
+    attempts.append(mid)
+    migrate._EDIT_STATE["reason"]="simulated failure"
+    return False
+with patch.object(migrate,"TARGET_DATE",backlog_date), \
+     patch.object(migrate,"FAMILY_FILTER",set()), \
+     patch.object(migrate,"PHOTO_ONLY",True), \
+     patch.object(migrate,"MAX_UPDATES",2), \
+     patch.object(migrate,"VERSION",11), \
+     patch.object(migrate,"_load_history",return_value=backlog), \
+     patch.object(migrate,"_card_visual_text",return_value="Original caption"), \
+     patch.object(migrate,"_card_pick",side_effect=lambda c,p,co:c["image_pick"]), \
+     patch.object(migrate,"_edit_message",side_effect=failed_photo):
+    audit=migrate.migrate()
+assert len(attempts)==2,attempts
+assert audit["candidates"]==2 and audit["failed"]==2,audit
+assert audit["batch_limit_reached"] is True,audit
+assert text_card["card_design_version"]==0
+assert all(c["card_design_version"]==3 for c in old_photo_cards)
+print("HISTORICAL PHOTO BACKLOG ATTEMPT CAP / NO TEXT TO PHOTO / FAIL CLOSED PASS")
