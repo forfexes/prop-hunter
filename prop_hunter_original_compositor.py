@@ -125,7 +125,7 @@ def _erase_template_head_remnants(im, family):
         # Sabonis) whose hair begins above the new player-photo slots.
         zones = (
             (62, 91, 164, 141),     # left player hair, outside title banner
-            (280, 115, 406, 143),   # centre hair below gold heading glyphs
+            (282, 107, 408, 143),   # centre sample hair over lower title border
             (526, 91, 631, 141),    # right hair, outside title banner
         )
     elif family == 'lottery':
@@ -154,6 +154,28 @@ def _erase_template_head_remnants(im, family):
                 border=min(xx, yy, w-1-xx, h-1-yy)
                 fp[xx,yy]=int(255*min(1,border/5))
         im.paste(patch,(x0,y0),feather)
+
+
+def _fade_baked_lottery_arm(im):
+    """Cover the sample Knicks player's shoulder outside the actual hero frame.
+
+    A feathered side-to-stadium transition avoids the solid navy rectangle
+    that used to sit across the original purple lottery banner.
+    """
+    x0,y0,x1,y1 = 0, 274, 135, 342
+    patch = Image.new("RGBA",(x1-x0,y1-y0))
+    pp=patch.load()
+    mask=Image.new("L",(x1-x0,y1-y0),0)
+    mp=mask.load()
+    for y in range(y1-y0):
+        t=y/max(1,y1-y0-1)
+        for x in range(x1-x0):
+            pp[x,y]=(7+int(3*t),13+int(5*t),29+int(13*t),255)
+            left_fade=1 if x<77 else max(0,(x1-x)/58)
+            upper_fade=min(1,y/8)
+            lower_fade=min(1,(y1-y-1)/13)
+            mp[x,y]=int(255*left_fade*upper_fade*lower_fade)
+    im.paste(patch,(x0,y0),mask)
 
 
 def _clean_hero(im, box):
@@ -483,8 +505,7 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _text(d, (206, 755), f'{len(rows)} LEGS', 18, 236, GREEN, 'mm')
     elif family == 'lottery':
         _clean_hero(im, (0, 83, 202, 287))
-        # Do not blank the left stadium at y=287..337: the old mask was
-        # leaving a conspicuous square black bar below the purple heading.
+        _fade_baked_lottery_arm(im)
         _portrait(im, rows[0].get('photo'), (6, 62, 197, 280), rows[0].get('name') or '')
         _rect(im, (462, 280, 654, 335), (50, 18, 70, 255), 6, VIOLET, 2)
         total_quote=re.search(r'Quote\s*(@[\d.,]+)', str(footer), re.I)
