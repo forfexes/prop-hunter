@@ -114,6 +114,48 @@ def _hide_baked_single_head(im):
     im.paste(patch,(x0,y0),mask)
 
 
+def _erase_template_head_remnants(im, family):
+    """Remove the sample athletes protruding above the new photo frames.
+
+    Do not repaint the gold/purple header title, league badge, or crown. The
+    original user artwork is retained everywhere outside these small masks.
+    """
+    if family == 'builder':
+        # The original card has three example athletes (Tatum / Doncic /
+        # Sabonis) whose hair begins above the new player-photo slots.
+        zones = (
+            (62, 104, 173, 135),    # left of gold banner
+            (282, 126, 408, 142),   # below the banner lettering
+            (519, 105, 631, 135),   # right of gold banner
+        )
+    elif family == 'lottery':
+        # Brunson's original face extends above the replacement hero frame.
+        zones = ((65, 42, 200, 66),)
+    else:
+        return
+    for x0, y0, x1, y1 in zones:
+        x0, y0 = max(0,x0), max(0,y0)
+        x1, y1 = min(im.width,x1), min(im.height,y1)
+        if x1 <= x0 or y1 <= y0:
+            continue
+        patch = Image.new('RGBA', (x1-x0, y1-y0))
+        pix = patch.load()
+        for yy in range(y1-y0):
+            for xx in range(x1-x0):
+                # A muted dark-stadium colour instead of a bright/opaque block.
+                t = yy/max(1,y1-y0-1)
+                pix[xx,yy] = (4+int(t*2), 13+int(t*7),
+                              28+int(t*11), 255)
+        feather = Image.new('L', patch.size, 0)
+        fp = feather.load()
+        w,h = patch.size
+        for yy in range(h):
+            for xx in range(w):
+                border=min(xx, yy, w-1-xx, h-1-yy)
+                fp[xx,yy]=int(255*min(1,border/5))
+        im.paste(patch,(x0,y0),feather)
+
+
 def _clean_hero(im, box):
     """Obscure baked-in example player without touching the original masthead."""
     x0, y0, x1, y1 = box
@@ -304,7 +346,15 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         distinct = {str(r.get('name') or '').strip().casefold() for r in rows}
         if len(distinct) != 1 or not next(iter(distinct)):
             raise ValueError('Ladder must use exactly one real athlete, not a builder')
+        if len(rows) > 5:
+            raise ValueError('Ladder has more than five rungs')
+    if family == 'builder' and len(rows) > 6:
+        raise ValueError('Builder has more than six legs; cannot silently hide picks')
+    if family == 'lottery' and len(rows) > 9:
+        raise ValueError('Lottery has more than nine legs; cannot silently hide picks')
     im = _source(family).copy()
+    if family in ('builder','lottery'):
+        _erase_template_head_remnants(im, family)
     # The Golden State bridge in the SINGLE screenshot is misleading for other
     # matchups; remove it BEFORE painting player, teams, odds and model data.
     if family == 'single':
@@ -363,10 +413,12 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _portrait(im, rows[0].get('photo'), (15, 300, 197, 606), rows[0].get('name') or '')
         _rect(im, (379, 290, 660, 343), NAVY, 5, CYAN, 2)
         _text(d, (515, 317), footer or 'LADDER', 22, 254, GOLD, 'mm')
-        if len(rows) > 5:
-            raise ValueError('Ladder has more than five rungs; cannot fit faithfully')
-        # Compact rungs; a 2-rung ladder must not have a huge empty gap.
-        ys = [355 + i * 59 for i in range(len(rows))]
+        # Keep every rung above the fixed footer (starts at y=615).
+        # Center short ladders and compress five rungs without overlap.
+        gap = 1 if len(rows) == 5 else 6
+        occupied = 49*len(rows) + gap*(len(rows)-1)
+        first = 352 + max(0,(254-occupied)//2)
+        ys = [first + i*(49+gap) for i in range(len(rows))]
         for index, (y, r) in enumerate(zip(ys, rows), 1):
             _row(im, (204, y), 480, r.get('name'), r.get('label'), r.get('odds'),
                  _f(r.get('form')), r.get('result'), no=index, color=CYAN)
@@ -376,21 +428,46 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _rect(im, (319, 615, 670, 656), NAVY, 7, CYAN, 1)
         _text(ImageDraw.Draw(im), (494, 635), f'LADDERS ({len(rows)} STUFEN)', 19, 335, WHITE, 'mm')
         _rect(im, (321, 657, 670, 742), NAVY, 7, CYAN, 1)
-        for i, row in enumerate(rows[:3]):
-            _text(d, (341, 666+i*23), f'{i+1}. {row.get("label") or ""} {row.get("odds") or ""}', 14, 314, WHITE)
+        for i, row in enumerate(rows):
+            _text(d, (341, 661+i*16),
+                  f'{i+1}. {row.get("label") or ""} {row.get("odds") or ""}',
+                  12, 314, WHITE)
     elif family == 'builder':
-        # Clear all three stale athlete portraits and all printed example info.
+        # Remove the stale three sample athletes and reconstruct ALL submitted
+        # player slots, up to six. The owner original remains the background.
         _clean_hero(im, (0, 135, 691, 411))
-        n = min(len(rows), 6)
-        w = 681 // max(1, min(n,3))
-        for i, r in enumerate(rows[:3]):
-            x = 8 + i * w
-            _portrait(im, r.get('photo'), (x+8, 116, x+w-8, 276), r.get('name') or '')
-            _rect(im, (x+4, 281, x+w-5, 345), NAVY, 6, GOLD, 1)
-            _text(d, (x+w//2, 291), r.get('name'), 17, w-17, WHITE, 'mt')
-            _text(d, (x+w//2, 319), r.get('label'), 17, w-17, GOLD, 'mt')
-            _rect(im, (x+4, 357, x+w-5, 408), NAVY, 4, CYAN, 1)
-            _text(d, (x+w//2, 372), _f(r.get('form')) or '—', 15, w-17, GREEN, 'mt')
+        n = len(rows)
+        columns = min(n, 3)
+        w = 681 // max(1, columns)
+        if n <= 3:
+            for i, r in enumerate(rows):
+                x = 8 + i*w
+                _portrait(im, r.get('photo'), (x+8, 116, x+w-8, 276), r.get('name') or '')
+                _rect(im, (x+4, 281, x+w-5, 345), NAVY, 6, GOLD, 1)
+                _text(d, (x+w//2, 291), r.get('name'), 17, w-17, WHITE, 'mt')
+                _text(d, (x+w//2, 319), r.get('label'), 17, w-17, GOLD, 'mt')
+                _rect(im, (x+4, 357, x+w-5, 408), NAVY, 4, CYAN, 1)
+                _text(d, (x+w//2, 372), _f(r.get('form')) or '—',
+                      15, w-17, GREEN, 'mt')
+        else:
+            # Two rows of 2/3 real athlete portraits. Previously the fourth,
+            # fifth and sixth legs existed only in tiny text at the bottom.
+            for i, r in enumerate(rows):
+                col, rowno = i%3, i//3
+                x = 8 + col*w
+                py0, py1 = (123, 235) if rowno == 0 else (272, 363)
+                label_y0, label_y1 = (236, 269) if rowno == 0 else (364, 409)
+                _portrait(im, r.get('photo'),
+                          (x+7, py0, x+w-8, py1), r.get('name') or '')
+                _rect(im, (x+4,label_y0,x+w-5,label_y1), NAVY, 5, GOLD, 1)
+                _text(d, (x+w//2, label_y0+3), r.get('name'),
+                      14, w-15, WHITE, 'mt')
+                _text(d, (x+w//2, label_y0+19),
+                      r.get('label'), 13, w-16, GOLD, 'mt')
+        # The original artwork says "3-LEG BUILDER" permanently. Redraw the
+        # number with the ACTUAL submitted leg count.
+        _rect(im, (82, 523, 419, 584), NAVY, 6, CYAN, 1)
+        _text(d, (252, 553), f'{n}-LEG BUILDER', 23, 315, WHITE, 'mm')
         _rect(im, (423, 527, 662, 580), (55, 35, 8, 255), 7, GOLD, 2)
         _text(d, (540, 549), footer or '—', 19, 228, GOLD, 'mm')
         _rect(im, (82, 590, 646, 710), NAVY, 5, CYAN, 1)
