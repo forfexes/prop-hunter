@@ -308,3 +308,67 @@ for count in (3,6,9):
                                 "Quote @2.15 · Einsatz 1u")
     assert len(photos)==(1+count if count<=6 else 1),(count,photos)
 print("LOTTERY REAL LEG PORTRAITS / TEXT-ONLY HIGH-DENSITY LAYOUT PASS")
+
+# Clean fixture: the two team labels are ONLY beside VS, never repeated in
+# the large right-side legacy 'SPIEL / Home / Away' box.
+fixture_rows=[{"name":"Test Athlete","photo":_fixture_photo(0),
+               "label":"Points Under 12.5","odds":"@1.75",
+               "form":"L5 4/5 L10 8/10 L15 12/15",
+               "model":{"prob":"65","edge":"+26.1","confidence":"85/100"}}]
+match_teams=[("BOS Celtics",None),("DEN Nuggets",None)]
+for kind in ("single","ladder"):
+    rows=fixture_rows if kind=="single" else [
+        dict(fixture_rows[0],name="One Real Athlete"),
+        dict(fixture_rows[0],name="One Real Athlete",label="Points Under 14.5")]
+    for extra_time in (""," · Do 19.11. · 18:30"):
+        with patch.object(originals,"_text",wraps=originals._text) as texts:
+            png=originals.original_card(kind,kind.upper(),
+                        "BOS Celtics @ DEN Nuggets"+extra_time,
+                        "NBA",match_teams,rows,"Quote @1.75 · Einsatz 1u")
+            fields=[str(c.args[2]) for c in texts.call_args_list]
+            assert "SPIEL" not in fields,fields
+            assert fields.count("BOS Celtics")==1,fields
+            assert fields.count("DEN Nuggets")==1,fields
+            assert ("SPIELBEGINN" in fields)==bool(extra_time),fields
+            assert ("Do 19.11. · 18:30" in fields)==bool(extra_time),fields
+        out=Path("poster_previews")/f"{kind}_clean_match_{'kickoff' if extra_time else 'no_time'}.png"
+        out.write_bytes(png)
+
+sky=originals._source("single")
+clean=sky.copy()
+originals._erase_redundant_match_box(clean,"single")
+assert clean.getpixel((609,204))!=sky.getpixel((609,204))
+assert clean.getpixel((320,204))==sky.getpixel((320,204))
+print("SINGLE + LADDER REDUNDANT MATCH PANEL REMOVAL AND VERIFIED KICKOFF TEST PASS")
+
+# Exact-model evidence: neither prices nor recent form may manufacture a
+# probability, edge or confidence, but published pick values must be visible.
+from types import SimpleNamespace as NS
+evidence=cards._display_model_evidence(NS(probability=.65,edge_pct=26.1,confidence_score=85))
+assert evidence=={"prob":"65","edge":"+26.1","confidence":"85/100"},evidence
+missing=cards._display_model_evidence(NS(odds=2.5,features={"recent_form":{"l5":{"hits":5,"n":5}}}))
+assert missing=={"prob":"","edge":"","confidence":""},missing
+explicit=cards._display_model_evidence(NS(probability=.65,edge_pct=21.1,
+    _display_model={"prob":"67.4","edge":"+22.5","confidence":"86/100"}))
+assert explicit=={"prob":"67.4","edge":"+22.5","confidence":"86/100"},explicit
+saved=cards.snapshot(NS(type="single",player="Test Athlete",odds=1.82,
+                       probability=.65,edge_pct=26.1,confidence_score=85))
+assert saved["probability"]==.65 and saved["edge_pct"]==26.1
+print("VERIFIED MODEL OUTPUTS AND SNAPSHOT ROUNDTRIP, NO FAKE NUMBERS PASS")
+
+# ESPN uses PHX for Phoenix, while some bookmakers use PHO Suns.
+fake_teams={"sports":[{"leagues":[{"teams":[
+    {"team":{"displayName":"Phoenix Suns","name":"Suns","nickname":"Suns",
+             "abbreviation":"PHX","logos":[{"href":"https://test.invalid/suns.png"}]}},
+    {"team":{"displayName":"Boston Celtics","name":"Celtics","nickname":"Celtics",
+             "abbreviation":"BOS","logos":[{"href":"https://test.invalid/boston.png"}]}}
+]}]}]}
+cards._CACHE.pop("teams:nba",None)
+with patch.object(cards,"_get_json",return_value=fake_teams), \\
+     patch.object(cards,"_get_image",side_effect=lambda url:Image.new("RGBA",(32,32),
+                                               (255,90,90,255)) if url else None):
+    assert cards.team_logo("PHO Suns",("basketball","nba")) is not None
+    assert cards.team_logo("PHX Suns",("basketball","nba")) is not None
+    assert cards.team_logo("XYZ Suns",("basketball","nba")) is None
+cards._CACHE.pop("teams:nba",None)
+print("PHO SUNS ESPN LOGO ALIAS MATCH / NO WRONG CRESTS PASS")
