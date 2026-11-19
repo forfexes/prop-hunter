@@ -364,7 +364,7 @@ fake_teams={"sports":[{"leagues":[{"teams":[
              "abbreviation":"BOS","logos":[{"href":"https://test.invalid/boston.png"}]}}
 ]}]}]}
 cards._CACHE.pop("teams:nba",None)
-with patch.object(cards,"_get_json",return_value=fake_teams), \\
+with patch.object(cards,"_get_json",return_value=fake_teams), \
      patch.object(cards,"_get_image",side_effect=lambda url:Image.new("RGBA",(32,32),
                                                (255,90,90,255)) if url else None):
     assert cards.team_logo("PHO Suns",("basketball","nba")) is not None
