@@ -28,6 +28,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: prop-hunter-nba-master-preview-15
-          path: diagnostics/nba_master_visual_qa.png
+          path: diagnostics/nba_master_*.png
           retention-days: 14
           if-no-files-found: error
