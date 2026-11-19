@@ -12,6 +12,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   migrate_existing:
+    # Workflow-definition pushes are CI-only; never edit older Telegram posts
+    # unless an explicit dated repair was requested.
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[repair-18]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
