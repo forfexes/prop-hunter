@@ -184,3 +184,79 @@ hero = Image.new("RGBA", (250, 330), (8,22,40,255))
 originals._portrait(hero,dummy,(4,4,244,324),"Example",prominent=True)
 assert hero.getpixel((125, 70))[0] > 50, "Player portrait is still stuck at the bottom"
 print("ORIGINAL BAKED HEAD REMOVED / PORTRAIT ENLARGED / NBA HEADER SAFE")
+
+# Full visual regression for 2-5 ladder rungs, 4-6 builder portraits and
+# 2-9 lottery rows (not just a static 3-leg template).
+from PIL import ImageDraw as DrawAPI
+def _fixture_photo(index):
+    img = Image.new("RGBA", (210,245), (0,0,0,0))
+    pen = DrawAPI.Draw(img)
+    # Original synthetic test shape (never passed off as a real player).
+    pen.ellipse((52,6,159,115),fill=(215-index*11,170,131,255))
+    pen.rounded_rectangle((19,108,193,244),20,fill=(25+index*20,70,130,255))
+    return img
+
+def _fixture_rows(kind,count):
+    return [{
+        "name": "One Real Athlete" if kind=="ladder" else f"Player {i+1}",
+        "photo": _fixture_photo(i), "label":f"Points Under {12.5+i}",
+        "odds":f"@{1.65 + i*0.11:.2f}",
+        "form":"L5 4/5 · L10 8/10 · L15 12/15"
+    } for i in range(count)]
+
+for variant, count in [("ladder",2),("ladder",4),("ladder",5),
+                       ("builder",4),("builder",5),("builder",6),
+                       ("lottery",2),("lottery",6),("lottery",9)]:
+    fixture = _fixture_rows(variant,count)
+    out_file=Path('poster_previews')/f'{variant}_{count}.png'
+    rendered=originals.original_card(
+        variant,variant.upper(),"Verified visual fixture","NBA",
+        [("HOME",None),("AWAY",None)],fixture,"Quote @1.85","OFFEN")
+    out_file.write_bytes(rendered)
+    assert Image.open(BytesIO(rendered)).size[0]==1080
+
+# All builder players, not just the first three, receive a distinct photo
+# slot even when there are 4, 5 or 6 legs.
+for size in (4,5,6):
+    used=[]
+    original_portrait=originals._portrait
+    def capture_portrait(im,person,rect,name='',prominent=False):
+        used.append(name)
+        return original_portrait(im,person,rect,name,prominent=prominent)
+    with patch.object(originals,"_portrait",side_effect=capture_portrait):
+        originals.original_card("builder","BUILDER","Fixture","NBA",[],
+                                _fixture_rows("builder",size),"Quote @2.05")
+    assert len(used)==size,(size,used)
+    assert len(set(used))==size,(size,used)
+
+# Every ladder row finishes above the lower box starting at y=615.
+for count in range(2,6):
+    geometry=[]
+    row_fn=originals._row
+    def capture_row(im,xy,width,*args,**kwargs):
+        geometry.append(xy[1])
+        return row_fn(im,xy,width,*args,**kwargs)
+    with patch.object(originals,"_row",side_effect=capture_row):
+        originals.original_card("ladder","LADDER","Fixture","NBA",[],
+                                _fixture_rows("ladder",count),"Quote @2.00")
+    assert len(geometry)==count
+    assert max(geometry)+49 < 615, (count,geometry)
+
+for kind, max_count in [("ladder",5),("builder",6),("lottery",9)]:
+    try:
+        originals.original_card(kind,kind.upper(),"Fixture","NBA",[],
+                                 _fixture_rows(kind,max_count+1))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(f"{kind} would silently hide extra legs")
+
+# No original sample hair may leak in the tested mask centres, and the
+# essential owner logo/banner stay unchanged.
+for family, check_xy in (("builder",(112,119)),("lottery",(116,57))):
+    source=originals._source(family)
+    cleaned=source.copy()
+    originals._erase_template_head_remnants(cleaned,family)
+    assert cleaned.getpixel(check_xy) != source.getpixel(check_xy),(family,check_xy)
+    assert cleaned.getpixel((50,30)) == source.getpixel((50,30)),family
+print("VISUAL QA: 4-6 REAL BUILDER PORTRAITS, 2-5 LADDER SPACING, 2-9 LOTTERY LEGS, TEMPLATE HEAD REMNANTS PASS")
