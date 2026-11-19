@@ -72,4 +72,8 @@ for i,key in enumerate(keys):
 out=Path('diagnostics/nba_master_visual_qa.png')
 out.parent.mkdir(parents=True,exist_ok=True)
 overview.save(out,optimize=True)
-print('NBA_MASTER_QA: 52/52 layered masters passed; single/ladders/builders/lottery; 2-6 legs; transparent photos; verified odds; rendered contact sheet:',out,flush=True)
+for key in ('single_single','ladder_4','builder_6','lottery_5'):
+    full=Path('diagnostics')/('nba_master_'+key+'.png')
+    cairosvg.svg2png(bytestring=(ROOT/templates[key]['file']).read_bytes(),
+                     write_to=str(full),output_width=1080,output_height=1440)
+print('NBA_MASTER_QA: 52/52 layered masters passed; single/ladders/builders/lottery; 2-6 legs; transparent photos; verified odds; rendered contact sheet + four full-size masters:',out,flush=True)
