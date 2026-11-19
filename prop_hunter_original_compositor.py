@@ -92,26 +92,69 @@ def _erase_single_bridge(im):
 
 
 def _hide_baked_single_head(im):
-    """Erase the example athlete above the new single-card portrait frame.
+    """Replace the sample athlete's hair with actual clean stadium pixels.
 
-    Keep the NBA badge, gold header and original source artwork untouched.
+    A stretched copy of the unobstructed RIGHT stadium sky is blended into
+    the affected LEFT sky. No solid navy rectangle and no synthetic face.
+    The NBA badge and gold header sit outside the masked region.
     """
     x0, y0, x1, y1 = 77, 67, 202, 141
-    patch = Image.new("RGBA", (x1-x0, y1-y0))
-    pixels = patch.load()
-    for y in range(y1-y0):
-        t = y/max(1,y1-y0-1)
-        color = (3+int(3*t), 12+int(8*t), 27+int(14*t), 255)
-        for x in range(x1-x0):
-            pixels[x,y] = color
-    mask = Image.new("L", patch.size, 0)
-    m = mask.load()
-    w, h = patch.size
-    for y in range(h):
-        for x in range(w):
-            edge = min(x, y, w-1-x, h-1-y)
-            m[x,y] = int(255*min(1.,edge/7.))
-    im.paste(patch,(x0,y0),mask)
+    # In the owner's exact JPEG, right-upper sky at x=536..682 and y=19..116
+    # is clean arena lighting. The old opaque dark patch was a visible bar.
+    donor = im.crop((536, 19, 682, 116)).resize(
+        (x1-x0, y1-y0), Image.Resampling.LANCZOS)
+    donor = donor.filter(ImageFilter.GaussianBlur(1.1))
+    feather = Image.new('L', donor.size, 0)
+    md = ImageDraw.Draw(feather)
+    md.rectangle((9, 9, donor.width-9, donor.height-7), fill=255)
+    feather = feather.filter(ImageFilter.GaussianBlur(6))
+    im.paste(donor, (x0, y0), feather)
+
+
+def _erase_redundant_match_box(im, family):
+    """Replace the baked-in sample match-info panel with clean arena sky.
+
+    Logos and matchup immediately to the left already identify both teams.
+    A small kickoff label may be painted later ONLY with supplied timestamp.
+    """
+    if family == 'single':
+        x0,y0,x1,y1 = 514, 139, 691, 269
+        donor_box = (526, 16, 688, 137)
+    elif family == 'ladder':
+        x0,y0,x1,y1 = 488, 147, 691, 286
+        donor_box = (490, 18, 681, 142)
+    else:
+        return
+    donor = im.crop(donor_box).resize((x1-x0,y1-y0),Image.Resampling.LANCZOS)
+    donor = donor.filter(ImageFilter.GaussianBlur(1))
+    # Preserve natural header boundary with a soft left and top transition.
+    mask = Image.new('L', donor.size, 255)
+    mm = ImageDraw.Draw(mask)
+    for x in range(14):
+        alpha=int(255*x/14)
+        mm.line((x,0,x,donor.height),fill=alpha)
+    for y in range(7):
+        alpha=int(255*y/7)
+        mm.line((0,y,donor.width,y),fill=alpha)
+    im.paste(donor, (x0,y0), mask)
+
+
+def _verified_kickoff_label(subtitle):
+    """Extract date/time already appended from a real commence_time field."""
+    matched=re.search(r'\b(?:Mo|Di|Mi|Do|Fr|Sa|So)\s+\d{2}\.\d{2}\.(?:\s*·\s*\d{2}:\d{2})?',str(subtitle or ''))
+    return matched.group(0) if matched else ''
+
+
+def _paint_kickoff_label(im, family, subtitle):
+    when=_verified_kickoff_label(subtitle)
+    if not when:
+        return
+    is_time=bool(re.search(r'\d{2}:\d{2}',when))
+    cx,cy=(603,194) if family=='single' else (589,208)
+    d=ImageDraw.Draw(im)
+    _text(d,(cx,cy-16),'SPIELBEGINN' if is_time else 'SPIELDATUM',
+          14,166,GOLD,'mm')
+    _text(d,(cx,cy+17),when,17,182,WHITE,'mm')
 
 
 def _erase_template_head_remnants(im, family):
@@ -303,12 +346,12 @@ def _header(im, family, sport_label, subtitle, teams):
         _rect(im, (227, 143, 349, 273), NAVY, 9)
         _rect(im, (400, 143, 514, 273), NAVY, 9)
         boxes = ((278, 155), (457, 155))
-        _rect(im, (517, 142, 689, 263), NAVY, 8, CYAN, 1)
+        # The redundant right-hand Home/Away box is erased below.
     elif family == 'ladder':
         _rect(im, (124, 152, 248, 281), NAVY, 8)
         _rect(im, (328, 152, 475, 281), NAVY, 8)
         boxes = ((183, 160), (400, 160))
-        _rect(im, (490, 150, 687, 280), NAVY, 8, CYAN, 1)
+        # The redundant right-hand Home/Away box is erased below.
     elif family == 'builder':
         _rect(im, (108, 411, 315, 481), NAVY, 7)
         _rect(im, (380, 411, 608, 481), NAVY, 7)
@@ -321,22 +364,17 @@ def _header(im, family, sport_label, subtitle, teams):
         _rect(im, (513, 109, 689, 251), NAVY, 8, VIOLET, 1)
     for i, item in enumerate(teams[:2]):
         _team(im, item, boxes[i][0], boxes[i][1], size=(41 if family == "builder" else 63))
-    d = ImageDraw.Draw(im)
-    if family == 'builder':
-        _text(d, (348, 498), subtitle, 16, 353, WHITE, 'mm')
-    elif family in ('single', 'ladder'):
-        center_x = 603 if family == 'single' else 587
-        y0 = 159 if family == 'single' else 166
-        _text(d, (center_x, y0), 'SPIEL', 15, 154, GOLD, 'mt')
-        if len(teams) >= 2:
-            for idx, (_, team) in enumerate((('away', teams[0]), ('home', teams[1]))):
-                raw_name = str(team[0] or '').strip()
-                short_name = raw_name.rsplit(' ', 1)[-1] if len(raw_name) > 13 else raw_name
-                _text(d, (center_x, y0 + 27 + idx * 31), short_name, 15, 155, WHITE, 'mt')
-        else:
-            _text(d, (center_x, y0 + 40), subtitle, 13, 155, WHITE, 'mt')
+    # Eliminate duplicated team names in the right field.
+    # Match names/logos stay next to VS. Only an evidence-backed kickoff appears.
+    if family in ('single','ladder'):
+        _erase_redundant_match_box(im, family)
+        _paint_kickoff_label(im, family, subtitle)
     else:
-        _text(d, (600, 144), subtitle, 12, 155, WHITE, 'mt')
+        d = ImageDraw.Draw(im)
+        if family == 'builder':
+            _text(d, (348, 498), subtitle, 16, 353, WHITE, 'mm')
+        else:
+            _text(d, (600, 144), subtitle, 12, 155, WHITE, 'mt')
 
 
 def _f(form):
