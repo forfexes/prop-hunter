@@ -279,3 +279,17 @@ with patch.object(originals,"_text",wraps=originals._text) as written:
     assert "@1.85" in fields, fields
     assert not any("L5 " in v or "L10 " in v or "L15 " in v for v in fields),fields
 print("LOTTERY ODDS NOT TRUNCATED, REAL STAKE ONLY, PLAYER PHOTO SINGLE PASS")
+
+# Previously visible ghost: original Lottery arm below portrait and hair behind
+# the builder gold bar. These specific template pixels must be altered without
+# touching upper branding or unrelated clean stadium.
+for family, point in (("lottery",(52,310)),("builder",(347,120))):
+    before=originals._source(family)
+    after=before.copy()
+    if family=="lottery":
+        originals._fade_baked_lottery_arm(after)
+    else:
+        originals._erase_template_head_remnants(after,family)
+    assert before.getpixel(point)!=after.getpixel(point),(family,point)
+    assert before.getpixel((470,50))==after.getpixel((470,50)),family
+print("SOURCE ATHLETE GHOST REGRESSION / ORIGINAL TOP BRANDING PRESERVED")
