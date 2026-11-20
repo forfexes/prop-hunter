@@ -655,7 +655,9 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
-        if league and league[1] == "nba" and os.getenv("PH_NBA_PREMIUM_V2", "0") == "1":
+        # Strict premium-only policy: no legacy/procedural card renderer for any sport.
+        # If a verified premium master is unavailable, do not publish a replacement design.
+        if league and league[1] == "nba":
             try:
                 from prop_hunter_nba_premium_adapter import render_nba_pick
                 png = render_nba_pick(pick, rows, teams)
@@ -664,10 +666,9 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             except Exception as exc:
                 print("NBA_PREMIUM_V2_NOT_READY type=%s reason=%s: %s" %
                       (typ, type(exc).__name__, str(exc)[:160]), flush=True)
-                if os.getenv("PH_NBA_PREMIUM_V2_REQUIRE", "0") == "1":
-                    return None
-                # Safe compatibility fallback: never invent data to force a premium card.
-        return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""), template_sport=str(sport_hint or (league[1] if league else "NBA")).upper())
+                return None
+        print("PREMIUM_ONLY_NO_VERIFIED_MASTER sport=%s type=%s" % (str(sport_hint), typ), flush=True)
+        return None
     except Exception as exc:
         # Do not silently hide broken historical card data: the migration needs
         # an actionable failure class without exposing player or Telegram data.
