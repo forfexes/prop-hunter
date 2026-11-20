@@ -14,7 +14,7 @@ import cairosvg
 
 HERE=Path(__file__).resolve().parent
 W,H=1080,1440
-GOLD='#FFD66B'; BLUE='#35C9FF'; GREEN='#2CFF8E'; WHITE='#F5F7FF'; MUTED='#A9C9DE'; DARK='#04101F'
+GOLD='#FFD66B'; BLUE='#35C9FF'; GREEN='#2CFF8E'; PURPLE='#D83AFF'; WHITE='#F5F7FF'; MUTED='#A9C9DE'; DARK='#04101F'
 
 MARKETS={
 'single':'PRO TIP · SINGLE','points':'POINTS','rebounds':'REBOUNDS','assists':'ASSISTS',
@@ -64,6 +64,7 @@ def svg_start():
 <linearGradient id="metal" x2="0" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".36" stop-color="#F9FCFF"/><stop offset=".54" stop-color="#C5D3E3"/><stop offset=".77" stop-color="#FFFFFF"/><stop offset="1" stop-color="#65758A"/></linearGradient>
 <linearGradient id="green" x2="0" y2="1"><stop stop-color="#114D37"/><stop offset=".4" stop-color="#031D15"/><stop offset="1" stop-color="#020F0B"/></linearGradient>
 <linearGradient id="amber" x2="0" y2="1"><stop stop-color="#765012"/><stop offset=".4" stop-color="#2A1703"/><stop offset="1" stop-color="#080E16"/></linearGradient>
+<linearGradient id="purple" x2="0" y2="1"><stop stop-color="#681580"/><stop offset=".4" stop-color="#250634"/><stop offset="1" stop-color="#0E0924"/></linearGradient>
 <linearGradient id="glass" x2="0" y2="1"><stop stop-color="#0D2C4B" stop-opacity=".35"/><stop offset="1" stop-color="#030C19" stop-opacity=".85"/></linearGradient>
 </defs>
 <g id="layer-01-arena-photo" data-static-background="true"><image x="0" y="0" width="1080" height="1440" preserveAspectRatio="xMidYMid slice" xlink:href="assets/arena.jpg"/></g>
@@ -71,7 +72,7 @@ def svg_start():
 <path d="M0 1000 H1080 V1250 H0Z" fill="#001328" opacity=".27"/></g>
 '''
 
-def header(label,small='NBA'):
+def header(label,small='NBA',accent=GOLD):
     return f'''<g id="layer-03-branding">
 <path d="M498 64 L510 23 L540 45 L570 23 L582 64Z" fill="url(#gold)" stroke="#FFF0A0" stroke-width="3"/>
 <circle cx="540" cy="105" r="58" stroke="#E9B53C" stroke-width="4" fill="none" opacity=".65"/>
@@ -79,7 +80,7 @@ def header(label,small='NBA'):
 <text x="540" y="130" font-family="DejaVu Sans,Arial,sans-serif" font-size="69" font-weight="900" font-style="italic" text-anchor="middle" fill="url(#metal)" stroke="#E1A12C" stroke-width="1.8" paint-order="stroke">PROP-HUNTER</text>
 <path d="M330 147 H750" stroke="#F3C25E" stroke-width="3" opacity=".9"/>
 {neon_box(38,38,115,121,GOLD,16)}<image x="69" y="40" width="54" height="116" preserveAspectRatio="xMidYMid meet" xlink:href="assets/nba_logo.png" data-static-nba-logo="true"/>
-{neon_box(231,164,618,76,GOLD,16,'url(#amber)')}{txt(540,217,label,30 if len(label)>22 else 36,'url(#gold)','middle',italic=True)}
+{neon_box(231,164,618,76,accent,16,'url(#purple)' if accent==PURPLE else 'url(#amber)')}{txt(540,217,label,30 if len(label)>22 else 36,'#FFE7FF' if accent==PURPLE else 'url(#gold)','middle',italic=True)}
 </g>'''
 
 def crest_pair(y=275,mini=False):
@@ -102,9 +103,9 @@ def match_info(x=837,y=305):
 {txt(x,y+184,'ARENA',18,GOLD)}{dynamic(x,y+220,'venue',19)}
 </g>'''
 
-def settlement(y=1260):
+def settlement(y=1260,accent=GOLD):
     return f'''<g id="layer-12-settlement">
-{neon_box(39,y,765,95,GOLD,12,'url(#amber)')}
+{neon_box(39,y,765,95,accent,12,'url(#purple)' if accent==PURPLE else 'url(#amber)')}
 {txt(66,y+60,'◎ AUSWERTUNG:',34,WHITE,italic=True)}
 {dynamic(540,y+60,'settlement',32,GOLD,'middle',True)}
 {txt(1038,y+134,'@prophunter',28,WHITE,'end',italic=True)}
@@ -130,20 +131,21 @@ def stats(y=833,for_ladder=False):
     return s+'</g>'
 
 def single(label):
-    s=svg_start()+header(label)
+    s=svg_start()+header('PRO TIP — SINGLE')
     s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-45,180,408,700)}</g>'
     s+=crest_pair(286)+match_info(838,286)
-    s+=f'<g id="layer-07-player-name">{dynamic(692,567,"player_name",48,WHITE,"middle",True)}</g>'
-    s+=f'<g id="layer-08-bet-market">{neon_box(303,603,531,112,GREEN,22,"url(#green)")}'
-    s+=dynamic(566,673,'market',43,WHITE,'middle',True)
-    s+=neon_box(850,603,202,112,GOLD,20,'url(#amber)')+dynamic(951,674,'odds',43,GOLD,'middle',True)+'</g>'
+    s+=f'<g id="layer-07-player-name">{dynamic(692,532,"player_name",48,WHITE,"middle",True)}</g>'
+    s+=f'<g id="layer-07-market-title">{txt(569,605,label,37,WHITE,"middle",italic=True)}</g>'
+    s+=f'<g id="layer-08-bet-market">{neon_box(303,639,531,112,GREEN,22,"url(#green)")}'
+    s+=dynamic(566,709,'market',43,WHITE,'middle',True)
+    s+=neon_box(850,639,202,112,GOLD,20,'url(#amber)')+dynamic(951,710,'odds',43,GOLD,'middle',True)+'</g>'
     s+=stats(801)+settlement(1228)+'</svg>'
     return s
 
 def leg_row(x,y,w,h,i,family):
     # All leg-specific elements are independent; no baked players or sample odds.
     is_ladder=family in ('ladder','same_player')
-    c=GREEN if is_ladder else BLUE
+    c=GREEN if is_ladder else PURPLE if family=='lottery' else BLUE
     s=f'<g id="layer-leg-{i}">'+neon_box(x,y,w,h,c,14)
     s+=rect(x+12,y+14,85,h-28,10,'url(#gold)','none',0,1)
     s+=txt(x+55,y+h/2+10,f'{i}.',30,'#071226','middle',italic=True)
@@ -162,7 +164,8 @@ def leg_row(x,y,w,h,i,family):
     return s
 
 def multi(family,n):
-    s=svg_start()+header(f'{FAMILIES[family]} · {n} LEGS')
+    accent=PURPLE if family=='lottery' else GOLD
+    s=svg_start()+header(f'{FAMILIES[family]} · {n} LEGS',accent=accent)
     same=family in ('ladder','same_player')
     if same:
         s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-45,175,405,805)}</g>'
@@ -193,7 +196,7 @@ def multi(family,n):
         s+=neon_box(726,1124,320,97,BLUE,16)
         s+=txt(746,1186,'EINSATZ',28,WHITE,italic=True)+dynamic(1022,1186,'stake',34,GOLD,'end',True)
     s+='</g>'
-    s+=settlement(1240)+'</svg>'
+    s+=settlement(1240,accent=accent)+'</svg>'
     return s
 
 
