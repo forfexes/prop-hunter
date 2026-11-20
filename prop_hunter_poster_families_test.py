@@ -73,11 +73,15 @@ ladder_pick = SimpleNamespace(type="ladder", player="Player One", game="Test",
 with patch.object(cards, "player_photo", return_value=None):
     assert cards.build_for_pick(ladder_pick) is None
 ladder_pick.leg_details[1]["player"] = "Player One"
-with patch.object(cards, "player_photo", return_value=None), patch.object(cards, "render", return_value=b"ok") as rr:
-    assert cards.build_for_pick(ladder_pick) == b"ok"
-    assert len(rr.call_args.args[5]) == 2
-    assert {row["name"] for row in rr.call_args.args[5]} == {"Player One"}
-print("EIGHT SPORT ROUTES / FOUR SHARED ORIGINAL-LAYOUT SLOTS / SINGLE-PLAYER LADDER PASSED")
+# Production MUST use the NBA premium adapter, never the old compositor.
+with patch.object(cards, "ON", True), \
+     patch.object(cards, "player_photo", return_value=None), \
+     patch.object(cards, "render", side_effect=AssertionError("legacy image used")), \
+     patch("prop_hunter_nba_premium_adapter.render_nba_pick", return_value=b"PREMIUM") as premium:
+    assert cards.build_for_pick(ladder_pick) == b"PREMIUM"
+    assert len(premium.call_args.args[1]) == 2
+    assert {row["name"] for row in premium.call_args.args[1]} == {"Player One"}
+print("EIGHT SPORT ROUTES / FOUR ORIGINAL-LAYOUT SLOTS / PREMIUM-ONLY LADDER PASSED")
 
 # The generator consumes a real render-ready artwork file when present.
 # It must NOT silently claim that an absent user master exists.
@@ -120,9 +124,14 @@ print("ALL FOUR EXACT USER ORIGINAL JPGS VERIFIED IN GITHUB CHECKOUT")
 wnba_pick = SimpleNamespace(type="single", player="Test WNBA Athlete", game="Test",
     source_sport="WNBA", features={}, odds=1.9, stake=.25,
     market="points", direction="over", point=15.5)
-with patch.object(cards, "player_photo", return_value=None), patch.object(cards, "render", return_value=b"ok") as rr:
-    assert cards.build_for_pick(wnba_pick) == b"ok"
-    assert template_location(rr.call_args.kwargs["template_sport"],"single") == template_location("NBA","single")
+# The artwork registry is shared, but WNBA production must NOT use NBA-only
+# cards before WNBA has a verified premium adapter of its own.
+with patch.object(cards, "ON", True), \
+     patch.object(cards, "player_photo", side_effect=AssertionError("unexpected photo lookup")), \
+     patch.object(cards, "team_logo", side_effect=AssertionError("unexpected logo lookup")), \
+     patch.object(cards, "render", side_effect=AssertionError("legacy image used")):
+    assert cards.build_for_pick(wnba_pick) is None
+assert template_location("WNBA","single") == template_location("NBA","single")
 for hint, expected in [("NHL", "hockey"), ("NFL", "football"), ("WNBA", "basketball")]:
     assert cards.league_of(hint)[0] == expected
 print("NBA ORIGINAL ARTWORK SHARED BY WNBA/NHL/NFL, SPORTS DATA ROUTING PASS")
