@@ -37,16 +37,16 @@ for family, count in [("single",1),("ladder",3),("builder",3),("lottery",3)]:
     test_family(family,count)
 print("FOUR POSTER FAMILIES PNG RENDER PASS")
 
-# Every supported sport shares the SAME four NBA original layouts.
+# Every league gets its own clean master slots; screenshots share design intent only.
 assert len(all_required_templates()) == 4
 assert set(SPORTS) == {"NBA", "WNBA", "NCAAB", "EUROLEAGUE", "NFL", "NCAAF", "NHL", "MLB"}
 for league in SPORTS:
     for family in FAMILIES:
         assert template_location(league, family).suffix == ".webp"
-assert template_location("WNBA", "single") == template_location("NBA", "single")
-assert template_location("NCAAF", "builder") == template_location("NFL", "builder")
-assert template_location("NHL", "lottery") == template_location("NBA", "lottery")
-assert template_location("MLB", "ladder") == template_location("NBA", "ladder")
+assert template_location("WNBA", "single") != template_location("NBA", "single")
+assert template_location("NCAAF", "builder") != template_location("NFL", "builder")
+assert template_location("NHL", "lottery") != template_location("NBA", "lottery")
+assert template_location("MLB", "ladder") != template_location("NBA", "ladder")
 for key in SPORTS:
     assert cards.league_of(key), key
 
@@ -120,7 +120,7 @@ for family, fingerprint in _original_sha256.items():
         assert original.format == "JPEG" and original.size == (691, 1536)
 print("ALL FOUR EXACT USER ORIGINAL JPGS VERIFIED IN GITHUB CHECKOUT")
 
-# WNBA overlays its own sports data on the SAME NBA original artwork.
+# WNBA must NEVER use an NBA master, despite sharing card-family structure.
 wnba_pick = SimpleNamespace(type="single", player="Test WNBA Athlete", game="Test",
     source_sport="WNBA", features={}, odds=1.9, stake=.25,
     market="points", direction="over", point=15.5)
@@ -131,10 +131,10 @@ with patch.object(cards, "ON", True), \
      patch.object(cards, "team_logo", side_effect=AssertionError("unexpected logo lookup")), \
      patch.object(cards, "render", side_effect=AssertionError("legacy image used")):
     assert cards.build_for_pick(wnba_pick) is None
-assert template_location("WNBA","single") == template_location("NBA","single")
+assert template_location("WNBA","single") != template_location("NBA","single")
 for hint, expected in [("NHL", "hockey"), ("NFL", "football"), ("WNBA", "basketball")]:
     assert cards.league_of(hint)[0] == expected
-print("NBA ORIGINAL ARTWORK SHARED BY WNBA/NHL/NFL, SPORTS DATA ROUTING PASS")
+print("NFL/NHL/WNBA HAVE SEPARATE TEMPLATE SLOTS, NO CROSS-LEAGUE DESIGN FALLBACK")
 
 # Historical two-leg combination cards must use the builder artwork for settlement repaint.
 assert originals._family('kombi2') == 'builder'
