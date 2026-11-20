@@ -56,8 +56,17 @@ rejects(SimpleNamespace(**base,type="betbuilder",odds=5.10,
        leg_details=[{"odds":1.7},{"odds":1.8}],
        features={**feats,"combined_odds_observed":False}),legs,
        contains="combo ticket")
-rejects(SimpleNamespace(**base,type="betbuilder",odds=5.10,
-       leg_details=[{"odds":1.7},{"odds":1.8}],
-       features={**feats,"combo_scope":"cross_game"}),legs,
-       contains="Cross-game")
-print("NBA PREMIUM ADAPTER PASS: verified single, ladder, builder; authentic logos/photos; fail-closed missing tipoff/odds/assets")
+multi_legs=[{"odds":1.7,"game":"TEAM A vs TEAM B","commence_time":"2026-11-20T19:00:00+00:00","sport":"NBA"},
+            {"odds":1.8,"game":"TEAM C vs TEAM D","commence_time":"2026-11-21T20:00:00+00:00","sport":"NBA"}]
+cross=SimpleNamespace(**base,type="betbuilder",odds=5.10,leg_details=multi_legs,
+                      features={**feats,"combo_scope":"cross_game"})
+assert Image.open(BytesIO(render_nba_pick(cross,legs,[]))).size==(1080,1440)
+lottery=SimpleNamespace(**base,type="lottery",odds=18.25,leg_details=multi_legs)
+assert Image.open(BytesIO(render_nba_pick(lottery,legs,[]))).size==(1080,1440)
+rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
+       leg_details=[{**multi_legs[0],"game":""},multi_legs[1]]),legs,[],
+       contains="verified matchup")
+rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
+       leg_details=[{**multi_legs[0],"commence_time":None},multi_legs[1]],
+       commence_time=None),legs,[],contains="tipoff")
+print("NBA PREMIUM ADAPTER PASS: verified single, ladder, builder, cross-game, lottery; authentic logos/photos; fail-closed missing tipoff/odds/assets")
