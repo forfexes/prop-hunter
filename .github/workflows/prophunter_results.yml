@@ -222,7 +222,7 @@ jobs:
       - name: Settle and publish evaluation
         env:
           PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
-          PH_NBA_PREMIUM_V2_REQUIRE: '0'  # retain original for incomplete photos/odds; no invented fields
+          PH_NBA_PREMIUM_V2_REQUIRE: '1'  # strict premium-only; incomplete photo/odds never trigger legacy image
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
