@@ -1,0 +1,42 @@
+name: PROP HUNTER NFL NHL League-Isolation QA
+
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'prop_hunter_original_template_registry.py'
+      - 'test_prop_hunter_league_template_isolation.py'
+      - 'prop_hunter_image_cards.py'
+      - 'test_prop_hunter_premium_only.py'
+      - '.github/workflows/nfl_nhl_template_isolation_qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-no-telegram:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TELEGRAM_BOT_TOKEN: ''
+      TELEGRAM_CHAT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile league registry and offline guards
+        run: |
+          python -m py_compile prop_hunter_original_template_registry.py
+          python -m py_compile test_prop_hunter_league_template_isolation.py
+      - name: Check four original-layout slots per league without NBA fallback
+        run: python test_prop_hunter_league_template_isolation.py
+      - name: Install image-route test dependencies
+        run: python -m pip install --quiet requests pillow pytest
+      - name: Ensure NFL NHL cannot send an NBA or legacy image
+        run: python -m pytest -q test_prop_hunter_premium_only.py
+      - name: Explain release boundary
+        run: |
+          echo 'NFL and NHL asset locations isolated.'
+          echo 'This is NOT an approval of source artwork or Telegram image publication.'
+          echo 'Required next: four cleaned league-specific masters, logos/photos and visual QA.'
