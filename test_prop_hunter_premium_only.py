@@ -29,3 +29,16 @@ def test_non_nba_never_uses_legacy_renderer():
          patch.object(cards, "team_logo", side_effect=AssertionError("unexpected logo lookup")):
         for sport in ("NFL", "NHL", "MLB", "WNBA"):
             assert cards.build_for_pick(_pick(sport)) is None
+
+
+def test_nba_uses_premium_adapter_and_never_legacy():
+    """Successful NBA cards must come from the premium adapter only."""
+    from prop_hunter_nba_premium_adapter import render_nba_pick
+    fake_png = b"\\x89PNG\\r\\n\\x1a\\nPREMIUM"
+    with patch.object(cards, "ON", True), \
+         patch.object(cards, "player_photo", return_value=None), \
+         patch.object(cards, "team_logo", return_value=None), \
+         patch("prop_hunter_nba_premium_adapter.render_nba_pick", return_value=fake_png) as premium, \
+         patch.object(cards, "render", side_effect=AssertionError("legacy renderer called")):
+        assert cards.build_for_pick(_pick("NBA")) == fake_png
+        premium.assert_called_once()
