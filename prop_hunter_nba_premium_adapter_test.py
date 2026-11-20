@@ -110,6 +110,17 @@ with patch.object(image_cards, "ON", True), \
         assert rendered is not None, f"Production route rejected {family}"
         assert Image.open(BytesIO(rendered)).size == (1080, 1440), family
 
+# Never mix WNBA or other-league selections into an NBA-branded ticket.
+mixed_builder=SimpleNamespace(**base,type="betbuilder",odds=5.10,
+        leg_details=[{"odds":1.7,"sport":"NBA"},
+                     {"odds":1.8,"sport":"WNBA"}])
+rejects(mixed_builder,legs,contains="not NBA")
+mixed_ladder=SimpleNamespace(**base,type="ladder",player="TEST ATHLETE",
+        leg_details=[{"odds":1.75,"sport":"NBA"},
+                     {"odds":2.45,"sport":"EuroLeague"}])
+rejects(mixed_ladder,rungs,contains="not NBA")
+print("NBA LEAGUE ISOLATION PASS: no WNBA/EuroLeague legs in NBA cards")
+
 # Preserve QA-only render samples for visual inspection in GitHub Actions.
 # Synthetic names/odds/photos must never be published as actual Telegram tips.
 from pathlib import Path
