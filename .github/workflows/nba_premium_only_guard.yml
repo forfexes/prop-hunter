@@ -41,6 +41,23 @@ jobs:
           for family in single ladder builder lottery; do
             test -s "output/nba_premium_qa/${family}.png" || exit 1
           done
+      - name: Expose QA-only preview thumbnails for actual visual inspection
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import base64,io
+          for family in ('single','ladder','builder','lottery'):
+              path=Path('output/nba_premium_qa')/(family+'.png')
+              with Image.open(path) as source:
+                  thumb=source.convert('RGB')
+                  thumb.thumbnail((420,560),Image.Resampling.LANCZOS)
+                  out=io.BytesIO()
+                  thumb.save(out,'JPEG',quality=52,optimize=True)
+              print('NBA_PREMIUM_VISUAL_THUMB '+family+' '+
+                    base64.b64encode(out.getvalue()).decode('ascii'))
+          print('Synthetic QA only: not a Telegram publication or owner pixel-match approval')
+          PY
       - name: Upload NBA QA preview cards
         if: always()
         uses: actions/upload-artifact@v4
