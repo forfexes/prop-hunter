@@ -172,7 +172,7 @@ def render_nba_pick(pick, rows, teams):
                 game = str(detail.get("game") or detail.get("matchup") or "").strip()
                 if not game and feats.get("combo_scope") != "cross_game":
                     game = str(_get(pick, "game") or "").strip()
-                if not game or not re.search(r"\\s+(?:vs\\.?|@)\\s+", game, re.I):
+                if not game or not re.search(r"\s+(?:vs\.?|@)\s+", game, re.I):
                     raise PremiumDataMissing(f"Leg {i} has no verified matchup")
                 sport = str(detail.get("sport") or "NBA").lower()
                 if "nba" not in sport or "wnba" in sport:
