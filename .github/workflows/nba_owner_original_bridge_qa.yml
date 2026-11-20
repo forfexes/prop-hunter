@@ -1,0 +1,54 @@
+name: PROP HUNTER NBA Actual Owner Originals Integration QA
+
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'prop_hunter_nba_owner_bridge.py'
+      - 'prop_hunter_nba_premium_adapter.py'
+      - 'prop_hunter_original_compositor.py'
+      - 'test_prop_hunter_nba_owner_bridge.py'
+      - 'card_templates/cleaned/**'
+      - '.github/workflows/nba_owner_original_bridge_qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  no-telegram-owner-cards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install isolated bitmap compositing dependencies
+        run: python -m pip install --quiet pillow requests numpy cairosvg
+      - name: Compile source and run strict approved-owner adapter regression
+        run: |
+          python -m py_compile prop_hunter_nba_owner_bridge.py prop_hunter_nba_premium_adapter.py
+          python -m py_compile prop_hunter_original_compositor.py test_prop_hunter_nba_owner_bridge.py
+          python test_prop_hunter_nba_owner_bridge.py
+      - name: Show three synthetic source-original previews
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import base64,io
+          for name in ('single','ladder','builder'):
+              path=Path('output/nba_owner_qa')/(name+'.png')
+              with Image.open(path) as source:
+                  thumb=source.convert('RGB')
+                  thumb.thumbnail((420,560),Image.Resampling.LANCZOS)
+                  b=io.BytesIO()
+                  thumb.save(b,'JPEG',quality=55,optimize=True)
+              print('NBA_OWNER_ACTUAL_PREVIEW '+name+' '+
+                    base64.b64encode(b.getvalue()).decode('ascii'))
+          print('Source-derived artwork QA ONLY; no Telegram send')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nba-true-owner-single-ladder-builder-qa
+          path: output/nba_owner_qa/*.png
+          retention-days: 7
