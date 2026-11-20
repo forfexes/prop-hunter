@@ -80,6 +80,32 @@ with patch.dict(os.environ, {"PH_NBA_PREMIUM_V2": "1"}), \
      patch.object(image_cards, "render", side_effect=AssertionError("Legacy card unexpectedly used")):
     via_pipeline = image_cards.build_for_pick(single)
     assert via_pipeline and Image.open(BytesIO(via_pipeline)).size == (1080,1440)
+# Test all four families through the actual production routing, not only the adapter.
+with patch.object(image_cards, "ON", True), \
+     patch.object(image_cards, "player_photo", return_value=img()), \
+     patch.object(image_cards, "team_logo", return_value=img("logo")), \
+     patch.object(image_cards, "render", side_effect=AssertionError("Legacy renderer called")):
+    for family, pick in (("single", single), ("ladder", ladder),
+                         ("builder", builder), ("lottery", lottery)):
+        if family == "ladder":
+            pick.leg_details = [
+                {"player": "TEST ATHLETE", "market": "points", "odds": 1.75},
+                {"player": "TEST ATHLETE", "market": "points", "odds": 2.45},
+            ]
+        if family == "builder":
+            pick.leg_details = [
+                {"player": "TEST PLAYER A", "market": "points", "odds": 1.7},
+                {"player": "TEST PLAYER B", "market": "rebounds", "odds": 1.8},
+            ]
+        if family == "lottery":
+            pick.leg_details = [
+                {**multi_legs[0], "player": "TEST PLAYER A", "market": "points"},
+                {**multi_legs[1], "player": "TEST PLAYER B", "market": "rebounds"},
+            ]
+        rendered = image_cards.build_for_pick(pick)
+        assert rendered is not None, f"Production route rejected {family}"
+        assert Image.open(BytesIO(rendered)).size == (1080, 1440), family
+
 # Preserve QA-only render samples for visual inspection in GitHub Actions.
 # Synthetic names/odds/photos must never be published as actual Telegram tips.
 from pathlib import Path
