@@ -1,9 +1,9 @@
-"""Explicit mapping from each PROP HUNTER sport to the user's four ORIGINAL poster layouts.
+"""League-isolated locations for PROP HUNTER's four premium poster families.
 
-These paths are a contract, not a claim that the user-provided JPGs have been
-uploaded.  Only render-ready artwork with editable data slots can be enabled.
-A user screenshot containing prefilled players/odds is a reference/master,
-not a safe template for directly overprinting changing picks.
+The four user JPEG screenshots are present under card_templates/originals and
+are reference images only, NOT reusable blank masters. A league may publish a
+premium image only after that league's separate clean assets are approved.
+NEVER redirect NFL, NHL, WNBA or MLB to NBA artwork as a silent fallback.
 """
 from __future__ import annotations
 
@@ -11,31 +11,37 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent / "card_templates"
 FAMILIES = ("single", "ladder", "builder", "lottery")
-# All leagues use the SAME four original NBA layouts. Do not branch by sport.
-# Actual NHL/NFL/WNBA player photos, crests and labels are dynamic overlays.
+# Distinct clean masters are REQUIRED for each league. Sharing hierarchy
+# and layouts does not permit mixing official league logos or game assets.
 SPORTS = {
-    "NBA": "basketball",
-    "WNBA": "basketball",
-    "NCAAB": "basketball",
-    "EUROLEAGUE": "basketball",
-    "NFL": "basketball",
-    "NCAAF": "basketball",
-    "NHL": "basketball",
-    "MLB": "basketball",
+    "NBA": "nba",
+    "WNBA": "wnba",
+    "NCAAB": "ncaab",
+    "EUROLEAGUE": "euroleague",
+    "NFL": "nfl",
+    "NCAAF": "ncaaf",
+    "NHL": "nhl",
+    "MLB": "mlb",
 }
+# Legacy offline render functions pass generic sport names. Those generic
+# directories are NOT approved league masters and never activate production.
+LEGACY_GENERIC_FAMILIES = frozenset({"basketball", "football", "hockey", "baseball"})
 
 ORIGINAL_REFERENCE_NAMES = {
-    "single": "1000114998.jpg",
-    "ladder": "1000114995.jpg",
-    "builder": "1000114996.jpg",
-    "lottery": "1000114997.jpg",
+    "single": "single.jpg",
+    "ladder": "ladder.jpg",
+    "builder": "builder.jpg",
+    "lottery": "lottery.jpg",
 }
 
 def sport_family(name: str) -> str:
-    """All supported leagues and legacy sport names select NBA original artwork."""
+    """Resolve an exact league; NEVER map NFL/NHL/other leagues onto NBA."""
     key = str(name or "").strip().upper()
-    if key in SPORTS or key.lower() in ("basketball", "football", "hockey", "baseball", "wnba"):
-        return "basketball"
+    if key in SPORTS:
+        return SPORTS[key]
+    generic = key.lower()
+    if generic in LEGACY_GENERIC_FAMILIES:
+        return generic
     raise ValueError(f"Unsupported sport: {name!r}")
 
 def poster_family(kind: str) -> str:
@@ -57,5 +63,18 @@ def available_template(sport: str, kind: str) -> Path | None:
     return p if p.is_file() else None
 
 def all_required_templates() -> list[Path]:
-    """Exactly FOUR images, shared by NBA, NHL, NFL, WNBA, MLB, etc."""
+    """Four required NBA slots; other leagues require their OWN four slots."""
     return [template_location("NBA", family) for family in FAMILIES]
+
+
+def league_required_templates(league: str) -> list[Path]:
+    """All four explicit render-ready slots for a single requested league."""
+    key = str(league or "").strip().upper()
+    if key not in SPORTS:
+        raise ValueError(f"An explicit supported league is required: {league!r}")
+    return [template_location(key, family) for family in FAMILIES]
+
+
+def league_is_ready(league: str) -> bool:
+    """No publication unless all original-layout-derived clean masters exist."""
+    return all(path.is_file() for path in league_required_templates(league))
