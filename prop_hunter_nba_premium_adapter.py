@@ -31,8 +31,14 @@ def _photo(img, slot):
     if not isinstance(img, Image.Image):
         raise PremiumDataMissing(f"Unexpected {slot} type")
     out = img.convert("RGBA")
-    if (slot == "player_photo" or slot.endswith("_photo")) and out.getchannel("A").getextrema()[0] == 255:
-        raise PremiumDataMissing(f"{slot} must be a real transparent cutout")
+    if slot == "player_photo" or slot.endswith("_photo"):
+        alpha = out.getchannel("A")
+        # A single artificially translucent pixel is not a genuine cutout.
+        # Require a visible transparent border (>= 2% fully transparent area)
+        # before composing a player over the owner's original stadium.
+        clear_pixels = sum(alpha.histogram()[:32])
+        if clear_pixels < max(1, int(out.width * out.height * .02)):
+            raise PremiumDataMissing(f"{slot} must have a real transparent cutout border")
     buf = BytesIO()
     out.save(buf, format="PNG", optimize=True)
     return buf.getvalue()
