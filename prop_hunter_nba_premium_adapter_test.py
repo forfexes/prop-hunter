@@ -66,7 +66,7 @@ assert Image.open(BytesIO(render_nba_pick(lottery,legs,[]))).size==(1080,1440)
 rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
        leg_details=[{**multi_legs[0],"game":""},multi_legs[1]]),legs,[],
        contains="verified matchup")
-rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
-       leg_details=[{**multi_legs[0],"commence_time":None},multi_legs[1]],
-       commence_time=None),legs,[],contains="tipoff")
+rejects(SimpleNamespace(**{**base,"commence_time":None},type="lottery",odds=18.25,
+       leg_details=[{**multi_legs[0],"commence_time":None},multi_legs[1]]),legs,[],
+       contains="tipoff")
 print("NBA PREMIUM ADAPTER PASS: verified single, ladder, builder, cross-game, lottery; authentic logos/photos; fail-closed missing tipoff/odds/assets")
