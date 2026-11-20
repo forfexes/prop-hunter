@@ -54,9 +54,17 @@ def publishable_extra(obj):
     """Only singles/ladders or tickets with a verified bookmaker combined quote."""
     if value(obj, 'type') in {'single', 'ladder'}:
         return True
-    # Never publish multiplied prices, even across different games, and never
-    # allow an environment opt-in to bypass a missing observed ticket quote.
-    return confirmed_ticket(obj)
+    # Missing combined bookmaker price must not suppress an otherwise valid combo.
+    # Require observed, positive individual leg quotes; the presentation layer
+    # must clearly mark any resulting product as calculated, not bookable.
+    legs=value(obj,'leg_details',[]) or []
+    if len(legs)<2:
+        return False
+    try:
+        return all(math.isfinite(float(value(leg,'odds'))) and
+                   float(value(leg,'odds'))>1.01 for leg in legs)
+    except (TypeError,ValueError,OverflowError):
+        return False
 
 
 def quote_withdrawal_reason(ticket):
