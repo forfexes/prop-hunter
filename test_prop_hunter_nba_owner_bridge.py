@@ -63,7 +63,8 @@ finally:
     originals._source.cache_clear()
 
 # If actual approved cleaned source is not present, NO generic SVG fallback.
-with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
+with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+     patch.object(bridge, "BASE", CLEAN / "intentionally_missing_approved"):
     try:
         adapter.render_nba_pick(examples[0][1],examples[0][2],teams)
     except ValueError as err:
