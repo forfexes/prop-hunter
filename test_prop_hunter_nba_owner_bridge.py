@@ -11,7 +11,7 @@ import prop_hunter_nba_owner_bridge as bridge
 import prop_hunter_original_compositor as originals
 
 CLEAN=Path(__file__).resolve().parent/"card_templates"/"cleaned"
-for family in ("single","ladder","builder"):
+for family in ("single","ladder","builder","lottery"):
     assert (CLEAN/(family+".png")).is_file(),family
 
 hero=Image.new("RGBA",(160,200),(0,0,0,0))
@@ -39,6 +39,14 @@ examples=[
          {"odds":1.75,"sport":"NBA"},{"odds":1.9,"sport":"NBA"},
          {"odds":2.0,"sport":"NBA"}]),
      [row,dict(row,name="TEST PLAYER TWO"),dict(row,name="TEST PLAYER THREE")],[]),
+    ("lottery",N(**common,type="lottery",odds=13.80,leg_details=[
+         {"odds":1.75,"sport":"NBA","game":"HOME TEST vs AWAY TEST",
+          "commence_time":"2026-11-20T19:00:00+00:00"},
+         {"odds":2.30,"sport":"NBA","game":"TEAM C vs TEAM D",
+          "commence_time":"2026-11-21T19:00:00+00:00"},
+         {"odds":3.40,"sport":"NBA","game":"TEAM E vs TEAM F",
+          "commence_time":"2026-11-22T19:00:00+00:00"}]),
+     [row,dict(row,name="TEST PLAYER TWO"),dict(row,name="TEST PLAYER THREE")],[]),
 ]
 
 old_master=originals.APPROVED_MASTER
@@ -65,7 +73,7 @@ finally:
 # Approval-gate: exercise the actual checked-in approved production files,
 # not only a monkeypatched working directory.
 APPROVED=Path(__file__).resolve().parent/"card_templates"/"approved"
-if all((APPROVED/(family+".png")).is_file() for family in ("single","ladder","builder")):
+if all((APPROVED/(family+".png")).is_file() for family in ("single","ladder","builder","lottery")):
     with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
         for family,pick,rows,_ in examples:
             raw=adapter.render_nba_pick(pick,rows,teams)
