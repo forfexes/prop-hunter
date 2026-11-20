@@ -3491,15 +3491,25 @@ def _payload_card_image(payload,picks):
     """PNG-Bildkarte fuer ein Telegram-Fenster (oder None -> reiner Text). Abschalten: PH_IMAGE_CARDS=0."""
     try:
         import prop_hunter_image_cards as cards
-        if not cards.ON or not picks:return None
+        if not picks:return None
         all_picks=list(picks)
         if payload.get("kind")=="single":
             pool=[p for p in all_picks if getattr(p,"type",None)=="single"];idx=(payload.get("single_indices") or [None])[0]
         else:
             pool=[p for p in all_picks if getattr(p,"type",None) in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")];idx=(payload.get("combo_indices") or [None])[0]
         if idx is None or idx>=len(pool):return None
-        payload["image_pick"]=cards.snapshot(pool[idx])
-        png=cards.build_for_pick(pool[idx])
+        pick=pool[idx]
+        details=list(getattr(pick,"leg_details",None) or [])
+        hint=(getattr(pick,"source_sport",None) or getattr(pick,"sport",None)
+              or (details[0].get("sport") if details else None))
+        league=cards.league_of(hint)
+        payload["premium_required"]=bool(
+            os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1"
+            and league and league[1]=="nba")
+        payload["image_pick"]=cards.snapshot(pick)
+        if not cards.ON:
+            return None
+        png=cards.build_for_pick(pick)
         if png: payload["media_type"]="photo"
         return png
     except Exception:
@@ -3527,6 +3537,18 @@ def send_telegram(text,dry_run=False,picks=None):
     if not TG_TOKEN or not TG_CHAT:
         log.warning("Telegram not configured")
         return None
+    # All NBA photo cards are validated BEFORE any Telegram publication.
+    # Never post text instead of the exact owner-approved artwork; this also
+    # avoids a partially delivered batch when later NBA photos are missing.
+    image_cache={}
+    if os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1":
+        for payload in payloads:
+            png=_payload_card_image(payload,picks)
+            image_cache[id(payload)]=png
+            if payload.get("premium_required") and not png:
+                log.error("NBA_OWNER_ORIGINAL_BLOCKED kind=%s; no text/photo sent",
+                          payload.get("kind"))
+                return None
     sent=[]
     max_retries=max(1,min(5,int(os.getenv("PH_TELEGRAM_429_RETRIES","3"))))
     send_delay=max(0.0,min(5.0,float(os.getenv("PH_TELEGRAM_SEND_DELAY","3.2"))))
@@ -3541,12 +3563,23 @@ def send_telegram(text,dry_run=False,picks=None):
         for attempt in range(max_retries+1):
             try:
                 r=None
-                png=_payload_card_image(payload,picks)
+                png=(image_cache[id(payload)] if id(payload) in image_cache
+                     else _payload_card_image(payload,picks))
+                if payload.get("premium_required") and not png:
+                    log.error("NBA_OWNER_ORIGINAL_BLOCKED kind=%s during retry",
+                              payload.get("kind"))
+                    _LAST_TELEGRAM_CARDS=sent
+                    return None
                 if png:
                     # Bildkarte ohne doppelte Caption; message_id bleibt fuer Settlement gespeichert.
                     r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendPhoto",
                         data={"chat_id":TG_CHAT},files={"photo":("card.png",png,"image/png")},timeout=max(TIMEOUT,30))
                     if r.status_code not in (200,429):
+                        if payload.get("premium_required"):
+                            log.error("NBA_OWNER_ORIGINAL_TRANSPORT_FAIL http=%d kind=%s; NEVER send text fallback",
+                                      r.status_code,payload.get("kind"))
+                            _LAST_TELEGRAM_CARDS=sent
+                            return None
                         log.warning("sendPhoto %d kind=%s -> Text-Fallback: %s",r.status_code,payload.get("kind"),r.text[:120]);r=None;payload.pop("media_type",None)
                 if r is None:
                     r=requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
