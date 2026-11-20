@@ -659,13 +659,11 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
         combo = typ not in ("single", "ladder")
         verified = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
-        if combo and not verified and not getattr(pick, "_repaint_existing_photo", False):
-            # Never publish a new multi-leg quote without an observed bookmaker ticket.
-            return None
+        # Missing a combined bookmaker price must not prevent image delivery.
         if combo and not verified:
             # Already-published historical photos may be repainted for settlement.
             # Do not display their old combined price as a VERIFIED bookmaker total.
-            footer = "GESAMTQUOTE UNBESTÄTIGT"
+            footer = "BERECHNETE QUOTE (NICHT BUCHMACHERBESTÄTIGT)"
         else:
             footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
