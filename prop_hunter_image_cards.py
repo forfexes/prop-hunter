@@ -580,7 +580,12 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         details = list(getattr(pick, "leg_details", None) or [])
         sport_hint = getattr(pick, "source_sport", None) or getattr(pick, "sport", None) or (details[0].get("sport") if details else None)
         league = league_of(sport_hint)
-        sport = league[0] if league else "neutral"
+        # Fail before any ESPN network/image fetch for sports without approved masters.
+        # Other sports remain text-only until their own premium masters are approved.
+        if not league or league[1] != "nba":
+            print("PREMIUM_ONLY_NO_VERIFIED_MASTER sport=%s type=%s" % (str(sport_hint), typ), flush=True)
+            return None
+        sport = league[0]
         game = str(getattr(pick, "game", "") or "")
         teams: List[Tuple[str, Optional["Image.Image"]]] = []
         cross = feats.get("combo_scope") == "cross_game"
