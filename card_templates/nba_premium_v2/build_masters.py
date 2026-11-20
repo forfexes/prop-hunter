@@ -220,7 +220,7 @@ def build():
             key=f'{family}_{n}'
             (HERE/f'{key}.svg').write_text(multi(family,n),encoding='utf8')
             templates[key]={'family':family,'legs':n,'file':f'{key}.svg'}
-    manifest={'version':2,'format':'layered_svg','resolution':[W,H],'not_live':True,
+    manifest={'version':2,'format':'layered_svg','resolution':[W,H],'not_live':False,'production_gated':True,
               'template_count':len(templates),'templates':templates,
               'rules':{'photos':'transparent PNG cutouts only; no frames; independent layers',
                        'logos':'floating without frames, with dynamic team names beneath',
@@ -321,7 +321,7 @@ def qa_and_previews():
 
 Jedes dynamische Textfeld ist mit `data-field` markiert. Fotos/Wappen sind separate `data-image-slot`-Ebenen. **Keine** eingebrannten Namen, Fotos, Wappen, Quoten oder Statistiken; **keine** überklebten Beispielkarten. Wappen sind frei schwebend und Teamnamen stehen darunter. Spieler links ohne Rahmen. Spielername kleiner, ohne PRO-TIP-Kasten oder Trennlinie.
 
-`previews/` enthält die gerenderten **leeren** Master, nicht reale Tipps. Für die Produktionsnutzung: verifizierte Team-/Spieler-/Quotendaten einsetzen, SVG zu PNG rendern, Telegram-Nachricht bei Settlement **bearbeiten**. Nicht ungeprüft live aktivieren.
+`previews/` enthält die gerenderten **leeren** Master, nicht reale Tipps. Produktiv ist der neue Renderer über `PH_NBA_PREMIUM_V2=1` nur für NBA-Tipps mit echten Fotos, Wappen, Spielzeiten und verifizierten Buchmacherquoten aktiviert. Bei fehlenden Daten bleibt der bisherige Renderer als sichere Rückfallebene. Beim Settlement wird die **ursprüngliche Telegram-Nachricht bearbeitet**, ohne zusätzliche Tippnachricht.
 
 `build_masters.py` erzeugt die 52 SVGs und die Prüf-Vorschauen aus dem vorhandenen Arena-Bild. `manifest.json` definiert die Familien und Feldbelegungen.
 ''',encoding='utf8')
