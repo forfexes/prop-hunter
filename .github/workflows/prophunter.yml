@@ -195,6 +195,15 @@ jobs:
         run: |
           python prop_hunter_nba_dvp_scraper.py
 
+      - name: Regenerate current NBA premium masters before publishing
+        run: |
+          python - <<'PY'
+          from card_templates.nba_premium_v2.build_masters import build
+          master = build()
+          assert master["template_count"] == 52, "NBA master set incomplete"
+          print("NBA_CURRENT_PREMIUM_MASTERS_GENERATED=52")
+          PY
+
       - name: Build and post card
         env:
           PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
