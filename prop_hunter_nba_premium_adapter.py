@@ -94,10 +94,10 @@ def _template(pick, rows):
         # These still have their own approved REBOUNDS / ASSISTS master.
         # Strip ONLY the independently verified trailing line, not unknown
         # market terms; never silently substitute a generic card family.
-        market = re.sub(r"\\s+", " ", re.sub(r"[_-]+", " ",
+        market = re.sub(r"\s+", " ", re.sub(r"[_-]+", " ",
                       str(_get(pick, "market") or "").lower())).strip()
         observed = re.fullmatch(
-            r"(.+?)\\s+(over|under)\\s+([-+]?\\d+(?:[.,]\\d+)?)", market)
+            r"(.+?)\s+(over|under)\s+([-+]?\d+(?:[.,]\d+)?)", market)
         if observed:
             direction = str(_get(pick, "direction") or "").strip().lower()
             if direction and direction != observed.group(2):
@@ -110,8 +110,8 @@ def _template(pick, rows):
                 except (TypeError, ValueError) as exc:
                     raise PremiumDataMissing("Invalid observed NBA threshold") from exc
             market = observed.group(1)
-        market = re.sub(r"^player\\s+", "", market)
-        market = re.sub(r"\\s+alternate$", "", market)
+        market = re.sub(r"^player\s+", "", market)
+        market = re.sub(r"\s+alternate$", "", market)
         aliases = {
             "3pt":"threes", "3pm":"threes", "3pt made":"threes",
             "three pointers":"threes", "three pointers made":"threes",
