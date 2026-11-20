@@ -491,13 +491,15 @@ def _family(kind):
 
 @lru_cache(maxsize=4)
 def _source(family):
-    if family == 'single' and _single_clean_master().is_file():
-        # This file must contain only the stadium and permanent decorations:
-        # NO baked sample athlete, name, crest, price or statistics.
-        source = Image.open(_single_clean_master()).convert('RGBA')
-        if source.size != (691, CROP['single'][3]-CROP['single'][1]):
-            raise ValueError('Approved clean single plate has incorrect dimensions')
-        return source
+    approved = APPROVED_MASTER / (family + '.png')
+    if family in FAMILIES and approved.is_file():
+        # An explicitly approved owner-derived, sample-free master. Do not
+        # substitute a generated screenshot or a raw prefilled screenshot.
+        with Image.open(approved) as art:
+            source = art.convert('RGBA')
+            if source.size != (691, CROP[family][3] - CROP[family][1]):
+                raise ValueError('Approved clean owner plate has incorrect dimensions')
+            return source
     path = MASTER / (family + '.jpg')
     if not path.is_file():
         raise FileNotFoundError(f'User original JPG not in repo: {path}')
