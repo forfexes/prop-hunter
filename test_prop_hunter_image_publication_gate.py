@@ -27,4 +27,8 @@ assert rejected==2, rejected
 assert [p.player for p in published]==["good","wnba","nhl","details_ok"]
 assert cards.calls==["good","missing","fake","details_ok"]
 assert len(picks)==6
+assert picks[0]._verified_owner_png == PNG
+assert picks[5]._verified_owner_png == PNG
+assert not hasattr(picks[1],"_verified_owner_png")
+assert not hasattr(picks[4],"_verified_owner_png")
 print("NBA OWNER IMAGE PUBLICATION GATE PASSED: individual skips, no false histories, no text fallback")
