@@ -523,6 +523,12 @@ def _label(detail: Dict[str, Any]) -> str:
     pt = detail.get("point")
     d = str(detail.get("direction") or "over").lower()
     market = re.sub(r"\s+", " ", str(detail.get("market") or "").replace("_", " ")).strip()
+    # Some confirmed feeds put the actual Under/Over in the market string
+    # while leaving direction blank. Never reverse an observed Under pick.
+    observed_direction = re.search(r"\b(over|under)\s+[-+]?\d+(?:[.,]\d+)?\s*$",
+                                   market, re.I)
+    if observed_direction and not detail.get("direction"):
+        d = observed_direction.group(1).lower()
     if pt is None:
         return market
     sign = "Over" if d == "over" else "Under"
