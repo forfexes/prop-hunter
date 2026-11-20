@@ -80,4 +80,21 @@ with patch.dict(os.environ, {"PH_NBA_PREMIUM_V2": "1"}), \
      patch.object(image_cards, "render", side_effect=AssertionError("Legacy card unexpectedly used")):
     via_pipeline = image_cards.build_for_pick(single)
     assert via_pipeline and Image.open(BytesIO(via_pipeline)).size == (1080,1440)
+# Preserve QA-only render samples for visual inspection in GitHub Actions.
+# Synthetic names/odds/photos must never be published as actual Telegram tips.
+from pathlib import Path
+preview_dir = Path("output/nba_premium_qa")
+preview_dir.mkdir(parents=True, exist_ok=True)
+samples = {
+    "single": render_nba_pick(single, [row], teams),
+    "ladder": render_nba_pick(ladder, rungs, teams),
+    "builder": render_nba_pick(builder, legs, teams),
+    "lottery": render_nba_pick(lottery, legs, []),
+}
+for family, blob in samples.items():
+    image = Image.open(BytesIO(blob)).convert("RGB")
+    assert image.size == (1080, 1440), family
+    assert image.getbbox() is not None, family
+    (preview_dir / (family + ".png")).write_bytes(blob)
+print("NBA QA PREVIEWS: " + ", ".join(sorted(samples)))
 print("NBA PREMIUM ADAPTER PASS: verified single, ladder, builder, cross-game, lottery; authentic logos/photos; fail-closed missing tipoff/odds/assets")
