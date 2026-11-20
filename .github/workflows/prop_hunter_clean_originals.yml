@@ -37,6 +37,23 @@ jobs:
               assert np.array_equal(dst[2:30,270:420],src[2:30,270:420])
               print(name,'cleaned-source OK',flush=True)
           PY
+      - name: Expose four cleaned owner-source previews for independent visual approval
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import base64, io
+          for family in ('single','ladder','builder','lottery'):
+              path=Path('card_templates/cleaned')/(family+'.png')
+              with Image.open(path) as original:
+                  image=original.convert('RGB')
+                  image.thumbnail((430,590),Image.Resampling.LANCZOS)
+                  buf=io.BytesIO()
+                  image.save(buf,'JPEG',quality=53,optimize=True)
+              print('OWNER_CLEANED_PREVIEW '+family+' '+
+                    base64.b64encode(buf.getvalue()).decode('ascii'))
+          print('PREVIEW ONLY: no Telegram publishing or original artwork approval')
+          PY
       - name: Export clean image plates and masks for visual QA
         uses: actions/upload-artifact@v4
         with:
