@@ -37,6 +37,45 @@ jobs:
               assert np.array_equal(dst[2:30,270:420],src[2:30,270:420])
               print(name,'cleaned-source OK',flush=True)
           PY
+      - name: Compose all four original-owner cards with SYNTHETIC QA data
+        run: |
+          python - <<'PY'
+          import io, base64
+          from pathlib import Path
+          from PIL import Image, ImageDraw
+          import prop_hunter_original_compositor as original
+          original.APPROVED_MASTER=Path('card_templates/cleaned')
+          original._source.cache_clear()
+          player=Image.new('RGBA',(170,220),(0,0,0,0))
+          draw=ImageDraw.Draw(player)
+          draw.ellipse((36,12,140,118),fill=(65,140,220,255))
+          draw.rounded_rectangle((11,105,159,216),20,fill=(31,67,125,255))
+          logo=Image.new('RGBA',(100,100),(0,0,0,0))
+          ImageDraw.Draw(logo).ellipse((10,10,90,90),fill=(43,195,231,255))
+          teams=[('HOME TEAM',logo),('AWAY TEAM',logo)]
+          for family in ('single','ladder','builder','lottery'):
+              count={'single':1,'ladder':3,'builder':3,'lottery':3}[family]
+              rows=[{'name':'TEST PLAYER' if family=='ladder' else 'TEST PLAYER '+str(i+1),
+                     'photo':player.copy(),
+                     'label':'Over 20.5 points','odds':'@1.80',
+                     'form':'L5 3/5 · L10 7/10 · L15 11/15',
+                     'model':{'prob':'65','edge':'+9','confidence':'80/100'}}
+                    for i in range(count)]
+              raw=original.original_card(family,family.upper(),
+                  'HOME TEAM vs AWAY TEAM · 20.11.2026 20:00',
+                  'NBA',teams,rows,
+                  'Quote @4.25 · Einsatz 1u','OFFEN')
+              with Image.open(io.BytesIO(raw)) as image:
+                  assert image.size[0]==1080 and image.size[1]>1100
+                  thumb=image.convert('RGB')
+                  thumb.thumbnail((430,590),Image.Resampling.LANCZOS)
+                  out=io.BytesIO()
+                  thumb.save(out,'JPEG',quality=56,optimize=True)
+              Path('diagnostics/rendered_owner_'+family+'.png').write_bytes(raw)
+              print('OWNER_COMPOSED_PREVIEW '+family+' '+
+                    base64.b64encode(out.getvalue()).decode('ascii'))
+          print('Composed clean owner references are QA ONLY; no Telegram publication')
+          PY
       - name: Expose four cleaned owner-source previews for independent visual approval
         run: |
           python - <<'PY'
