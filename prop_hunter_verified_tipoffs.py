@@ -15,6 +15,11 @@ def _get(obj,key,default=None):
 
 def _identity(obj):
     sport=str(_get(obj,"sport") or _get(obj,"source_sport") or "").casefold().strip()
+    # These are two explicit labels for the SAME league, not a guess from
+    # unspecified "basketball" (which may be WNBA or EuroLeague).
+    if sport not in ("nba","basketball_nba"):
+        return None
+    sport="nba"
     game=" ".join(str(_get(obj,"game") or "").casefold().split())
     player=" ".join(str(_get(obj,"player") or "").casefold().split())
     if not all((sport,game,player)) or game in ("verified ladder","unknown","n/a"):
@@ -63,7 +68,8 @@ def enrich_verified_tipoffs(picks, props):
         if details and str(_get(pick,"type") or "").lower()=="ladder":
             for detail in details:
                 game=" ".join(str(_get(detail,"game") or "").casefold().split())
-                sport=str(_get(detail,"sport") or "").casefold().strip()
+                raw_sport=str(_get(detail,"sport") or "").casefold().strip()
+                sport="nba" if raw_sport in ("nba","basketball_nba") else raw_sport
                 athlete=" ".join(str(_get(detail,"player") or "").casefold().split())
                 if game and game!=key[1]:
                     times.clear()
