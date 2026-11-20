@@ -177,7 +177,7 @@ def render_nba_pick(pick, rows, teams):
                 sport = str(detail.get("sport") or "NBA").lower()
                 if "nba" not in sport or "wnba" in sport:
                     raise PremiumDataMissing(f"Leg {i} is not NBA")
-                kickoff = detail.get("commence_time") or _get(pick, "commence_time")
+                # Cross-game legs must carry their own event timestamp; a parent\n                # timestamp cannot safely represent multiple different games.\n                kickoff = detail.get("commence_time")
                 if not kickoff:
                     raise PremiumDataMissing(f"Leg {i} tipoff missing")
                 date, local_time = _tipoff({"commence_time": kickoff})
