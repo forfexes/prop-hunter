@@ -31,6 +31,10 @@ def filter_verified_nba_images(picks, cards):
             continue
         result=cards.build_for_pick(pick)
         if isinstance(result,(bytes,bytearray)) and bytes(result).startswith(_PNG_MAGIC):
+            # Production will reuse the exact verified artwork bytes from
+            # preflight. Never fetch photos or redraw a second time after the
+            # decision, which could change the card or hit a transient API.
+            setattr(pick,"_verified_owner_png",bytes(result))
             accepted.append(pick)
         else:
             blocked+=1
