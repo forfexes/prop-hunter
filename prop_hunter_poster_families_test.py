@@ -14,7 +14,8 @@ from prop_hunter_image_cards import render
 
 def test_family(kind, count):
     rows = [{"name": ("One Ladder Player" if kind == "ladder" else "Test Player " + str(i)), "label": "Over 20.5 Points",
-             "photo": None, "form": "L10 8/10   L15 12/15", "odds": "@1.90"}
+             "photo": None, "form": "L10 8/10   L15 12/15", "odds": "@1.90",
+             "game": "TEST HOME vs TEST AWAY · 20.11.2026 20:00"}
             for i in range(count)]
     data = render(kind, kind.upper(), "Verified sample only", "basketball",
                   [("Home", None), ("Away", None)], rows, "Quote @1.90", "")
