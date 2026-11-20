@@ -147,13 +147,15 @@ def leg_row(x,y,w,h,i,family):
     s=f'<g id="layer-leg-{i}">'+neon_box(x,y,w,h,c,14)
     s+=rect(x+12,y+14,85,h-28,10,'url(#gold)','none',0,1)
     s+=txt(x+55,y+h/2+10,f'{i}.',30,'#071226','middle',italic=True)
-    if not is_ladder and family in ('builder','cross_game'):
+    if not is_ladder and family in ('builder','cross_game','lottery'):
         s+=asset_slot(f'leg_{i}_photo',x+103,y+4,round(min(h*.86,92)),h-8)
         left=x+215
     else:
         left=x+118
     s+=dynamic(left,y+h*.45,f'leg_{i}_name' if not is_ladder else f'leg_{i}_line',26,WHITE)
-    s+=dynamic(left,y+h*.78,f'leg_{i}_market',24,MUTED)
+    s+=dynamic(left,y+h*(.65 if family in ('lottery','combo','cross_game') else .78),f'leg_{i}_market',24,MUTED)
+    if family in ('lottery','combo','cross_game'):
+        s+=dynamic(left,y+h*.89,f'leg_{i}_game',18,MUTED)
     s+=neon_box(x+w-186,y+h/2-32,166,64,GOLD,14,'url(#amber)')
     s+=dynamic(x+w-103,y+h/2+10,f'leg_{i}_odds',27,GOLD,'middle',True)
     s+='</g>'
@@ -167,6 +169,9 @@ def multi(family,n):
         s+=crest_pair(273,mini=True)+match_info(845,276)
         s+=f'<g id="layer-07-player-name">{dynamic(690,539,"player_name",46,WHITE,"middle",True)}</g>'
         x,w,top,bottom=298,750,566,1102
+    elif family in ('lottery','combo','cross_game'):
+        s+=f'<g id="layer-05-multi-game-context">{txt(540,325,"MEHRERE SPIELE · INDIVIDUELLE PROPS",31,GOLD,"middle",italic=True)}{txt(540,373,"SPIELER · MARKT · SPIELZEIT · QUOTE",23,WHITE,"middle")}</g>'
+        x,w,top,bottom=34,1012,(400 if n>=5 else 465),1099
     else:
         s+=crest_pair(267,mini=True)+match_info(845,267)
         x,w,top,bottom=34,1012,510,1099
@@ -270,12 +275,16 @@ def qa_and_previews():
         assert len(slots)==len(set(slots)),key
         assert {'settlement'}.issubset(fields),key
         assert not any('data:image' in str(el.attrib) for el in root.iter()),key
-        assert 'home_logo' in slots and 'away_logo' in slots,key
+        if meta['family'] not in ('lottery','combo','cross_game'):
+            assert 'home_logo' in slots and 'away_logo' in slots,key
+        else:
+            assert 'home_logo' not in slots and 'away_logo' not in slots,key
+            assert f'leg_{meta["legs"]}_game' in fields,key
         if meta['family'] in ('single','longshot','ladder','same_player'):
             assert slots.count('player_photo')==1,key
         if meta['family'] in ('ladder','same_player'):
             assert sum(s.endswith('_photo') for s in slots)==1,key
-        if meta['family'] in ('builder','cross_game'):
+        if meta['family'] in ('builder','cross_game','lottery'):
             assert sum(s.endswith('_photo') for s in slots)==meta['legs'],key
         if meta['legs']>1:
             assert ('total_odds' in fields) == (meta['family']!='ladder'),key

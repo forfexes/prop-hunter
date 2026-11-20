@@ -9,8 +9,12 @@ for key,meta in m['templates'].items():
     raw=(ROOT/meta['file']).read_text()
     assert 'assets/arena.jpg' in raw,key
     assert 'data-field="settlement"' in raw,key
-    assert 'data-image-slot="home_logo"' in raw,key
-    assert 'data-image-slot="away_logo"' in raw,key
+    if meta['family'] not in ('lottery','combo','cross_game'):
+        assert 'data-image-slot="home_logo"' in raw,key
+        assert 'data-image-slot="away_logo"' in raw,key
+    else:
+        assert 'data-image-slot="home_logo"' not in raw,key
+        assert f'data-field="leg_{meta["legs"]}_game"' in raw,key
     assert 'SPIELERNAME' not in raw,key
     assert '@1.72' not in raw,key
     assert 'Jokic' not in raw,key
@@ -23,7 +27,7 @@ for key,meta in m['templates'].items():
     assert 'data-field="True"' not in raw,key
     if meta['family'] in ('ladder','same_player'):
         assert raw.count('data-image-slot="player_photo"')==1,key
-    if meta['family']=='builder':
+    if meta['family'] in ('builder','lottery','cross_game'):
         assert sum(raw.count(f'data-image-slot="leg_{i}_photo"') for i in range(1,7))==meta['legs'],key
 for key in ('single_single','ladder_4','builder_6','combo_5','lottery_6'):
     try:render_svg(key,{},{});

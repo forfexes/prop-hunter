@@ -57,12 +57,16 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
         else:
             if not _price(values.get('total_odds')):
                 raise ValueError('Verified combination price missing; do not multiply leg prices')
-        if not all(str(values.get(k) or '').strip() for k in ('date','time','home_name','away_name')):
+        multi_game=info['family'] in ('lottery','combo','cross_game')
+        if multi_game:
+            if not all(str(values.get(f'leg_{i}_game') or '').strip() for i in range(1,info['legs']+1)):
+                raise ValueError('Every multi-game leg requires its verified matchup and tipoff')
+        elif not all(str(values.get(k) or '').strip() for k in ('date','time','home_name','away_name')):
             raise ValueError('Verified matchup and tipoff are required')
-        required={'home_logo','away_logo'}
+        required=set() if multi_game else {'home_logo','away_logo'}
         if info['family'] in ('single','longshot','ladder','same_player'):
             required.add('player_photo')
-        if info['family'] in ('builder','cross_game'):
+        if info['family'] in ('builder','cross_game','lottery'):
             required.update(f'leg_{i}_photo' for i in range(1,info['legs']+1))
         missing=required-set(k for k,v in images.items() if v)
         if missing:raise ValueError('Missing authentic images: '+', '.join(sorted(missing)))
