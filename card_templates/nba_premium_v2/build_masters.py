@@ -191,8 +191,10 @@ def builder_hero(n):
     s+='<g id="layer-08-original-builder-ticket">'
     s+=neon_box(34,981,1012,78,GOLD,17,'url(#amber)')
     s+=txt(63,1031,f'{n}-LEG BUILDER',37,WHITE,italic=True)
-    s+=txt(715,1020,'GESAMTQUOTE',20,GOLD)
-    s+=dynamic(1013,1041,'total_odds',40,GOLD,'end',True)
+    s+=txt(538,1008,'GESAMTQUOTE',18,GOLD)
+    s+=dynamic(740,1041,'total_odds',31,GOLD,'end',True)
+    s+=txt(852,1008,'EINSATZ',18,WHITE)
+    s+=dynamic(1013,1041,'stake',31,GOLD,'end',True)
     for i in range(1,n+1):
         y=1066+(i-1)*(152/n)
         s+=neon_box(43,y,993,round(140/n),BLUE,10)
