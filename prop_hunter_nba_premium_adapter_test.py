@@ -69,4 +69,15 @@ rejects(SimpleNamespace(**{**base,"game":""},type="lottery",odds=18.25,
 rejects(SimpleNamespace(**{**base,"commence_time":None},type="lottery",odds=18.25,
        leg_details=[{**multi_legs[0],"commence_time":None},multi_legs[1]]),legs,[],
        contains="tipoff")
+# Exercise the actual production image-card routing with network fetches mocked.
+# This proves that the opt-in uses the new master rather than the legacy compositor.
+import os
+from unittest.mock import patch
+import prop_hunter_image_cards as image_cards
+with patch.dict(os.environ, {"PH_NBA_PREMIUM_V2": "1"}), \
+     patch.object(image_cards, "player_photo", return_value=img()), \
+     patch.object(image_cards, "team_logo", return_value=img("logo")), \
+     patch.object(image_cards, "render", side_effect=AssertionError("Legacy card unexpectedly used")):
+    via_pipeline = image_cards.build_for_pick(single)
+    assert via_pipeline and Image.open(BytesIO(via_pipeline)).size == (1080,1440)
 print("NBA PREMIUM ADAPTER PASS: verified single, ladder, builder, cross-game, lottery; authentic logos/photos; fail-closed missing tipoff/odds/assets")
