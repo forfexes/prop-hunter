@@ -50,6 +50,9 @@ rejects(SimpleNamespace(**{**base,"commence_time":None},type="single",
 rejects(SimpleNamespace(**{**base,"features":{}},type="single",
        market="points",odds=2.05),[row],contains="bookmaker")
 rejects(single,[dict(row,photo=None)],contains="player_photo")
+# Unsupported markets must not silently use a generic single-card fallback.
+rejects(SimpleNamespace(**base,type="single",market="unapproved_unsupported_prop",
+       odds=2.05),[row],contains="No approved NBA master")
 # Fake transparency (one transparent pixel on an opaque photo) is not a
 # cutout; a real picture needs visible transparent background around athlete.
 almost_opaque=Image.new("RGBA",(180,220),(52,72,88,255))
