@@ -1,3 +1,26 @@
+# NBA Premium v2 — neue echte Mastervorlagen (20.11.2026)
+
+Die **neue** NBA-Kollektion befindet sich in
+[`nba_premium_v2/`](./nba_premium_v2/README.md): **52 SVG-Master**
+mit eigenständigem **hochauflösendem Basketballarena-JPEG**,
+getrennten dynamischen Ebenen für Spielerfotos/Wappen/Namen/Quoten
+und offline geprüfter Renderpipeline.
+
+- Spielerbild links als freigestellte, **rahmenlose** PNG-Ebene
+- Wappen frei schwebend, Teamnamen direkt darunter
+- Spielername kleiner, ohne unteres `PRO TIP`-Textkästchen
+- Single/Longshot, Ladder 2–6, Builder 2–6, Same Player 2–6,
+  Cross Game 2–6, Combo 2–6, Lottery 2–6
+- Keine eingebrannten Beispieldaten, keine übermalten alten JPGs
+- **Nicht automatisch live in Telegram aktivieren**: erst
+  Datenadapter, Fotofreistellung und visuelle Freigabe
+
+Die bisherigen `nba_masters/`-SVGs sind die ältere, gestalterisch
+abgelehnte v1-Serie; `originals/` enthält historische Referenz-JPGs.
+Beide bleiben als Referenz unverändert.
+
+---
+
 # PROP HUNTER — Mastervorlagen-Stand 19.11.2026
 
 **Neue Entscheidung des Nutzers:** Wie bei NETRATTLER gibt es jetzt eine
