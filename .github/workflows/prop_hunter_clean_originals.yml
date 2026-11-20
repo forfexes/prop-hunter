@@ -6,7 +6,7 @@ name: PROP HUNTER Clean Owner Original Templates
       - '.github/workflows/prop_hunter_clean_originals.yml'
   workflow_dispatch: {}
 permissions:
-  contents: read
+  contents: write
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -103,3 +103,21 @@ jobs:
             diagnostics/template_cleanup_report.json
           retention-days: 7
           if-no-files-found: error
+      - name: Store reviewed clean plates in GitHub as NON-PRODUCTION working assets
+        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for family in single ladder builder lottery; do
+            test -s "card_templates/cleaned/${family}.png"
+          done
+          git add card_templates/cleaned/single.png card_templates/cleaned/ladder.png \
+                  card_templates/cleaned/builder.png card_templates/cleaned/lottery.png
+          if git diff --staged --quiet; then
+            echo "All four clean working plates already in GitHub"
+            exit 0
+          fi
+          git commit -m "assets: store four clean owner-source working plates (NOT production-approved)"
+          git push origin HEAD:main
+          echo "Four true-owner working assets stored; production approval remains gated"
