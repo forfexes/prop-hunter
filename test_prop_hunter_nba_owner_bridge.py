@@ -62,6 +62,20 @@ finally:
     bridge.BASE=old_base
     originals._source.cache_clear()
 
+# Approval-gate: exercise the actual checked-in approved production files,
+# not only a monkeypatched working directory.
+APPROVED=Path(__file__).resolve().parent/"card_templates"/"approved"
+if all((APPROVED/(family+".png")).is_file() for family in ("single","ladder","builder")):
+    with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
+        for family,pick,rows,_ in examples:
+            raw=adapter.render_nba_pick(pick,rows,teams)
+            with Image.open(BytesIO(raw)) as image:
+                assert image.width==1080 and image.height>=1100
+                image.verify()
+            print("PRODUCTION_APPROVED_ORIGINAL_OK",family)
+else:
+    print("OWNER_PRODUCTION_APPROVED_FILES_NOT_YET_PRESENT")
+
 # If actual approved cleaned source is not present, NO generic SVG fallback.
 with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
      patch.object(bridge, "BASE", CLEAN / "intentionally_missing_approved"):
