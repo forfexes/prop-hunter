@@ -196,7 +196,7 @@ assert hero.getpixel((125, 70))[0] > 50, "Player portrait is still stuck at the 
 print("ORIGINAL BAKED HEAD REMOVED / PORTRAIT ENLARGED / NBA HEADER SAFE")
 
 # Full visual regression for 2-5 ladder rungs, 4-6 builder portraits and
-# 2-9 lottery rows (not just a static 3-leg template).
+# 2-4 fully verified lottery rows; 6/9 remain blocked until approved tall original.
 from PIL import ImageDraw as DrawAPI
 def _fixture_photo(index):
     img = Image.new("RGBA", (210,245), (0,0,0,0))
@@ -318,8 +318,8 @@ for family, point in (("lottery",(52,310)),("builder",(347,120))):
 print("SOURCE ATHLETE GHOST REGRESSION / ORIGINAL TOP BRANDING PRESERVED")
 
 # The small athlete pictures from the actual lottery master are restored
-# on readable 2-6-leg formats; 9-leg lottery is kept spacious and text-first.
-for count in (3,6,9):
+# on owner-approved 2-4-leg formats; larger tickets require a taller plate.
+for count in (2,3,4):
     photos=[]
     old_portrait=originals._portrait
     def trace_hero(im,person,rect,name='',prominent=False):
@@ -329,8 +329,8 @@ for count in (3,6,9):
         originals.original_card("lottery","LOTTERY","Fixture","NBA",[],
                                 _fixture_rows("lottery",count),
                                 "Quote @2.15 · Einsatz 1u")
-    assert len(photos)==(1+count if count<=6 else 1),(count,photos)
-print("LOTTERY REAL LEG PORTRAITS / TEXT-ONLY HIGH-DENSITY LAYOUT PASS")
+    assert len(photos)==1+count,(count,photos)
+print("LOTTERY 2-4 REAL LEG PORTRAITS WITH PER-LEG VERIFIED EVENT CONTEXT PASS")
 
 # Clean fixture: the two team labels are ONLY beside VS, never repeated in
 # the large right-side legacy 'SPIEL / Home / Away' box.
