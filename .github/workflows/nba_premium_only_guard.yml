@@ -10,6 +10,7 @@ on:
       - 'prop_hunter_nba_premium_adapter_test.py'
       - 'prop_hunter_verified_tipoffs.py'
       - 'test_prop_hunter_verified_tipoffs.py'
+      - 'test_prop_hunter_premium_delivery.py'
       - 'prophunter_core_1391.py'
       - 'card_templates/nba_premium_v2/**'
       - '.github/workflows/prophunter.yml'
@@ -49,6 +50,10 @@ jobs:
         run: |
           python -m py_compile prop_hunter_verified_tipoffs.py prop_hunter_nba_premium_adapter.py test_prop_hunter_verified_tipoffs.py
           python test_prop_hunter_verified_tipoffs.py
+      - name: Verify premium photo-only Telegram sends and NBA scope (no credentials)
+        run: |
+          python -m py_compile test_prop_hunter_premium_delivery.py
+          python test_prop_hunter_premium_delivery.py
       - name: Verify old card renderer is never called
         run: python -m pytest -q test_prop_hunter_premium_only.py prop_hunter_image_cards_test.py prop_hunter_nba_premium_adapter_test.py
       - name: Confirm real send AND settlement rebuild up-to-date premium artwork
