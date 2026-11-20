@@ -6,7 +6,7 @@ name: PROP HUNTER NBA Premium V2 Master QA
       - '.github/workflows/prop_hunter_nba_premium_v2_qa.yml'
   workflow_dispatch: {}
 permissions:
-  contents: read
+  contents: write
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -18,6 +18,16 @@ jobs:
           python-version: '3.11'
       - name: Install image renderer
         run: python -m pip install 'Pillow>=10' 'cairosvg>=2.7'
+      - name: Regenerate 52 editable SVG masters and preserve original NBA logo
+        run: |
+          python -u card_templates/nba_premium_v2/build_masters.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add card_templates/nba_premium_v2/*.svg card_templates/nba_premium_v2/manifest.json card_templates/nba_premium_v2/README.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Regenerate 52 NBA premium masters with real NBA logo [skip ci]'
+            git push origin HEAD:main
+          fi
       - name: Test all 52 premium layered masters and strict bookmaker safety
         run: python -u card_templates/nba_premium_v2/test_masters.py
       - name: Render eight clean visual previews

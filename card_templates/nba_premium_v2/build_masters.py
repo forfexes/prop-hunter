@@ -78,7 +78,7 @@ def header(label,small='NBA'):
 {txt(540,136,'PROP-HUNTER',69,'#031020','middle',italic=True)}
 <text x="540" y="130" font-family="DejaVu Sans,Arial,sans-serif" font-size="69" font-weight="900" font-style="italic" text-anchor="middle" fill="url(#metal)" stroke="#E1A12C" stroke-width="1.8" paint-order="stroke">PROP-HUNTER</text>
 <path d="M330 147 H750" stroke="#F3C25E" stroke-width="3" opacity=".9"/>
-{neon_box(38,38,115,121,GOLD,16)}{txt(95,96,small,34,WHITE,'middle')}{txt(95,124,'PROPS',18,GOLD,'middle')}
+{neon_box(38,38,115,121,GOLD,16)}<image x="69" y="40" width="54" height="116" preserveAspectRatio="xMidYMid meet" xlink:href="assets/nba_logo.png" data-static-nba-logo="true"/>
 {neon_box(231,164,618,76,GOLD,16,'url(#amber)')}{txt(540,217,label,30 if len(label)>22 else 36,'url(#gold)','middle',italic=True)}
 </g>'''
 
@@ -107,7 +107,7 @@ def settlement(y=1260):
 {neon_box(39,y,765,95,GOLD,12,'url(#amber)')}
 {txt(66,y+60,'◎ AUSWERTUNG:',34,WHITE,italic=True)}
 {dynamic(540,y+60,'settlement',32,GOLD,'middle',True)}
-{txt(1038,y+134,'@prophunter',28,WHITE,'end',True)}
+{txt(1038,y+134,'@prophunter',28,WHITE,'end',italic=True)}
 </g>'''
 
 def stats(y=833,for_ladder=False):
@@ -146,7 +146,7 @@ def leg_row(x,y,w,h,i,family):
     c=GREEN if is_ladder else BLUE
     s=f'<g id="layer-leg-{i}">'+neon_box(x,y,w,h,c,14)
     s+=rect(x+12,y+14,85,h-28,10,'url(#gold)','none',0,1)
-    s+=txt(x+55,y+h/2+10,f'{i}.',30,'#071226','middle',True)
+    s+=txt(x+55,y+h/2+10,f'{i}.',30,'#071226','middle',italic=True)
     if not is_ladder and family in ('builder','cross_game'):
         s+=asset_slot(f'leg_{i}_photo',x+103,y+4,round(min(h*.86,92)),h-8)
         left=x+215
@@ -194,6 +194,8 @@ def multi(family,n):
 
 def build():
     (HERE/'assets').mkdir(exist_ok=True)
+    if not (HERE/'assets'/'nba_logo.png').is_file():
+        raise FileNotFoundError('Authentic user-supplied NBA logo asset missing')
     source_path=os.environ.get('PH_NBA_ARENA_SOURCE')
     src=Path(source_path) if source_path else None
     if (src is None or not src.is_file()) and not (HERE/'assets'/'arena.jpg').exists():
@@ -230,7 +232,9 @@ def build():
 
 def _embed_arena(svg):
     image=base64.b64encode((HERE/'assets'/'arena.jpg').read_bytes()).decode('ascii')
-    return svg.replace('xlink:href="assets/arena.jpg"',f'xlink:href="data:image/jpeg;base64,{image}"')
+    return (svg.replace('xlink:href="assets/arena.jpg"',f'xlink:href="data:image/jpeg;base64,{image}"')
+               .replace('xlink:href="assets/nba_logo.png"',
+                        'xlink:href="data:image/png;base64,'+base64.b64encode((HERE/'assets'/'nba_logo.png').read_bytes()).decode('ascii')+'"'))
 
 
 def render_png(name,values=None,images=None):
@@ -296,7 +300,7 @@ def qa_and_previews():
     overview.save(previews/'collection.png',quality=94)
     (HERE/'README.md').write_text('''# PROP HUNTER — NBA Premium Mastervorlagen v2
 
-52 echte, **datenfreie**, mehrschichtige SVG-Master im freigegebenen blau-goldenen Arena-Stil.
+52 echte, **datenfreie**, mehrschichtige SVG-Master im freigegebenen blau-goldenen Arena-Stil. Der NBA-Logo-Kasten bleibt erhalten, mit dem NBA-Logo aus der vom Nutzer gelieferten Originalkarte anstelle des Textplatzhalters „NBA PROPS“.
 
 ## Aufbau
 - `assets/arena.jpg`: eigenständiger Basketballarena-Hintergrund **ohne** Spieler, Teamwappen, Quoten, Namen oder Statistiken.

@@ -38,6 +38,9 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
         bg=(ROOT/'assets'/'arena.jpg').read_bytes()
         raw=raw.replace('xlink:href="assets/arena.jpg"',
                         'xlink:href="data:image/jpeg;base64,'+base64.b64encode(bg).decode('ascii')+'"')
+        logo=(ROOT/'assets'/'nba_logo.png').read_bytes()
+        raw=raw.replace('xlink:href="assets/nba_logo.png"',
+                        'xlink:href="data:image/png;base64,'+base64.b64encode(logo).decode('ascii')+'"')
     root=ET.fromstring(raw)
     fields={e.get('data-field') for e in root.iter() if e.get('data-field')}
     slots={e.get('data-image-slot') for e in root.iter() if e.get('data-image-slot')}

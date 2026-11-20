@@ -17,6 +17,10 @@ for key,meta in m['templates'].items():
     assert '1 offen' not in raw,key
     assert 'PRO TIP</text>' not in raw,key
     assert 'layer-01-arena-photo' in raw,key
+    assert 'data-static-nba-logo="true"' in raw,key
+    assert 'assets/nba_logo.png' in raw,key
+    assert '>PROPS</text>' not in raw,key
+    assert 'data-field="True"' not in raw,key
     if meta['family'] in ('ladder','same_player'):
         assert raw.count('data-image-slot="player_photo"')==1,key
     if meta['family']=='builder':
