@@ -210,6 +210,15 @@ jobs:
           SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECONDARY_SERVICE_ROLE_KEY }}
         run: python prop_hunter_results_wnba.py
 
+      - name: Regenerate current NBA premium masters for in-place Telegram settlement
+        run: |
+          python - <<'PY'
+          from card_templates.nba_premium_v2.build_masters import build
+          master = build()
+          assert master["template_count"] == 52, "NBA master set incomplete"
+          print("NBA_SETTLEMENT_CURRENT_PREMIUM_MASTERS=52")
+          PY
+
       - name: Settle and publish evaluation
         env:
           PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
