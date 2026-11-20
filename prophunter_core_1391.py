@@ -3509,7 +3509,12 @@ def _payload_card_image(payload,picks):
         payload["image_pick"]=cards.snapshot(pick)
         if not cards.ON:
             return None
-        png=cards.build_for_pick(pick)
+        # Same authentic bytes used by the prepublication quality gate:
+        # avoids a second ESPN portrait/crest lookup and transient mismatch.
+        png=(getattr(pick,"_verified_owner_png",None)
+             if payload.get("premium_required") else None)
+        if not png:
+            png=cards.build_for_pick(pick)
         if png: payload["media_type"]="photo"
         return png
     except Exception:
