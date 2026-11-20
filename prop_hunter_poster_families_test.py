@@ -211,12 +211,13 @@ def _fixture_rows(kind,count):
         "name": "One Real Athlete" if kind=="ladder" else f"Player {i+1}",
         "photo": _fixture_photo(i), "label":f"Points Under {12.5+i}",
         "odds":f"@{1.65 + i*0.11:.2f}",
-        "form":"L5 4/5 · L10 8/10 · L15 12/15"
+        "form":"L5 4/5 · L10 8/10 · L15 12/15",
+        "game":f"TEAM {i+1} vs TEAM {i+2} · 20.11.2026 20:00"
     } for i in range(count)]
 
 for variant, count in [("ladder",2),("ladder",4),("ladder",5),
                        ("builder",4),("builder",5),("builder",6),
-                       ("lottery",2),("lottery",6),("lottery",9)]:
+                       ("lottery",2),("lottery",3),("lottery",4)]:
     fixture = _fixture_rows(variant,count)
     out_file=Path('poster_previews')/f'{variant}_{count}.png'
     rendered=originals.original_card(
@@ -224,6 +225,18 @@ for variant, count in [("ladder",2),("ladder",4),("ladder",5),
         [("HOME",None),("AWAY",None)],fixture,"Quote @1.85 · Einsatz 1u","OFFEN")
     out_file.write_bytes(rendered)
     assert Image.open(BytesIO(rendered)).size[0]==1080
+
+# Owner-original screenshot currently has readable space for up to four
+# cross-game fixtures. Six/nine-leg slips must fail closed until a taller
+# verified original layout exists (rather than silently hiding fixture data).
+for count in (6,9):
+    try:
+        originals.original_card("lottery","LOTTERY","TEST","NBA",[],
+                                _fixture_rows("lottery",count),"","OFFEN")
+    except ValueError as error:
+        assert "max four legs" in str(error),str(error)
+    else:
+        raise AssertionError("Unapproved large Lottery omitted per-leg fixtures")
 
 # All builder players, not just the first three, receive a distinct photo
 # slot even when there are 4, 5 or 6 legs.
