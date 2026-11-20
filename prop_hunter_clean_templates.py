@@ -78,6 +78,11 @@ def build(family: str):
             cv2.rectangle(mask,(x0,y0),(x1,y1),255,-1)
     # 2px safety expansion catches anti-aliased glyph fringes.
     mask=cv2.dilate(mask,np.ones((5,5),np.uint8),iterations=1)
+    if family == "single":
+        # The owner's original vertical NBA badge overlaps the Curry hair
+        # cleanup at the left margin. Preserve the COMPLETE authentic badge,
+        # including the small white NBA lettering, without redrawing a logo.
+        mask[14:126,36:79]=0
     # Large erased player regions must NEVER be filled by OpenCV Telea:
     # on a nearly empty interior it produces giant polygonal color smears.
     # Use the separate player-free, verified basketball arena artwork as a
