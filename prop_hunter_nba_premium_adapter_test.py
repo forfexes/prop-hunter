@@ -63,7 +63,7 @@ cross=SimpleNamespace(**{**base,"features":{**feats,"combo_scope":"cross_game"}}
 assert Image.open(BytesIO(render_nba_pick(cross,legs,[]))).size==(1080,1440)
 lottery=SimpleNamespace(**base,type="lottery",odds=18.25,leg_details=multi_legs)
 assert Image.open(BytesIO(render_nba_pick(lottery,legs,[]))).size==(1080,1440)
-rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
+rejects(SimpleNamespace(**{**base,"game":""},type="lottery",odds=18.25,
        leg_details=[{**multi_legs[0],"game":""},multi_legs[1]]),legs,[],
        contains="verified matchup")
 rejects(SimpleNamespace(**{**base,"commence_time":None},type="lottery",odds=18.25,
