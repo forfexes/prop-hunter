@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Bildkarten fuer PROP HUNTER (Single, Same-Game-Builder, Cross-Game-Builder, Ladder).
+"""PROP HUNTER premium-only image entrypoint.
 
-Arena-Hintergrund je Sportart (prozedural, keine fremden Bilder), Teamwappen, Spielerfotos und Formwerte
-(L5/L10/L15) aus den bereits gepruefte Pick-Daten. Fotos/Wappen kommen aus der oeffentlichen ESPN-API; fehlt eines,
-erscheint ein neutraler Platzhalter. Jeder Fehler -> None, der Aufrufer sendet dann die normale Textkarte.
-Abschalten: PH_IMAGE_CARDS=0
+Only the verified NBA premium master may produce a card image. Missing authentic
+player photos, logos, bookmaker provenance or required data fail closed (None).
+The legacy procedural renderer is retained as inert code for compatibility with
+older imports; build_for_pick MUST NOT invoke it. Other sports await approved
+premium templates. Callers must not interpret None as permission to use an old
+image design. PH_IMAGE_CARDS=0 disables image generation.
 """
 from __future__ import annotations
 
