@@ -5512,6 +5512,13 @@ def run(dry_run=False,sport_filter=None):
         if not dry_run and os.getenv("PH_FAIL_ON_EMPTY_CARD", "1") == "1":
             raise RuntimeError("PROP HUNTER EMPTY CARD: every candidate rejected by final gates")
         return
+    # Display-only source evidence: attach an NBA start time ONLY when all
+    # independently observed timestamps for the EXACT same player/game agree.
+    # No schedule guessing, current-date defaults or opponent substitutions.
+    from prop_hunter_verified_tipoffs import enrich_verified_tipoffs
+    confirmed_starts=enrich_verified_tipoffs(picks,props)
+    log.info("verified NBA ticket kickoffs recovered=%d from exact source game/player keys",
+             confirmed_starts)
     # Global flat stake applies to every published ticket, including ladders,
     # builders and lotteries.  Apply before rendering AND persistence so that
     # settlement profit uses the same stake shown in Telegram.
