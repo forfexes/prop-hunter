@@ -9,6 +9,9 @@ name: PROP HUNTER NBA Actual Owner Originals Integration QA
       - 'prop_hunter_original_compositor.py'
       - 'test_prop_hunter_nba_owner_bridge.py'
       - 'card_templates/cleaned/**'
+      - 'card_templates/approved/**'
+      - '.github/workflows/prophunter.yml'
+      - '.github/workflows/prophunter_results.yml'
       - '.github/workflows/nba_owner_original_bridge_qa.yml'
 
 permissions:
@@ -30,6 +33,21 @@ jobs:
           python -m py_compile prop_hunter_nba_owner_bridge.py prop_hunter_nba_premium_adapter.py
           python -m py_compile prop_hunter_original_compositor.py test_prop_hunter_nba_owner_bridge.py
           python test_prop_hunter_nba_owner_bridge.py
+      - name: Check BOTH Telegram workflows use approved originals and never legacy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for wf in ('.github/workflows/prophunter.yml',
+                     '.github/workflows/prophunter_results.yml'):
+              text=Path(wf).read_text()
+              assert "PH_NBA_OWNER_ORIGINALS: '1'" in text, wf
+              assert "PH_NBA_PREMIUM_V2_REQUIRE: '1'" in text, wf
+              assert 'python test_prop_hunter_nba_owner_bridge.py' in text, wf
+          for family in ('single','ladder','builder','lottery'):
+              path=Path('card_templates/approved')/(family+'.png')
+              assert path.is_file(),path
+          print('PRODUCTION_NBA_OWNER_ORIGINALS_GUARDED_IN_BOTH_WORKFLOWS')
+          PY
       - name: Show three synthetic source-original previews
         run: |
           python - <<'PY'
