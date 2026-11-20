@@ -1,8 +1,12 @@
 """Hermetic proof that missing NBA photos never block valid neighbouring picks."""
 from types import SimpleNamespace as N
+from io import BytesIO
+from PIL import Image
 from prop_hunter_image_publication_gate import filter_verified_nba_images
 
-PNG=bytes((137,80,78,71,13,10,26,10))+b"QA"
+_out=BytesIO()
+Image.new("RGBA",(1080,1402),(12,35,54,255)).save(_out,"PNG")
+PNG=_out.getvalue()
 
 class Cards:
     def __init__(self):self.calls=[]
@@ -12,7 +16,7 @@ class Cards:
     def build_for_pick(self,pick):
         self.calls.append(pick.player)
         return {"good":PNG,"missing":None,"fake":b"not a png",
-                "details_ok":PNG}.get(pick.player)
+                "corrupt":PNG[:55],"details_ok":PNG}.get(pick.player)
 
 def p(player,sport=None,details=None):
     return N(type="single",player=player,sport=sport,source_sport=None,
@@ -20,15 +24,16 @@ def p(player,sport=None,details=None):
 
 picks=[p("good","NBA"),p("missing","basketball_nba"),
        p("wnba","WNBA"),p("nhl","NHL"),p("fake","NBA"),
-       p("details_ok",None,[{"sport":"NBA"}])]
+       p("corrupt","NBA"),p("details_ok",None,[{"sport":"NBA"}])]
 cards=Cards()
 published,rejected=filter_verified_nba_images(picks,cards)
-assert rejected==2, rejected
+assert rejected==3, rejected
 assert [p.player for p in published]==["good","wnba","nhl","details_ok"]
-assert cards.calls==["good","missing","fake","details_ok"]
-assert len(picks)==6
+assert cards.calls==["good","missing","fake","corrupt","details_ok"]
+assert len(picks)==7
 assert picks[0]._verified_owner_png == PNG
-assert picks[5]._verified_owner_png == PNG
+assert picks[6]._verified_owner_png == PNG
 assert not hasattr(picks[1],"_verified_owner_png")
 assert not hasattr(picks[4],"_verified_owner_png")
+assert not hasattr(picks[5],"_verified_owner_png")
 print("NBA OWNER IMAGE PUBLICATION GATE PASSED: individual skips, no false histories, no text fallback")
