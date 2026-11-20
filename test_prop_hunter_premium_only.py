@@ -24,8 +24,8 @@ def test_nba_failed_premium_never_uses_legacy_renderer():
 
 def test_non_nba_never_uses_legacy_renderer():
     with patch.object(cards, "ON", True), \
-         patch.object(cards, "player_photo", return_value=None), \
-         patch.object(cards, "team_logo", return_value=None), \
-         patch.object(cards, "render", side_effect=AssertionError("legacy renderer called")):
+         patch.object(cards, "render", side_effect=AssertionError("legacy renderer called")), \
+         patch.object(cards, "player_photo", side_effect=AssertionError("unexpected photo lookup")), \
+         patch.object(cards, "team_logo", side_effect=AssertionError("unexpected logo lookup")):
         for sport in ("NFL", "NHL", "MLB", "WNBA"):
             assert cards.build_for_pick(_pick(sport)) is None
