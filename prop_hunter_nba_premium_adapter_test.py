@@ -52,9 +52,9 @@ rejects(SimpleNamespace(**{**base,"features":{}},type="single",
 rejects(single,[dict(row,photo=None)],contains="player_photo")
 rejects(ladder,[dict(row,name="TEST A"),dict(row,name="TEST B")],
         contains="exactly one athlete")
-rejects(SimpleNamespace(**base,type="betbuilder",odds=5.10,
-       leg_details=[{"odds":1.7},{"odds":1.8}],
-       features={**feats,"combined_odds_observed":False}),legs,
+rejects(SimpleNamespace(**{**base,"features":{**feats,"combined_odds_observed":False}},
+       type="betbuilder",odds=5.10,
+       leg_details=[{"odds":1.7},{"odds":1.8}]),legs,
        contains="combo ticket")
 multi_legs=[{"odds":1.7,"game":"TEAM A vs TEAM B","commence_time":"2026-11-20T19:00:00+00:00","sport":"NBA"},
             {"odds":1.8,"game":"TEAM C vs TEAM D","commence_time":"2026-11-21T20:00:00+00:00","sport":"NBA"}]
