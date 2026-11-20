@@ -89,10 +89,42 @@ def _template(pick, rows):
     feats = feats if isinstance(feats, dict) else {}
     n = len(rows)
     if typ == "single" and n == 1:
-        market = str(_get(pick, "market") or "").lower().replace("-", "_")
-        aliases = {"3pt": "threes", "3pm": "threes", "three_pointers": "threes",
-                   "pts": "points", "reb": "rebounds", "ast": "assists"}
-        market = aliases.get(market, market)
+        # Real source picks often store the numeric line and direction as
+        # part of market, e.g. "Rebounds Over 3.5", "Assists Under 4.5".
+        # These still have their own approved REBOUNDS / ASSISTS master.
+        # Strip ONLY the independently verified trailing line, not unknown
+        # market terms; never silently substitute a generic card family.
+        market = re.sub(r"\\s+", " ", re.sub(r"[_-]+", " ",
+                      str(_get(pick, "market") or "").lower())).strip()
+        observed = re.fullmatch(
+            r"(.+?)\\s+(over|under)\\s+([-+]?\\d+(?:[.,]\\d+)?)", market)
+        if observed:
+            direction = str(_get(pick, "direction") or "").strip().lower()
+            if direction and direction != observed.group(2):
+                raise PremiumDataMissing("Conflicting observed NBA pick direction")
+            point = _get(pick, "point")
+            if point is not None:
+                try:
+                    if abs(float(point) - float(observed.group(3).replace(",", "."))) > 0.000001:
+                        raise PremiumDataMissing("Conflicting observed NBA pick threshold")
+                except (TypeError, ValueError) as exc:
+                    raise PremiumDataMissing("Invalid observed NBA threshold") from exc
+            market = observed.group(1)
+        market = re.sub(r"^player\\s+", "", market)
+        market = re.sub(r"\\s+alternate$", "", market)
+        aliases = {
+            "3pt":"threes", "3pm":"threes", "3pt made":"threes",
+            "three pointers":"threes", "three pointers made":"threes",
+            "pts":"points", "reb":"rebounds", "ast":"assists",
+            "points rebounds assists":"pra", "p r a":"pra",
+            "points rebounds":"points_rebounds", "points assists":"points_assists",
+            "rebounds assists":"rebounds_assists",
+            "double double":"double_double", "triple double":"triple_double",
+            "first basket":"first_basket", "team total":"team_total",
+            "match total":"match_total", "moneyline":"moneyline",
+            "spread":"spread", "turnovers":"turnovers",
+        }
+        market = aliases.get(market, market.replace(" ", "_"))
         from json import loads
         manifest = loads((MASTER_DIR / "manifest.json").read_text())
         key = "single_" + market
