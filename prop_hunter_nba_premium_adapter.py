@@ -105,10 +105,12 @@ def _template(pick, rows):
             point = _get(pick, "point")
             if point is not None:
                 try:
-                    if abs(float(point) - float(observed.group(3).replace(",", "."))) > 0.000001:
-                        raise PremiumDataMissing("Conflicting observed NBA pick threshold")
+                    observed_point = float(observed.group(3).replace(",", "."))
+                    stored_point = float(point)
                 except (TypeError, ValueError) as exc:
                     raise PremiumDataMissing("Invalid observed NBA threshold") from exc
+                if abs(stored_point - observed_point) > 0.000001:
+                    raise PremiumDataMissing("Conflicting observed NBA pick threshold")
             market = observed.group(1)
         market = re.sub(r"^player\s+", "", market)
         market = re.sub(r"\s+alternate$", "", market)
