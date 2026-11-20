@@ -2,8 +2,7 @@
 """Create CLEAN source plates, once, from the owner's four ORIGINAL JPGs.
 
 The originals are NEVER overwritten.  This script removes baked-in sample
-athletes, team crests, names, odds, figures and dates using image inpainting
-on source pixels BEFORE any new pick is rendered.  Runtime mask boxes cannot
+athletes, team crests, names, odds, figures and dates using a clean arena-photo donor and feathered masks BEFORE any new pick is rendered.  Runtime mask boxes cannot
 replace source cleanup.  All masks are source-coordinate masks (691-px crop).
 """
 from __future__ import annotations
@@ -79,9 +78,22 @@ def build(family: str):
             cv2.rectangle(mask,(x0,y0),(x1,y1),255,-1)
     # 2px safety expansion catches anti-aliased glyph fringes.
     mask=cv2.dilate(mask,np.ones((5,5),np.uint8),iterations=1)
-    # Pixel reconstruction is applied once to the underlying clean plate.
-    # Source outside the precisely enumerated masks stays pixel-identical.
-    clean=cv2.inpaint(source,mask,5.0,cv2.INPAINT_TELEA)
+    # Large erased player regions must NEVER be filled by OpenCV Telea:
+    # on a nearly empty interior it produces giant polygonal color smears.
+    # Use the separate player-free, verified basketball arena artwork as a
+    # clean photographic donor. Preserve ALL outside-mask original pixels,
+    # feathering inwards from the cut edge to avoid a rectangular seam.
+    arena_path=ROOT/"nba_premium_v2"/"assets"/"arena.jpg"
+    if not arena_path.is_file():
+        raise FileNotFoundError("Clean NBA arena donor missing")
+    with Image.open(arena_path) as arena:
+        donor=np.asarray(arena.convert("RGB").resize(
+            (source.shape[1],source.shape[0]),Image.Resampling.LANCZOS))
+    depth=cv2.distanceTransform(mask,cv2.DIST_L2,5)
+    alpha=np.clip(depth/11.0,0.0,1.0)[...,None]
+    clean=np.clip(source.astype("float32")*(1-alpha)+
+                  donor.astype("float32")*alpha,0,255).astype("uint8")
+    clean[mask==0]=source[mask==0]
     if clean.shape!=source.shape: raise AssertionError("Image shape mismatch")
     if not np.array_equal(clean[mask==0],source[mask==0]):
         raise AssertionError("The permanent source artwork was modified")
