@@ -1,0 +1,42 @@
+name: PROP HUNTER NBA Premium V2 Master QA
+"on":
+  push:
+    paths:
+      - 'card_templates/nba_premium_v2/**'
+      - '.github/workflows/prop_hunter_nba_premium_v2_qa.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install image renderer
+        run: python -m pip install 'Pillow>=10' 'cairosvg>=2.7'
+      - name: Test all 52 premium layered masters and strict bookmaker safety
+        run: python -u card_templates/nba_premium_v2/test_masters.py
+      - name: Render eight clean visual previews
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'card_templates/nba_premium_v2')
+          from render_cards import render_png
+          out=Path('diagnostics/nba_premium_v2')
+          out.mkdir(parents=True,exist_ok=True)
+          for key in ('single_single','ladder_4','builder_4','builder_6','same_player_4','combo_5','lottery_6','longshot'):
+              (out/(key+'.png')).write_bytes(render_png(key,{}, {},strict=False))
+          print('PREVIEW: 8 real blank masters, no invented tips')
+          PY
+      - name: Publish true rendered premium master PNGs
+        uses: actions/upload-artifact@v4
+        with:
+          name: nba-premium-v2-8-master-previews
+          path: diagnostics/nba_premium_v2/*.png
+          retention-days: 14
+          if-no-files-found: error
