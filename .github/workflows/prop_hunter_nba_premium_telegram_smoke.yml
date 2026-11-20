@@ -1,0 +1,66 @@
+name: PROP HUNTER NBA Premium Telegram Smoke Test
+"on":
+  push:
+    paths:
+      - '.github/workflows/prop_hunter_nba_premium_telegram_smoke.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PNG renderer and Telegram HTTP client
+        run: python -m pip install 'Pillow>=10' 'cairosvg>=2.7' 'requests>=2.31'
+      - name: Send ONE labeled non-tip photo, then delete it immediately
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<'PY'
+          import os,sys,time
+          from io import BytesIO
+          from PIL import Image,ImageDraw,ImageFont
+          import requests
+          sys.path.insert(0,'card_templates/nba_premium_v2')
+          from render_cards import render_png
+          token=os.getenv('TELEGRAM_BOT_TOKEN','').strip()
+          chat=os.getenv('TELEGRAM_CHAT_ID','').strip()
+          if not token or not chat:
+              raise SystemExit('SMOKE_NOT_CONFIGURED: Telegram token or chat missing')
+          base='https://api.telegram.org/bot'+token+'/'
+          session=requests.Session()
+          me=session.post(base+'getMe',timeout=12).json()
+          if not me.get('ok'):raise SystemExit('SMOKE_AUTH_FAILED')
+          img=Image.open(BytesIO(render_png('lottery_6',{}, {},strict=False))).convert('RGB')
+          d=ImageDraw.Draw(img)
+          d.rounded_rectangle((145,1320,930,1380),radius=16,fill=(8,10,24),outline=(255,212,96),width=4)
+          try:font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',30)
+          except OSError:font=ImageFont.load_default()
+          d.text((540,1350),'TEST MASTER - KEIN TIPP',font=font,fill='white',anchor='mm')
+          out=BytesIO();img.save(out,'JPEG',quality=90,optimize=True)
+          data={'chat_id':chat,'caption':'TEST MASTER - KEIN TIPP - wird sofort geloescht',
+                'disable_notification':'true'}
+          sent=session.post(base+'sendPhoto',data=data,files={'photo':('nba_master_smoke.jpg',out.getvalue(),'image/jpeg')},timeout=30).json()
+          if not sent.get('ok'):
+              raise SystemExit('SMOKE_SEND_FAILED: '+str(sent.get('description','unknown'))[:130])
+          message_id=sent['result']['message_id']
+          print('SMOKE_SENDPHOTO_CONFIRMED; temporary message_id:',message_id,flush=True)
+          deleted=False
+          for i in range(4):
+              try:
+                  result=session.post(base+'deleteMessage',data={'chat_id':chat,'message_id':message_id},timeout=15).json()
+                  if result.get('ok'):
+                      deleted=True;break
+                  print('SMOKE_DELETE_RETRY',i+1,str(result.get('description','unknown'))[:100],flush=True)
+              except requests.RequestException as e:
+                  print('SMOKE_DELETE_RETRY_NETWORK',i+1,type(e).__name__,flush=True)
+              time.sleep(2)
+          if not deleted:raise SystemExit('SMOKE_DELETE_FAILED: temporary test photo needs manual cleanup')
+          print('SMOKE_SUCCESS: sendPhoto and deleteMessage confirmed; no tip posted, no persistent test card',flush=True)
+          PY
