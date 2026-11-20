@@ -41,3 +41,13 @@ def test_nba_uses_premium_adapter_and_never_legacy():
          patch.object(cards, "render", side_effect=AssertionError("legacy renderer called")):
         assert cards.build_for_pick(_pick("NBA")) == fake_png
         premium.assert_called_once()
+
+
+def test_ambiguous_basketball_never_becomes_nba():
+    assert cards.league_of("basketball") is None
+    assert cards.league_of("basketball_wnba") == ("basketball", "wnba")
+    assert cards.league_of("basketball_nba") == ("basketball", "nba")
+    with patch.object(cards, "ON", True), \\
+         patch.object(cards, "player_photo", side_effect=AssertionError("unexpected network lookup")), \\
+         patch.object(cards, "team_logo", side_effect=AssertionError("unexpected network lookup")):
+        assert cards.build_for_pick(_pick("basketball")) is None
