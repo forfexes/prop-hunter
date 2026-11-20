@@ -152,7 +152,7 @@ def leg_row(x,y,w,h,i,family):
         left=x+215
     else:
         left=x+118
-    s+=dynamic(left,y+h*.45,f'leg_{i}_name' if not is_ladder else f'leg_{i}_line',26,WHITE)
+    s+=dynamic(left,y+h*(.34 if family in ('lottery','combo','cross_game') else .45),f'leg_{i}_name' if not is_ladder else f'leg_{i}_line',26,WHITE)
     s+=dynamic(left,y+h*(.65 if family in ('lottery','combo','cross_game') else .78),f'leg_{i}_market',24,MUTED)
     if family in ('lottery','combo','cross_game'):
         s+=dynamic(left,y+h*.89,f'leg_{i}_game',18,MUTED)
