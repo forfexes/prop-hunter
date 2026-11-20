@@ -89,5 +89,16 @@ with patch.dict(sys.modules,{"prop_hunter_image_cards":fake}), \
     card={"kind":"single","single_indices":[0]}
     assert scope["_payload_card_image"](card,[N(type="single",sport="WNBA")])
     assert card["premium_required"] is False
+    # A verified PNG must be delivered byte-for-byte, without invoking ESPN
+    # retrieval or redrawing an image that already passed the production gate.
+    def never_redraw(pick):
+        raise AssertionError("second owner artwork generation is forbidden")
+    fake.build_for_pick=never_redraw
+    card={"kind":"single","single_indices":[0]}
+    cached=N(type="single",sport="NBA",
+             _verified_owner_png=b"cached authentic png bytes")
+    assert scope["_payload_card_image"](card,[cached])==b"cached authentic png bytes"
+    assert card["media_type"]=="photo"
+    assert card["premium_required"] is True
 
-print("PREMIUM TELEGRAM PHOTO-ONLY CONTRACT PASSED: NBA classification, preflight, no text fallbacks, no partial batch")
+print("PREMIUM TELEGRAM PHOTO-ONLY CONTRACT PASSED: cached identical PNG, NBA classification, preflight, no text fallbacks")
