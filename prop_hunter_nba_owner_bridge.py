@@ -38,10 +38,10 @@ def render_owner(pick, key: str, rows: list, teams: list,
     when = f"{WD[dt.weekday()]} {dt:%d.%m}. · {values['time']}"
     subtitle = source + " · " + when
     stake = values.get("stake")
-    footer = "Quote " + (values.get("total_odds")
-             or values.get("odds") or "")
+    observed_quote = values.get("total_odds") or values.get("odds")
+    footer = ("Quote " + str(observed_quote)) if observed_quote else ""
     if stake:
-        footer += " · Einsatz " + str(stake)
+        footer += (" · " if footer else "") + "Einsatz " + str(stake)
     labels=[]
     for i, row in enumerate(rows):
         photo=row.get("photo")
