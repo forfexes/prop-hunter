@@ -10,6 +10,14 @@ on:
       - 'prop_hunter_nba_premium_adapter_test.py'
       - 'card_templates/nba_premium_v2/**'
       - '.github/workflows/nba_premium_only_guard.yml'
+  pull_request:
+    paths:
+      - 'prop_hunter_image_cards.py'
+      - 'prop_hunter_nba_premium_adapter.py'
+      - 'prop_hunter_nba_premium_adapter_test.py'
+      - 'test_prop_hunter_premium_only.py'
+      - 'prop_hunter_image_cards_test.py'
+      - 'card_templates/nba_premium_v2/**'
   workflow_dispatch: {}
 
 permissions:
@@ -28,6 +36,11 @@ jobs:
         run: python -m pip install pytest pillow requests cairosvg
       - name: Verify old card renderer is never called
         run: python -m pytest -q test_prop_hunter_premium_only.py prop_hunter_image_cards_test.py prop_hunter_nba_premium_adapter_test.py
+      - name: Require four NBA QA preview cards
+        run: |
+          for family in single ladder builder lottery; do
+            test -s "output/nba_premium_qa/${family}.png" || exit 1
+          done
       - name: Upload NBA QA preview cards
         if: always()
         uses: actions/upload-artifact@v4
