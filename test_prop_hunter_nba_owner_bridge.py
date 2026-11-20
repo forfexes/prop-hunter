@@ -53,6 +53,9 @@ try:
             with Image.open(BytesIO(raw)) as image:
                 assert image.width==1080 and image.height>=1100,(family,image.size)
                 image.verify()
+            outdir=Path("output/nba_owner_qa")
+            outdir.mkdir(parents=True,exist_ok=True)
+            (outdir/(family+".png")).write_bytes(raw)
             print("OWNER_NBA_PREVIEW_OK",family,len(raw))
 finally:
     originals.APPROVED_MASTER=old_master
