@@ -186,13 +186,15 @@ def render_nba_pick(pick, rows, teams):
                 # Every leg must carry its own verified game and local tipoff.
                 # A single generic VS would be false for a cross-game parlay.
                 game = str(detail.get("game") or detail.get("matchup") or "").strip()
-                if not game and feats.get("combo_scope") != "cross_game":
-                    game = str(_get(pick, "game") or "").strip()
+                # In a lottery/cross-game ticket, a generic parent game does NOT
+                # establish which fixture each individual leg belongs to.
                 if not game or not re.search(r"\s+(?:vs\.?|@)\s+", game, re.I):
                     raise PremiumDataMissing(f"Leg {i} has no verified matchup")
-                sport = str(detail.get("sport") or "NBA").lower()
-                if "nba" not in sport or "wnba" in sport:
-                    raise PremiumDataMissing(f"Leg {i} is not NBA")
+                # A parent's NBA label does not establish every cross-game leg's
+                # league. Never quietly relabel WNBA/college/unknown legs as NBA.
+                sport = str(detail.get("sport") or "").lower().replace("_", " ").strip()
+                if not sport or not re.search(r"\bnba\b", sport):
+                    raise PremiumDataMissing(f"Leg {i} has no verified NBA league")
                 # Cross-game legs must carry their own event timestamp; a parent
                 # timestamp cannot safely represent multiple different games.
                 kickoff = detail.get("commence_time")
