@@ -180,6 +180,10 @@ def render_nba_pick(pick, rows, teams):
                 raise PremiumDataMissing(f"Leg {i} is not NBA")
             values[f"leg_{i}_name"] = str(row.get("name") or "")
             values[f"leg_{i}_market"] = str(row.get("label") or "")
+            for form_key, form_value in _form(row.get("form")).items():
+                # Per-athlete L5/L10/L15 are observed windows only; do not
+                # invent data or copy another builder leg's statistics.
+                values[f"leg_{i}_{form_key}"] = form_value
             values[f"leg_{i}_line"] = str(row.get("label") or "")
             values[f"leg_{i}_odds"] = _price(detail.get("odds"))
             if multi_game:
