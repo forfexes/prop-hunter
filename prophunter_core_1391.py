@@ -5571,6 +5571,21 @@ def run(dry_run=False,sport_filter=None):
                 _ticket.stake = 0.10 if _is_lottery else _stake_all
         except (ValueError, TypeError) as _stake_exc:
             raise RuntimeError("Invalid PH_FLAT_ALL_STAKE") from _stake_exc
+    # Strict owner originals: remove ONLY NBA picks whose authentic portrait,
+    # club crests, source price or verified fixture time cannot render a real PNG.
+    # Filter BEFORE both Telegram transport and history persistence; otherwise
+    # a text-only/deferred pick would be falsely recorded as posted.
+    if os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1":
+        import prop_hunter_image_cards as _owner_cards
+        from prop_hunter_image_publication_gate import filter_verified_nba_images
+        picks, photo_blocked=filter_verified_nba_images(picks,_owner_cards)
+        log.info("NBA original-image publication preflight: blocked=%d publishable=%d",
+                 photo_blocked,len(picks))
+        if not picks:
+            log.error("No verified original NBA image cards available; nothing published")
+            if not dry_run:
+                raise RuntimeError("PROP HUNTER: all qualified cards failed original-image preflight")
+            return
     body=build_post(picks)
     print("\n"+body+"\n")
     telegram_message_id = send_telegram(body,dry_run=dry_run,picks=picks)
