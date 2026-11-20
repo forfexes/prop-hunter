@@ -194,10 +194,11 @@ def multi(family,n):
 
 def build():
     (HERE/'assets').mkdir(exist_ok=True)
-    src=Path('/mnt/data/a_highly_detailed_cinematic_photorealistic_indoo.png')
-    if not src.exists() and not (HERE/'assets'/'arena.jpg').exists():
+    source_path=os.environ.get('PH_NBA_ARENA_SOURCE')
+    src=Path(source_path) if source_path else None
+    if (src is None or not src.is_file()) and not (HERE/'assets'/'arena.jpg').exists():
         raise FileNotFoundError('Original arena artwork must be supplied; do not substitute a screenshot with baked players')
-    if src.exists():
+    if src is not None and src.is_file():
         im=Image.open(src).convert('RGB').resize((W,H),Image.Resampling.LANCZOS)
         im.save(HERE/'assets'/'arena.jpg',quality=88,optimize=True,subsampling=0)
     templates={}
@@ -311,11 +312,11 @@ Jedes dynamische Textfeld ist mit `data-field` markiert. Fotos/Wappen sind separ
 
 `build_masters.py` erzeugt die 52 SVGs und die Prüf-Vorschauen aus dem vorhandenen Arena-Bild. `manifest.json` definiert die Familien und Feldbelegungen.
 ''',encoding='utf8')
-    with zipfile.ZipFile('/mnt/data/PROP_HUNTER_NBA_Premium_Mastervorlagen_52.zip','w',zipfile.ZIP_DEFLATED,compresslevel=7) as z:
+    with zipfile.ZipFile(HERE.parent/'PROP_HUNTER_NBA_Premium_Mastervorlagen_52.zip','w',zipfile.ZIP_DEFLATED,compresslevel=7) as z:
         for p in HERE.rglob('*'):
             if p.is_file() and p.name!='__pycache__' and 'preview_test' not in p.name:
                 z.write(p,p.relative_to(HERE.parent))
-    print('PASS 52/52; preview',previews/'collection.png', 'zip', '/mnt/data/PROP_HUNTER_NBA_Premium_Mastervorlagen_52.zip')
+    print('PASS 52/52; preview',previews/'collection.png', 'zip', HERE.parent/'PROP_HUNTER_NBA_Premium_Mastervorlagen_52.zip')
 
 if __name__=='__main__':
     build();qa_and_previews()
