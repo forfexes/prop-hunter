@@ -197,6 +197,8 @@ jobs:
 
       - name: Build and post card
         env:
+          PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
+          PH_NBA_PREMIUM_V2_REQUIRE: '0'  # retain original for incomplete photos/odds; no invented fields
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
