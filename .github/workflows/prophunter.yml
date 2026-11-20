@@ -20,7 +20,7 @@ concurrency:
 jobs:
   card:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25  # source collection + NBA model can exceed 10 min; avoid killing before Telegram delivery
     steps:
       - uses: actions/checkout@v4
         with:
