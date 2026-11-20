@@ -95,7 +95,11 @@ def _template(pick, rows):
         from json import loads
         manifest = loads((MASTER_DIR / "manifest.json").read_text())
         key = "single_" + market
-        return key if key in manifest["templates"] else "single_single"
+        if key not in manifest["templates"]:
+            # Never silently render an unknown market on a generic card.
+            # Every production selection needs its explicit approved master.
+            raise PremiumDataMissing("No approved NBA master for market: " + market[:55])
+        return key
     if n < 2 or n > 6:
         raise PremiumDataMissing("Only 2–6 legs are supported")
     if typ == "ladder":
