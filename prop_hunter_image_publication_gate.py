@@ -7,8 +7,25 @@ image-card renderer; no Telegram or Supabase access.
 """
 from __future__ import annotations
 
+from io import BytesIO
+from PIL import Image
+
 
 _PNG_MAGIC=bytes((137,80,78,71,13,10,26,10))
+
+
+def _valid_owner_png(value):
+    """Reject truncated images or mislabeled thumbnails before Telegram upload."""
+    if not isinstance(value,(bytes,bytearray)) or not value.startswith(_PNG_MAGIC):
+        return False
+    try:
+        with Image.open(BytesIO(value)) as source:
+            if source.format!="PNG" or source.width<900 or source.height<1000:
+                return False
+            source.verify()
+        return True
+    except (ValueError,OSError,SyntaxError):
+        return False
 
 
 def filter_verified_nba_images(picks, cards):
@@ -30,7 +47,7 @@ def filter_verified_nba_images(picks, cards):
             accepted.append(pick)
             continue
         result=cards.build_for_pick(pick)
-        if isinstance(result,(bytes,bytearray)) and bytes(result).startswith(_PNG_MAGIC):
+        if _valid_owner_png(result):
             # Production will reuse the exact verified artwork bytes from
             # preflight. Never fetch photos or redraw a second time after the
             # decision, which could change the card or hit a transient API.
