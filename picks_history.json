@@ -364362,6 +364362,74 @@
           "gamelog_n": 15,
           "venue": "Paycom Center|Oklahoma City"
         }
+      },
+      {
+        "date": "2026-11-20",
+        "player": "Aaron Nesmith",
+        "team": "",
+        "market": "blocks Under 0.5",
+        "sport": "NBA",
+        "odds": 2.75,
+        "stake": 1.0,
+        "direction": "under",
+        "probability": 0.6535,
+        "dedup_key": "aaron nesmith|blocks under 0.5|0.5|under",
+        "point": 0.5,
+        "line": 0.5,
+        "game": "Indiana Pacers @ Cleveland Cavaliers",
+        "game_id": "1028744805",
+        "event_id": "1028744805",
+        "commence_time": "2026-11-21T00:30:00+00:00",
+        "bookmaker": "kambi_ub",
+        "source": "kambi",
+        "raw": {
+          "game": "Indiana Pacers @ Cleveland Cavaliers",
+          "commence_time": "2026-11-21T00:30:00+00:00",
+          "source_event_id": "1028744805",
+          "bookmaker": "kambi_ub",
+          "source": "kambi"
+        },
+        "result": "pending",
+        "profit": null,
+        "closing_odds": null,
+        "clv_pct": null,
+        "created_at": "2026-11-20T23:33:23.698065+00:00",
+        "features": {
+          "form_window_policy": "current_season",
+          "form_reference_date": "2026-11-21",
+          "form_season_start": "2026-10-20",
+          "form_last_game_date": "2026-11-18",
+          "gamelog_l15_hits": 12,
+          "gamelog_l15_n": 15,
+          "gamelog_l15_line": 0.5,
+          "gamelog_l15_direction": "under",
+          "recent_form": {
+            "version": 1,
+            "line": 0.5,
+            "direction": "under",
+            "l5": {
+              "n": 5,
+              "hits": 4,
+              "avg": 0.2
+            },
+            "l10": {
+              "n": 10,
+              "hits": 9,
+              "avg": 0.1
+            },
+            "l15": {
+              "n": 15,
+              "hits": 12,
+              "avg": 0.2
+            },
+            "previous": {
+              "n": 10,
+              "hits": 8
+            }
+          },
+          "gamelog_n": 15,
+          "venue": "Rocket Arena|Cleveland"
+        }
       }
     ],
     "kombis": [
@@ -366608,6 +366676,338 @@
         "ev": 0.0836,
         "analysis": "3 echte +EV Alt-Linien bei bovada; jede Stufe separat geprueft.",
         "bookmaker": "bovada",
+        "source": null,
+        "builder_profile": null,
+        "builder_odds_estimated_from_legs": false,
+        "acca_odds_estimated_from_legs": false,
+        "combo_scope": null,
+        "same_player_multistat": false
+      },
+      {
+        "type": "ladder",
+        "category": "ladder",
+        "player": "Onyeka Okongwu",
+        "market": "Blocks Ladder",
+        "sport": "NBA",
+        "legs": [],
+        "leg_details": [
+          {
+            "player": "Onyeka Okongwu",
+            "sport": "NBA",
+            "market": "Blocks Under 2.5",
+            "source_market": "blocks",
+            "direction": "under",
+            "point": 2.5,
+            "odds": 1.5,
+            "probability": 0.8013,
+            "edge_pct": 20.2,
+            "gamelog_l15_hits": 14,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "kambi_ub",
+            "game": "Charlotte Hornets @ Atlanta Hawks",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-21",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-09",
+              "gamelog_l15_hits": 14,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 2.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 2.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 1.0
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 9,
+                  "avg": 0.8
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 14,
+                  "avg": 0.7333
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 10
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "State Farm Arena|Atlanta"
+            },
+            "commence_time": "2026-11-21 00:00:00+00:00"
+          },
+          {
+            "player": "Onyeka Okongwu",
+            "sport": "NBA",
+            "market": "Blocks Under 1.5",
+            "source_market": "blocks",
+            "direction": "under",
+            "point": 1.5,
+            "odds": 2.43,
+            "probability": 0.8013,
+            "edge_pct": 94.7,
+            "gamelog_l15_hits": 14,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "kambi_ub",
+            "game": "Charlotte Hornets @ Atlanta Hawks",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-21",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-09",
+              "gamelog_l15_hits": 14,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 1.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 1.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 1.0
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 9,
+                  "avg": 0.8
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 14,
+                  "avg": 0.7333
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 10
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "State Farm Arena|Atlanta"
+            },
+            "commence_time": "2026-11-21 00:00:00+00:00"
+          }
+        ],
+        "odds": 1.5,
+        "stake": 1.0,
+        "features": {
+          "odds_observed": true,
+          "price_type": "bookmaker",
+          "bookmaker": "kambi_ub",
+          "ladder_rungs": 2
+        },
+        "game": "Charlotte Hornets @ Atlanta Hawks",
+        "commence_time": null,
+        "event_id": null,
+        "probability": 0.8013,
+        "result": "pending",
+        "created_at": "2026-11-20T23:33:24.492919+00:00",
+        "ladder_legs": [
+          {
+            "market": "Blocks Under 2.5",
+            "odds": 1.5,
+            "stake": 0.06,
+            "point": 2.5,
+            "direction": "under",
+            "probability": 0.8013,
+            "edge_pct": 20.2,
+            "bookmaker": "kambi_ub"
+          },
+          {
+            "market": "Blocks Under 1.5",
+            "odds": 2.43,
+            "stake": 0.1,
+            "point": 1.5,
+            "direction": "under",
+            "probability": 0.8013,
+            "edge_pct": 94.7,
+            "bookmaker": "kambi_ub"
+          }
+        ],
+        "direction": "under",
+        "point": 2.5,
+        "dedup_key": "a338aa68261ec5f2566357ea2df21dba48b1274a",
+        "combo_id": "97eaacdf6b3651ba",
+        "edge_pct": 20.2,
+        "ev": 0.2019,
+        "analysis": "2 echte +EV Alt-Linien bei kambi_ub; jede Stufe separat geprueft.",
+        "bookmaker": "kambi_ub",
+        "source": null,
+        "builder_profile": null,
+        "builder_odds_estimated_from_legs": false,
+        "acca_odds_estimated_from_legs": false,
+        "combo_scope": null,
+        "same_player_multistat": false
+      },
+      {
+        "type": "ladder",
+        "category": "ladder",
+        "player": "Aaron Nesmith",
+        "market": "Blocks Ladder",
+        "sport": "NBA",
+        "legs": [],
+        "leg_details": [
+          {
+            "player": "Aaron Nesmith",
+            "sport": "NBA",
+            "market": "Blocks Under 1.5",
+            "source_market": "blocks",
+            "direction": "under",
+            "point": 1.5,
+            "odds": 1.45,
+            "probability": 0.86,
+            "edge_pct": 24.7,
+            "gamelog_l15_hits": 15,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "kambi_ub",
+            "game": "Indiana Pacers @ Cleveland Cavaliers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-21",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-18",
+              "gamelog_l15_hits": 15,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 1.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 1.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 5,
+                  "avg": 0.2
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 10,
+                  "avg": 0.1
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 15,
+                  "avg": 0.2
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 10
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Rocket Arena|Cleveland"
+            },
+            "commence_time": "2026-11-21 00:30:00+00:00"
+          },
+          {
+            "player": "Aaron Nesmith",
+            "sport": "NBA",
+            "market": "Blocks Under 0.5",
+            "source_market": "blocks",
+            "direction": "under",
+            "point": 0.5,
+            "odds": 2.75,
+            "probability": 0.6413,
+            "edge_pct": 76.4,
+            "gamelog_l15_hits": 12,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "kambi_ub",
+            "game": "Indiana Pacers @ Cleveland Cavaliers",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-21",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-18",
+              "gamelog_l15_hits": 12,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 0.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 0.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 0.2
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 9,
+                  "avg": 0.1
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 12,
+                  "avg": 0.2
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 8
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Rocket Arena|Cleveland"
+            },
+            "commence_time": "2026-11-21 00:30:00+00:00"
+          }
+        ],
+        "odds": 1.45,
+        "stake": 1.0,
+        "features": {
+          "odds_observed": true,
+          "price_type": "bookmaker",
+          "bookmaker": "kambi_ub",
+          "ladder_rungs": 2
+        },
+        "game": "Indiana Pacers @ Cleveland Cavaliers",
+        "commence_time": "2026-11-21T00:30:00+00:00",
+        "event_id": null,
+        "probability": 0.86,
+        "result": "pending",
+        "created_at": "2026-11-20T23:33:25.252896+00:00",
+        "ladder_legs": [
+          {
+            "market": "Blocks Under 1.5",
+            "odds": 1.45,
+            "stake": 0.08,
+            "point": 1.5,
+            "direction": "under",
+            "probability": 0.86,
+            "edge_pct": 24.7,
+            "bookmaker": "kambi_ub"
+          },
+          {
+            "market": "Blocks Under 0.5",
+            "odds": 2.75,
+            "stake": 0.07,
+            "point": 0.5,
+            "direction": "under",
+            "probability": 0.6413,
+            "edge_pct": 76.4,
+            "bookmaker": "kambi_ub"
+          }
+        ],
+        "direction": "under",
+        "point": 1.5,
+        "dedup_key": "948430de741c976134609a89afa67c0fbb1cb38a",
+        "combo_id": "e00a9600078e8771",
+        "edge_pct": 24.7,
+        "ev": 0.247,
+        "analysis": "2 echte +EV Alt-Linien bei kambi_ub; jede Stufe separat geprueft.",
+        "bookmaker": "kambi_ub",
         "source": null,
         "builder_profile": null,
         "builder_odds_estimated_from_legs": false,
@@ -371187,6 +371587,462 @@
           ]
         },
         "card_design_version": 0
+      },
+      {
+        "created_at": "2026-11-20T23:33:25.756754+00:00",
+        "message_id": 2614,
+        "chat_id": "-1003861013124",
+        "text": "🎯 PROP HUNTER PRO TIP — SINGLE — 20.11.2026\n\n🏀 Aaron Nesmith\n🏟 Indiana Pacers @ Cleveland Cavaliers\n\n• blocks Under 0.5 @2.75 → 1.0u\n📈 Prob 65% · Edge +29.0% · Confidence 85/100\n💡 src:kambi_ub | Form L5 4/5 · L15(+9 Vorsaison) avg 0.2, 80% unter Linie\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "pick_keys": [
+          "aaron nesmith|blocks under 0.5|0.5|under"
+        ],
+        "combo_ids": [],
+        "card_kind": "single",
+        "media_type": "photo",
+        "image_pick": {
+          "type": "single",
+          "player": "Aaron Nesmith",
+          "market": "blocks Under 0.5",
+          "direction": "under",
+          "point": 0.5,
+          "odds": 2.75,
+          "game": "Indiana Pacers @ Cleveland Cavaliers",
+          "source_sport": "NBA",
+          "sport": "NBA",
+          "features": {
+            "odds_observed": true,
+            "price_type": "bookmaker",
+            "bookmaker": "kambi_ub",
+            "source": "kambi",
+            "sport": "NBA",
+            "league": "NBA",
+            "source_event_id": "1028744805",
+            "commence_time": "2026-11-21T00:30:00+00:00",
+            "home_team": "Cleveland Cavaliers",
+            "away_team": "Indiana Pacers",
+            "event_market": false,
+            "confirmed_builder_quotes": [],
+            "consensus_sources": 1,
+            "consensus_books": 1,
+            "paired_book_count": 1,
+            "consensus_fair_method": "paired_books",
+            "opening_line": 1.5,
+            "current_line": 0.5,
+            "opening_odds": 1.45,
+            "current_odds": 2.75,
+            "line_move": 1.0,
+            "price_move_prob": -0.326019,
+            "snapshots": 6,
+            "window_minutes": 39.4,
+            "steam": true,
+            "movement_strength": 1.19,
+            "fair_prob": 0.6535,
+            "fair_prob_source": "market_no_vig_consensus",
+            "form_window_policy": "current_season",
+            "form_reference_date": "2026-11-21",
+            "form_season_start": "2026-10-20",
+            "form_games_available": 6,
+            "form_first_game_date": "2026-10-23",
+            "form_last_game_date": "2026-11-18",
+            "form_current_games": 6,
+            "form_prev_season_games": 9,
+            "gamelog_l15_hits": 12,
+            "gamelog_l15_n": 15,
+            "gamelog_l15_empirical_rate": 0.8,
+            "gamelog_l15_line": 0.5,
+            "gamelog_l15_direction": "under",
+            "recent_form": {
+              "version": 1,
+              "line": 0.5,
+              "direction": "under",
+              "l5": {
+                "n": 5,
+                "hits": 4,
+                "avg": 0.2
+              },
+              "l10": {
+                "n": 10,
+                "hits": 9,
+                "avg": 0.1
+              },
+              "l15": {
+                "n": 15,
+                "hits": 12,
+                "avg": 0.2
+              },
+              "previous": {
+                "n": 10,
+                "hits": 8
+              }
+            },
+            "monte_carlo_prob": 0.8201,
+            "monte_carlo_n": 15,
+            "gamelog_model_rate": 0.807035,
+            "gamelog_l15_rate": 0.8,
+            "gamelog_l10_n": 10,
+            "gamelog_l10_hits": 9,
+            "gamelog_l10_rate": 0.9,
+            "gamelog_n": 15,
+            "gamelog_prev_season_n": 9,
+            "venue": "Rocket Arena|Cleveland"
+          },
+          "leg_details": null,
+          "result": null,
+          "actual_value": null,
+          "profit": null,
+          "stake": 1.0,
+          "commence_time": "2026-11-21T00:30:00+00:00",
+          "game_date": null,
+          "date": null,
+          "probability": 0.6535,
+          "edge_pct": 28.99,
+          "confidence_score": null,
+          "model_confidence": null,
+          "picks": []
+        },
+        "card_design_version": 5
+      },
+      {
+        "created_at": "2026-11-20T23:33:25.756773+00:00",
+        "message_id": 2615,
+        "chat_id": "-1003861013124",
+        "text": "🪜 PROP HUNTER PRO TIP — LADDER — 20.11.2026\n\n🏀 Onyeka Okongwu\n🏟 Charlotte Hornets @ Atlanta Hawks\n\n• Blocks Under 2.5 @1.50 → 0.06u\n  📈 Prob konservativ 80% · EV konservativ +20.2% · L15 14/15\n• Blocks Under 1.5 @2.43 → 0.1u\n  📈 Prob konservativ 80% · EV konservativ +94.7% · L15 14/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "pick_keys": [],
+        "combo_ids": [
+          "97eaacdf6b3651ba"
+        ],
+        "card_kind": "ladder",
+        "media_type": "text",
+        "image_pick": {
+          "type": "ladder",
+          "player": "Onyeka Okongwu",
+          "market": "Blocks Ladder",
+          "direction": "under",
+          "point": 2.5,
+          "odds": 1.5,
+          "game": "Charlotte Hornets @ Atlanta Hawks",
+          "source_sport": null,
+          "sport": "NBA",
+          "features": {
+            "odds_observed": true,
+            "price_type": "bookmaker",
+            "bookmaker": "kambi_ub",
+            "ladder_rungs": 2
+          },
+          "leg_details": [
+            {
+              "player": "Onyeka Okongwu",
+              "sport": "NBA",
+              "market": "Blocks Under 2.5",
+              "source_market": "blocks",
+              "direction": "under",
+              "point": 2.5,
+              "odds": 1.5,
+              "probability": 0.8013,
+              "edge_pct": 20.2,
+              "gamelog_l15_hits": 14,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "kambi_ub",
+              "game": "Charlotte Hornets @ Atlanta Hawks",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-21",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-09",
+                "gamelog_l15_hits": 14,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 2.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 2.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 1.0
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 9,
+                    "avg": 0.8
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 14,
+                    "avg": 0.7333
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 10
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "State Farm Arena|Atlanta"
+              },
+              "commence_time": "2026-11-21 00:00:00+00:00"
+            },
+            {
+              "player": "Onyeka Okongwu",
+              "sport": "NBA",
+              "market": "Blocks Under 1.5",
+              "source_market": "blocks",
+              "direction": "under",
+              "point": 1.5,
+              "odds": 2.43,
+              "probability": 0.8013,
+              "edge_pct": 94.7,
+              "gamelog_l15_hits": 14,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "kambi_ub",
+              "game": "Charlotte Hornets @ Atlanta Hawks",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-21",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-09",
+                "gamelog_l15_hits": 14,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 1.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 1.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 1.0
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 9,
+                    "avg": 0.8
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 14,
+                    "avg": 0.7333
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 10
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "State Farm Arena|Atlanta"
+              },
+              "commence_time": "2026-11-21 00:00:00+00:00"
+            }
+          ],
+          "result": null,
+          "actual_value": null,
+          "profit": null,
+          "stake": 1.0,
+          "commence_time": null,
+          "game_date": null,
+          "date": null,
+          "probability": 0.8013,
+          "edge_pct": 20.2,
+          "confidence_score": null,
+          "model_confidence": null,
+          "picks": [
+            {
+              "market": "Blocks Under 2.5",
+              "odds": 1.5,
+              "stake": 0.06,
+              "point": 2.5,
+              "direction": "under",
+              "probability": 0.8013,
+              "edge_pct": 20.2,
+              "bookmaker": "kambi_ub"
+            },
+            {
+              "market": "Blocks Under 1.5",
+              "odds": 2.43,
+              "stake": 0.1,
+              "point": 1.5,
+              "direction": "under",
+              "probability": 0.8013,
+              "edge_pct": 94.7,
+              "bookmaker": "kambi_ub"
+            }
+          ]
+        },
+        "card_design_version": 0
+      },
+      {
+        "created_at": "2026-11-20T23:33:25.756779+00:00",
+        "message_id": 2616,
+        "chat_id": "-1003861013124",
+        "text": "🪜 PROP HUNTER PRO TIP — LADDER — 20.11.2026\n\n🏀 Aaron Nesmith\n🏟 Indiana Pacers @ Cleveland Cavaliers\n\n• Blocks Under 1.5 @1.45 → 0.08u\n  📈 Prob konservativ 86% · EV konservativ +24.7% · L15 15/15\n• Blocks Under 0.5 @2.75 → 0.07u\n  📈 Prob konservativ 64% · EV konservativ +76.4% · L15 12/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "pick_keys": [],
+        "combo_ids": [
+          "e00a9600078e8771"
+        ],
+        "card_kind": "ladder",
+        "media_type": "photo",
+        "image_pick": {
+          "type": "ladder",
+          "player": "Aaron Nesmith",
+          "market": "Blocks Ladder",
+          "direction": "under",
+          "point": 1.5,
+          "odds": 1.45,
+          "game": "Indiana Pacers @ Cleveland Cavaliers",
+          "source_sport": null,
+          "sport": "NBA",
+          "features": {
+            "odds_observed": true,
+            "price_type": "bookmaker",
+            "bookmaker": "kambi_ub",
+            "ladder_rungs": 2
+          },
+          "leg_details": [
+            {
+              "player": "Aaron Nesmith",
+              "sport": "NBA",
+              "market": "Blocks Under 1.5",
+              "source_market": "blocks",
+              "direction": "under",
+              "point": 1.5,
+              "odds": 1.45,
+              "probability": 0.86,
+              "edge_pct": 24.7,
+              "gamelog_l15_hits": 15,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "kambi_ub",
+              "game": "Indiana Pacers @ Cleveland Cavaliers",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-21",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-18",
+                "gamelog_l15_hits": 15,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 1.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 1.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 5,
+                    "avg": 0.2
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 10,
+                    "avg": 0.1
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 15,
+                    "avg": 0.2
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 10
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Rocket Arena|Cleveland"
+              },
+              "commence_time": "2026-11-21 00:30:00+00:00"
+            },
+            {
+              "player": "Aaron Nesmith",
+              "sport": "NBA",
+              "market": "Blocks Under 0.5",
+              "source_market": "blocks",
+              "direction": "under",
+              "point": 0.5,
+              "odds": 2.75,
+              "probability": 0.6413,
+              "edge_pct": 76.4,
+              "gamelog_l15_hits": 12,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "kambi_ub",
+              "game": "Indiana Pacers @ Cleveland Cavaliers",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-21",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-18",
+                "gamelog_l15_hits": 12,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 0.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 0.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 0.2
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 9,
+                    "avg": 0.1
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 12,
+                    "avg": 0.2
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 8
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Rocket Arena|Cleveland"
+              },
+              "commence_time": "2026-11-21 00:30:00+00:00"
+            }
+          ],
+          "result": null,
+          "actual_value": null,
+          "profit": null,
+          "stake": 1.0,
+          "commence_time": "2026-11-21T00:30:00+00:00",
+          "game_date": null,
+          "date": null,
+          "probability": 0.86,
+          "edge_pct": 24.7,
+          "confidence_score": null,
+          "model_confidence": null,
+          "picks": [
+            {
+              "market": "Blocks Under 1.5",
+              "odds": 1.45,
+              "stake": 0.08,
+              "point": 1.5,
+              "direction": "under",
+              "probability": 0.86,
+              "edge_pct": 24.7,
+              "bookmaker": "kambi_ub"
+            },
+            {
+              "market": "Blocks Under 0.5",
+              "odds": 2.75,
+              "stake": 0.07,
+              "point": 0.5,
+              "direction": "under",
+              "probability": 0.6413,
+              "edge_pct": 76.4,
+              "bookmaker": "kambi_ub"
+            }
+          ]
+        },
+        "card_design_version": 5
       }
     ]
   }
