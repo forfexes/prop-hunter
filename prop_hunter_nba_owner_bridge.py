@@ -20,23 +20,31 @@ def render_owner(pick, key: str, rows: list, teams: list,
                  values: dict, details: list) -> bytes:
     from prop_hunter_original_compositor import original_card
     family = key.rsplit("_", 1)[0]
-    if family not in ("single", "ladder", "builder"):
+    if family not in ("single", "ladder", "builder", "lottery"):
         raise ValueError("Owner original release is not approved for this family")
-    if len(teams) != 2 or any(not team or logo is None
-                              for team,logo in teams):
+    if family != "lottery" and (len(teams) != 2 or any(
+            not team or logo is None for team,logo in teams)):
         raise ValueError("Owner original must show two genuine NBA teams")
+    if family == "lottery" and not 2 <= len(rows) <= 4:
+        raise ValueError("Approved original Lottery safely fits 2-4 cross-game selections")
     if not (BASE / (family + ".png")).is_file():
         raise ValueError("Owner original clean plate not approved")
     if family == "ladder" and not 2 <= len(rows) <= 5:
         raise ValueError("Original Ladder accepts one athlete with 2-5 rungs")
     if family == "builder" and not 2 <= len(rows) <= 6:
         raise ValueError("Original Builder accepts 2-6 verified athletes")
-    dt = datetime.strptime(values["date"], "%d.%m.%Y")
-    if not values.get("time"):
-        raise ValueError("Verified NBA start time missing")
-    source = f"{teams[0][0]} vs {teams[1][0]}"
-    when = f"{WD[dt.weekday()]} {dt:%d.%m}. · {values['time']}"
-    subtitle = source + " · " + when
+    if family == "lottery":
+        # No fictitious single date/opponent for multi-game tickets. Exact
+        # game and tipoff are printed for EVERY individual leg instead.
+        subtitle=f"NBA · {len(rows)} SPIELE"
+        teams=[]
+    else:
+        dt = datetime.strptime(values["date"], "%d.%m.%Y")
+        if not values.get("time"):
+            raise ValueError("Verified NBA start time missing")
+        source = f"{teams[0][0]} vs {teams[1][0]}"
+        when = f"{WD[dt.weekday()]} {dt:%d.%m}. · {values['time']}"
+        subtitle = source + " · " + when
     stake = values.get("stake")
     observed_quote = values.get("total_odds") or values.get("odds")
     footer = ("Quote " + str(observed_quote)) if observed_quote else ""
@@ -56,6 +64,7 @@ def render_owner(pick, key: str, rows: list, teams: list,
             "label": str(row.get("label") or "").strip(),
             "odds": price, "form": row.get("form") or "",
             "model": row.get("model") or {},
+            "game": values.get(f"leg_{i+1}_game") if family == "lottery" else "",
         })
     if family == "ladder":
         if len({r["name"].casefold() for r in labels}) != 1:
