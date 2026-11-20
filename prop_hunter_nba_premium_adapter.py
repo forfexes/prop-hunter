@@ -246,9 +246,9 @@ def render_nba_pick(pick, rows, teams):
         if typ == "ladder":
             values.update(_form(rows[0].get("form")))
         else:
-            if not (feats.get("combined_odds_observed") is True and feats.get("combined_quote_id")):
-                raise PremiumDataMissing("No verified bookmaker combo ticket")
-            values["total_odds"] = _price(_get(pick, "odds"))
+            verified_combo = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
+            values["total_odds"] = (_price(_get(pick, "odds")) if verified_combo
+                                   else "BERECHNET" if _get(pick, "odds") else "OFFEN")
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
         "single", "ladder", "builder", "lottery"):
         # No silent fallback: if a true owner-original asset is absent or its
