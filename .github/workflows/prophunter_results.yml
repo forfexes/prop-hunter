@@ -128,6 +128,7 @@ jobs:
           python prop_hunter_card_quality_test.py
           python prop_hunter_results_writer_safety_test.py
           python prop_hunter_media_settlement_test.py
+          python test_prop_hunter_nba_owner_bridge.py
           python prop_hunter_card_design_migration_test.py
           python prop_hunter_mixed_builders_test.py
           python prop_hunter_decisive_leg_test.py
@@ -223,6 +224,7 @@ jobs:
         env:
           PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
           PH_NBA_PREMIUM_V2_REQUIRE: '1'  # strict premium-only; incomplete photo/odds never trigger legacy image
+          PH_NBA_OWNER_ORIGINALS: '1'  # settle in the SAME approved original artwork as the posted tip
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
