@@ -62,7 +62,7 @@ with patch.object(cards,'settled_image',return_value=closed), \
 assert sent[0][0].endswith('/editMessageMedia')
 assert sent[0][1]['data']['message_id']==123
 assert json.loads(sent[0][1]['data']['media'])['caption']==''
-assert sent[0][1]['files']['card'][1].startswith(b'\\xff\\xd8')
+assert sent[0][1]['files']['card'][1].startswith(b'\xff\xd8')
 assert sent[0][1]['files']['card'][2]=='image/jpeg'
 
 sent.clear()
