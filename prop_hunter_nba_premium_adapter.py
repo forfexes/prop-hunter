@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import os
 import re
 import sys
 from PIL import Image
@@ -214,4 +215,12 @@ def render_nba_pick(pick, rows, teams):
             if not (feats.get("combined_odds_observed") is True and feats.get("combined_quote_id")):
                 raise PremiumDataMissing("No verified bookmaker combo ticket")
             values["total_odds"] = _price(_get(pick, "odds"))
+    if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
+        "single", "ladder", "builder"):
+        # No silent fallback: if a true owner-original asset is absent or its
+        # verified data cannot fit, refuse the image instead of publishing a
+        # similar-looking generated SVG poster.
+        from prop_hunter_nba_owner_bridge import render_owner
+        return render_owner(pick, key, rows, teams, values,
+                            list(_get(pick, "leg_details") or []))
     return renderer.render_png(key, values, images, strict=True)
