@@ -119,5 +119,15 @@ jobs:
             exit 0
           fi
           git commit -m "assets: store four clean owner-source working plates (NOT production-approved)"
-          git push origin HEAD:main
-          echo "Four true-owner working assets stored; production approval remains gated"
+          # Branch tip may advance while this CPU-heavy image clean-up runs.
+          # Never overwrite other workflow commits or push a stale checkout.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              echo "Four true-owner working assets stored; production approval remains gated"
+              exit 0
+            fi
+            sleep $((3 * attempt))
+          done
+          echo "CRITICAL: cleaned source plates not saved after three safe rebase attempts"
+          exit 1
