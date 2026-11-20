@@ -209,6 +209,8 @@ jobs:
         run: |
           python -m py_compile prophunter_core_1391.py test_prop_hunter_premium_delivery.py
           python test_prop_hunter_premium_delivery.py
+          python -m py_compile prop_hunter_image_publication_gate.py test_prop_hunter_image_publication_gate.py
+          python test_prop_hunter_image_publication_gate.py
 
       - name: Build and post card
         env:
