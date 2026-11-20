@@ -69,6 +69,10 @@ rejects(SimpleNamespace(**{**base,"game":""},type="lottery",odds=18.25,
 rejects(SimpleNamespace(**{**base,"commence_time":None},type="lottery",odds=18.25,
        leg_details=[{**multi_legs[0],"commence_time":None},multi_legs[1]]),legs,[],
        contains="tipoff")
+# Parent-game time must never be reused for a different cross-game leg.
+rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
+       leg_details=[{**multi_legs[0], "commence_time": None}, multi_legs[1]]),
+       legs, [], contains="tipoff")
 # Exercise the actual production image-card routing with network fetches mocked.
 # This proves that the opt-in uses the new master rather than the legacy compositor.
 import os
