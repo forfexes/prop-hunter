@@ -77,7 +77,7 @@ jobs:
           from PIL import Image
           from pathlib import Path
           import base64,io
-          for family in ('single','ladder','builder','lottery'):
+          for family in ('single','ladder','builder','builder_3','lottery'):
               path=Path('output/nba_premium_qa')/(family+'.png')
               with Image.open(path) as source:
                   thumb=source.convert('RGB')
