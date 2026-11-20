@@ -216,7 +216,7 @@ def render_nba_pick(pick, rows, teams):
                 raise PremiumDataMissing("No verified bookmaker combo ticket")
             values["total_odds"] = _price(_get(pick, "odds"))
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
-        "single", "ladder", "builder"):
+        "single", "ladder", "builder", "lottery"):
         # No silent fallback: if a true owner-original asset is absent or its
         # verified data cannot fit, refuse the image instead of publishing a
         # similar-looking generated SVG poster.
