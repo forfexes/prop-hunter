@@ -170,7 +170,7 @@ def multi(family,n):
         s+=f'<g id="layer-07-player-name">{dynamic(690,539,"player_name",46,WHITE,"middle",True)}</g>'
         x,w,top,bottom=298,750,566,1102
     elif family in ('lottery','combo','cross_game'):
-        s+=f'<g id="layer-05-multi-game-context">{txt(540,325,"MEHRERE SPIELE · INDIVIDUELLE PROPS",31,GOLD,"middle",italic=True)}{txt(540,373,"SPIELER · MARKT · SPIELZEIT · QUOTE",23,WHITE,"middle")}</g>'
+        s+=f'<g id="layer-05-multi-game-context">{txt(540,325,"INDIVIDUELLE NBA-SPIELERPROPS",31,GOLD,"middle",italic=True)}{txt(540,373,"SPIELER · MARKT · SPIELZEIT · QUOTE",23,WHITE,"middle")}</g>'
         x,w,top,bottom=34,1012,(400 if n>=5 else 465),1099
     else:
         s+=crest_pair(267,mini=True)+match_info(845,267)
