@@ -655,6 +655,18 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
+        if league and league[1] == "nba" and os.getenv("PH_NBA_PREMIUM_V2", "0") == "1":
+            try:
+                from prop_hunter_nba_premium_adapter import render_nba_pick
+                png = render_nba_pick(pick, rows, teams)
+                print("NBA_PREMIUM_V2_RENDER_OK type=%s legs=%d" % (typ, len(rows)), flush=True)
+                return png
+            except Exception as exc:
+                print("NBA_PREMIUM_V2_NOT_READY type=%s reason=%s: %s" %
+                      (typ, type(exc).__name__, str(exc)[:160]), flush=True)
+                if os.getenv("PH_NBA_PREMIUM_V2_REQUIRE", "0") == "1":
+                    return None
+                # Safe compatibility fallback: never invent data to force a premium card.
         return render(typ, title, subtitle, sport, teams, rows, footer, getattr(pick,"settlement_summary", ""), template_sport=str(sport_hint or (league[1] if league else "NBA")).upper())
     except Exception as exc:
         # Do not silently hide broken historical card data: the migration needs
