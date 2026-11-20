@@ -58,6 +58,26 @@ rejects(single,[dict(row,photo=None)],contains="player_photo")
 # Unsupported markets must not silently use a generic single-card fallback.
 rejects(SimpleNamespace(**base,type="single",market="unapproved_unsupported_prop",
        odds=2.05),[row],contains="No approved NBA master")
+# Real live production strings: these are market and observed numeric lines,
+# not new or synthetic market types. Preserve the exact direction and threshold.
+from prop_hunter_nba_premium_adapter import _template
+for observed,expected,direction,point in (
+    ("Rebounds Over 3.5","single_rebounds","over",3.5),
+    ("Assists Under 4.5","single_assists","under",4.5),
+    ("Points Under 13.5","single_points","under",13.5),
+    ("Player_Points_Alternate","single_points","over",13.5),
+    ("Points Rebounds Assists Over 23.5","single_pra","over",23.5),
+):
+    assert _template(SimpleNamespace(type="single",market=observed,
+                                     direction=direction,point=point),[row])==expected
+rejects(SimpleNamespace(**base,type="single",market="Assists Under 4.5",
+       direction="over",point=4.5,odds=2.05),[row],
+       contains="Conflicting observed NBA pick direction")
+rejects(SimpleNamespace(**base,type="single",market="Rebounds Over 3.5",
+       direction="over",point=6.5,odds=2.05),[row],
+       contains="Conflicting observed NBA pick threshold")
+print("LIVE SOURCE SINGLE MARKET ROUTING PASSED: points/rebounds/assists + numeric lines")
+
 # Fake transparency (one transparent pixel on an opaque photo) is not a
 # cutout; a real picture needs visible transparent background around athlete.
 almost_opaque=Image.new("RGBA",(180,220),(52,72,88,255))
