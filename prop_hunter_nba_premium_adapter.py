@@ -166,7 +166,7 @@ def render_nba_pick(pick, rows, teams):
             # EuroLeague or other sport's individual leg, even if the parent
             # pick was accidentally labelled NBA by an upstream source.
             leg_sport = str(detail.get("sport") or "").lower().replace("_", " ").strip()
-            if leg_sport and not re.search(r"\\bnba\\b", leg_sport):
+            if leg_sport and not re.search(r"\bnba\b", leg_sport):
                 raise PremiumDataMissing(f"Leg {i} is not NBA")
             values[f"leg_{i}_name"] = str(row.get("name") or "")
             values[f"leg_{i}_market"] = str(row.get("label") or "")
