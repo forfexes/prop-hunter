@@ -205,6 +205,11 @@ jobs:
           print("NBA_CURRENT_PREMIUM_MASTERS_GENERATED=52")
           PY
 
+      - name: Mandatory NBA photo-only Telegram transport preflight
+        run: |
+          python -m py_compile prophunter_core_1391.py test_prop_hunter_premium_delivery.py
+          python test_prop_hunter_premium_delivery.py
+
       - name: Build and post card
         env:
           PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
