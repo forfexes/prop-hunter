@@ -12,6 +12,6 @@
 
 Jedes dynamische Textfeld ist mit `data-field` markiert. Fotos/Wappen sind separate `data-image-slot`-Ebenen. **Keine** eingebrannten Namen, Fotos, Wappen, Quoten oder Statistiken; **keine** überklebten Beispielkarten. Wappen sind frei schwebend und Teamnamen stehen darunter. Spieler links ohne Rahmen. Spielername kleiner, ohne PRO-TIP-Kasten oder Trennlinie.
 
-`previews/` enthält die gerenderten **leeren** Master, nicht reale Tipps. Produktiv ist der neue Renderer über `PH_NBA_PREMIUM_V2=1` nur für NBA-Tipps mit echten Fotos, Wappen, Spielzeiten und verifizierten Buchmacherquoten aktiviert. Bei fehlenden Daten bleibt der bisherige Renderer als sichere Rückfallebene. Beim Settlement wird die **ursprüngliche Telegram-Nachricht bearbeitet**, ohne zusätzliche Tippnachricht.
+`previews/` enthält die gerenderten **leeren** Master, nicht reale Tipps. Produktiv ist der neue Renderer über `PH_NBA_PREMIUM_V2=1` nur für NBA-Tipps mit echten Fotos, Wappen, Spielzeiten und verifizierten Buchmacherquoten aktiviert. Bei fehlenden Daten wird keine Ersatzkarte mit dem alten Renderer erzeugt; der Tipp bleibt gegebenenfalls textbasiert. Beim Settlement wird die **ursprüngliche Telegram-Nachricht bearbeitet**, ohne zusätzliche Tippnachricht.
 
 `build_masters.py` erzeugt die 52 SVGs und die Prüf-Vorschauen aus dem vorhandenen Arena-Bild. `manifest.json` definiert die Familien und Feldbelegungen.
