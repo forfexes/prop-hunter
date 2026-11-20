@@ -100,8 +100,7 @@ def _template(pick, rows):
         return f"combo_{n}"
     if typ == "betbuilder":
         if feats.get("combo_scope") == "cross_game":
-            # One pair of team logos would misidentify multi-game builders.
-            raise PremiumDataMissing("Cross-game needs leg-specific matchups; no false team logos")
+            return f"cross_game_{n}"
         if feats.get("same_player_multistat") is True:
             return f"same_player_{n}"
         return f"builder_{n}"
@@ -119,24 +118,26 @@ def render_nba_pick(pick, rows, teams):
     bookmaker = feats.get("bookmaker") or _get(pick, "bookmaker")
     if not str(bookmaker or "").strip():
         raise PremiumDataMissing("No observed bookmaker provenance")
-    if len(teams) != 2 or not all(name and logo is not None for name, logo in teams):
-        raise PremiumDataMissing("Verified home/away team logos missing")
-    date, time = _tipoff(pick)
     key = _template(pick, rows)
     family = key.rsplit("_", 1)[0]
+    multi_game = family in ("lottery", "combo", "cross_game")
     values = {
-        "odds_verified": True, "home_name": str(teams[0][0]),
-        "away_name": str(teams[1][0]), "date": date, "time": time,
-        "venue": str(feats.get("venue") or ""),
+        "odds_verified": True,
         "settlement": str(_get(pick, "settlement_summary") or "OFFEN"),
     }
+    if not multi_game:
+        if len(teams) != 2 or not all(name and logo is not None for name, logo in teams):
+            raise PremiumDataMissing("Verified home/away team logos missing")
+        date, time = _tipoff(pick)
+        values.update({"home_name": str(teams[0][0]), "away_name": str(teams[1][0]),
+                       "date": date, "time": time, "venue": str(feats.get("venue") or "")})
     stake = _get(pick, "stake")
     if stake is not None:
         try:
             values["stake"] = f"{float(stake):g}u"
         except (TypeError, ValueError):
             raise PremiumDataMissing("Invalid stake")
-    images = {
+    images = {} if multi_game else {
         "home_logo": _photo(teams[0][1], "home_logo"),
         "away_logo": _photo(teams[1][1], "away_logo"),
     }
@@ -165,7 +166,23 @@ def render_nba_pick(pick, rows, teams):
             values[f"leg_{i}_market"] = str(row.get("label") or "")
             values[f"leg_{i}_line"] = str(row.get("label") or "")
             values[f"leg_{i}_odds"] = _price(detail.get("odds"))
-            if family in ("builder", "cross_game"):
+            if multi_game:
+                # Every leg must carry its own verified game and local tipoff.
+                # A single generic VS would be false for a cross-game parlay.
+                game = str(detail.get("game") or detail.get("matchup") or "").strip()
+                if not game and feats.get("combo_scope") != "cross_game":
+                    game = str(_get(pick, "game") or "").strip()
+                if not game or not re.search(r"\\s+(?:vs\\.?|@)\\s+", game, re.I):
+                    raise PremiumDataMissing(f"Leg {i} has no verified matchup")
+                sport = str(detail.get("sport") or "NBA").lower()
+                if "nba" not in sport or "wnba" in sport:
+                    raise PremiumDataMissing(f"Leg {i} is not NBA")
+                kickoff = detail.get("commence_time") or _get(pick, "commence_time")
+                if not kickoff:
+                    raise PremiumDataMissing(f"Leg {i} tipoff missing")
+                date, local_time = _tipoff({"commence_time": kickoff})
+                values[f"leg_{i}_game"] = f"{game} · {date} {local_time}"
+            if family in ("builder", "cross_game", "lottery"):
                 images[f"leg_{i}_photo"] = _photo(row.get("photo"), f"leg_{i}_photo")
         if typ == "ladder":
             values.update(_form(rows[0].get("form")))
