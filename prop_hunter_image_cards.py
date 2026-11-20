@@ -72,8 +72,10 @@ def league_of(value: Any) -> Optional[Tuple[str, str]]:
         return LEAGUES["ncaaf"]
     if "college basketball" in v or "ncaa basketball" in v:
         return LEAGUES["ncaab"]
-    if "basketball" in v:
-        return LEAGUES["nba"]
+    # An unspecified basketball feed may be WNBA, EuroLeague or college.
+    # Never silently label it NBA and render an NBA-branded card.
+    if v.strip() == "basketball":
+        return None
     return None
 
 
