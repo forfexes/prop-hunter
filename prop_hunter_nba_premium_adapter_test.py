@@ -81,6 +81,15 @@ rejects(SimpleNamespace(**{**base,"commence_time":None},type="lottery",odds=18.2
 rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
        leg_details=[{**multi_legs[0], "commence_time": None}, multi_legs[1]]),
        legs, [], contains="tipoff")
+# Cross-game graphics must NEVER substitute the parent game for a leg
+# that has no real event. They must also have independently verified NBA league.
+rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
+       leg_details=[{**multi_legs[0], "game": None}, multi_legs[1]]),
+       legs, [], contains="verified matchup")
+rejects(SimpleNamespace(**base,type="lottery",odds=18.25,
+       leg_details=[{**multi_legs[0], "sport": None}, multi_legs[1]]),
+       legs, [], contains="verified NBA league")
+
 # Exercise the actual production image-card routing with network fetches mocked.
 # This proves that the opt-in uses the new master rather than the legacy compositor.
 import os
