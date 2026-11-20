@@ -616,6 +616,12 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _erase_single_bridge(im)
     # Source frame and decorative motifs remain pixel-identical outside the dynamic slots.
     _header(im, family, league_name or sport, subtitle, teams)
+    if family == 'lottery' and not teams:
+        # The user's original lottery includes a decorative VS and two example
+        # club crest positions. For a real cross-game ticket, NO single pair
+        # should be implied by a reused NBA screenshot.
+        _rect(im,(202,143,495,274),(27,13,47,255),8,VIOLET,2)
+        _text(ImageDraw.Draw(im),(349,207),'MEHRERE SPIELE',18,271,GOLD,'mm')
     d = ImageDraw.Draw(im)
     if family == 'single':
         item = rows[0]
@@ -782,6 +788,14 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
             _text(d, (59+shift, yy+4),
                   f'{i+1}. {row.get("name") or ""} · {row.get("label") or ""}',
                   16, 420-shift, GOLD)
+            # A cross-game Lottery MUST identify every game's fixture/time,
+            # not just names/prices. The compact original layout safely fits
+            # this extra line for 2-4 selections; larger tickets need a
+            # separate taller owner-approved master (fail closed).
+            game=str(row.get('game') or '').strip()
+            if not game or n > 4:
+                raise ValueError('Original Lottery requires per-leg verified game, max four legs')
+            _text(d, (59+shift, yy+24), game, 12, 420-shift, WHITE)
             # Never print a truncated "L5 ... L10 ... L15 ..." fragment.
             # The list is narrow, especially on nine-leg lottery posters.
             # Preserve the real observed per-leg bookmaker price here.
