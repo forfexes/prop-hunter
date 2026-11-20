@@ -25,6 +25,14 @@ for key,meta in m['templates'].items():
     assert 'assets/nba_logo.png' in raw,key
     assert '>PROPS</text>' not in raw,key
     assert 'data-field="True"' not in raw,key
+    if meta['family'] in ('lottery','combo','cross_game') and meta['legs']>=5:
+        # Realistic 6-leg text must never overlap its neighboring row labels.
+        from xml.etree import ElementTree as ET
+        root=ET.fromstring(raw)
+        labels={e.get('data-field'):e for e in root.iter() if e.get('data-field')}
+        name=labels['leg_1_name'];market=labels['leg_1_market'];game=labels['leg_1_game']
+        assert float(market.get('y'))-float(name.get('y'))>=26,key
+        assert float(game.get('y'))-float(market.get('y'))>=20,key
     if meta['family'] in ('ladder','same_player'):
         assert raw.count('data-image-slot="player_photo"')==1,key
     if meta['family'] in ('builder','lottery','cross_game'):
