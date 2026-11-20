@@ -163,7 +163,51 @@ def leg_row(x,y,w,h,i,family):
     s+='</g>'
     return s
 
+def builder_hero(n):
+    """Owner-original 2/3-player Builder hierarchy: large borderless athletes.
+
+    The supplied screenshot has three prominent portraits across the arena,
+    verified form panels, fixture crests, a total quote and leg-detail list.
+    Every image/text value remains an independent editable SVG field.
+    """
+    if n not in (2, 3):
+        raise ValueError("Hero Builder requires two or three verified athletes")
+    s=svg_start()+header("PRO TIP — BUILDER")
+    centers=(330,750) if n==2 else (200,540,880)
+    s+='<g id="layer-04-original-builder-hero-portraits">'
+    for i,cx in enumerate(centers,1):
+        left=cx-144
+        s+=asset_slot(f'leg_{i}_photo',left,246,288,341)
+        s+=neon_box(left-9,574,306,85,GOLD,14)
+        s+=dynamic(cx,608,f'leg_{i}_name',25,WHITE,'middle',True)
+        s+=dynamic(cx,638,f'leg_{i}_market',22,GOLD,'middle',True)
+        s+=neon_box(left,661,288,61,BLUE,12)
+        for index,form in enumerate(('l5','l10','l15')):
+            xx=left+12+index*93
+            s+=txt(xx,685,form.upper(),16,GOLD)
+            s+=dynamic(xx,711,f'leg_{i}_{form}',21,GREEN)
+    s+='</g>'
+    s+=crest_pair(760,mini=True)+match_info(845,734)
+    s+='<g id="layer-08-original-builder-ticket">'
+    s+=neon_box(34,981,1012,78,GOLD,17,'url(#amber)')
+    s+=txt(63,1031,f'{n}-LEG BUILDER',37,WHITE,italic=True)
+    s+=txt(715,1020,'GESAMTQUOTE',20,GOLD)
+    s+=dynamic(1013,1041,'total_odds',40,GOLD,'end',True)
+    for i in range(1,n+1):
+        y=1066+(i-1)*(152/n)
+        s+=neon_box(43,y,993,round(140/n),BLUE,10)
+        s+=txt(70,y+round(100/n),str(i)+'.',25,GOLD,italic=True)
+        s+=dynamic(125,y+round(100/n),f'leg_{i}_name',22,WHITE)
+        s+=dynamic(492,y+round(100/n),f'leg_{i}_market',21,GOLD)
+        s+=dynamic(999,y+round(100/n),f'leg_{i}_odds',24,GOLD,'end',True)
+    s+='</g>'
+    s+=settlement(1240)+'</svg>'
+    return s
+
+
 def multi(family,n):
+    if family == 'builder' and n in (2,3):
+        return builder_hero(n)
     accent=PURPLE if family=='lottery' else GOLD
     s=svg_start()+header(f'{FAMILIES[family]} · {n} LEGS',accent=accent)
     same=family in ('ladder','same_player')
