@@ -1,6 +1,6 @@
 # PROP HUNTER — NBA Premium Mastervorlagen v2
 
-52 echte, **datenfreie**, mehrschichtige SVG-Master im freigegebenen blau-goldenen Arena-Stil.
+52 echte, **datenfreie**, mehrschichtige SVG-Master im freigegebenen blau-goldenen Arena-Stil. Der NBA-Logo-Kasten bleibt erhalten, mit dem NBA-Logo aus der vom Nutzer gelieferten Originalkarte anstelle des Textplatzhalters „NBA PROPS“.
 
 ## Aufbau
 - `assets/arena.jpg`: eigenständiger Basketballarena-Hintergrund **ohne** Spieler, Teamwappen, Quoten, Namen oder Statistiken.
