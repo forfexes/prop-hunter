@@ -1,0 +1,45 @@
+name: PROP HUNTER Premium Compatibility QA
+
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'prop_hunter_poster_families_test.py'
+      - 'prop_hunter_media_settlement_test.py'
+      - 'prop_hunter_image_cards.py'
+      - 'prop_hunter_nba_premium_adapter.py'
+      - 'prop_hunter_original_compositor.py'
+      - '.github/workflows/prop_hunter_premium_compatibility_qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  premium-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements_results.txt
+      - name: Install test-only dependencies
+        run: python -m pip install -r requirements_results.txt
+      - name: Compile premium and Telegram regression tests
+        run: |
+          python -m py_compile prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py
+          python -m py_compile prop_hunter_poster_families_test.py prop_hunter_media_settlement_test.py
+      - name: Test original poster families without publishing
+        run: python prop_hunter_poster_families_test.py
+      - name: Test premium-only settlements and Telegram edits with mocked HTTP
+        run: python prop_hunter_media_settlement_test.py
+      - name: Upload synthetic offline poster previews (never send to Telegram)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premium-compatibility-offline-preview
+          path: poster_previews/*.png
+          if-no-files-found: warn
+          retention-days: 3
