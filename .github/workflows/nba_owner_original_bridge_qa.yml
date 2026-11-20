@@ -48,13 +48,13 @@ jobs:
               assert path.is_file(),path
           print('PRODUCTION_NBA_OWNER_ORIGINALS_GUARDED_IN_BOTH_WORKFLOWS')
           PY
-      - name: Show three synthetic source-original previews
+      - name: Show four synthetic source-original previews
         run: |
           python - <<'PY'
           from pathlib import Path
           from PIL import Image
           import base64,io
-          for name in ('single','ladder','builder'):
+          for name in ('single','ladder','builder','lottery'):
               path=Path('output/nba_owner_qa')/(name+'.png')
               with Image.open(path) as source:
                   thumb=source.convert('RGB')
