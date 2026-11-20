@@ -50,6 +50,11 @@ rejects(SimpleNamespace(**{**base,"commence_time":None},type="single",
 rejects(SimpleNamespace(**{**base,"features":{}},type="single",
        market="points",odds=2.05),[row],contains="bookmaker")
 rejects(single,[dict(row,photo=None)],contains="player_photo")
+# Fake transparency (one transparent pixel on an opaque photo) is not a
+# cutout; a real picture needs visible transparent background around athlete.
+almost_opaque=Image.new("RGBA",(180,220),(52,72,88,255))
+almost_opaque.putpixel((0,0),(52,72,88,0))
+rejects(single,[dict(row,photo=almost_opaque)],contains="transparent cutout border")
 rejects(ladder,[dict(row,name="TEST A"),dict(row,name="TEST B")],
         contains="exactly one athlete")
 rejects(SimpleNamespace(**{**base,"features":{**feats,"combined_odds_observed":False}},
