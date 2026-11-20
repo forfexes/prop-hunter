@@ -1,4 +1,4 @@
-"""Original photo edits, legacy migration, result rendering and retry regression."""
+"""Premium-only Telegram card edits and results regression (offline mocks)."""
 import io,json,os
 from types import SimpleNamespace as N
 from unittest.mock import patch
@@ -6,45 +6,83 @@ from PIL import Image
 import prop_hunter_image_cards as cards
 import prophunter_results as results
 
-pick=N(type='betbuilder',features={'combined_odds_observed':True,'combined_quote_id':'fixture-bookmaker-ticket'},game='Lakers @ Celtics',sport='NBA',odds=3.4,leg_details=[{'player':'Player A','market':'Points','point':25.5,'direction':'over','odds':1.8},{'player':'Player B','market':'Rebounds','point':6.5,'direction':'under','odds':1.9}])
-with patch.object(cards,'player_photo',return_value=None),patch.object(cards,'team_logo',return_value=None):
- # Unverified builder total must never render or reach Telegram.
- unverified=N(**dict(vars(pick),features={}))
- assert cards.build_for_pick(unverified) is None
- data=cards.snapshot(pick)
- # Previously published legacy photos may lack provenance for their historical
- # combined quote; re-render their official result but NEVER invent/reverify it.
- legacy=dict(data,features={})
- with patch.object(cards,'render',return_value=b'LEGACY') as draw:
-  assert cards.settled_image(legacy,'🏁 Auswertung: 1✅ 0❌ · +0.12u')==b'LEGACY'
-  assert 'GESAMTQUOTE UNBESTÄTIGT' in draw.call_args.args[6]
-  assert '@3.40' not in draw.call_args.args[6]
- # The exact same unverified combo must still fail the NEW production photo gate.
- assert cards.build_for_pick(N(**dict(vars(pick),features={}))) is None
- opened=cards.build_for_pick(pick)
- closed=cards.settled_image(data,'🏁 Auswertung: 1✅ 0❌ · +0.12u')
- assert opened and closed and opened!=closed
- img=Image.open(io.BytesIO(closed));assert img.width==1080 and img.height>700
- Image.open(io.BytesIO(closed)).save('/tmp/prop-hunter-settled-preview.png')
- sent=[]
- def post(url,**kw):
-  sent.append((url,kw))
-  mid=(kw.get('data') or kw.get('json') or {}).get('message_id')
-  return N(status_code=200,text='',content=b'{}',
-           json=lambda:{'ok':True,'result':{'message_id':mid,'photo':[{'file_id':'new-photo'}]}})
- results.TG_TOKEN='TEST';results.TG_CHAT='TEST'
- with patch.object(results.requests,'post',side_effect=post),patch.object(results.time,'sleep'):
-  assert results._edit_message(123,'🏁 Auswertung: 0✅ 1❌ · -0.05u',image_pick=data)
- assert sent[0][0].endswith('/editMessageMedia')
- assert sent[0][1]['data']['message_id']==123
- assert json.loads(sent[0][1]['data']['media'])['caption']==''
- assert sent[0][1]['files']['card'][1].startswith(b'\xff\xd8')
- assert sent[0][1]['files']['card'][2]=='image/jpeg'
- sent.clear();responses=[N(status_code=400,text='Bad Request: there is no text in the message to edit'),N(status_code=429,text='Too Many Requests',json=lambda:{'parameters':{'retry_after':1}}),N(status_code=200,text='',json=lambda:{'ok':True,'result':{'message_id':123,'photo':[{'file_id':'new-photo'}]}})]
- def retry(url,**kw):sent.append(url);return responses.pop(0)
- with patch.object(results.requests,'post',side_effect=retry),patch.object(results.time,'sleep'):
-  assert results._edit_message(123,'🏁 Auswertung: 1✅ 0❌ · +0.12u',fallback_pick=data)
- assert sent[0].endswith('/editMessageText') and all(x.endswith('/editMessageMedia') for x in sent[1:])
+pick=N(type='betbuilder',features={
+    'combined_odds_observed':True,
+    'combined_quote_id':'fixture-bookmaker-ticket',
+    'bookmaker':'FIXTURE ONLY'},game='Lakers @ Celtics',sport='NBA',
+    commence_time='2026-11-20T19:00:00+00:00',odds=3.4,
+    leg_details=[
+        {'player':'Player A','market':'Points','point':25.5,'direction':'over','odds':1.8},
+        {'player':'Player B','market':'Rebounds','point':6.5,'direction':'under','odds':1.9}])
+data=cards.snapshot(pick)
+with patch.object(cards,'ON',True), \
+     patch.object(cards,'player_photo',return_value=None), \
+     patch.object(cards,'team_logo',return_value=None), \
+     patch.object(cards,'render',side_effect=AssertionError('old card used')):
+    # A new combo without a real ticket may not be published.
+    assert cards.build_for_pick(N(**dict(vars(pick),features={}))) is None
+    # Even already-published legacy image snapshots may NEVER resurrect the old
+    # renderer or falsely label an unverified combined quote as observed.
+    legacy=dict(data,features={'bookmaker':'FIXTURE ONLY'})
+    assert cards.settled_image(legacy,'🏁 Auswertung: 1✅ 0❌ · +0.12u') is None
+
+# The premium adapter itself is covered by its dedicated 1080x1440 render
+# suite. Here we isolate Telegram retries, settlement and exact message IDs.
+premium_calls=[]
+def premium_preview(pick,rows,teams):
+    summary=str(getattr(pick,'settlement_summary','') or '')
+    premium_calls.append((summary,rows))
+    out=io.BytesIO()
+    Image.new('RGB',(1080,1440),(42,80,63) if 'gewonnen' in summary else (20,35,57)).save(out,'PNG')
+    return out.getvalue()
+
+with patch.object(cards,'ON',True), \
+     patch.object(cards,'player_photo',return_value=None), \
+     patch.object(cards,'team_logo',return_value=None), \
+     patch.object(cards,'render',side_effect=AssertionError('old card used')), \
+     patch('prop_hunter_nba_premium_adapter.render_nba_pick',side_effect=premium_preview):
+    opened=cards.build_for_pick(pick)
+    closed=cards.settled_image(data,'🏁 Auswertung: 1✅ 0❌ · +0.12u')
+assert opened and closed and opened!=closed
+assert '1 gewonnen' in premium_calls[-1][0], premium_calls[-1][0]
+img=Image.open(io.BytesIO(closed))
+assert img.size==(1080,1440)
+
+sent=[]
+def post(url,**kw):
+    sent.append((url,kw))
+    mid=(kw.get('data') or kw.get('json') or {}).get('message_id')
+    return N(status_code=200,text='',content=b'{}',
+             json=lambda:{'ok':True,'result':{'message_id':mid,'photo':[{'file_id':'new-photo'}]}})
+results.TG_TOKEN='TEST';results.TG_CHAT='TEST'
+with patch.object(cards,'settled_image',return_value=closed), \
+     patch.object(results.requests,'post',side_effect=post), \
+     patch.object(results.time,'sleep'):
+    assert results._edit_message(123,'🏁 Auswertung: 0✅ 1❌ · -0.05u',image_pick=data)
+assert sent[0][0].endswith('/editMessageMedia')
+assert sent[0][1]['data']['message_id']==123
+assert json.loads(sent[0][1]['data']['media'])['caption']==''
+assert sent[0][1]['files']['card'][1].startswith(b'\\xff\\xd8')
+assert sent[0][1]['files']['card'][2]=='image/jpeg'
+
+sent.clear()
+responses=[
+    N(status_code=400,text='Bad Request: there is no text in the message to edit'),
+    N(status_code=429,text='Too Many Requests',json=lambda:{'parameters':{'retry_after':1}}),
+    N(status_code=200,text='',json=lambda:{'ok':True,'result':{
+        'message_id':123,'photo':[{'file_id':'new-photo'}]}})
+]
+def retry(url,**kw):
+    sent.append(url)
+    return responses.pop(0)
+with patch.object(cards,'settled_image',return_value=closed), \
+     patch.object(results.requests,'post',side_effect=retry), \
+     patch.object(results.time,'sleep'):
+    assert results._edit_message(123,'🏁 Auswertung: 1✅ 0❌ · +0.12u',fallback_pick=data)
+assert sent[0].endswith('/editMessageText')
+assert all(x.endswith('/editMessageMedia') for x in sent[1:])
+print('PREMIUM MEDIA SETTLEMENT PASSED: no legacy, original ID, JPEG, 429 retry')
+
 assert cards._label({'point':25.5,'direction':'over','market':'Points'})=='Over 25.5 Points'
 assert results._card_pick({'pick_keys':['a']},[{'dedup_key':'a','player':'A','market':'Points','line':20.5}],[])['point']==20.5
 assert results._card_pick({'pick_keys':['a','b']},[{'dedup_key':'a'},{'dedup_key':'b'}],[]) is None
@@ -70,11 +108,15 @@ print('TELEGRAM EXACT MESSAGE / PHOTO ACKNOWLEDGEMENT PASSED')
 single={'type':'single','player':'Verified Athlete','sport':'NBA','game':'Away @ Home',
         'market':'points','direction':'under','point':20.5,'odds':1.77,
         'features':{'recent_form':{'l10':{'hits':7,'n':9}}},'stake':1}
-with patch.object(cards,'player_photo',return_value=None), patch.object(cards,'team_logo',return_value=None), patch.object(cards,'render',return_value=b'PNG') as draw:
+with patch.object(cards,'ON',True), \
+     patch.object(cards,'player_photo',return_value=None), \
+     patch.object(cards,'team_logo',return_value=None), \
+     patch.object(cards,'render',side_effect=AssertionError('old card used')), \
+     patch('prop_hunter_nba_premium_adapter.render_nba_pick',return_value=b'PNG') as draw:
  assert cards.settled_image(single,'📈 Prob 72% · Edge +20.8% · Confidence 91/100\\n🏁 Auswertung: 1⏳ · +0.00u')==b'PNG'
- assert draw.call_args.args[5][0]['model']=={'prob':'72','edge':'+20.8','confidence':'91/100'}
+ assert draw.call_args.args[1][0]['model']=={'prob':'72','edge':'+20.8','confidence':'91/100'}
  assert cards.settled_image(single,'🏁 Auswertung: 1⏳ · +0.00u')==b'PNG'
- assert not any(draw.call_args.args[5][0]['model'].values())
+ assert not any(draw.call_args.args[1][0]['model'].values())
 print('ORIGINAL PUBLISHED MODEL METRICS / MISSING EVIDENCE GUARDS PASSED')
 
 # Sustained Telegram HTTP 502 must not trigger 35 futile requests.
