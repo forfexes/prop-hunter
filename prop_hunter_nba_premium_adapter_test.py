@@ -36,6 +36,11 @@ builder=SimpleNamespace(**base,type="betbuilder",odds=5.10,
                         leg_details=[{"odds":1.7},{"odds":1.8}])
 legs=[dict(row,name="TEST PLAYER A"),dict(row,name="TEST PLAYER B")]
 assert Image.open(BytesIO(render_nba_pick(builder,legs,teams))).size==(1080,1440)
+builder_3=SimpleNamespace(**base,type="betbuilder",odds=6.40,
+                          leg_details=[{"odds":1.7},{"odds":1.8},{"odds":1.9}])
+legs_3=[dict(row,name="TEST PLAYER A"),dict(row,name="TEST PLAYER B"),
+        dict(row,name="TEST PLAYER C")]
+assert Image.open(BytesIO(render_nba_pick(builder_3,legs_3,teams))).size==(1080,1440)
 
 def rejects(pick,rows,teamlist=teams,contains=None):
     try:
@@ -147,6 +152,7 @@ samples = {
     "single": render_nba_pick(single, [row], teams),
     "ladder": render_nba_pick(ladder, rungs, teams),
     "builder": render_nba_pick(builder, legs, teams),
+    "builder_3": render_nba_pick(builder_3, legs_3, teams),
     "lottery": render_nba_pick(lottery, legs, []),
 }
 for family, blob in samples.items():
