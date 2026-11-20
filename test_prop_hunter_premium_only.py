@@ -33,8 +33,7 @@ def test_non_nba_never_uses_legacy_renderer():
 
 def test_nba_uses_premium_adapter_and_never_legacy():
     """Successful NBA cards must come from the premium adapter only."""
-    from prop_hunter_nba_premium_adapter import render_nba_pick
-    fake_png = b"\\x89PNG\\r\\n\\x1a\\nPREMIUM"
+    fake_png = bytes([137, 80, 78, 71, 13, 10, 26, 10]) + b"PREMIUM"
     with patch.object(cards, "ON", True), \
          patch.object(cards, "player_photo", return_value=None), \
          patch.object(cards, "team_logo", return_value=None), \
