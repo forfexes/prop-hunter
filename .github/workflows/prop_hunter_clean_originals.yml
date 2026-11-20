@@ -59,6 +59,7 @@ jobs:
                      'photo':player.copy(),
                      'label':'Over 20.5 points','odds':'@1.80',
                      'form':'L5 3/5 · L10 7/10 · L15 11/15',
+                     'game':f'TEST HOME {i+1} vs TEST AWAY {i+1} · 20.11.2026 20:00',
                      'model':{'prob':'65','edge':'+9','confidence':'80/100'}}
                     for i in range(count)]
               raw=original.original_card(family,family.upper(),
