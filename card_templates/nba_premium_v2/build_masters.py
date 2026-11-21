@@ -135,7 +135,10 @@ def single(label):
     s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-45,180,408,700)}</g>'
     s+=crest_pair(286)+match_info(838,286)
     s+=f'<g id="layer-07-player-name">{dynamic(692,532,"player_name",48,WHITE,"middle",True)}</g>'
-    s+=f'<g id="layer-07-market-title">{txt(569,605,label,37,WHITE,"middle",italic=True)}</g>'
+    # The generic Single already has the exact PRO TIP — SINGLE header.
+    # Never repeat PRO TIP below the player name; leave that area clear.
+    if label != 'PRO TIP · SINGLE':
+        s+=f'<g id="layer-07-market-title">{txt(569,605,label,37,WHITE,"middle",italic=True)}</g>'
     s+=f'<g id="layer-08-bet-market">{neon_box(303,639,531,112,GREEN,22,"url(#green)")}'
     s+=dynamic(566,709,'market',43,WHITE,'middle',True)
     s+=neon_box(850,639,202,112,GOLD,20,'url(#amber)')+dynamic(951,710,'odds',43,GOLD,'middle',True)+'</g>'
