@@ -3500,8 +3500,14 @@ def _payload_card_image(payload,picks):
         if idx is None or idx>=len(pool):return None
         pick=pool[idx]
         details=list(getattr(pick,"leg_details",None) or [])
+        # Builder/Ladder legs can be dicts, Pydantic objects or typed
+        # SimpleNamespace models. The source classifier must never abort
+        # a genuine premium photo simply because .get() does not exist.
+        first=details[0] if details else None
+        leg_sport=(first.get("sport") if isinstance(first,dict)
+                   else getattr(first,"sport",None)) if first is not None else None
         hint=(getattr(pick,"source_sport",None) or getattr(pick,"sport",None)
-              or (details[0].get("sport") if details else None))
+              or leg_sport)
         league=cards.league_of(hint)
         payload["premium_required"]=bool(
             os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1"
@@ -3531,7 +3537,8 @@ def _payload_card_image(payload,picks):
             png=cards.build_for_pick(pick)
         if png: payload["media_type"]="photo"
         return png
-    except Exception:
+    except Exception as exc:
+        log.error("OWNER_PHOTO_PAYLOAD_PREFLIGHT_FAILED: %s", type(exc).__name__)
         return None
 
 def send_telegram(text,dry_run=False,picks=None):
