@@ -167,6 +167,14 @@ with patch.object(image_cards,"ON",True), \
     assert real_route is not None,"Longshot lost before premium adapter"
     assert Image.open(BytesIO(real_route)).size==(1080,1440)
 print("NBA PRODUCTION LONGSHOT ORIGINAL ROUTING PASS")
+# An attractive payout does not exempt Longshot from verified market scope.
+rejects(SimpleNamespace(**base,type="longshot",player="TEST ATHLETE",
+       market="unapproved_unsupported_prop",odds=3.25),
+       [row],contains="No approved NBA master")
+rejects(SimpleNamespace(**base,type="longshot",player="TEST ATHLETE",
+       market="Points Over 22.5",direction="under",point=22.5,odds=3.25),
+       [row],contains="Conflicting observed NBA pick direction")
+
 
 # Test all four families through the actual production routing, not only the adapter.
 with patch.object(image_cards, "ON", True), \
