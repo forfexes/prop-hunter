@@ -162,3 +162,35 @@ with patch.dict("os.environ", {
     assert good == [] and blocked == 1
     assert not hasattr(synthetic,"_verified_owner_png")
 print("PIXEL QA REJECTS SYNTHETIC PNG BEFORE TELEGRAM")
+
+
+# Fresh single odds must come from a named observed bookmaker, and pre-match
+# tickets must have a future event timestamp. No live HTTP or Telegram.
+from datetime import datetime,timezone,timedelta
+from prop_hunter_image_publication_gate import pre_match_quote_provenance
+future=(datetime.now(timezone.utc)+timedelta(days=3)).isoformat()
+past=(datetime.now(timezone.utc)-timedelta(hours=3)).isoformat()
+observed={"odds_observed":True,"bookmaker":"QA_OBSERVED_BOOK"}
+valid=N(type="single",sport="NBA",odds=1.86,
+        commence_time=future,features=dict(observed))
+assert pre_match_quote_provenance(valid)[0]
+assert not pre_match_quote_provenance(N(
+    type="single",odds=1.86,commence_time=future,features={}))[0]
+assert not pre_match_quote_provenance(N(
+    type="single",odds=float("inf"),commence_time=future,
+    features=dict(observed)))[0]
+assert not pre_match_quote_provenance(N(
+    type="single",odds=1.86,commence_time=past,features=dict(observed)))[0]
+assert not pre_match_quote_provenance(N(
+    type="single",odds=1.86,features=dict(observed)))[0]
+assert not pre_match_quote_provenance(N(
+    type="single",odds=1.86,commence_time=future,
+    features={"odds_observed":True,"bookmaker":"model"}))[0]
+cross=N(type="lottery",odds=3.55,
+        features={"combined_odds_observed":True,"combined_quote_id":"QA",
+                  "combo_scope":"cross_game"},
+        leg_details=[{"commence_time":future},{"commence_time":past}])
+assert not pre_match_quote_provenance(cross)[0]
+cross.leg_details[1]["commence_time"]=future
+assert pre_match_quote_provenance(cross)[0]
+print("PREMATCH SOURCE / BOOKMAKER / STARTED-FIXTURE BLOCK PASSED")
