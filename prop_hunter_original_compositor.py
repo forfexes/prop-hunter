@@ -500,6 +500,11 @@ def _source(family):
             if source.size != (691, CROP[family][3] - CROP[family][1]):
                 raise ValueError('Approved clean owner plate has incorrect dimensions')
             return source
+    # Every Premium AI tip must use its actual APPROVED, sample-free plate.
+    # A raw JPG with old players/lines beneath new text is NOT a valid
+    # fallback even when the apparent card looks plausible in Telegram.
+    if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1":
+        raise ValueError("Approved owner-original master missing; no overpainted fallback")
     path = MASTER / (family + '.jpg')
     if not path.is_file():
         raise FileNotFoundError(f'User original JPG not in repo: {path}')
