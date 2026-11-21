@@ -135,8 +135,12 @@ def _template(pick, rows):
             # Every production selection needs its explicit approved master.
             raise PremiumDataMissing("No approved NBA master for market: " + market[:55])
         return key
-    if n < 2 or n > 6:
-        raise PremiumDataMissing("Only 2–6 legs are supported")
+    if n < 2 or n > 12:
+        raise PremiumDataMissing("Only 2–12 legs are supported")
+    # 7+ is supported for Builder only through 7, and for multi-game
+    # Combo/Lottery through 12. Ladder/same-player remain separately approved.
+    if n > 6 and typ in ("ladder",):
+        raise PremiumDataMissing("Ladder currently supports 2–6 original rungs")
     if typ == "ladder":
         return f"ladder_{n}"
     if typ in ("lottery", "big", "super"):
@@ -147,7 +151,11 @@ def _template(pick, rows):
         if feats.get("combo_scope") == "cross_game":
             return f"cross_game_{n}"
         if feats.get("same_player_multistat") is True:
+            if n > 6:
+                raise PremiumDataMissing("Same-player master only supports 2–6 rungs")
             return f"same_player_{n}"
+        if n > 7:
+            raise PremiumDataMissing("Same-game Builder master only supports 2–7 legs")
         return f"builder_{n}"
     raise PremiumDataMissing(f"Unsupported NBA pick type: {typ}")
 
@@ -160,9 +168,14 @@ def render_nba_pick(pick, rows, teams):
     renderer = import_module("render_cards")
     feats = _get(pick, "features") or {}
     feats = feats if isinstance(feats, dict) else {}
+    details = list(_get(pick, "leg_details") or [])
+    books = {str(leg.get("bookmaker") or "").strip() for leg in details
+             if isinstance(leg, dict)}
     bookmaker = feats.get("bookmaker") or _get(pick, "bookmaker")
+    if not str(bookmaker or "").strip() and len(books)==1 and next(iter(books)):
+        bookmaker=next(iter(books))
     if not str(bookmaker or "").strip():
-        raise PremiumDataMissing("No observed bookmaker provenance")
+        raise PremiumDataMissing("No observed individual-leg bookmaker provenance")
     key = _template(pick, rows)
     family = key.rsplit("_", 1)[0]
     multi_game = family in ("lottery", "combo", "cross_game")
@@ -249,13 +262,18 @@ def render_nba_pick(pick, rows, teams):
             verified_combo = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
             # The owner's card keeps a numeric total even without a book-issued
             # parlay ticket. The unconfirmed value is derived from real leg prices.
+            values["combo_quote_verified"] = verified_combo
+            values["combo_quote_calculated"] = not verified_combo
             if verified_combo:
                 values["total_odds"] = _price(_get(pick, "odds"))
             else:
                 from prop_hunter_combo_prices import calculated_combo_odds
                 calculated = calculated_combo_odds(pick)
-                values["total_odds"] = (f"≈{calculated:.2f}" if calculated is not None
-                                       else "OFFEN")
+                if calculated is None:
+                    raise PremiumDataMissing("Authentic leg prices needed for calculated quote")
+                # Keep the value numeric for SVG's strict arithmetic check;
+                # the original total-quote label becomes BERECHNETE QUOTE.
+                values["total_odds"] = f"@{calculated:.2f}"
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
         "single", "ladder", "builder", "lottery"):
         # No silent fallback: if a true owner-original asset is absent or its
