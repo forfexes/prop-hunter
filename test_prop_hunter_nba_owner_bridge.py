@@ -55,7 +55,7 @@ examples=[
 
 # Combo and cross-game are data variants of the user's Lottery original.
 # Confirm the production owner bridge is called, not the generated SVG route.
-lottery_reference=examples[3]
+lottery_reference=next(example for example in examples if example[0]=="lottery")
 lottery_rows=lottery_reference[2]
 lottery_details=lottery_reference[1].leg_details
 combo_original=N(**common,type="combo",odds=13.80,
