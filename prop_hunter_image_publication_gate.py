@@ -41,6 +41,7 @@ def owner_image_signature(pick):
     record["approval_mode"]={
         "nba_owner":os.getenv("PH_NBA_OWNER_ORIGINALS","0"),
         "no_overpaint":os.getenv("PH_BLOCK_OVERPAINTED_MASTERS","0"),
+        "layered_owner_release":os.getenv("PH_ALLOW_VERIFIED_LAYERED_OWNER","0"),
         "all_sports":os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0"),
         "pixel_qa":os.getenv("PH_OWNER_PIXEL_QA","0"),
         "quote_qa":os.getenv("PH_OWNER_QUOTE_QA","0"),
