@@ -761,6 +761,28 @@ def _card_pick(card,picks,combos):
 _EDIT_STATE = {"gone": False, "reason": "", "gateway_unavailable": False, "unchanged": False}
 
 
+def _original_photo_caption_only(image_pick) -> bool:
+    """Protect all non-NBA/unapproved owner originals from image repainting."""
+    if os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0").strip() != "1":
+        return False
+    if not isinstance(image_pick,dict):
+        return True
+    from prop_hunter_image_cards import league_of
+    hint=(image_pick.get("source_sport") or image_pick.get("sport")
+          or image_pick.get("league"))
+    league=league_of(hint)
+    if not league or league[1] != "nba":
+        return True
+    for leg in image_pick.get("leg_details") or []:
+        sport=leg.get("sport") if isinstance(leg,dict) else getattr(leg,"sport",None)
+        if sport is None:
+            continue
+        linked=league_of(sport)
+        if not linked or linked[1] != "nba":
+            return True
+    return False
+
+
 def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=None, fallback_pick=None) -> bool:
     _EDIT_STATE["reason"] = ""
     _EDIT_STATE["unchanged"] = False
@@ -779,7 +801,20 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
     media_payload = None
     for attempt in range(retries+1):
         try:
-            if image_pick:
+            caption_only=bool(image_pick and _original_photo_caption_only(image_pick))
+            if caption_only:
+                # Existing non-NBA legacy photo is still the user's original
+                # Telegram message. Do not re-render old example artwork or
+                # silently truncate their tip just to force the result.
+                if len(str(text)) > 1024:
+                    _EDIT_STATE["reason"]="original_photo_caption_exceeds_1024_no_truncation"
+                    return False
+                r=requests.post(
+                    f"https://api.telegram.org/bot{TG_TOKEN}/editMessageCaption",
+                    json={"chat_id":target,"message_id":int(message_id),
+                          "caption":str(text)},
+                    timeout=TIMEOUT)
+            elif image_pick:
                 import json
                 if media_payload is None:
                     from prop_hunter_image_cards import settled_image
@@ -899,6 +934,11 @@ def _replace_recent_text_with_photo(card: dict, visual: dict, text: str) -> bool
     delete the old text only after success, and roll back the new photo if
     deleting the old one fails. Never touch messages >=40 hours old.
     """
+    if os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0").strip()=="1":
+        # In strict premium mode an existing text message is NEVER deleted
+        # and re-posted as a different Telegram ID, even if approved artwork
+        # exists. Same-message settlement is the user's hard requirement.
+        return False
     if not TG_TOKEN or not visual or str(card.get("media_type") or "text") != "text":
         return False
     created=card.get("created_at")
