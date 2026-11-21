@@ -31,7 +31,7 @@ RECTS = {
     (240,278,559,374),                    # sample player name / market
     (158,380,620,446),                    # sample prop and price
     (519,278,689,456),                    # Warriors bridge watermark
-    (73,454,252,506),(31,505,247,602),  # remove entire stale FORM sample heading and values
+    (62,454,252,508),(31,505,247,602),  # remove remaining leftmost FORM glyphs and sample values
     (269,500,511,601), (529,518,670,600), # model / stake numbers
     (332,630,515,716),                    # remove entire baked-in OFFEN/result sample
  ],
