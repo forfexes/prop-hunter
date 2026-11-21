@@ -51,3 +51,18 @@ def test_ambiguous_basketball_never_becomes_nba():
          patch.object(cards, "player_photo", side_effect=AssertionError("unexpected network lookup")), \
          patch.object(cards, "team_logo", side_effect=AssertionError("unexpected network lookup")):
         assert cards.build_for_pick(_pick("basketball")) is None
+
+def test_premium_owner_mode_blocks_direct_render_even_when_legacy_toggle_off():
+    # This old entry point was still callable directly and PH_USE_USER_ORIGINALS=0
+    # would allow a generated substitute poster despite approved-owner mode.
+    with patch.dict("os.environ", {
+            "PH_NBA_OWNER_ORIGINALS": "1", "PH_USE_USER_ORIGINALS": "0"}), \
+         patch.object(cards, "_original_artwork_background",
+                      side_effect=AssertionError("legacy background generated")):
+        try:
+            cards.render("single", "SINGLE", "Fixture", "NBA", [],
+                         [{"name": "TEST PLAYER", "label": "Points Over"}])
+        except ValueError as exc:
+            assert "Direct legacy card renderer disabled" in str(exc), str(exc)
+        else:
+            raise AssertionError("Direct NBA legacy renderer escaped premium guard")
