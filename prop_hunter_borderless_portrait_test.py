@@ -40,7 +40,9 @@ with TemporaryDirectory() as folder:
                 "model": {"prob": "", "edge": "", "confidence": ""}}]
         with patch.object(poster, "_portrait", side_effect=AssertionError("Framed player must not render")), \
              patch.object(poster, "_clean_hero", side_effect=AssertionError("No legacy photo patch")), \
-             patch.object(poster, "_hide_baked_single_head", side_effect=AssertionError("No baked athlete")):
+             patch.object(poster, "_hide_baked_single_head", side_effect=AssertionError("No baked athlete")), \
+             patch.object(poster, "_rect", side_effect=AssertionError("No opaque runtime rectangle over a cleaned original")), \
+             patch.object(poster, "_blend_fill", side_effect=AssertionError("No sample-text blending over a cleaned original")):
             data = poster.original_card("single", "SINGLE", "Test fixture",
                          "NBA", teams, row, "Einsatz 1u", "OFFEN")
         im = Image.open(BytesIO(data))
