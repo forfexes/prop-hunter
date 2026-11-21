@@ -148,3 +148,17 @@ with patch.dict("os.environ", {"PH_OWNER_APPROVED_ALL_SPORTS":"1"}):
     assert untouched.calls == []
     assert all(not hasattr(item, "_verified_owner_png") for item in forged)
 print("FORGED SINGLE/LADDER STALE IMAGE FAIL-CLOSED PASSED")
+
+
+# Owner pixel QA is REQUIRED for live production. A valid PNG header, correct
+# dimensions and genuine-looking generic artwork are not visual approval.
+with patch.dict("os.environ", {
+    "PH_OWNER_APPROVED_ALL_SPORTS":"1",
+    "PH_NBA_OWNER_ORIGINALS":"1",
+    "PH_OWNER_PIXEL_QA":"1",
+}):
+    synthetic=p("good","NBA")
+    good,blocked=filter_verified_nba_images([synthetic],Cards())
+    assert good == [] and blocked == 1
+    assert not hasattr(synthetic,"_verified_owner_png")
+print("PIXEL QA REJECTS SYNTHETIC PNG BEFORE TELEGRAM")
