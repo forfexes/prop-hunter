@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install image renderer
-        run: python -m pip install 'Pillow>=10' 'cairosvg>=2.7' 'requests>=2.31'
+        run: python -m pip install 'Pillow>=10' 'cairosvg>=2.7' 'requests>=2.31' 'numpy>=1.26'
       - name: Regenerate 52 editable SVG masters and preserve original NBA logo
         run: |
           python -u card_templates/nba_premium_v2/build_masters.py
