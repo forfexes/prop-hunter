@@ -53,7 +53,7 @@ with Image.open(APPROVED / "ladder.png") as clean_ladder:
     tall.paste(raw.crop((0,730,691,865)),(0,850))
     stretched = tall.resize((1080,round(1080*985/691)),Image.Resampling.LANCZOS)
     same_player = N(type="betbuilder",features={"same_player_multistat":True})
-    buffered = BytesIO()
+    buffer = BytesIO()
     stretched.save(buffer,"PNG")
     assert owner_pixel_provenance(same_player,buffer.getvalue()) == (
         True,"source_original_pixels_verified")
