@@ -48,8 +48,9 @@ def test_builds_team_plus_players():
 def test_card_shows_as_estimated_and_pl_invalidated():
     props = [_team(1.9), _player("LeBron James", "points", 1.8, 24.5)]
     t = build_estimated_mixed(props, Pick)[0]
-    # publishable because flagged estimated (opt-in on)
-    assert publishable_extra(t) is True
+    # The offline opt-in may create a calculated fixture for model analysis,
+    # but the premium Telegram publication gate must never publish it.
+    assert publishable_extra(t) is False
     # but invalidated in realised P/L
     assert unpriced_sgp(t) is True
 
