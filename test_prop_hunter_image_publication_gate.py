@@ -2,7 +2,7 @@
 from types import SimpleNamespace as N
 from io import BytesIO
 from PIL import Image
-from prop_hunter_image_publication_gate import filter_verified_nba_images
+from prop_hunter_image_publication_gate import filter_verified_nba_images,owner_image_signature
 
 _out=BytesIO()
 Image.new("RGBA",(1080,1402),(12,35,54,255)).save(_out,"PNG")
@@ -53,6 +53,13 @@ print("NBA OWNER IMAGE PUBLICATION GATE PASSED: individual skips, no false histo
 # could draw a visually convincing authentic PNG.
 assert not hasattr(picks[7], "_verified_owner_png")
 assert picks[8]._verified_owner_png == PNG
+assert picks[8]._verified_owner_signature == owner_image_signature(picks[8])
+# Even an updated, still-bookmaker-confirmed odd is a different ticket image.
+_old_signature=picks[8]._verified_owner_signature
+picks[8].odds=4.25
+assert owner_image_signature(picks[8]) != _old_signature
+picks[8].odds=3.40
+assert owner_image_signature(picks[8]) == _old_signature
 print("NBA UNOBSERVED COMBO TOTAL REJECTED BEFORE IMAGE CREATION")
 
 # A previously successful photo MUST be invalidated when the ticket changes.
