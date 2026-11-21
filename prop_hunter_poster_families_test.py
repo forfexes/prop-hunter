@@ -96,13 +96,13 @@ with TemporaryDirectory() as temp:
         loaded = cards._original_artwork_background("football", "single", 1000)
         assert loaded.size == (1080, 1000)
         assert all(abs(actual - expected) <= 5 for actual,expected in zip(loaded.getpixel((540, 500))[:3], (19, 42, 61)))
-with mock_patch("prop_hunter_original_template_registry.available_template", return_value=None), mock_patch.dict(os.environ, {"PH_ORIGINAL_ONLY":"1"}):
+with mock_patch("prop_hunter_original_template_registry.available_template", return_value=None), mock_patch.dict(os.environ, {"PH_ORIGINAL_ONLY":"0"}):
     try:
         cards._original_artwork_background("hockey", "ladder", 1000)
     except FileNotFoundError:
         pass
     else:
-        raise AssertionError("PH_ORIGINAL_ONLY must reject missing user artwork")
+        raise AssertionError("Missing original artwork must always fail closed")
 print("REAL ARTWORK PATH / FAIL-CLOSED ORIGINAL MODE PASSED")
 
 # Integrity gate for the FOUR actual uploaded user source images, NOT recreated art.
