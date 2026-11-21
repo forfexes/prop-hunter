@@ -279,7 +279,8 @@ def render_nba_pick(pick, rows, teams):
                 # the original total-quote label becomes BERECHNETE QUOTE.
                 values["total_odds"] = f"@{calculated:.2f}"
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
-        "single", "ladder", "builder", "lottery", "combo", "cross_game"):
+        "single", "ladder", "builder", "lottery", "combo", "cross_game",
+        "same_player"):
         # Cross-game/Combo use the owner's Lottery artwork via owner_bridge.
         # Never silently substitute NBA SVG masters when owner mode is active.
         # No silent fallback: if a true owner-original asset is absent or its
