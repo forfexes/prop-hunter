@@ -88,8 +88,8 @@ def render_owner(pick, key: str, rows: list, teams: list,
     stake = values.get("stake")
     observed_quote = values.get("total_odds") or values.get("odds")
     feats=pick.get("features", {}) if isinstance(pick,dict) else getattr(pick,"features",{}) or {}
-    verified=(isinstance(feats,dict) and feats.get("combined_odds_observed") is True
-              and bool(feats.get("combined_quote_id")))
+    from prop_hunter_combo_prices import confirmed_ticket
+    verified=confirmed_ticket(pick)
     footer=(("Quote " if verified or family in ("single","ladder") else "Berechnet ")
             + str(observed_quote)) if observed_quote else ""
     if stake:
