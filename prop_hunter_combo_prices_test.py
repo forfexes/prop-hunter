@@ -108,6 +108,15 @@ for sport in ("NBA", "NFL", "NHL", "MLB", "WNBA", "EUROLEAGUE", "SOCCER"):
     assert not publishable_extra(dict(type="ladder",sport=sport,
         leg_details=[dict(same_player[0],player=""),
                      dict(same_player[1],player="")]))
+    assert not publishable_extra(dict(type="ladder",sport=sport,
+        player="PLAYER A",leg_details=[dict(same_player[0],market=""),
+                                       dict(same_player[1],market="")]))
+    assert not publishable_extra(dict(type="ladder",sport=sport,
+        player="PLAYER A",leg_details=[dict(same_player[0],market="Blocks Over 2.5"),
+                                      same_player[1]]))
+    assert not publishable_extra(dict(type="ladder",sport=sport,
+        player="PLAYER A",leg_details=[dict(same_player[0],game="A vs B"),
+                                      dict(same_player[1],game="C vs D")]))
 print("ALL-SPORT DISGUISED MULTI-LEG / SINGLE-PLAYER LADDER GATE PASSED")
 
 print("MULTISPORT COMBO QUOTE REGRESSIONS PASSED")
