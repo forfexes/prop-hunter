@@ -50,21 +50,32 @@ def unpriced_sgp(obj):
     except (TypeError,ValueError):
         return False
 
+def calculated_combo_odds(obj):
+    """Product of observed decimal leg odds; not a bookmaker combined ticket."""
+    legs=value(obj,'leg_details',[]) or []
+    if len(legs)<2:
+        return None
+    prices=[]
+    for leg in legs:
+        try:
+            price=float(value(leg,'odds'))
+        except (TypeError,ValueError,OverflowError):
+            return None
+        if not math.isfinite(price) or price<=1.01:
+            return None
+        prices.append(price)
+    result=math.prod(prices)
+    return result if math.isfinite(result) and result>1.01 else None
+
+
 def publishable_extra(obj):
-    """Only singles/ladders or tickets with a verified bookmaker combined quote."""
+    """Publish combos based on observed leg quotes, not a combined-price gate."""
     if value(obj, 'type') in {'single', 'ladder'}:
         return True
     # Missing combined bookmaker price must not suppress an otherwise valid combo.
     # Require observed, positive individual leg quotes; the presentation layer
     # must clearly mark any resulting product as calculated, not bookable.
-    legs=value(obj,'leg_details',[]) or []
-    if len(legs)<2:
-        return False
-    try:
-        return all(math.isfinite(float(value(leg,'odds'))) and
-                   float(value(leg,'odds'))>1.01 for leg in legs)
-    except (TypeError,ValueError,OverflowError):
-        return False
+    return calculated_combo_odds(obj) is not None
 
 
 def quote_withdrawal_reason(ticket):
