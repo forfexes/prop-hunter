@@ -54,3 +54,17 @@ print("NBA OWNER IMAGE PUBLICATION GATE PASSED: individual skips, no false histo
 assert not hasattr(picks[7], "_verified_owner_png")
 assert picks[8]._verified_owner_png == PNG
 print("NBA UNOBSERVED COMBO TOTAL REJECTED BEFORE IMAGE CREATION")
+
+# A previously successful photo MUST be invalidated when the ticket changes.
+# Production reuses exactly the _verified_owner_png bytes; leaving old bytes
+# after a failed recheck would silently publish obsolete selections.
+again,failed=filter_verified_nba_images([picks[8]],cards)
+assert failed==0 and again==[picks[8]]
+assert picks[8]._verified_owner_png==PNG
+picks[8].features["combined_odds_observed"]=False
+again,failed=filter_verified_nba_images([picks[8]],cards)
+assert again==[] and failed==1
+assert not hasattr(picks[8],"_verified_owner_png")
+picks[8].features["combined_odds_observed"]=True
+picks[8].features["combined_quote_id"]="QA_BOOK_TICKET"
+print("NBA STALE ORIGINAL PREVIEW REJECTED AFTER TICKET CHANGE")
