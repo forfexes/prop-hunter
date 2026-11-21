@@ -125,6 +125,18 @@ def filter_verified_nba_images(picks, cards):
         # bookable parlay price and must never reach Telegram as a pick.
         result=cards.build_for_pick(pick)
         if _valid_owner_png(result):
+            # A structurally valid image is NOT sufficient. In owner release
+            # mode, compare the real NBA original masthead pixel-for-pixel
+            # against both the approved AND the latest cleaned source plate.
+            # This refuses a stale master, an altered crown, and sample-image
+            # overlays before any Telegram transport is attempted.
+            if os.getenv("PH_OWNER_PIXEL_QA", "0").strip() == "1":
+                from prop_hunter_owner_pixel_qa import owner_pixel_provenance
+                passed, reason = owner_pixel_provenance(pick, result)
+                if not passed:
+                    print("OWNER_PIXEL_QA_BLOCKED reason=" + reason, flush=True)
+                    blocked += 1
+                    continue
             # Production will reuse the exact verified artwork bytes from
             # preflight. Never fetch photos or redraw a second time after the
             # decision, which could change the card or hit a transient API.
