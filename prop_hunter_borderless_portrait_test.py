@@ -31,6 +31,9 @@ with TemporaryDirectory() as folder:
     with patch.object(poster, "APPROVED_MASTER", Path(folder)):
         poster._source.cache_clear()
         assert poster._source("single").size == (691, 758)
+        team_logo = Image.new("RGBA", (80, 80), (0, 0, 0, 0))
+        ImageDraw.Draw(team_logo).ellipse((8, 8, 72, 72), fill=(26, 122, 219, 255))
+        teams = [("QA HOME", team_logo), ("QA AWAY", team_logo)]
         row = [{"name": "TEST ATHLETE", "photo": portrait,
                 "label": "Test market (NOT A REAL TIP)", "odds": "@2.00",
                 "form": "L5 3/5 L10 6/10 L15 9/15",
@@ -39,7 +42,7 @@ with TemporaryDirectory() as folder:
              patch.object(poster, "_clean_hero", side_effect=AssertionError("No legacy photo patch")), \
              patch.object(poster, "_hide_baked_single_head", side_effect=AssertionError("No baked athlete")):
             data = poster.original_card("single", "SINGLE", "Test fixture",
-                         "NBA", [], row, "Einsatz 1u", "OFFEN")
+                         "NBA", teams, row, "Einsatz 1u", "OFFEN")
         im = Image.open(BytesIO(data))
         assert im.size[0] == 1080
         assert im.getbbox()
@@ -47,7 +50,7 @@ with TemporaryDirectory() as folder:
         row[0]["photo"] = Image.new("RGB", (150, 240), "red")
         try:
             poster.original_card("single", "SINGLE", "Test fixture",
-                                 "NBA", [], row, "Einsatz 1u", "OFFEN")
+                                 "NBA", teams, row, "Einsatz 1u", "OFFEN")
         except ValueError as exc:
             assert "transparent player cutout" in str(exc)
         else:
