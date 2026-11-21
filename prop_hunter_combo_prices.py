@@ -19,7 +19,9 @@ def features(obj):
 
 def confirmed_ticket(obj):
     f=features(obj)
-    return f.get('combined_odds_observed') is True and bool(f.get('combined_quote_id'))
+    # Whitespace or placeholder IDs are not bookmaker-issued receipts.
+    return (f.get('combined_odds_observed') is True
+            and bool(str(f.get('combined_quote_id') or '').strip()))
 
 def unpriced_sgp(obj):
     if value(obj,'type') in {'single','ladder'} or confirmed_ticket(obj):
