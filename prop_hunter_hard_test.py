@@ -2,7 +2,7 @@
 """Offline HARD TEST for PROP HUNTER 13.10.1. No external writes."""
 from __future__ import annotations
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest.mock import patch
 import prop_hunter_runtime_guard as guard
@@ -26,11 +26,16 @@ def test_keyless_betrivers_relabel():
 def test_snapshot_consensus_and_bad_row_filter():
     import prophunter as ph
     now=datetime.now(timezone.utc).isoformat()
+    kickoff=(datetime.now(timezone.utc)+timedelta(hours=2)).isoformat()
+    started=(datetime.now(timezone.utc)-timedelta(minutes=2)).isoformat()
     rows=[
-        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Player X","market":"hits","market_key":"hits","direction":"over","line":.5,"odds_decimal":1.91,"commence_time":now,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"book_a","source":"fixture","raw":{}},
-        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Player X","market":"hits","market_key":"hits","direction":"under","line":.5,"odds_decimal":1.91,"commence_time":now,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"book_a","source":"fixture","raw":{}},
-        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Player X","market":"hits","market_key":"hits","direction":"over","line":.5,"odds_decimal":2.05,"commence_time":now,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"book_b","source":"fixture","raw":{}},
-        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Over 0.5","market":"hits","market_key":"hits","direction":"over","line":.5,"odds_decimal":9.99,"commence_time":now,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"bad","source":"fixture","raw":{}},
+        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Player X","market":"hits","market_key":"hits","direction":"over","line":.5,"odds_decimal":1.91,"commence_time":kickoff,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"book_a","source":"fixture","raw":{}},
+        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Player X","market":"hits","market_key":"hits","direction":"under","line":.5,"odds_decimal":1.91,"commence_time":kickoff,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"book_a","source":"fixture","raw":{}},
+        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Player X","market":"hits","market_key":"hits","direction":"over","line":.5,"odds_decimal":2.05,"commence_time":kickoff,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"book_b","source":"fixture","raw":{}},
+        {"sport":"MLB","league":"MLB","source_event_id":"e1","player_name":"Over 0.5","market":"hits","market_key":"hits","direction":"over","line":.5,"odds_decimal":9.99,"commence_time":kickoff,"created_at":now,"home_team":"Home","away_team":"Away","bookmaker":"bad","source":"fixture","raw":{}},
+        # This bookmaker price is real-looking, but the match started:
+        # it must NEVER be promoted into a fresh pre-match recommendation.
+        {"sport":"MLB","league":"MLB","source_event_id":"e2","player_name":"Started Player","market":"hits","market_key":"hits","direction":"over","line":.5,"odds_decimal":2.40,"commence_time":started,"created_at":now,"home_team":"Home2","away_team":"Away2","bookmaker":"book_c","source":"fixture","raw":{}},
     ]
     class R:
         def __init__(self,data): self.data=data
@@ -54,6 +59,7 @@ def test_snapshot_consensus_and_bad_row_filter():
     with patch.object(shared, "snapshot_supabase_client", return_value=SB()):
         props=ph.fetch_snapshot_props("MLB")
     check(all(p.player!="Over 0.5" for p in props),"bad player row leaked")
+    check(all(p.player!="Started Player" for p in props),"pre-match quote from started game leaked")
     overs=[p for p in props if p.direction=="over"]
     check(len(overs)==1,"best-price dedupe failed")
     check(abs(float(overs[0].odds)-2.05)<.001,"best observed price not kept")
