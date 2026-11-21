@@ -46,6 +46,16 @@ def filter_verified_nba_images(picks, cards):
         if not league or league[1]!="nba":
             accepted.append(pick)
             continue
+        # A pick may be rechecked after bookmaker odds, lineups, photos or
+        # ticket provenance changed. Invalidate an old successful preflight
+        # before every new check. Otherwise a previously cached image could
+        # be uploaded even after the updated pick is rejected.
+        if hasattr(pick, "_verified_owner_png"):
+            try:
+                delattr(pick, "_verified_owner_png")
+            except (AttributeError, TypeError):
+                blocked+=1
+                continue
         # Publishing a combined NBA ticket requires an actual observed
         # bookmaker price AND its ticket identifier. Multiplying authentic
         # single-leg odds is useful for offline analysis, but is not a
