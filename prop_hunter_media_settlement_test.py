@@ -143,3 +143,28 @@ with patch.object(cards,"settled_image",return_value=b"VALID-PNG"), \
     assert results._EDIT_STATE["reason"]=="telegram_media_already_identical"
 results._EDIT_STATE["unchanged"]=False
 print("TELEGRAM 400 ALREADY-IDENTICAL IS NOT COUNTED AS A REPLACED PHOTO")
+
+# Strict all-sport premium settlement: historical NHL/NFL/WNBA/MLB photos
+# cannot be repainted from unapproved sample-filled templates.
+legacy_photo={'sport':'NHL','type':'single','player':'TEST NHL','features':{}}
+with patch.dict(os.environ,{"PH_OWNER_APPROVED_ALL_SPORTS":"1"}), \
+     patch.object(cards,'settled_image',
+                  side_effect=AssertionError('unapproved legacy card repainted')), \
+     patch.object(results.requests,'post',side_effect=post) as caption_send, \
+     patch.object(results.time,'sleep'):
+    sent.clear()
+    assert results._edit_message(123,'🏁 Auswertung: ✅ gewonnen',
+                                  image_pick=legacy_photo)
+    assert sent[-1][0].endswith('/editMessageCaption')
+    assert sent[-1][1]['json']['message_id']==123
+    assert sent[-1][1]['json']['caption']=='🏁 Auswertung: ✅ gewonnen'
+    caption_send.assert_called_once()
+    sent.clear()
+    assert not results._edit_message(123,'LONG-RESULT-'*110,
+                                      image_pick=legacy_photo)
+    assert not sent
+    assert results._EDIT_STATE['reason']=='original_photo_caption_exceeds_1024_no_truncation'
+    assert not results._replace_recent_text_with_photo(
+        {'media_type':'text','message_id':123},
+        legacy_photo,'🏁 Auswertung: ✅ gewonnen')
+print('HISTORICAL ALL-SPORT PHOTO IMMUTABILITY AND SAME-ID CAPTION VERIFIED')
