@@ -85,6 +85,23 @@ longshot_original=N(**common,type="longshot",player="TEST PLAYER",
                     market="points",odds=3.25)
 examples.append(("longshot_owner_single",longshot_original,[row],[]))
 
+# Even a previously published historical card cannot be repainted with a
+# multiplied estimate in owner-only Telegram settlement mode.
+builder_fixture=next(item for item in examples if item[0]=="builder")
+historical_without_ticket=N(**{
+    **vars(builder_fixture[1]),
+    "features":{"bookmaker":"TEST_BOOKMAKER_ONLY"},
+})
+with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
+    try:
+        adapter.render_nba_pick(historical_without_ticket,
+                                builder_fixture[2],teams)
+    except adapter.PremiumDataMissing as exc:
+        assert "observed bookmaker combined ticket" in str(exc)
+    else:
+        raise AssertionError("Owner-image settlement displayed a calculated combined quote")
+print("NBA HISTORIC UNVERIFIED PARLAY CANNOT REPAINT OWNER ORIGINAL")
+
 old_master=originals.APPROVED_MASTER
 old_base=bridge.BASE
 try:
