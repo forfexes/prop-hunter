@@ -167,6 +167,26 @@ with patch.dict(os.environ,{"PH_OWNER_APPROVED_ALL_SPORTS":"1"}), \
     assert not results._replace_recent_text_with_photo(
         {'media_type':'text','message_id':123},
         legacy_photo,'🏁 Auswertung: ✅ gewonnen')
+# An old NBA Builder with only multiplied/unknown prices must ALSO keep
+# its existing Telegram PHOTO byte-for-byte, not create a new owner poster.
+unpriced_nba_photo = {
+    'sport':'NBA','type':'betbuilder','odds':3.4,'features':{},
+    'leg_details':[{'odds':1.8,'game':'A vs B'},
+                   {'odds':1.9,'game':'C vs D'}],
+}
+with patch.dict(os.environ, {'PH_OWNER_APPROVED_ALL_SPORTS':'1',
+                              'PH_BLOCK_OVERPAINTED_MASTERS':'0'}), \
+     patch.object(cards,'settled_image',
+                  side_effect=AssertionError('unpriced NBA ticket repainted')), \
+     patch.object(results.requests,'post',side_effect=post), \
+     patch.object(results.time,'sleep'):
+    sent.clear()
+    assert results._edit_message(123,'Auswertung: unverifizierte Kombiquote',
+                                  image_pick=unpriced_nba_photo)
+    assert sent[-1][0].endswith('/editMessageCaption')
+    assert sent[-1][1]['json']['message_id']==123
+print('HISTORICAL NBA UNVERIFIED TICKET CAPTION-ONLY SAFE')
+
 print('HISTORICAL ALL-SPORT PHOTO IMMUTABILITY AND SAME-ID CAPTION VERIFIED')
 
 # Older Results workflows set PH_NBA_OWNER_ORIGINALS but did not yet carry
