@@ -49,6 +49,20 @@ examples=[
      [row,dict(row,name="TEST PLAYER TWO"),dict(row,name="TEST PLAYER THREE")],[]),
 ]
 
+# Combo and cross-game are data variants of the user's Lottery original.
+# Confirm the production owner bridge is called, not the generated SVG route.
+lottery_reference=examples[3]
+lottery_rows=lottery_reference[2]
+lottery_details=lottery_reference[1].leg_details
+combo_original=N(**common,type="combo",odds=13.80,
+                 leg_details=lottery_details)
+cross_original=N(**{**common,"features":{**features,"combo_scope":"cross_game"}},
+                 type="betbuilder",odds=13.80,leg_details=lottery_details)
+examples.extend([
+    ("combo_owner_lottery",combo_original,lottery_rows,[]),
+    ("cross_game_owner_lottery",cross_original,lottery_rows,[]),
+])
+
 old_master=originals.APPROVED_MASTER
 old_base=bridge.BASE
 try:
@@ -57,7 +71,13 @@ try:
     originals._source.cache_clear()
     with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
         for family,pick,rows,_ in examples:
-            raw=adapter.render_nba_pick(pick,rows,teams)
+            if family in ("combo_owner_lottery","cross_game_owner_lottery"):
+                with patch.object(bridge,"render_owner", wraps=bridge.render_owner) as check_owner:
+                    raw=adapter.render_nba_pick(pick,rows,teams)
+                    check_owner.assert_called_once()
+                    assert check_owner.call_args.args[1].startswith(("combo_","cross_game_"))
+            else:
+                raw=adapter.render_nba_pick(pick,rows,teams)
             with Image.open(BytesIO(raw)) as image:
                 assert image.width==1080 and image.height>=1100,(family,image.size)
                 image.verify()
