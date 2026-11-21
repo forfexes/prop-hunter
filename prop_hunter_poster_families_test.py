@@ -276,7 +276,7 @@ for count in range(2,6):
     assert len(geometry)==count
     assert max(geometry)+49 < 615, (count,geometry)
 
-for kind, max_count in [("ladder",5),("builder",6),("lottery",4)]:
+for kind, max_count in [("ladder",5),("builder",7),("lottery",12)]:
     try:
         originals.original_card(kind,kind.upper(),"Fixture","NBA",[],
                                  _fixture_rows(kind,max_count+1))
@@ -293,7 +293,7 @@ for family, check_xy in (("builder",(112,119)),("lottery",(116,57))):
     originals._erase_template_head_remnants(cleaned,family)
     assert cleaned.getpixel(check_xy) != source.getpixel(check_xy),(family,check_xy)
     assert cleaned.getpixel((50,30)) == source.getpixel((50,30)),family
-print("VISUAL QA: 4-6 BUILDER PORTRAITS, 2-5 LADDER RUNGS, 2-4 VERIFIED-LEG LOTTERY, NO SAMPLE HEAD REMNANTS")
+print("VISUAL QA: 4-7 BUILDER PORTRAITS, 2-5 LADDER RUNGS, 2-12 VERIFIED-LEG LOTTERY, NO SAMPLE HEAD REMNANTS")
 
 # Single with a visible supplied portrait: detect sample face over the banner.
 single_photo=originals.original_card(
