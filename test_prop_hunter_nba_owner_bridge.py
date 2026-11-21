@@ -77,6 +77,10 @@ same_player_pick=N(**{**common,"features":{**features,"same_player_multistat":Tr
                    type="betbuilder",odds=6.15,leg_details=same_player_details)
 examples.append(("same_player_owner_ladder",same_player_pick,same_player_rows,[]))
 
+longshot_original=N(**common,type="longshot",player="TEST PLAYER",
+                    market="points",odds=3.25)
+examples.append(("longshot_owner_single",longshot_original,[row],[]))
+
 old_master=originals.APPROVED_MASTER
 old_base=bridge.BASE
 try:
@@ -86,12 +90,13 @@ try:
     with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
         for family,pick,rows,_ in examples:
             if family in ("combo_owner_lottery","cross_game_owner_lottery",
-                          "same_player_owner_ladder"):
+                          "same_player_owner_ladder","longshot_owner_single"):
                 with patch.object(bridge,"render_owner", wraps=bridge.render_owner) as check_owner:
                     raw=adapter.render_nba_pick(pick,rows,teams)
                     check_owner.assert_called_once()
-                    expected=("same_player_",) if family=="same_player_owner_ladder" else (
-                        "combo_","cross_game_")
+                    expected=(("same_player_",) if family=="same_player_owner_ladder"
+                              else ("longshot",) if family=="longshot_owner_single"
+                              else ("combo_","cross_game_"))
                     assert check_owner.call_args.args[1].startswith(expected)
             else:
                 raw=adapter.render_nba_pick(pick,rows,teams)
