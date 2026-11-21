@@ -826,8 +826,16 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
             for i, r in enumerate(rows):
                 col, rowno = i%3, i//3
                 x = 8 + col*w
-                py0, py1 = (123, 235) if rowno == 0 else (272, 363)
-                label_y0, label_y1 = (236, 269) if rowno == 0 else (364, 409)
+                if n == 7:
+                    # Seven real photos require THREE compact rows (3/3/1).
+                    # The old two-row coordinates would overlap leg seven
+                    # with leg four and visually misrepresent the ticket.
+                    top = (120, 215, 310)[rowno]
+                    py0, py1 = top, top + 62
+                    label_y0, label_y1 = top + 63, top + 94
+                else:
+                    py0, py1 = (123, 235) if rowno == 0 else (272, 363)
+                    label_y0, label_y1 = (236, 269) if rowno == 0 else (364, 409)
                 _portrait(im, r.get('photo'),
                           (x+7, py0, x+w-8, py1), r.get('name') or '')
                 _rect(im, (x+4,label_y0,x+w-5,label_y1), NAVY, 5, GOLD, 1)
