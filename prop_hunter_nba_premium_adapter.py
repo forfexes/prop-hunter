@@ -89,6 +89,10 @@ def _template(pick, rows):
     feats = _get(pick, "features") or {}
     feats = feats if isinstance(feats, dict) else {}
     n = len(rows)
+    if typ == "longshot":
+        if n != 1:
+            raise PremiumDataMissing("Longshot requires exactly one verified selection")
+        return "longshot"
     if typ == "single" and n == 1:
         # Real source picks often store the numeric line and direction as
         # part of market, e.g. "Rebounds Over 3.5", "Assists Under 4.5".
@@ -204,13 +208,13 @@ def render_nba_pick(pick, rows, teams):
         "away_logo": _photo(teams[1][1], "away_logo"),
     }
     typ = str(_get(pick, "type") or "").lower()
-    if typ in ("single", "ladder") or family == "same_player":
+    if typ in ("single", "longshot", "ladder") or family == "same_player":
         names = {str(row.get("name") or "").strip().casefold() for row in rows}
         if len(names) != 1 or not next(iter(names)):
             raise PremiumDataMissing("Ladder/same-player must contain exactly one athlete")
         values["player_name"] = str(rows[0]["name"])
         images["player_photo"] = _photo(rows[0].get("photo"), "player_photo")
-    if typ == "single":
+    if typ in ("single", "longshot"):
         values["market"] = str(rows[0].get("label") or "")
         values["odds"] = _price(_get(pick, "odds"))
         values.update(_form(rows[0].get("form")))
@@ -280,7 +284,7 @@ def render_nba_pick(pick, rows, teams):
                 values["total_odds"] = f"@{calculated:.2f}"
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
         "single", "ladder", "builder", "lottery", "combo", "cross_game",
-        "same_player"):
+        "same_player", "longshot"):
         # Cross-game/Combo use the owner's Lottery artwork via owner_bridge.
         # Never silently substitute NBA SVG masters when owner mode is active.
         # No silent fallback: if a true owner-original asset is absent or its
