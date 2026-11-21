@@ -168,3 +168,14 @@ with patch.dict(os.environ,{"PH_OWNER_APPROVED_ALL_SPORTS":"1"}), \
         {'media_type':'text','message_id':123},
         legacy_photo,'🏁 Auswertung: ✅ gewonnen')
 print('HISTORICAL ALL-SPORT PHOTO IMMUTABILITY AND SAME-ID CAPTION VERIFIED')
+
+# Older Results workflows set PH_NBA_OWNER_ORIGINALS but did not yet carry
+# PH_OWNER_APPROVED_ALL_SPORTS: strict photo immutability must still default ON.
+with patch.dict(os.environ, {"PH_NBA_OWNER_ORIGINALS":"1"}, clear=True):
+    assert results._strict_owner_approval()
+    assert results._original_photo_caption_only({'sport':'NHL'})
+    assert not results._original_photo_caption_only({'sport':'NBA'})
+    assert not results._replace_recent_text_with_photo(
+        {'media_type':'text','message_id':918},
+        {'sport':'NHL'}, '🏁 Auswertung: offen')
+print('LEGACY WORKFLOW OWNER-ORIGINAL FALLBACK IS STRICT FOR ALL SPORTS')
