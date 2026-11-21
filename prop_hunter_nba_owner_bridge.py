@@ -19,7 +19,9 @@ WD = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 def render_owner(pick, key: str, rows: list, teams: list,
                  values: dict, details: list) -> bytes:
     from prop_hunter_original_compositor import original_card
-    render_family = key.rsplit("_", 1)[0]
+    # The master key is the approved market identifier, not necessarily
+    # family + one numeric suffix. Single-market names may contain underscores.
+    render_family = "single" if key.startswith("single_") else key.rsplit("_", 1)[0]
     # PROP HUNTER has exactly four user originals. Cross-game Combo/ACCA
     # are a data variant of the user's LOTTERY original, not a generic
     # fallback or an illicit reuse of an NBA single-match Builder.
