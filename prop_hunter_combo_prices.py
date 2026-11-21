@@ -90,7 +90,7 @@ def prepare_calculated_combo(obj):
 
 def publishable_extra(obj):
     """Publish combos based on observed leg quotes, not a combined-price gate."""
-    if value(obj, 'type') in {'single', 'ladder'}:
+    if value(obj, 'type') in {'single', 'ladder'} or confirmed_ticket(obj):
         return True
     # Missing combined bookmaker price must not suppress an otherwise valid combo.
     # Require observed, positive individual leg quotes; the presentation layer
