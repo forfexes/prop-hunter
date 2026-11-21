@@ -16,6 +16,23 @@ BASE = Path(__file__).resolve().parent / "card_templates" / "approved"
 WD = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
 
+def _layered_owner_release_ready() -> bool:
+    """Release only if all four clean owner-derived plates are current.
+
+    Unmodified user JPEGs are references. Legacy screenshot cover-ups remain
+    forbidden in real Telegram, even after a separate layered release.
+    """
+    root = BASE.parent
+    for family in ("single", "ladder", "builder", "lottery"):
+        approved = BASE / (family + ".png")
+        cleaned = root / "cleaned" / (family + ".png")
+        if not (approved.is_file() and cleaned.is_file()):
+            return False
+        if approved.read_bytes() != cleaned.read_bytes():
+            return False
+    return True
+
+
 def render_owner(pick, key: str, rows: list, teams: list,
                  values: dict, details: list) -> bytes:
     # Production fail-closed: the legacy owner compositor still draws large
@@ -23,7 +40,13 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # overlay-free clean-plate renderer replaces this path.
     import os
     if os.getenv("PH_BLOCK_OVERPAINTED_MASTERS", "0").strip() == "1":
-        raise ValueError("owner_original_overpainted_compositor_blocked")
+        # Keep old overpaint fully blocked. A separate NBA-only production
+        # release can use only the approved source-derived layered renderer.
+        if (os.getenv("PH_ALLOW_VERIFIED_LAYERED_OWNER", "0").strip() != "1"
+                or os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() != "1"):
+            raise ValueError("owner_original_overpainted_compositor_blocked")
+        if not _layered_owner_release_ready():
+            raise ValueError("owner_layered_clean_plates_not_ready")
     from prop_hunter_original_compositor import original_card
     # The master key is the approved market identifier, not necessarily
     # family + one numeric suffix. Single-market names may contain underscores.
