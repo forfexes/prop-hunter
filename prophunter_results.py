@@ -846,6 +846,16 @@ def _edit_message(message_id: Any, text: str, chat_id: Any = None, image_pick=No
                         _EDIT_STATE["reason"] = "image_render_failed"
                         print("Telegram image settlement render failed; retry next run")
                         return False
+                    # Replacements require the same immutable owner-original
+                    # masthead and approved clean-plate identity as new tips.
+                    # Never use a previous QA preview or a synthetic SVG.
+                    if os.getenv("PH_OWNER_PIXEL_QA", "0").strip() == "1":
+                        from prop_hunter_owner_pixel_qa import owner_pixel_provenance
+                        passed, reason = owner_pixel_provenance(image_pick, png)
+                        if not passed:
+                            _EDIT_STATE["reason"] = "owner_pixel_qa_blocked:" + reason
+                            print("Telegram photo replacement blocked: "+reason)
+                            return False
                     # For Telegram PHOTO media the original RGBA PNG can be
                     # needlessly large, leading to gateway timeouts. Encode it
                     # once as a high-quality JPEG, preserve all poster content,
