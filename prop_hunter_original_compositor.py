@@ -708,6 +708,13 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         return render_clean_single(
             im, title=title, subtitle=subtitle, teams=teams, row=rows[0],
             footer=footer, settlement=settlement)
+    if family == 'ladder' and approved_plate and os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1':
+        # Original one-athlete Ladder: never draw opaque legacy list masks
+        # or a photo frame over the clean owner-supplied stadium.
+        from prop_hunter_owner_clean_ladder import render as render_clean_ladder
+        return render_clean_ladder(
+            im, subtitle=subtitle, teams=teams, rows=rows,
+            footer=footer, settlement=settlement)
     if family in ('builder','lottery') and not approved_plate:
         _erase_template_head_remnants(im, family)
     # The Golden State bridge in the SINGLE screenshot is misleading for other
