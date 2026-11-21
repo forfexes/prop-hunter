@@ -1,0 +1,22 @@
+name: Combo Odds Hardtest
+on:
+  push:
+    paths:
+      - 'prop_hunter_combo_prices.py'
+      - 'prophunter_core_1391.py'
+      - 'prop_hunter_combo_prices_test.py'
+      - '.github/workflows/combo-odds-hardtest.yml'
+  workflow_dispatch:
+jobs:
+  offline-combo-pricing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile changed Python modules
+        run: python -m py_compile prop_hunter_combo_prices.py prophunter_core_1391.py prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py prop_hunter_combo_prices_test.py
+      - name: Multi-sport combo odds and settlement guard regression
+        run: python prop_hunter_combo_prices_test.py
