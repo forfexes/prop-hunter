@@ -178,3 +178,18 @@ with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
     else:
         raise AssertionError("Owner-only mode accepted missing approved source")
 print("NO OWNER ORIGINAL FALLBACK PASS")
+# Never paint a premium pick on the raw user JPEG if the APPROVED plate
+# is missing: this is how stale sample players/lines leak into Telegram.
+with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+     patch.object(originals,"APPROVED_MASTER",CLEAN/"missing_production_plates"):
+    originals._source.cache_clear()
+    for family in ("single","ladder","builder","lottery"):
+        try:
+            originals._source(family)
+        except ValueError as exc:
+            assert "Approved owner-original master missing" in str(exc),str(exc)
+        else:
+            raise AssertionError("Premium "+family+" fell back to prefilled owner JPG")
+originals._source.cache_clear()
+print("NO SAMPLE-TEXT OVERPAINT FALLBACK PASS")
+
