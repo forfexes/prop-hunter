@@ -8,11 +8,42 @@ image-card renderer; no Telegram or Supabase access.
 from __future__ import annotations
 
 from io import BytesIO
+import hashlib
+import json
 import os
 from PIL import Image
 
 
 _PNG_MAGIC=bytes((137,80,78,71,13,10,26,10))
+
+
+
+def owner_image_signature(pick):
+    """Hash all ticket fields that can invalidate a pre-verified owner PNG.
+
+    The fingerprint is intentionally strict: unknown changed state prevents
+    reuse rather than risking stale bookmaker odds, lineups or players.
+    """
+    keys = (
+        "type", "sport", "source_sport", "game", "commence_time", "date",
+        "player", "market", "point", "direction", "odds", "stake",
+        "home_team", "away_team", "leg_details", "ladder_legs",
+        "legs", "picks", "features",
+    )
+    record = {}
+    for key in keys:
+        field = pick.get(key) if isinstance(pick,dict) else getattr(pick,key,None)
+        if hasattr(field,"model_dump"):
+            field=field.model_dump()
+        record[key]=field
+    record["approval_mode"]={
+        "nba_owner":os.getenv("PH_NBA_OWNER_ORIGINALS","0"),
+        "no_overpaint":os.getenv("PH_BLOCK_OVERPAINTED_MASTERS","0"),
+        "all_sports":os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0"),
+    }
+    raw=json.dumps(record,sort_keys=True,default=str,ensure_ascii=True,
+                   allow_nan=False).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _valid_owner_png(value):
@@ -52,12 +83,17 @@ def filter_verified_nba_images(picks, cards):
         league=cards.league_of(hint)
         # Never retain an old validated image after price, player, league or
         # approval state changed. This applies even to legacy non-NBA routes.
-        if hasattr(pick,"_verified_owner_png"):
-            try:
-                delattr(pick,"_verified_owner_png")
-            except (AttributeError,TypeError):
-                blocked+=1
-                continue
+        for stale_attr in ("_verified_owner_png","_verified_owner_signature"):
+            if hasattr(pick,stale_attr):
+                try:
+                    delattr(pick,stale_attr)
+                except (AttributeError,TypeError):
+                    blocked+=1
+                    break
+        else:
+            pass
+        if hasattr(pick,"_verified_owner_png") or hasattr(pick,"_verified_owner_signature"):
+            continue
         if strict_all:
             # Only NBA has actual approved, sample-free owner PNG masters.
             # NFL/NHL/WNBA/MLB and unknown-source cards must be deferred
@@ -92,7 +128,13 @@ def filter_verified_nba_images(picks, cards):
             # Production will reuse the exact verified artwork bytes from
             # preflight. Never fetch photos or redraw a second time after the
             # decision, which could change the card or hit a transient API.
+            try:
+                signature=owner_image_signature(pick)
+            except (TypeError,ValueError,OverflowError):
+                blocked+=1
+                continue
             setattr(pick,"_verified_owner_png",bytes(result))
+            setattr(pick,"_verified_owner_signature",signature)
             accepted.append(pick)
         else:
             blocked+=1
