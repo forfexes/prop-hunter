@@ -120,16 +120,79 @@ def prepare_calculated_combo(obj):
     return obj
 
 
-def publishable_extra(obj):
-    """Only publish an actual, identified bookmaker combined ticket.
+def _published_legs(obj):
+    """Check all historically used leg containers, not just leg_details.
 
-    This filter applies to NBA, NFL, NHL, MLB, WNBA, EuroLeague and other
-    leagues alike. A mathematically valid leg-odds product is NOT a bookmaker
-    quote for a bookable multi-leg ticket, even for cross-game parlays.
-    Single picks and genuine one-player ladder stages are priced separately.
+    A combined bet mislabeled as a single or ladder must never bypass the
+    global bookmaker-ticket gate.
     """
-    if str(value(obj, 'type') or '').strip().lower() in {'single', 'longshot', 'ladder'}:
+    for key in ('leg_details', 'ladder_legs', 'legs', 'picks'):
+        raw = value(obj, key)
+        if isinstance(raw, (list, tuple)) and raw:
+            return raw
+    return []
+
+
+def _ladder_stages_are_individual(obj, legs):
+    """One athlete, one prop market and independently observed rung prices.
+
+    A same-player multi-stat builder is not a ladder: it requires a verified
+    combined bookmaker ticket even if stored with type='ladder'.
+    """
+    if len(legs) < 2:
         return True
+    parent = str(value(obj, 'player') or '').strip().casefold()
+    players = {
+        str(value(leg, 'player') or value(leg, 'player_name') or '').strip().casefold()
+        for leg in legs
+    }
+    players.discard('')
+    if len(players) > 1 or (parent and players and players != {parent}):
+        return False
+    if not parent and not players:
+        return False
+
+    def market_key(raw):
+        # Ignore each rung's threshold while keeping the underlying prop.
+        market = str(raw or '').strip().casefold()
+        market = re.sub(r'\\b(?:over|under)\\s*\\d+(?:[.,]\\d+)?', '', market)
+        market = re.sub(r'\\s+', ' ', market).strip(' -:')
+        return market
+
+    markets = {market_key(value(leg, 'market') or value(obj, 'market')) for leg in legs}
+    markets.discard('')
+    if len(markets) > 1:
+        return False
+    directions = {
+        str(value(leg, 'direction') or value(obj, 'direction') or '').strip().lower()
+        for leg in legs
+    }
+    directions.discard('')
+    if len(directions) > 1:
+        return False
+    for leg in legs:
+        try:
+            price = float(value(leg, 'odds'))
+        except (TypeError, ValueError, OverflowError):
+            return False
+        if not math.isfinite(price) or price <= 1:
+            return False
+    return True
+
+
+def publishable_extra(obj):
+    """Never present an unverified multi-leg product as a bookmaker quote.
+
+    Includes deliberately misclassified Single/Longshot/Ladder picks. Genuine
+    one-player ladders have separate observed rung prices, not a multiplied
+    combined price; all other multi-leg tickets require their actual receipt.
+    """
+    kind = str(value(obj, 'type') or '').strip().lower()
+    legs = _published_legs(obj)
+    if kind in {'single', 'longshot'}:
+        return len(legs) <= 1
+    if kind == 'ladder':
+        return _ladder_stages_are_individual(obj, legs)
     if not confirmed_ticket(obj):
         return False
     try:
