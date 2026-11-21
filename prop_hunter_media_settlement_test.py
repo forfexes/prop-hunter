@@ -194,7 +194,15 @@ print('HISTORICAL ALL-SPORT PHOTO IMMUTABILITY AND SAME-ID CAPTION VERIFIED')
 with patch.dict(os.environ, {"PH_NBA_OWNER_ORIGINALS":"1"}, clear=True):
     assert results._strict_owner_approval()
     assert results._original_photo_caption_only({'sport':'NHL'})
-    assert not results._original_photo_caption_only({'sport':'NBA'})
+    # Bare NBA metadata is NOT enough to approve replacing a live photo:
+    # the existing image must carry a genuine ticket or be a single-stage pick.
+    assert results._original_photo_caption_only({'sport':'NBA'})
+    assert not results._original_photo_caption_only(
+        {'sport':'NBA','type':'single','odds':1.8})
+    assert not results._original_photo_caption_only(
+        {'sport':'NBA','type':'betbuilder','odds':3.3,
+         'features':{'combined_odds_observed':True,
+                     'combined_quote_id':'TEST_CONFIRMED_TICKET'}})
     assert not results._replace_recent_text_with_photo(
         {'media_type':'text','message_id':918},
         {'sport':'NHL'}, '🏁 Auswertung: offen')
