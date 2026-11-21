@@ -1,0 +1,24 @@
+name: PROP HUNTER One Unit Stakes QA
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'prop_hunter_stake_policy.py'
+      - 'prop_hunter_stake_policy_test.py'
+      - 'prophunter_core_1391.py'
+      - '.github/workflows/prop_hunter_stake_unit_qa.yml'
+permissions:
+  contents: read
+jobs:
+  unit-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile exact ticket and rung accounting modules
+        run: python -m py_compile prop_hunter_stake_policy.py prop_hunter_stake_policy_test.py prophunter_core_1391.py
+      - name: Enforce exact sum of Ladder stakes and Lottery limit
+        run: python prop_hunter_stake_policy_test.py
