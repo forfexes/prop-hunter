@@ -265,6 +265,7 @@ jobs:
           print("OWNER_LAYERED_RELEASE_READY: exact four clean owner plates confirmed")
           PY
           python prop_hunter_settler_fast_test.py
+          python prop_hunter_stake_policy_test.py
           python prophunter.py
 
       - name: Save card state
