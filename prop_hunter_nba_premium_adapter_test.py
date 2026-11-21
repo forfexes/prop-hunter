@@ -67,6 +67,13 @@ for invalid_quote in (float("nan"), float("inf"), float("-inf"), "NaN", "Infinit
 rejects(SimpleNamespace(**base,type="single",market="points",odds=float("nan")),
         [row],contains="Invalid bookmaker price")
 print("NBA PREMIUM QUOTE FINITE-VALUE GATE PASSED")
+# A zero-unit card is not an actionable stake; malformed units must fail closed.
+for invalid_stake in (0, -1, float("nan"), float("inf"), "invalid"):
+    rejects(SimpleNamespace(**{**base, "stake": invalid_stake},
+                            type="single", market="points", odds=2.05),
+            [row], contains="Invalid stake")
+print("NBA PREMIUM STAKE GUARD PASSED")
+
 # Stake must be an actual nonnegative finite unit amount.
 for invalid_stake in (float("nan"), float("inf"), float("-inf"), -1, "NaN", "Infinity"):
     rejects(SimpleNamespace(**{**base, "stake": invalid_stake},
