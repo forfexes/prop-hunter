@@ -628,7 +628,9 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             title, subtitle = "LADDER", f"{name} · {len(rows)} Stufen"
             if not teams and game and game.lower() != "verified ladder":
                 subtitle = game[:60]
-        elif typ == "single":
+        elif typ in ("single", "longshot"):
+            # Longshot is a one-player market with its own single-selection
+            # master, not an empty multi-leg Builder/Lottery ticket.
             name = str(getattr(pick, "player", "") or "")
             rows.append({"name": name, "photo": player_photo(name, league),
                          "label": _label({"market":getattr(pick,"market","") or "","direction":getattr(pick,"direction","over"),"point":getattr(pick,"point",None)}),
@@ -655,7 +657,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         subtitle = _with_kickoff(subtitle, pick)
         odds = getattr(pick, "odds", None)
         est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
-        combo = typ not in ("single", "ladder")
+        combo = typ not in ("single", "longshot", "ladder")
         verified = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
         # Missing a combined bookmaker price must not prevent image delivery.
         if combo and not verified:
