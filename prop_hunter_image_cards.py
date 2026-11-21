@@ -348,6 +348,11 @@ def _venue_text(pick) -> str:
 def render(kind: str, title: str, subtitle: str, sport: str, teams: List[Tuple[str, Optional["Image.Image"]]],
            rows: List[Dict[str, Any]], footer: str = "", settlement: str = "", *, template_sport: str = "") -> bytes:
     """rows: {name, label, photo(Image|None), form(str), odds(str)}; teams: [(name, logo)] (0-2)."""
+    if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1":
+        # All production NBA cards MUST pass the verified premium adapter
+        # and the approved sample-free owner PNG source. A direct render()
+        # call is legacy even when PH_USE_USER_ORIGINALS is turned off.
+        raise ValueError("Direct legacy card renderer disabled in owner-original premium mode")
     # Always use the user's four literal GitHub JPG masters, for every league.
     # No reconstructed posters and no stale example players/odds are allowed.
     if os.getenv("PH_USE_USER_ORIGINALS", "1") != "0":
