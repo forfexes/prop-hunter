@@ -25,14 +25,14 @@ def render_owner(pick, key: str, rows: list, teams: list,
     if family != "lottery" and (len(teams) != 2 or any(
             not team or logo is None for team,logo in teams)):
         raise ValueError("Owner original must show two genuine NBA teams")
-    if family == "lottery" and not 2 <= len(rows) <= 4:
-        raise ValueError("Approved original Lottery safely fits 2-4 cross-game selections")
+    if family == "lottery" and not 2 <= len(rows) <= 12:
+        raise ValueError("Original Lottery supports 2-12 verified selections")
     if not (BASE / (family + ".png")).is_file():
         raise ValueError("Owner original clean plate not approved")
     if family == "ladder" and not 2 <= len(rows) <= 5:
         raise ValueError("Original Ladder accepts one athlete with 2-5 rungs")
-    if family == "builder" and not 2 <= len(rows) <= 6:
-        raise ValueError("Original Builder accepts 2-6 verified athletes")
+    if family == "builder" and not 2 <= len(rows) <= 7:
+        raise ValueError("Original Builder accepts 2-7 verified athletes")
     if family == "lottery":
         # No fictitious single date/opponent for multi-game tickets. Exact
         # game and tipoff are printed for EVERY individual leg instead.
@@ -47,7 +47,11 @@ def render_owner(pick, key: str, rows: list, teams: list,
         subtitle = source + " · " + when
     stake = values.get("stake")
     observed_quote = values.get("total_odds") or values.get("odds")
-    footer = ("Quote " + str(observed_quote)) if observed_quote else ""
+    feats=pick.get("features", {}) if isinstance(pick,dict) else getattr(pick,"features",{}) or {}
+    verified=(isinstance(feats,dict) and feats.get("combined_odds_observed") is True
+              and bool(feats.get("combined_quote_id")))
+    footer=(("Quote " if verified or family in ("single","ladder") else "Berechnet ")
+            + str(observed_quote)) if observed_quote else ""
     if stake:
         footer += (" · " if footer else "") + "Einsatz " + str(stake)
     labels=[]
