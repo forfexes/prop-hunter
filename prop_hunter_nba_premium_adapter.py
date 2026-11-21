@@ -170,6 +170,24 @@ def _template(pick, rows):
     raise PremiumDataMissing(f"Unsupported NBA pick type: {typ}")
 
 
+
+def _family_from_key(key):
+    """Keep multiword single-market keys in the owner's Single family.
+
+    E.g. single_points_rebounds and single_double_double must not become
+    invented single_points or single_double layouts.
+    """
+    if key == "longshot":
+        return "longshot"
+    if key.startswith("single_"):
+        return "single"
+    for name in ("cross_game", "same_player", "lottery", "ladder",
+                 "combo", "builder"):
+        if re.fullmatch(re.escape(name) + r"_\d+", key):
+            return name
+    raise PremiumDataMissing("Unsupported NBA premium card master: " + key)
+
+
 def render_nba_pick(pick, rows, teams):
     """Return a 1080×1440 PNG for a fully verified NBA pick, otherwise fail closed."""
     from importlib import import_module
@@ -187,7 +205,7 @@ def render_nba_pick(pick, rows, teams):
     if not str(bookmaker or "").strip():
         raise PremiumDataMissing("No observed individual-leg bookmaker provenance")
     key = _template(pick, rows)
-    family = key.rsplit("_", 1)[0]
+    family = _family_from_key(key)
     multi_game = family in ("lottery", "combo", "cross_game")
     values = {
         "odds_verified": True,
