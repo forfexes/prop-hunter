@@ -316,9 +316,10 @@ def test_builder_persistence_and_learning_loop():
     # Now simulate an actually observed sportsbook-issued combined ticket,
     # with no estimated/derived provenance flags.
     for item in module.history[0]["kombis"]:
-        item["features"].pop("builder_odds_estimated_from_legs", None)
-        item["features"].pop("combined_quote_calculated", None)
-        item["features"].pop("price_type", None)
+        for key in ("builder_odds_estimated_from_legs", "acca_odds_estimated_from_legs",
+                    "combined_quote_calculated", "price_type"):
+            item["features"].pop(key, None)
+            item.pop(key, None)
     quoted_learning=learn_builder_correlations(module.history)
     check(quoted_learning["profiles"]["safe"]["n"]==24, "confirmed ticket profile performance missing")
     check(len(learned["pairs"])==1, "builder pair learning missing")
