@@ -101,13 +101,13 @@ def _leg_detail(row):
     }
 
 
-def build_estimated_mixed(props, PickCls, max_tickets=4, max_legs=4):
+def build_estimated_mixed(props, PickCls, max_tickets=4, max_legs=7):
     """Return estimated team+player same-game builders from the observed pool."""
     if os.getenv("PH_ESTIMATED_SAME_GAME_BUILDERS", "1").strip().lower() not in {"1", "true", "yes", "on"}:
         return []
     props = [p for p in (props or []) if _observed(p) and _odds(p) > 1 and _norm_game(p) and "@" in str(_g(p, "game", ""))]
 
-    # Group by game; each ticket is one team leg + 1-3 player legs from that game.
+    # Group by game; each ticket is one team leg + 1-6 genuine player legs.
     by_game = {}
     for p in props:
         by_game.setdefault(_norm_game(p), []).append(p)
@@ -120,7 +120,7 @@ def build_estimated_mixed(props, PickCls, max_tickets=4, max_legs=4):
             continue
         # Strongest team leg (best implied prob = lowest odds) + top player legs
         team = min(team_legs, key=_odds)
-        # Pick up to 3 distinct players so the ticket spreads across the roster.
+        # Pick up to 6 distinct players so seven-leg owner Builders are possible.
         seen_players, chosen = set(), []
         for pl in sorted(player_legs, key=_odds):  # safest first
             name = str(_g(pl, "player", "") or _g(pl, "player_name", "")).lower()
