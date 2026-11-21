@@ -81,6 +81,20 @@ same_player_pick=N(**{**common,"features":{**features,"same_player_multistat":Tr
                    type="betbuilder",odds=6.15,leg_details=same_player_details)
 examples.append(("same_player_owner_ladder",same_player_pick,same_player_rows,[]))
 
+same_player_rows6 = [
+    dict(row, label=f"Same-player verified QA market {i+1}")
+    for i in range(6)
+]
+same_player_details6 = [
+    {"player":"TEST PLAYER","sport":"NBA","market":f"qa_market_{i+1}",
+     "odds":round(1.30+i*.1,2)}
+    for i in range(6)
+]
+same_player_pick6 = N(
+    **{**common,"features":{**features,"same_player_multistat":True}},
+    type="betbuilder",odds=10.50,leg_details=same_player_details6)
+examples.append(("same_player_owner_ladder6",same_player_pick6,same_player_rows6,[]))
+
 longshot_original=N(**common,type="longshot",player="TEST PLAYER",
                     market="points",odds=3.25)
 examples.append(("longshot_owner_single",longshot_original,[row],[]))
@@ -145,7 +159,7 @@ try:
         # owner-approved rung count without Telegram or external lookups.
         import prop_hunter_owner_clean_ladder as clean_ladder
         real_text=clean_ladder._text
-        for n in (2,3,4,5):
+        for n in (2,3,4,5,6):
             named=[]
             def capture_name(draw, xy, label, *args, **kwargs):
                 if str(label).strip()=="TEST PLAYER":
@@ -160,7 +174,7 @@ try:
                 raw=adapter.render_nba_pick(ladder,ladder_rows,teams)
             # Both original hero name and one-player banner stay readable.
             assert (443,332) in named,(n,named)
-            assert (127,650) in named,(n,named)
+            assert (127,770 if n==6 else 650) in named,(n,named)
             with Image.open(BytesIO(raw)) as proof:
                 assert proof.width==1080 and proof.height>=1100
             outdir.joinpath(f"ladder_{n}_name_fixed.png").write_bytes(raw)
@@ -200,6 +214,7 @@ with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS": "1"}), \
     originals._source.cache_clear()
     for name, pick, rows, _ in examples:
         if name in ("single", "ladder", "builder", "lottery",
+                    "same_player_owner_ladder6",
                     "combo_owner_lottery", "cross_game_owner_lottery"):
             raw = adapter.render_nba_pick(pick, rows, teams)
             with Image.open(BytesIO(raw)) as approved_layered:
