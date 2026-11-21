@@ -18,6 +18,12 @@ WD = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
 def render_owner(pick, key: str, rows: list, teams: list,
                  values: dict, details: list) -> bytes:
+    # Production fail-closed: the legacy owner compositor still draws large
+    # opaque rectangles over original artwork. Re-enable only after a reviewed
+    # overlay-free clean-plate renderer replaces this path.
+    import os
+    if os.getenv("PH_BLOCK_OVERPAINTED_MASTERS", "0").strip() == "1":
+        raise ValueError("owner_original_overpainted_compositor_blocked")
     from prop_hunter_original_compositor import original_card
     # The master key is the approved market identifier, not necessarily
     # family + one numeric suffix. Single-market names may contain underscores.
