@@ -8,6 +8,7 @@ image-card renderer; no Telegram or Supabase access.
 from __future__ import annotations
 
 from io import BytesIO
+import os
 from PIL import Image
 
 
@@ -37,12 +38,32 @@ def filter_verified_nba_images(picks, cards):
     """
     accepted=[]
     blocked=0
+    strict_all=os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0").strip()=="1"
     for pick in picks:
         details=list(getattr(pick,"leg_details",None) or [])
         hint=(getattr(pick,"source_sport",None)
               or getattr(pick,"sport",None)
               or (details[0].get("sport") if details else None))
         league=cards.league_of(hint)
+        # Never retain an old validated image after price, player, league or
+        # approval state changed. This applies even to legacy non-NBA routes.
+        if hasattr(pick,"_verified_owner_png"):
+            try:
+                delattr(pick,"_verified_owner_png")
+            except (AttributeError,TypeError):
+                blocked+=1
+                continue
+        if strict_all:
+            # Only NBA has actual approved, sample-free owner PNG masters.
+            # NFL/NHL/WNBA/MLB and unknown-source cards must be deferred
+            # until THEIR original premium master is formally approved.
+            leg_leagues=[cards.league_of(
+                leg.get("sport") if isinstance(leg,dict)
+                else getattr(leg,"sport",None)) for leg in details]
+            if (not league or league[1]!="nba"
+                    or any(not item or item[1]!="nba" for item in leg_leagues)):
+                blocked+=1
+                continue
         if not league or league[1]!="nba":
             accepted.append(pick)
             continue
@@ -50,12 +71,6 @@ def filter_verified_nba_images(picks, cards):
         # ticket provenance changed. Invalidate an old successful preflight
         # before every new check. Otherwise a previously cached image could
         # be uploaded even after the updated pick is rejected.
-        if hasattr(pick, "_verified_owner_png"):
-            try:
-                delattr(pick, "_verified_owner_png")
-            except (AttributeError, TypeError):
-                blocked+=1
-                continue
         # Publishing a combined NBA ticket requires an actual observed
         # bookmaker price AND its ticket identifier. Multiplying authentic
         # single-leg odds is useful for offline analysis, but is not a
