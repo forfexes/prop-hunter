@@ -85,10 +85,10 @@ almost_opaque.putpixel((0,0),(52,72,88,0))
 rejects(single,[dict(row,photo=almost_opaque)],contains="transparent cutout border")
 rejects(ladder,[dict(row,name="TEST A"),dict(row,name="TEST B")],
         contains="exactly one athlete")
-rejects(SimpleNamespace(**{**base,"features":{**feats,"combined_odds_observed":False}},
-       type="betbuilder",odds=5.10,
-       leg_details=[{"odds":1.7},{"odds":1.8}]),legs,
-       contains="combo ticket")
+unconfirmed=SimpleNamespace(**{**base,"features":{**feats,"combined_odds_observed":False}},
+       type="betbuilder",odds=None,
+       leg_details=[{"odds":1.7},{"odds":1.8}])
+assert Image.open(BytesIO(render_nba_pick(unconfirmed,legs,teams))).size==(1080,1440)
 multi_legs=[{"odds":1.7,"game":"TEAM A vs TEAM B","commence_time":"2026-11-20T19:00:00+00:00","sport":"NBA"},
             {"odds":1.8,"game":"TEAM C vs TEAM D","commence_time":"2026-11-21T20:00:00+00:00","sport":"NBA"}]
 cross=SimpleNamespace(**{**base,"features":{**feats,"combo_scope":"cross_game"}},
