@@ -587,6 +587,86 @@ def _result(im, family, settlement):
           RED if red else GREEN if green else GOLD, 'mm')
 
 
+def _expanded_owner_lottery(title, subtitle, sport, teams, rows, footer, settlement,
+                           league_name=''):
+    """Extend the actual approved Lottery bitmap for 5–12 full game/price rows.
+
+    Original top artwork and settlement/footer are copied from the owner's
+    four-row reference render; only the leg-list section grows. No generic
+    replacement poster or invented data is allowed.
+    """
+    if not 5 <= len(rows) <= 12:
+        raise ValueError('Extended original Lottery needs 5-12 real legs')
+    for index, row in enumerate(rows, 1):
+        if not all(str(row.get(field) or '').strip()
+                   for field in ('name', 'label', 'odds', 'game')):
+            raise ValueError(f'Lottery leg {index}: verified name, market, price and game required')
+        if not isinstance(row.get('photo'), Image.Image):
+            raise ValueError(f'Lottery leg {index}: authentic player photo missing')
+    # Render four complete owner-original rows with the actual first four
+    # selections; the other selections are appended below in the same styling.
+    base_png=original_card('lottery', title, subtitle, sport, teams,
+                           rows[:4], footer, settlement, league_name=league_name)
+    with Image.open(io.BytesIO(base_png)) as src:
+        src.load()
+        base=src.convert('RGBA')
+    scale=base.width/691.0
+    cut=round(532*scale)
+    extra=(len(rows)-4)*round(49*scale)
+    im=Image.new('RGBA',(base.width,base.height+extra),NAVY)
+    im.paste(base.crop((0,0,base.width,cut)),(0,0))
+    # Repeat only a narrow strip of the owner's authentic violet stadium
+    # texture where new list rows will go, never a legacy generated template.
+    band=base.crop((0,round(485*scale),base.width,cut))
+    bh=band.height
+    for y in range(cut,cut+extra,bh):
+        h=min(bh,cut+extra-y)
+        im.paste(band.crop((0,0,base.width,h)),(0,y))
+    im.paste(base.crop((0,cut,base.width,base.height)),(0,cut+extra))
+    def xy(x,y):
+        return round(x*scale),round(y*scale)
+    left,top=xy(46,336)
+    right=round(646*scale)
+    bottom=round(527*scale)+extra
+    d=ImageDraw.Draw(im)
+    d.rounded_rectangle((left,top,right,bottom),radius=round(12*scale),
+                        fill=(3,15,29,255),outline=VIOLET,width=3)
+    inner=bottom-top-14
+    step=inner/len(rows)
+    for i,row in enumerate(rows):
+        row_y=top+7+round(i*step)
+        row_bottom=top+7+round((i+1)*step)-4
+        d.rounded_rectangle((left+8,row_y,right-8,row_bottom),
+                            radius=9,fill=(13,20,41,255),outline=(80,41,112),width=2)
+        px=left+16
+        py=row_y+5
+        icon=ImageOps.contain(row['photo'].convert('RGBA'),
+                              (max(24,round(34*scale)),max(24,round(34*scale))),
+                              Image.Resampling.LANCZOS)
+        im.alpha_composite(icon,(px,py))
+        name_x=left+round(65*scale)
+        _text(d,(name_x,row_y+round(9*scale)),
+              f'{i+1}. {row["name"]} · {row["label"]}',20,round(405*scale),GOLD)
+        _text(d,(name_x,row_y+round(31*scale)),
+              row['game'],16,round(420*scale),WHITE)
+        _text(d,(right-round(12*scale),row_y+round(11*scale)),
+              row['odds'],21,round(94*scale),GREEN,'rt')
+    # Replace 4-LEG labels in the two immutable template ribbons.
+    _rect(im,(round(183*scale),round(282*scale),
+              round(435*scale),round(326*scale)),
+          (40,15,56,255),7,VIOLET,2)
+    _text(ImageDraw.Draw(im),xy(311,302),
+          f'{len(rows)}-LEG LOTTERY',round(22*scale),round(239*scale),WHITE,'mm')
+    _rect(im,(round(39*scale),round(560*scale)+extra,
+              round(363*scale),round(629*scale)+extra),NAVY,5)
+    _text(ImageDraw.Draw(im),(round(195*scale),round(592*scale)+extra),
+          f'{len(rows)} LEGS · HOHES RISIKO',round(16*scale),
+          round(309*scale),VIOLET,'mm')
+    out=io.BytesIO()
+    im.convert('RGB').save(out,'PNG',optimize=True)
+    return out.getvalue()
+
+
 def original_card(kind: str, title: str, subtitle: str, sport: str,
                   teams: list, rows: list, footer: str='', settlement: str='',
                   *, league_name: str='') -> bytes:
@@ -604,6 +684,9 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         raise ValueError('Builder has more than seven legs; cannot silently hide picks')
     if family == 'lottery' and len(rows) > 12:
         raise ValueError('Lottery has more than twelve legs; cannot silently hide picks')
+    if family == 'lottery' and len(rows) > 4:
+        return _expanded_owner_lottery(title, subtitle, sport, teams, rows,
+                                       footer, settlement, league_name=league_name)
     if family in ('builder', 'lottery'):
         subtitle = str(subtitle or '').split(' @@ ')[0]
     approved_single = family == 'single' and _single_clean_master().is_file()
