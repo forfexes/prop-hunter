@@ -74,15 +74,35 @@ def owner_pixel_provenance(pick, png_bytes):
                 original.crop(STATIC_CROWN),
             ).getbbox() is not None:
                 return False, "owner_original_branding_changed"
-            # The real owner compositor scales the source to 1080 px with
-            # LANCZOS. Compare the *same* immutable master pixels in the PNG.
+            # The original Single/Ladder/Builder/Lottery scales its immutable
+            # crown with LANCZOS. When the six-stage Ladder adds an owner-derived
+            # EMPTY 120px stadium band, the vertical scaling ratio changes by a
+            # tiny rounding amount. Comparing that image against the 865px
+            # *unextended* resized plate falsely rejects genuine pixels.
+            # Reconstruct the exact source-layer geometry before resampling,
+            # rather than weakening pixel equality or allowing a legacy mask.
             factor = 1080.0 / master.width
             box = tuple(round(v * factor) for v in STATIC_CROWN)
             exact_height = round(1080 * master.height / master.width)
             if sent.height < exact_height:
                 return False, "owner_png_truncated"
-            expected = master.resize(
-                (1080, exact_height), Image.Resampling.LANCZOS
+            comparison = master
+            if family == "ladder" and sent.height != exact_height:
+                extra, cut = 120, 730
+                allowed_height = round(1080 * (master.height + extra) / master.width)
+                if master.size != (691, 865) or sent.height != allowed_height:
+                    return False, "unapproved_ladder_extension"
+                comparison = Image.new(
+                    "RGB", (691, 865 + extra), (3, 15, 29)
+                )
+                comparison.paste(master.crop((0, 0, 691, cut)), (0, 0))
+                comparison.paste(master.crop((0, 515, 691, 635)), (0, cut))
+                comparison.paste(
+                    master.crop((0, cut, 691, 865)), (0, cut + extra)
+                )
+            expected = comparison.resize(
+                (1080, sent.height if family == "ladder" else exact_height),
+                Image.Resampling.LANCZOS
             ).crop(box)
             actual = sent.convert("RGB").crop(box)
             if ImageChops.difference(expected, actual).getbbox() is not None:
