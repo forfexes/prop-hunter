@@ -3513,6 +3513,20 @@ def _payload_card_image(payload,picks):
         # avoids a second ESPN portrait/crest lookup and transient mismatch.
         png=(getattr(pick,"_verified_owner_png",None)
              if payload.get("premium_required") else None)
+        if png:
+            # Revalidate even an approved preflight bitmap against the CURRENT
+            # pick. A subsequently changed bookmaker ticket, player, price or
+            # approval mode must not reuse an old owner-original PNG.
+            from prop_hunter_image_publication_gate import owner_image_signature
+            signature=owner_image_signature(pick)
+            if signature!=getattr(pick,"_verified_owner_signature",None):
+                for attr in ("_verified_owner_png","_verified_owner_signature"):
+                    try:
+                        delattr(pick,attr)
+                    except (AttributeError,TypeError):
+                        pass
+                log.error("OWNER_PNG_TICKET_CHANGED: refusing stale image before Telegram")
+                return None
         if not png:
             png=cards.build_for_pick(pick)
         if png: payload["media_type"]="photo"
