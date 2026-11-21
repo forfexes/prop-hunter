@@ -161,14 +161,27 @@ def _ladder_stages_are_individual(obj, legs):
 
     markets = {market_key(value(leg, 'market') or value(obj, 'market')) for leg in legs}
     markets.discard('')
-    if len(markets) > 1:
+    # A genuine ladder has a known, single statistical category. Unknown
+    # categories cannot justify a claimed single-market multi-rung price.
+    if len(markets) != 1:
         return False
-    directions = {
-        str(value(leg, 'direction') or value(obj, 'direction') or '').strip().lower()
+    def stage_direction(leg):
+        explicit = str(value(leg, 'direction') or value(obj, 'direction') or '').strip().lower()
+        raw = str(value(leg, 'market') or value(obj, 'market') or '').lower()
+        embedded = re.search(r'\b(over|under)\b', raw)
+        if explicit and embedded and explicit != embedded.group(1):
+            return 'conflicting:' + explicit
+        return explicit or (embedded.group(1) if embedded else '')
+    directions = {stage_direction(leg) for leg in legs}
+    directions.discard('')
+    if len(directions) > 1 or any(x.startswith('conflicting:') for x in directions):
+        return False
+    games = {
+        re.sub(r'\s+', ' ', str(value(leg, 'game') or value(obj, 'game') or '').strip().casefold())
         for leg in legs
     }
-    directions.discard('')
-    if len(directions) > 1:
+    games.discard('')
+    if len(games) > 1:
         return False
     for leg in legs:
         try:
