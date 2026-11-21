@@ -715,6 +715,13 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         return render_clean_ladder(
             im, subtitle=subtitle, teams=teams, rows=rows,
             footer=footer, settlement=settlement)
+    if family == 'builder' and approved_plate and os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1':
+        # Each 2-7-leg ticket is composed from the empty authentic owner
+        # source, never patched on top of the old example athletes/odds.
+        from prop_hunter_owner_clean_builder import render as render_clean_builder
+        return render_clean_builder(
+            im, subtitle=subtitle, teams=teams, rows=rows,
+            footer=footer, settlement=settlement)
     if family in ('builder','lottery') and not approved_plate:
         _erase_template_head_remnants(im, family)
     # The Golden State bridge in the SINGLE screenshot is misleading for other
