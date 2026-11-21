@@ -283,8 +283,8 @@ def _kickoff_text(pick) -> str:
     raw = _get(pick, "commence_time")
     if not raw:
         _legs = _get(pick, "leg_details") or []
-        _ts = sorted(str(l.get("commence_time")) for l in _legs
-                     if isinstance(l, dict) and l.get("commence_time"))
+        _ts = sorted(str(_get(l, "commence_time")) for l in _legs
+                     if _get(l, "commence_time"))
         if _ts:
             raw = _ts[0]
     feats = _get(pick, "features") or {}
@@ -338,7 +338,8 @@ def _venue_text(pick) -> str:
     v = feats.get("venue") if isinstance(feats, dict) else None
     if not v:
         for leg in (_get(pick, "leg_details") or []):
-            lf = (leg or {}).get("features") or {}
+            lf = (leg.get("features") if isinstance(leg, dict)
+                  else getattr(leg, "features", None)) or {}
             if isinstance(lf, dict) and lf.get("venue"):
                 v = lf["venue"]
                 break
@@ -588,7 +589,19 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
     try:
         typ = str(getattr(pick, "type", "") or "")
         feats = getattr(pick, "features", {}) or {}
-        details = list(getattr(pick, "leg_details", None) or [])
+        # Preserve both dictionary and typed source legs.  Normalize only the
+        # local presentation copy; the original pick remains untouched for
+        # bookmaker-ticket validation and preflight fingerprinting.
+        details = []
+        for leg in (getattr(pick, "leg_details", None) or []):
+            if isinstance(leg, dict):
+                details.append(leg)
+            elif callable(getattr(leg, "model_dump", None)):
+                details.append(leg.model_dump())
+            elif hasattr(leg, "__dict__"):
+                details.append(vars(leg))
+            else:
+                raise ValueError("Unsupported leg detail representation")
         sport_hint = getattr(pick, "source_sport", None) or getattr(pick, "sport", None) or (details[0].get("sport") if details else None)
         league = league_of(sport_hint)
         # The visual generator (including later in-place Telegram edits) is
