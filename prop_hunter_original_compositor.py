@@ -720,7 +720,8 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         if approved_single:
             # Approved look: the athlete is an independent, frameless cutout
             # on the stadium layer. No dark box and no golden photo border.
-            cutout = _background_portrait(im, item.get('photo'), (0, 131, 246, 518))
+            # Do not let shoulders paint across the L5/L10/L15 statistics header.
+            cutout = _background_portrait(im, item.get('photo'), (0, 131, 246, 457))
             if item.get('photo') is not None and not cutout:
                 raise ValueError('Borderless portrait requires a real transparent player cutout')
         else:
@@ -733,7 +734,10 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
                       item.get('name') or '', prominent=True)
         _blend_fill(im, (250, 287, 556, 377))
         _text(d, (395, 301), item.get('name'), 29, 280, WHITE, 'mt')
-        _text(d, (395, 339), title if title not in ('SINGLE','') else 'PRO TIP', 19, 275, GOLD, 'mt')
+        # The owner's gold header already prints PRO TIP — SINGLE. No second
+        # PRO TIP label below the athlete name on the actual original card.
+        if title not in ('SINGLE', ''):
+            _text(d, (395, 339), title, 19, 275, GOLD, 'mt')
         _rect(im, (170, 378, 468, 439), (4, 44, 35, 255), 10, GREEN, 3)
         _text(d, (322, 407), item.get('label'), 30, 272, WHITE, 'mm')
         _rect(im, (475, 380, 614, 438), (65, 39, 5, 255), 10, GOLD, 2)
