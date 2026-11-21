@@ -250,8 +250,19 @@ with patch.dict(os.environ,{"PH_NBA_OWNER_ORIGINALS":"0"}):
 from prop_hunter_nba_owner_bridge import BASE as ORIGINALS
 if (ORIGINALS/"lottery.png").is_file():
     with patch.dict(os.environ,{"PH_NBA_OWNER_ORIGINALS":"1"}):
-        for title,pick in (("lottery_12",lottery_12),("cross_game_12",cross_12)):
-            raw=render_nba_pick(pick,extended_rows,[])
+        # Owner-original production requires a genuine ticket total. The
+        # calculated-quote fixtures above are allowed ONLY in isolated SVG
+        # layout tests, never in original PNG Telegram or settlement.
+        for title,unverified in (("lottery_12",lottery_12),
+                                 ("cross_game_12",cross_12)):
+            rejects(unverified,extended_rows,[],contains="observed bookmaker combined ticket")
+            verified=SimpleNamespace(**{
+                **vars(unverified),
+                "features":{**feats,
+                            "combo_scope":unverified.features.get("combo_scope")},
+                "odds":18.37,
+            })
+            raw=render_nba_pick(verified,extended_rows,[])
             assert Image.open(BytesIO(raw)).width==1080,title
 
 # Never mix WNBA or other-league selections into an NBA-branded ticket.
