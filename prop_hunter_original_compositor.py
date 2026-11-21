@@ -694,9 +694,13 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
                                        footer, settlement, league_name=league_name)
     if family in ('builder', 'lottery'):
         subtitle = str(subtitle or '').split(' @@ ')[0]
-    approved_single = family == 'single' and _single_clean_master().is_file()
+    # Production starts with a separately cleaned OWNER plate, not a
+    # sample-filled screenshot. Do not run any former cover-up operations over
+    # the cleaned stadium: they destroy original pixels and create seams.
+    approved_plate = (APPROVED_MASTER / (family + '.png')).is_file()
+    approved_single = family == 'single' and approved_plate
     im = _source(family).copy()
-    if family in ('builder','lottery'):
+    if family in ('builder','lottery') and not approved_plate:
         _erase_template_head_remnants(im, family)
     # The Golden State bridge in the SINGLE screenshot is misleading for other
     # matchups; remove it BEFORE painting player, teams, odds and model data.
@@ -867,15 +871,20 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         _rect(im, (78, 731, 338, 782), NAVY, 5)
         _text(d, (206, 755), f'{len(rows)} LEGS', 18, 236, GREEN, 'mm')
     elif family == 'lottery':
-        _clean_hero(im, (0, 83, 202, 287))
-        _fade_baked_lottery_arm(im)
+        # Clean source artwork already has the example athlete and shoulder
+        # removed. Repeating the opaque legacy patches would cover real arena
+        # texture and reintroduce the exact overpaint problem.
+        if not approved_plate:
+            _clean_hero(im, (0, 83, 202, 287))
+            _fade_baked_lottery_arm(im)
         # Join the violet ticket artwork under the hero instead of exposing a
         # black rectangular patch where the original athlete's jersey was.
-        ribbon=ImageDraw.Draw(im)
-        ribbon.polygon(((0,285),(113,285),(77,336),(0,336)),
-                       fill=(35,13,59,255))
-        ribbon.line(((0,285),(113,285),(77,336),(0,336)),
-                    fill=(148,62,197,255),width=2)
+        if not approved_plate:
+            ribbon=ImageDraw.Draw(im)
+            ribbon.polygon(((0,285),(113,285),(77,336),(0,336)),
+                           fill=(35,13,59,255))
+            ribbon.line(((0,285),(113,285),(77,336),(0,336)),
+                        fill=(148,62,197,255),width=2)
         _portrait(im, rows[0].get('photo'), (6, 62, 197, 280), rows[0].get('name') or '')
         _rect(im, (462, 280, 654, 335), (50, 18, 70, 255), 6, VIOLET, 2)
         total_quote=re.search(r'(?:Quote|Berechnet)\s*(@[\d.,]+)', str(footer), re.I)
