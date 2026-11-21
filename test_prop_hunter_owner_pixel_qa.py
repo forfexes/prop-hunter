@@ -40,6 +40,35 @@ for family, pick in families.items():
         assert not owner_pixel_provenance(pick,bad.getvalue())[0], family
         assert owner_family(pick)==family
         print("OWNER_ORIGINAL_PIXEL_QA",family,"approved_current="+str(up_to_date))
+# A six-prop one-player Ladder expands only empty stadium rows. Its crown
+# must remain byte-exact when rendered at the correctly extended height.
+# Compare the EXACT same geometry as the overlay-free producer; no tolerance,
+# no "ignore top pixels" waiver, and no old screenshot underpaint.
+with Image.open(APPROVED / "ladder.png") as clean_ladder:
+    raw = clean_ladder.convert("RGB")
+    assert raw.size == (691,865)
+    tall = Image.new("RGB",(691,985),(3,15,29))
+    tall.paste(raw.crop((0,0,691,730)),(0,0))
+    tall.paste(raw.crop((0,515,691,635)),(0,730))
+    tall.paste(raw.crop((0,730,691,865)),(0,850))
+    stretched = tall.resize((1080,round(1080*985/691)),Image.Resampling.LANCZOS)
+    same_player = N(type="betbuilder",features={"same_player_multistat":True})
+    buffered = BytesIO()
+    stretched.save(buffer,"PNG")
+    assert owner_pixel_provenance(same_player,buffer.getvalue()) == (
+        True,"source_original_pixels_verified")
+    corrupted = stretched.copy()
+    ImageDraw.Draw(corrupted).rectangle((455,20,510,52),fill=(255,0,0))
+    manipulated = BytesIO()
+    corrupted.save(manipulated,"PNG")
+    assert owner_pixel_provenance(same_player,manipulated.getvalue()) == (
+        False,"owner_masthead_pixel_overlap")
+    wrong_height = stretched.crop((0,0,1080,stretched.height-20))
+    bad_height = BytesIO()
+    wrong_height.save(bad_height,"PNG")
+    assert owner_pixel_provenance(same_player,bad_height.getvalue())[0] is False
+    print("OWNER_SIX_LEG_CROWN_EXACT_MATCH_AND_FORGERY_REJECTED")
+
 assert owner_family(N(type="unknown")) is None
 assert owner_family(N(type="betbuilder",features={"combo_scope":"cross_game"}))=="lottery"
 assert owner_family(N(type="betbuilder",features={"same_player_multistat":True}))=="ladder"
