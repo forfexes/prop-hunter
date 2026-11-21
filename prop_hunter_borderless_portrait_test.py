@@ -6,6 +6,7 @@ published as a real design or a real tip, and never sent to Telegram.
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import os
 from unittest.mock import patch
 from PIL import Image, ImageDraw
 import prop_hunter_original_compositor as poster
@@ -28,7 +29,8 @@ assert not poster._background_portrait(canvas, None, (0, 131, 246, 457))
 with TemporaryDirectory() as folder:
     path = Path(folder) / "single.png"
     Image.new("RGBA", (691, 758), (11, 22, 39, 255)).save(path)
-    with patch.object(poster, "APPROVED_MASTER", Path(folder)):
+    with patch.object(poster, "APPROVED_MASTER", Path(folder)), \
+         patch.dict(os.environ, {"PH_NBA_OWNER_ORIGINALS": "1"}):
         poster._source.cache_clear()
         assert poster._source("single").size == (691, 758)
         team_logo = Image.new("RGBA", (80, 80), (0, 0, 0, 0))
@@ -54,7 +56,7 @@ with TemporaryDirectory() as folder:
             poster.original_card("single", "SINGLE", "Test fixture",
                                  "NBA", teams, row, "Einsatz 1u", "OFFEN")
         except ValueError as exc:
-            assert "transparent player cutout" in str(exc)
+            assert "transparent athlete cutout" in str(exc)
         else:
             raise AssertionError("Opaque player picture was accepted")
     poster._source.cache_clear()
