@@ -16,13 +16,15 @@ for sport in ("NBA", "NFL", "NHL", "MLB", "WNBA", "EUROLEAGUE", "SOCCER"):
             dict(player="PLAYER FIVE",market="shots",odds=1.33,game="A vs B"),
         ]
         p=dict(type=kind,sport=sport,leg_details=legs,odds=None,features={})
-        assert publishable_extra(p), (sport,kind)
+        assert not publishable_extra(p), ("unbookable total blocked",sport,kind)
         assert round(calculated_combo_odds(p),2)==3.54
         prepare_calculated_combo(p)
         assert round(p["odds"],2)==3.54
         assert p["features"]["combined_odds_observed"] is False
         assert p["features"]["calculated_combined_odds"]>3.5
-        assert not invalidate_unpriced_combo(p), "missing quote alone may not withdraw"
+        assert invalidate_unpriced_combo(p), "derived same-game payout must be invalidated"
+        assert p["quote_invalidated"] is True
+        assert p["result"]=="withdrawn" and p["profit"] is None
         assert unpriced_sgp(p), "same-game estimated price must be flagged"
 
 verified=dict(type="betbuilder",leg_details=[
@@ -36,11 +38,15 @@ assert publishable_extra(dict(type="lottery",odds=3.25,
 
 cross=dict(type="lottery",leg_details=[
     dict(odds=1.8,game="A vs B"),dict(odds=1.9,game="C vs D")],features={})
-assert publishable_extra(cross) and not unpriced_sgp(cross)
+assert not publishable_extra(cross) and not unpriced_sgp(cross)
 assert round(calculated_combo_odds(cross),2)==3.42
 assert not publishable_extra(dict(type="lottery",leg_details=[
     dict(odds=1.8),dict(odds=None)]))
 assert not publishable_extra(dict(type="lottery",leg_details=[dict(odds=1.8)]))
+assert not publishable_extra(dict(type="lottery",odds=float("nan"),
+    features=dict(combined_odds_observed=True,combined_quote_id="ticket")))
+assert not publishable_extra(dict(type="lottery",odds=None,
+    features=dict(combined_odds_observed=True,combined_quote_id="ticket")))
 assert publishable_extra(dict(type="single",odds=1.8))
 assert publishable_extra(dict(type="ladder",odds=1.8))
 
