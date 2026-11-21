@@ -689,6 +689,14 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         raise ValueError('Builder has more than seven legs; cannot silently hide picks')
     if family == 'lottery' and len(rows) > 12:
         raise ValueError('Lottery has more than twelve legs; cannot silently hide picks')
+    if family == 'lottery' and os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1':
+        # Every leg is a separately verified game and timestamp. The true
+        # clean owner Lottery is extended with its own empty arena artwork,
+        # never a repainted 3-leg screenshot or substituted generic SVG.
+        from prop_hunter_owner_clean_lottery import render as render_clean_lottery
+        return render_clean_lottery(
+            _source('lottery'), rows=rows, footer=footer,
+            settlement=settlement)
     if family == 'lottery' and len(rows) > 4:
         return _expanded_owner_lottery(title, subtitle, sport, teams, rows,
                                        footer, settlement, league_name=league_name)
