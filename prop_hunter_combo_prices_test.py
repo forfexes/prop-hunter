@@ -50,4 +50,18 @@ old=dict(type="betbuilder",quote_invalidated=True,result="withdrawn",
          leg_details=[dict(odds=1.8,game="A"),dict(odds=1.9,game="A")])
 before=deepcopy(old)
 assert not invalidate_unpriced_combo(old) and old==before
+# Event identity must normalize whitespace consistently even when prices
+# are missing; otherwise a repeated SAME game can be mislabeled CROSS-game.
+from prop_hunter_combo_prices import publishable_extra_reason
+same_unpriced = dict(type="lottery", features={}, leg_details=[
+    dict(game="LAL vs BOS", odds=1.8),
+    dict(game="LAL   vs   BOS", odds=None),
+])
+cross_unpriced = dict(type="lottery", features={}, leg_details=[
+    dict(game="LAL vs BOS", odds=1.8),
+    dict(game="NYK vs MIA", odds=None),
+])
+assert publishable_extra_reason(same_unpriced) == "same_game_missing_confirmed_quote"
+assert publishable_extra_reason(cross_unpriced) == "cross_game_missing_confirmed_quote"
+
 print("MULTISPORT COMBO QUOTE REGRESSIONS PASSED")
