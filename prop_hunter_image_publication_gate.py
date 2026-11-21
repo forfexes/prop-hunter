@@ -8,8 +8,10 @@ image-card renderer; no Telegram or Supabase access.
 from __future__ import annotations
 
 from io import BytesIO
+from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from PIL import Image
 
@@ -45,6 +47,63 @@ def owner_image_signature(pick):
     raw=json.dumps(record,sort_keys=True,default=str,ensure_ascii=True,
                    allow_nan=False).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
+
+
+def _pick_value(pick, key, default=None):
+    return pick.get(key, default) if isinstance(pick, dict) else getattr(pick, key, default)
+
+
+def pre_match_quote_provenance(pick):
+    """Block stale pre-match prices and unlabeled sportsbook odds in live sends.
+
+    Settlement photo editing intentionally uses its own historical safeguards;
+    this test runs only immediately before NEW Telegram publication.
+    """
+    kind=str(_pick_value(pick, "type", "") or "").strip().lower()
+    f=_pick_value(pick, "features", {}) or {}
+    if not isinstance(f, dict):
+        return False, "no_quote_provenance"
+    # Single-leg prices have no combined ticket; demand a real bookmaker or
+    # observed exchange source rather than treating a formula estimate as odds.
+    if kind in ("single", "longshot"):
+        observed=(f.get("odds_observed") is True or
+                  (f.get("odds_observed") is None and
+                   str(f.get("price_type") or "").lower()
+                   in ("bookmaker", "observed", "exchange")))
+        source=str(f.get("bookmaker") or f.get("source") or "").strip()
+        if not observed or not source or source.lower() in (
+            "synthetic", "model", "estimated", "calculated", "unknown"):
+            return False, "single_missing_observed_bookmaker"
+    try:
+        price=float(_pick_value(pick, "odds"))
+        if kind not in ("ladder",) and (not math.isfinite(price) or price <= 1):
+            return False, "invalid_bookmaker_decimal_price"
+    except (ValueError, TypeError, OverflowError):
+        if kind != "ladder":
+            return False, "invalid_bookmaker_decimal_price"
+    details=list(_pick_value(pick, "leg_details", None) or [])
+    if kind == "ladder" and not details:
+        return False, "ladder_rungs_missing"
+    scope=str(f.get("combo_scope") or "").lower()
+    if scope == "cross_game":
+        if len(details)<2:
+            return False, "cross_game_leg_timestamps_missing"
+        times=[_pick_value(leg, "commence_time") for leg in details]
+    else:
+        times=[(_pick_value(pick, "commence_time")
+                or f.get("commence_time"))]
+    now=datetime.now(timezone.utc)
+    for value in times:
+        if not value:
+            return False, "kickoff_unverified"
+        try:
+            when=(value if isinstance(value,datetime) else
+                  datetime.fromisoformat(str(value).replace("Z","+00:00")))
+            if when.tzinfo is None or when.astimezone(timezone.utc) <= now:
+                return False, "prematch_fixture_already_started"
+        except (ValueError, TypeError, OverflowError):
+            return False, "kickoff_invalid"
+    return True, "observed_prematch_quote"
 
 
 def _valid_owner_png(value):
@@ -116,6 +175,12 @@ def filter_verified_nba_images(picks, cards):
         if not league or league[1]!="nba":
             accepted.append(pick)
             continue
+        if os.getenv("PH_OWNER_QUOTE_QA", "0").strip() == "1":
+            proven, reason=pre_match_quote_provenance(pick)
+            if not proven:
+                print("OWNER_QUOTE_PREFLIGHT_BLOCKED reason="+reason, flush=True)
+                blocked+=1
+                continue
         # A pick may be rechecked after bookmaker odds, lineups, photos or
         # ticket provenance changed. Invalidate an old successful preflight
         # before every new check. Otherwise a previously cached image could
