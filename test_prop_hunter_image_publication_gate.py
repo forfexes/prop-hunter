@@ -30,7 +30,7 @@ picks=[p("good","NBA"),p("missing","basketball_nba"),
          leg_details=[{"sport":"NBA"},{"sport":"NBA"}],
          features={"combined_odds_observed":False,
                    "calculated_combined_odds":3.30}),
-       N(type="lottery",player="verified_combo",sport="NBA",
+       N(type="lottery",player="verified_combo",sport="NBA",odds=3.40,
          leg_details=[{"sport":"NBA"},{"sport":"NBA"}],
          features={"combined_odds_observed":True,
                    "combined_quote_id":"QA_BOOK_TICKET"})]
@@ -118,3 +118,26 @@ with patch.dict("os.environ", {"PH_BLOCK_OVERPAINTED_MASTERS": "1"}):
     else:
         raise AssertionError("Opaque-patch compositor leaked into production")
 print("PRODUCTION NO-OVERPAINT RELEASE LOCK PASSED")
+
+
+# Regression: a disguised Single or mixed-player Ladder must not reach
+# Telegram even when an old preflight PNG and claimed quote ID both exist.
+# Verify that stale bytes are erased BEFORE anything is published.
+with patch.dict("os.environ", {"PH_OWNER_APPROVED_ALL_SPORTS":"1"}):
+    forged=[
+        N(type="single",player="good",sport="NBA",odds=3.19,
+          leg_details=[{"sport":"NBA","player":"A","odds":1.79},
+                       {"sport":"NBA","player":"B","odds":1.80}],
+          features={"combined_odds_observed":True,"combined_quote_id":"other"}),
+        N(type="ladder",player="good",sport="NBA",odds=3.19,
+          leg_details=[{"sport":"NBA","player":"A","odds":1.79},
+                       {"sport":"NBA","player":"B","odds":1.80}]),
+    ]
+    for item in forged:
+        item._verified_owner_png=PNG
+    untouched=Cards()
+    sent,blocked=filter_verified_nba_images(forged,untouched)
+    assert sent == [] and blocked == 2
+    assert untouched.calls == []
+    assert all(not hasattr(item, "_verified_owner_png") for item in forged)
+print("FORGED SINGLE/LADDER STALE IMAGE FAIL-CLOSED PASSED")
