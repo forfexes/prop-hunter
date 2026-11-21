@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install offline card test dependencies
-        run: python -m pip install pillow cairosvg requests
+        run: python -m pip install pillow cairosvg requests numpy
       - name: Compile changed Python modules
         run: python -m py_compile prop_hunter_combo_prices.py prophunter_core_1391.py prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py prophunter_results.py prop_hunter_combo_prices_test.py prop_hunter_nba_premium_adapter_test.py
       - name: Multi-sport combo odds and settlement guard regression
