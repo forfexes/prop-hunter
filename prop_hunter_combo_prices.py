@@ -118,7 +118,10 @@ def invalidate_unpriced_combo(ticket):
                 ticket['quote_invalidation_reason']=reason
                 return True
         return False
-    if not unpriced_sgp(ticket):
+    # Publishing without a combined quote is allowed; do not retroactively
+    # withdraw otherwise valid selections solely for this missing quote.
+    # Previously withdrawn records are left untouched by the branch above.
+    if publishable_extra(ticket) or not unpriced_sgp(ticket):
         return False
     ticket['quote_original_result']=ticket.get('result')
     ticket['quote_original_profit']=ticket.get('profit')
