@@ -196,8 +196,10 @@ def render_nba_pick(pick, rows, teams):
     renderer = import_module("render_cards")
     feats = _get(pick, "features") or {}
     feats = feats if isinstance(feats, dict) else {}
+    # Upstream legs may be dictionaries or typed model objects; preserve
+    # observed bookmaker and fixture provenance for both representations.
     details = list(_get(pick, "leg_details") or [])
-    books = {str(leg.get("bookmaker") or "").strip() for leg in details
+    books = {str(_get(leg, "bookmaker") or "").strip() for leg in details
              if isinstance(leg, dict)}
     bookmaker = feats.get("bookmaker") or _get(pick, "bookmaker")
     if not str(bookmaker or "").strip() and len(books)==1 and next(iter(books)):
@@ -254,7 +256,7 @@ def render_nba_pick(pick, rows, teams):
             # A NBA-branded premium card must NEVER contain a WNBA, college,
             # EuroLeague or other sport's individual leg, even if the parent
             # pick was accidentally labelled NBA by an upstream source.
-            leg_sport = str(detail.get("sport") or "").lower().replace("_", " ").strip()
+            leg_sport = str(_get(detail, "sport") or "").lower().replace("_", " ").strip()
             if leg_sport and not re.search(r"\bnba\b", leg_sport):
                 raise PremiumDataMissing(f"Leg {i} is not NBA")
             values[f"leg_{i}_name"] = str(row.get("name") or "")
@@ -264,23 +266,23 @@ def render_nba_pick(pick, rows, teams):
                 # invent data or copy another builder leg's statistics.
                 values[f"leg_{i}_{form_key}"] = form_value
             values[f"leg_{i}_line"] = str(row.get("label") or "")
-            values[f"leg_{i}_odds"] = _price(detail.get("odds"))
+            values[f"leg_{i}_odds"] = _price(_get(detail, "odds"))
             if multi_game:
                 # Every leg must carry its own verified game and local tipoff.
                 # A single generic VS would be false for a cross-game parlay.
-                game = str(detail.get("game") or detail.get("matchup") or "").strip()
+                game = str(_get(detail, "game") or _get(detail, "matchup") or "").strip()
                 # In a lottery/cross-game ticket, a generic parent game does NOT
                 # establish which fixture each individual leg belongs to.
                 if not game or not re.search(r"\s+(?:vs\.?|@)\s+", game, re.I):
                     raise PremiumDataMissing(f"Leg {i} has no verified matchup")
                 # A parent's NBA label does not establish every cross-game leg's
                 # league. Never quietly relabel WNBA/college/unknown legs as NBA.
-                sport = str(detail.get("sport") or "").lower().replace("_", " ").strip()
+                sport = str(_get(detail, "sport") or "").lower().replace("_", " ").strip()
                 if not sport or not re.search(r"\bnba\b", sport):
                     raise PremiumDataMissing(f"Leg {i} has no verified NBA league")
                 # Cross-game legs must carry their own event timestamp; a parent
                 # timestamp cannot safely represent multiple different games.
-                kickoff = detail.get("commence_time")
+                kickoff = _get(detail, "commence_time")
                 if not kickoff:
                     raise PremiumDataMissing(f"Leg {i} tipoff missing")
                 date, local_time = _tipoff({"commence_time": kickoff})
