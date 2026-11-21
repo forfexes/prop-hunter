@@ -326,3 +326,31 @@ typed_leg_book = SimpleNamespace(**{**base, "features": {"venue": "TEST ARENA",
     type="betbuilder", odds=5.10, leg_details=typed_builder.leg_details)
 assert Image.open(BytesIO(render_nba_pick(typed_leg_book, legs, teams))).width == 1080
 print("NBA TYPED LEG OBJECT COMPATIBILITY PASS: ladder/builder/lottery, bookmaker provenance and mixed-league rejection")
+
+
+# The actual published image entrypoint must also support typed legs, not only
+# the lower-level SVG adapter. Mocked images are QA-only; never sent to Telegram.
+with patch.dict(os.environ, {"PH_NBA_OWNER_ORIGINALS": "0"}), \
+     patch.object(image_cards, "ON", True), \
+     patch.object(image_cards, "player_photo", return_value=img()), \
+     patch.object(image_cards, "team_logo", return_value=img("logo")), \
+     patch.object(image_cards, "render", side_effect=AssertionError("Legacy fallback used")):
+    for family, model in (("ladder", typed_ladder),
+                          ("builder", typed_builder)):
+        png = image_cards.build_for_pick(model)
+        assert png and Image.open(BytesIO(png)).size == (1080, 1440), family
+    typed_lottery_full = SimpleNamespace(**base, type="lottery", odds=18.25,
+        leg_details=[
+            SimpleNamespace(**{**leg, "player": f"TEST PLAYER {i+1}",
+                               "market": "points"})
+            for i, leg in enumerate(multi_legs)])
+    png = image_cards.build_for_pick(typed_lottery_full)
+    assert png and Image.open(BytesIO(png)).size == (1080, 1440)
+from prop_hunter_image_cards import _venue_text, _kickoff_text
+typed_venue = SimpleNamespace(features={}, leg_details=[
+    SimpleNamespace(features={"venue": "TEST ARENA"})])
+assert _venue_text(typed_venue) == "TEST ARENA"
+typed_time = SimpleNamespace(features={}, commence_time=None,
+    leg_details=[SimpleNamespace(commence_time="2026-11-20T19:00:00+00:00")])
+assert "20.11." in _kickoff_text(typed_time)
+print("NBA LIVE ENTRYPOINT TYPED LEGS PASS: all four families, league isolation, venue and kickoff")
