@@ -190,6 +190,22 @@ with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS":"1"}), \
         print("CLEAN_PLATE_NO_LEGACY_MASK_QA",family)
 print("CLEAN OWNER COMPOSITOR WITHOUT SAMPLE OVERPAINT PASSED")
 
+# No opaque runtime screenshot coverups are permitted on the three newly
+# layered owner families. Each input is synthetic and never sent to Telegram.
+with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS": "1"}), \
+     patch.object(originals, "APPROVED_MASTER", CLEAN), \
+     patch.object(bridge, "BASE", CLEAN), \
+     patch.object(originals, "_rect", side_effect=AssertionError("Opaque screenshot repaint detected")), \
+     patch.object(originals, "_blend_fill", side_effect=AssertionError("Opaque source blending detected")):
+    originals._source.cache_clear()
+    for name, pick, rows, _ in examples:
+        if name in ("single", "ladder", "builder"):
+            raw = adapter.render_nba_pick(pick, rows, teams)
+            with Image.open(BytesIO(raw)) as approved_layered:
+                assert approved_layered.width == 1080, name
+            print("OWNER_LAYERED_NO_OPAQUE_REPAINT_OK", name)
+originals._source.cache_clear()
+
 # Approval-gate: exercise the actual checked-in approved production files,
 # not only a monkeypatched working directory.
 APPROVED=Path(__file__).resolve().parent/"card_templates"/"approved"
