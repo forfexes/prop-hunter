@@ -767,8 +767,10 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         stake = re.search(r'Einsatz\s+([\d.,]+u)', str(footer), re.I)
         _text(d, (594, 552), stake.group(1) if stake else '—', 22, 130, GOLD, 'mm')
     elif family == 'ladder':
-        # Remove all THREE old athletes and badges, then draw ONE hero photograph.
-        _clean_hero(im, (0, 270, 247, 621))
+        # Clean owner plates have no baked-in sample athletes. Never repaint
+        # the authentic arena just to remove players already absent.
+        if not approved_plate:
+            _clean_hero(im, (0, 270, 247, 621))
         _rect(im, (202, 352, 685, 615), NAVY, 6)
         _portrait(im, rows[0].get('photo'), (15, 300, 197, 606), rows[0].get('name') or '')
         # The owner JPEG has an old white 'LADDERS' legend behind this row.
@@ -815,7 +817,8 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
     elif family == 'builder':
         # Remove the stale three sample athletes and reconstruct ALL submitted
         # player slots, up to six. The owner original remains the background.
-        _clean_hero(im, (0, 135, 691, 411))
+        if not approved_plate:
+            _clean_hero(im, (0, 135, 691, 411))
         n = len(rows)
         columns = min(n, 3)
         w = 681 // max(1, columns)
