@@ -207,3 +207,57 @@ with patch.dict(os.environ, {"PH_NBA_OWNER_ORIGINALS":"1"}, clear=True):
         {'media_type':'text','message_id':918},
         {'sport':'NHL'}, '🏁 Auswertung: offen')
 print('LEGACY WORKFLOW OWNER-ORIGINAL FALLBACK IS STRICT FOR ALL SPORTS')
+
+
+# NEW clean owner-layered NBA cards are allowed to update the result INSIDE
+# their original Telegram photo. No generic fallback, no new message ID.
+# Old (unmarked) photos remain completely immutable: caption-only settlement.
+from prop_hunter_nba_owner_bridge import _layered_owner_release_ready
+new_layered = {'sport': 'NBA', 'type': 'single', 'odds': 1.82,
+               '_owner_layered_original_v1': True}
+old_owner = {'sport': 'NBA', 'type': 'single', 'odds': 1.82}
+unverified_builder = {
+    'sport': 'NBA', 'type': 'betbuilder', 'odds': 3.81,
+    '_owner_layered_original_v1': True, 'features': {},
+    'leg_details': [{'odds': 1.82}, {'odds': 2.10}]}
+release_env = {
+    'PH_OWNER_APPROVED_ALL_SPORTS': '1',
+    'PH_NBA_OWNER_ORIGINALS': '1',
+    'PH_BLOCK_OVERPAINTED_MASTERS': '1',
+    'PH_ALLOW_VERIFIED_LAYERED_OWNER': '1',
+    'PH_OWNER_PIXEL_QA': '1',
+}
+with patch.dict(os.environ, release_env), \
+     patch('prop_hunter_nba_owner_bridge._layered_owner_release_ready',
+           return_value=True), \
+     patch('prop_hunter_owner_pixel_qa.owner_pixel_provenance',
+           return_value=(True, 'source_original_pixels_verified')), \
+     patch.object(cards, 'settled_image', return_value=closed), \
+     patch.object(results.requests, 'post', side_effect=post), \
+     patch.object(results.time, 'sleep'):
+    assert results._original_photo_caption_only(old_owner)
+    assert results._original_photo_caption_only(unverified_builder)
+    assert results._original_photo_caption_only(
+        {**new_layered, 'sport': 'NHL'})
+    assert not results._original_photo_caption_only(new_layered)
+    sent.clear()
+    assert results._edit_message(
+        5678, '🏁 Auswertung: ✅ gewonnen', image_pick=new_layered)
+    assert sent[-1][0].endswith('/editMessageMedia')
+    assert sent[-1][1]['data']['message_id'] == 5678
+    assert sent[-1][1]['files']['card'][2] == 'image/jpeg'
+    sent.clear()
+    assert results._edit_message(
+        5679, '🏁 Auswertung: ✅ gewonnen', image_pick=old_owner)
+    assert sent[-1][0].endswith('/editMessageCaption')
+    assert sent[-1][1]['json']['message_id'] == 5679
+
+# Stale or missing approval plates always close the photo-edit gate again.
+with patch.dict(os.environ, release_env), \
+     patch('prop_hunter_nba_owner_bridge._layered_owner_release_ready',
+           return_value=False):
+    assert results._original_photo_caption_only(new_layered)
+with patch.dict(os.environ, {**release_env,
+                             'PH_ALLOW_VERIFIED_LAYERED_OWNER': '0'}):
+    assert results._original_photo_caption_only(new_layered)
+print('NEW CLEAN NBA PHOTO SETTLES IN-PLACE; HISTORICAL PHOTOS STAY IMMUTABLE')
