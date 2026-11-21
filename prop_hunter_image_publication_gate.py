@@ -46,6 +46,18 @@ def filter_verified_nba_images(picks, cards):
         if not league or league[1]!="nba":
             accepted.append(pick)
             continue
+        # Publishing a combined NBA ticket requires an actual observed
+        # bookmaker price AND its ticket identifier. Multiplying authentic
+        # single-leg odds is useful for offline analysis, but is not a
+        # bookable parlay price and must never reach Telegram as a pick.
+        typ=str(getattr(pick,"type","") or "").strip().lower()
+        if typ not in ("single","longshot","ladder"):
+            features=getattr(pick,"features",{}) or {}
+            if not isinstance(features,dict) or not (
+                    features.get("combined_odds_observed") is True
+                    and str(features.get("combined_quote_id") or "").strip()):
+                blocked+=1
+                continue
         result=cards.build_for_pick(pick)
         if _valid_owner_png(result):
             # Production will reuse the exact verified artwork bytes from
