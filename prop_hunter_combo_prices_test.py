@@ -43,6 +43,10 @@ assert round(calculated_combo_odds(cross),2)==3.42
 assert not publishable_extra(dict(type="lottery",leg_details=[
     dict(odds=1.8),dict(odds=None)]))
 assert not publishable_extra(dict(type="lottery",leg_details=[dict(odds=1.8)]))
+assert not publishable_extra(dict(type="lottery",odds=4.2,
+    features=dict(combined_odds_observed=True,combined_quote_id="   ")))
+assert not publishable_extra(dict(type="betbuilder",odds=4.2,
+    features=dict(combined_odds_observed=False,combined_quote_id="book-123")))
 assert not publishable_extra(dict(type="lottery",odds=float("nan"),
     features=dict(combined_odds_observed=True,combined_quote_id="ticket")))
 assert not publishable_extra(dict(type="lottery",odds=None,
