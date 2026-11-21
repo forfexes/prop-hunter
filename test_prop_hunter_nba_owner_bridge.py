@@ -63,6 +63,20 @@ examples.extend([
     ("cross_game_owner_lottery",cross_original,lottery_rows,[]),
 ])
 
+same_player_rows=[
+    dict(row,label="Points Over 20.5"),
+    dict(row,label="Assists Over 5.5"),
+    dict(row,label="Rebounds Over 7.5"),
+]
+same_player_details=[
+    {"player":"TEST PLAYER","sport":"NBA","market":"points","odds":1.75},
+    {"player":"TEST PLAYER","sport":"NBA","market":"assists","odds":1.85},
+    {"player":"TEST PLAYER","sport":"NBA","market":"rebounds","odds":1.90},
+]
+same_player_pick=N(**{**common,"features":{**features,"same_player_multistat":True}},
+                   type="betbuilder",odds=6.15,leg_details=same_player_details)
+examples.append(("same_player_owner_ladder",same_player_pick,same_player_rows,[]))
+
 old_master=originals.APPROVED_MASTER
 old_base=bridge.BASE
 try:
@@ -71,11 +85,14 @@ try:
     originals._source.cache_clear()
     with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
         for family,pick,rows,_ in examples:
-            if family in ("combo_owner_lottery","cross_game_owner_lottery"):
+            if family in ("combo_owner_lottery","cross_game_owner_lottery",
+                          "same_player_owner_ladder"):
                 with patch.object(bridge,"render_owner", wraps=bridge.render_owner) as check_owner:
                     raw=adapter.render_nba_pick(pick,rows,teams)
                     check_owner.assert_called_once()
-                    assert check_owner.call_args.args[1].startswith(("combo_","cross_game_"))
+                    expected=("same_player_",) if family=="same_player_owner_ladder" else (
+                        "combo_","cross_game_")
+                    assert check_owner.call_args.args[1].startswith(expected)
             else:
                 raw=adapter.render_nba_pick(pick,rows,teams)
             with Image.open(BytesIO(raw)) as image:
@@ -85,6 +102,18 @@ try:
             outdir.mkdir(parents=True,exist_ok=True)
             (outdir/(family+".png")).write_bytes(raw)
             print("OWNER_NBA_PREVIEW_OK",family,len(raw))
+        six_rows=same_player_rows+[dict(row,label=f"Extra {i}") for i in range(3)]
+        six_details=same_player_details+[
+            {"player":"TEST PLAYER","sport":"NBA","market":"points","odds":1.91}
+            for _ in range(3)]
+        six=N(**{**common,"features":{**features,"same_player_multistat":True}},
+              type="betbuilder",odds=21.5,leg_details=six_details)
+        try:
+            adapter.render_nba_pick(six,six_rows,teams)
+        except ValueError as exc:
+            assert "2-5 rungs" in str(exc),str(exc)
+        else:
+            raise AssertionError("Six-row Same Player used unapproved artwork")
         # Visual regression: the owner's Ladder must display the real athlete
         # name, not only a portrait and anonymous numbered stages. Test every
         # owner-approved rung count without Telegram or external lookups.
