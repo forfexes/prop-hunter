@@ -148,12 +148,13 @@ try:
             for _ in range(3)]
         six=N(**{**common,"features":{**features,"same_player_multistat":True}},
               type="betbuilder",odds=21.5,leg_details=six_details)
-        try:
-            adapter.render_nba_pick(six,six_rows,teams)
-        except ValueError as exc:
-            assert "2-5 rungs" in str(exc),str(exc)
-        else:
-            raise AssertionError("Six-row Same Player used unapproved artwork")
+        # The new user-source-derived clean plate extends the arena rather
+        # than squeezing six same-player props onto the five-row screenshot.
+        expanded = adapter.render_nba_pick(six,six_rows,teams)
+        with Image.open(BytesIO(expanded)) as proof_six:
+            assert proof_six.width == 1080 and proof_six.height > 1350
+        outdir.joinpath("same_player_owner_ladder6.png").write_bytes(expanded)
+        print("SAME_PLAYER_SIX_LAYERED_APPROVED_QA")
         # Visual regression: the owner's Ladder must display the real athlete
         # name, not only a portrait and anonymous numbered stages. Test every
         # owner-approved rung count without Telegram or external lookups.
