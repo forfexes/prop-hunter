@@ -23,7 +23,8 @@ def confirmed_ticket(obj):
     # A contradictory "observed" marker cannot rehabilitate a product of
     # individual leg prices. These flags make a same-game or cross-game total
     # unbookable even when a stale ticket ID remains in storage.
-    for marker in ('combined_quote_calculated', 'builder_odds_estimated_from_legs'):
+    for marker in ('combined_quote_calculated', 'builder_odds_estimated_from_legs',
+                   'acca_odds_estimated_from_legs'):
         if f.get(marker) is True or value(obj, marker) is True:
             return False
     estimated_types = {'estimated', 'derived_builder', 'calculated_from_leg_odds'}
