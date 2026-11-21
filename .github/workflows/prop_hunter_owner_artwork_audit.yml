@@ -1,0 +1,34 @@
+name: PROP HUNTER Original Artwork Audit (No Telegram)
+
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/workflows/prop_hunter_owner_artwork_audit.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original and cleaned plates are present
+        run: |
+          set -euo pipefail
+          for family in single ladder builder lottery; do
+            test -s "card_templates/originals/${family}.jpg"
+            test -s "card_templates/cleaned/${family}.png"
+            test -s "card_templates/approved/${family}.png"
+          done
+          echo 'Four owner JPG references and all eight clean plates exist'
+      - name: Export originals and approved plates for independent VISUAL review
+        uses: actions/upload-artifact@v4
+        with:
+          name: owner-four-originals-and-approved-plates
+          path: |
+            card_templates/originals/*.jpg
+            card_templates/cleaned/*.png
+            card_templates/approved/*.png
+          if-no-files-found: error
+          retention-days: 2
