@@ -25,6 +25,7 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # fallback or an illicit reuse of an NBA single-match Builder.
     family = ("lottery" if render_family in ("combo", "cross_game")
               else "ladder" if render_family == "same_player"
+              else "single" if render_family == "longshot"
               else render_family)
     if family not in ("single", "ladder", "builder", "lottery"):
         raise ValueError("Owner original release is not approved for this family")
@@ -81,6 +82,7 @@ def render_owner(pick, key: str, rows: list, teams: list,
     if family == "ladder":
         if len({r["name"].casefold() for r in labels}) != 1:
             raise ValueError("Original Ladder cannot mix athletes")
-    title = "SAME PLAYER" if render_family == "same_player" else family.upper()
+    title = ("SAME PLAYER" if render_family == "same_player" else
+             "LONGSHOT" if render_family == "longshot" else family.upper())
     return original_card(family, title, subtitle,"NBA",teams,
                          labels,footer,values.get("settlement") or "OFFEN")
