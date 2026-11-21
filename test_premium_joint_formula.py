@@ -96,3 +96,26 @@ def test_joint_sample_and_conditional_reject_bad_inputs():
         estimate_combo(rows,conditional_probabilities=[0.8,0.7])
     with pytest.raises(ValueError):
         estimate_combo(rows,conditional_probabilities=[float("nan")])
+
+
+def test_model_only_combination_can_estimate_fair_without_any_prices():
+    # Different games: real independent model probabilities are still usable
+    # even when NO bookmaker has priced the selection.
+    rows=[leg("A vs B",None,0.6),leg("C vs D",None,0.5)]
+    result=estimate_combo(rows,allow_missing_leg_prices=True)
+    assert result["indicative_leg_product"] is None
+    assert math.isclose(result["joint_probability"],0.3)
+    assert math.isclose(result["fair_model_odds"],10/3)
+    assert result["real_bookmaker_combined_odds"] is None
+    assert result["ev_percent_using_real_ticket_only"] is None
+    assert result["individual_prices_observed"] is False
+
+
+def test_model_only_same_game_needs_true_joint_evidence():
+    rows=[leg("A vs B",None,0.6),leg("A vs B",None,0.5)]
+    result=estimate_combo(rows,allow_missing_leg_prices=True)
+    assert result["fair_model_odds"] is None
+    conditional=estimate_combo(rows,allow_missing_leg_prices=True,
+                               conditional_probabilities=[0.7])
+    assert math.isclose(conditional["joint_probability"],0.42)
+    assert conditional["indicative_leg_product"] is None
