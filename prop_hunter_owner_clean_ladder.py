@@ -1,4 +1,4 @@
-"""Render 2-5 real ladder prices for ONE athlete on the user's clean original.
+"""Render 2-6 real ladder prices for ONE athlete on the user's clean original.
 
 The source is separately cleaned and keeps the owner's unchanged logo,
 lighting, violet/cyan borders and footer. No old screenshot is painted over.
@@ -16,15 +16,27 @@ from prop_hunter_owner_clean_single import (
 
 
 def render(plate: Image.Image, *, subtitle: str, teams: list,
-           rows: list, footer: str, settlement: str) -> bytes:
-    if plate.size != (691, 865) or len(teams) != 2 or not 2 <= len(rows) <= 5:
-        raise ValueError("Original Ladder requires clean plate, two clubs, 2-5 stages")
+           rows: list, footer: str, settlement: str, title: str = "LADDER") -> bytes:
+    if plate.size != (691, 865) or len(teams) != 2 or not 2 <= len(rows) <= 6:
+        raise ValueError("Original Ladder requires clean plate, two clubs, 2-6 verified legs")
     names = {str(row.get("name") or "").strip().casefold() for row in rows}
     if len(names) != 1 or not next(iter(names)):
         raise ValueError("Ladder has multiple athletes or no confirmed athlete")
 
     from prop_hunter_original_compositor import _background_portrait
     im = plate.convert("RGBA").copy()
+    extra = 0
+    if len(rows) == 6:
+        # Insert only an EMPTY stadium band from the same owner image, keep
+        # the uploaded original crown and footer byte-for-byte in place.
+        extra, cut = 120, 730
+        original = im
+        extended = Image.new("RGBA", (691, 865 + extra), (3, 15, 29, 255))
+        extended.paste(original.crop((0, 0, 691, cut)), (0, 0))
+        extended.paste(original.crop((0, 515, 691, 635)), (0, cut))
+        extended.paste(original.crop((0, cut, 691, 865)),
+                       (0, cut + extra))
+        im = extended
     for center, team in zip((181, 401), teams):
         _floating_team(im, team, center)
     if not _background_portrait(im, rows[0].get("photo"), (0, 268, 237, 622)):
@@ -35,10 +47,13 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     _text(d, (592, 167), date, size=17, max_width=178, color=GOLD)
     _text(d, (592, 207), clock + " Uhr" if clock else "",
           size=18, max_width=176)
-    _text(d, (448, 305), str(len(rows)) + " STUFEN",
+    heading = ("SAME PLAYER · " + str(len(rows)) + " PROPS"
+               if title == "SAME PLAYER"
+               else str(len(rows)) + " STUFEN")
+    _text(d, (448, 305), heading,
           size=25, max_width=240, color=GOLD)
     _text(d, (443, 332), rows[0]["name"], size=23, max_width=335)
-    top = 342 + (5 - len(rows)) * 18
+    top = (354 + (5 - len(rows)) * 18) if len(rows) <= 5 else 360
 
     # Translucent data-first layout boxes are built on EMPTY arena artwork.
     # Unlike the legacy compositor, they never cover an old tip or player.
@@ -72,9 +87,9 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
         _text(d, (618, y + 21), row.get("odds"),
               size=20, max_width=99, color=GOLD)
 
-    _text(d, (127, 650), rows[0]["name"], size=21, max_width=220)
+    _text(d, (127, 650 + extra), rows[0]["name"], size=21, max_width=220)
     stake = re.search(r"Einsatz\s+([\d.,]+u)", str(footer or ""), re.I)
-    _text(d, (583, 697),
+    _text(d, (583, 697 + extra),
           "EINSATZ " + stake.group(1) if stake else "",
           size=20, max_width=190, color=GOLD)
 
@@ -86,13 +101,13 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
         match = re.search(r"\bL" + str(n) + r"\s+(\d+)/(\d+)\b", form, re.I)
         if match and 0 <= int(match[1]) <= int(match[2]) <= n:
             windows.append(f"L{n} {match[1]}/{match[2]}")
-    _text(d, (374, 681), " · ".join(windows),
+    _text(d, (374, 681 + extra), " · ".join(windows),
           size=17, max_width=359, color=GREEN)
 
     state = str(settlement or "OFFEN").strip()
     color = (GREEN if "gewonnen" in state.casefold()
              else RED if "verloren" in state.casefold() else GOLD)
-    _text(d, (422, 784), state, size=21, max_width=148, color=color)
+    _text(d, (422, 784 + extra), state, size=21, max_width=148, color=color)
 
     output = im.convert("RGB").resize(
         (1080, round(1080 * im.height / im.width)),
