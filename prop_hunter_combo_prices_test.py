@@ -31,6 +31,8 @@ verified=dict(type="betbuilder",leg_details=[
 prepare_calculated_combo(verified)
 assert verified["odds"]==3.25, "observed combined ticket is authoritative"
 assert publishable_extra(verified)
+assert publishable_extra(dict(type="lottery",odds=3.25,
+    features=dict(combined_odds_observed=True,combined_quote_id="book-321")))
 
 cross=dict(type="lottery",leg_details=[
     dict(odds=1.8,game="A vs B"),dict(odds=1.9,game="C vs D")],features={})
