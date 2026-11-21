@@ -254,7 +254,7 @@ def render_nba_pick(pick, rows, teams):
             else:
                 from prop_hunter_combo_prices import calculated_combo_odds
                 calculated = calculated_combo_odds(pick)
-                values["total_odds"] = (f"{calculated:.2f}*" if calculated is not None
+                values["total_odds"] = (f"≈{calculated:.2f}" if calculated is not None
                                        else "OFFEN")
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
         "single", "ladder", "builder", "lottery"):
