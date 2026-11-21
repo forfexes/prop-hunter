@@ -68,3 +68,24 @@ assert not hasattr(picks[8],"_verified_owner_png")
 picks[8].features["combined_odds_observed"]=True
 picks[8].features["combined_quote_id"]="QA_BOOK_TICKET"
 print("NBA STALE ORIGINAL PREVIEW REJECTED AFTER TICKET CHANGE")
+
+# Global Premium-KI rule: no unapproved NFL/NHL/MLB/WNBA owner images may
+# enter Telegram, even when legacy renderers could create a convincing card.
+from unittest.mock import patch
+with patch.dict("os.environ",{"PH_OWNER_APPROVED_ALL_SPORTS":"1"}):
+    owner_only=[
+        p("good","NBA"),
+        p("wnba","WNBA"),
+        p("nhl","NHL"),
+        p("details_ok",None,[{"sport":"NBA"}]),
+        N(type="lottery",player="verified_combo",sport="NBA",
+          leg_details=[{"sport":"NBA"},{"sport":"NHL"}],
+          features={"combined_odds_observed":True,
+                    "combined_quote_id":"QA_VALID_COMBINED_BOOK_TICKET"}),
+    ]
+    screened,blocked_count=filter_verified_nba_images(owner_only,Cards())
+    assert blocked_count==3,(blocked_count,[x.player for x in screened])
+    assert [x.player for x in screened]==["good","details_ok"]
+    assert all(not hasattr(x,"_verified_owner_png")
+               for x in owner_only if x not in screened)
+print("ALL-SPORT OWNER-APPROVAL BLOCK: no overpainted unapproved premium images")
