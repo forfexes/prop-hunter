@@ -199,7 +199,8 @@ with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS": "1"}), \
      patch.object(originals, "_blend_fill", side_effect=AssertionError("Opaque source blending detected")):
     originals._source.cache_clear()
     for name, pick, rows, _ in examples:
-        if name in ("single", "ladder", "builder"):
+        if name in ("single", "ladder", "builder", "lottery",
+                    "combo_owner_lottery", "cross_game_owner_lottery"):
             raw = adapter.render_nba_pick(pick, rows, teams)
             with Image.open(BytesIO(raw)) as approved_layered:
                 assert approved_layered.width == 1080, name
