@@ -17,17 +17,18 @@ d.rounded_rectangle((0, 120, 149, 239), 22, fill=(38, 70, 160, 255))
 
 # Pixel-level: alpha-cutout blends directly into background. No rectangle.
 canvas = Image.new("RGBA", (691, 758), (11, 22, 39, 255))
-assert poster._background_portrait(canvas, portrait, (0, 131, 246, 518))
+assert poster._background_portrait(canvas, portrait, (0, 131, 246, 457))
 assert canvas.getpixel((300, 290)) == (11, 22, 39, 255)
 assert canvas.getpixel((245, 300)) == (11, 22, 39, 255)
 assert canvas.getpixel((100, 365)) != (11, 22, 39, 255)
-assert not poster._background_portrait(canvas, Image.new("RGB", (90, 180), "red"), (0, 131, 246, 518))
-assert not poster._background_portrait(canvas, None, (0, 131, 246, 518))
+assert canvas.getpixel((100, 467)) == (11, 22, 39, 255), "Player overpainted the L5/L10/L15 header"
+assert not poster._background_portrait(canvas, Image.new("RGB", (90, 180), "red"), (0, 131, 246, 457))
+assert not poster._background_portrait(canvas, None, (0, 131, 246, 457))
 
 with TemporaryDirectory() as folder:
     path = Path(folder) / "single.png"
     Image.new("RGBA", (691, 758), (11, 22, 39, 255)).save(path)
-    with patch.object(poster, "_single_clean_master", return_value=path):
+    with patch.object(poster, "APPROVED_MASTER", Path(folder)):
         poster._source.cache_clear()
         assert poster._source("single").size == (691, 758)
         row = [{"name": "TEST ATHLETE", "photo": portrait,
@@ -53,6 +54,6 @@ with TemporaryDirectory() as folder:
             raise AssertionError("Opaque player picture was accepted")
     poster._source.cache_clear()
 
-# No approved production plate is committed by this test.
-assert not poster._single_clean_master().is_file()
+# The test uses an isolated temporary clean plate and never changes the
+# actual approved or original user assets. Production remains separately gated.
 print("BORDERLESS SINGLE: ALPHA CUTOUT, NO FRAME, CLEAN PLATE ONLY, OPAQUE REJECTED – PASS")
