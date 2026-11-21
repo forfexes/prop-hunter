@@ -69,6 +69,13 @@ def filter_verified_nba_images(picks, cards):
                     or any(not item or item[1]!="nba" for item in leg_leagues)):
                 blocked+=1
                 continue
+        # Apply the same all-sport combined-ticket provenance gate to
+        # every pick, even one accidentally mislabeled Single/Longshot/Ladder.
+        # No cached PNG may bypass the verified bookmaker-price requirement.
+        from prop_hunter_combo_prices import publishable_extra
+        if not publishable_extra(pick):
+            blocked+=1
+            continue
         if not league or league[1]!="nba":
             accepted.append(pick)
             continue
@@ -80,14 +87,6 @@ def filter_verified_nba_images(picks, cards):
         # bookmaker price AND its ticket identifier. Multiplying authentic
         # single-leg odds is useful for offline analysis, but is not a
         # bookable parlay price and must never reach Telegram as a pick.
-        typ=str(getattr(pick,"type","") or "").strip().lower()
-        if typ not in ("single","longshot","ladder"):
-            features=getattr(pick,"features",{}) or {}
-            if not isinstance(features,dict) or not (
-                    features.get("combined_odds_observed") is True
-                    and str(features.get("combined_quote_id") or "").strip()):
-                blocked+=1
-                continue
         result=cards.build_for_pick(pick)
         if _valid_owner_png(result):
             # Production will reuse the exact verified artwork bytes from
