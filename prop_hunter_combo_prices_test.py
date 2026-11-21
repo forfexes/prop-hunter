@@ -120,3 +120,26 @@ for sport in ("NBA", "NFL", "NHL", "MLB", "WNBA", "EUROLEAGUE", "SOCCER"):
 print("ALL-SPORT DISGUISED MULTI-LEG / SINGLE-PLAYER LADDER GATE PASSED")
 
 print("MULTISPORT COMBO QUOTE REGRESSIONS PASSED")
+
+# A stale receipt ID beside an explicit formula/estimated flag is NOT a
+# genuine combined bookmaker quote. No Telegram Builder/Lottery may use it.
+from prop_hunter_combo_prices import confirmed_ticket as _real_ticket
+qa_live_ticket = {
+    "type": "betbuilder", "odds": 5.10,
+    "features": {"combined_odds_observed": True,
+                 "combined_quote_id": "QA_ONLY_BOOK_TICKET"},
+    "leg_details": [{"player": "QA A", "odds": 1.70},
+                    {"player": "QA B", "odds": 1.80}],
+}
+assert _real_ticket(qa_live_ticket), qa_live_ticket
+for key, bad in (
+    ("combined_quote_calculated", True),
+    ("builder_odds_estimated_from_legs", True),
+    ("price_type", "derived_builder"),
+    ("price_type", "calculated_from_leg_odds"),
+    ("price_type", "estimated"),
+):
+    row = {**qa_live_ticket, "features": {**qa_live_ticket["features"], key: bad}}
+    assert not _real_ticket(row), (key, bad)
+    assert not publishable_extra(row), (key, bad)
+print("BOOKMAKER_TICKET_CONTRADICTION_HARDSTOP_OK")
