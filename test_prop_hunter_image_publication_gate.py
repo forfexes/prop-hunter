@@ -106,3 +106,15 @@ with patch.dict("os.environ", {"PH_OWNER_APPROVED_ALL_SPORTS": "1"}):
     assert not hasattr(object_leg_nhl, "_verified_owner_png")
     assert not hasattr(object_leg_unknown, "_verified_owner_png")
 print("HISTORICAL OBJECT-LEG PREFLIGHT SAFE: one valid NBA card survives")
+
+# A green image-PNG validation alone cannot approve the overpainted legacy
+# compositor. Production must refuse it even when photos/odds are populated.
+from prop_hunter_nba_owner_bridge import render_owner
+with patch.dict("os.environ", {"PH_BLOCK_OVERPAINTED_MASTERS": "1"}):
+    try:
+        render_owner(None, "single_points", [], [], {}, [])
+    except ValueError as exc:
+        assert "overpainted" in str(exc), str(exc)
+    else:
+        raise AssertionError("Opaque-patch compositor leaked into production")
+print("PRODUCTION NO-OVERPAINT RELEASE LOCK PASSED")
