@@ -35,7 +35,7 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
         # same layered NBA v2 visual source, extended in height, not a generic
         # fallback poster. These are DERIVED masters, not user-uploaded originals.
         import re as _re
-        match=_re.fullmatch(r'(builder|cross_game|combo|lottery)_(\\d+)',str(template_key))
+        match=_re.fullmatch(r'(builder|cross_game|combo|lottery)_(\d+)',str(template_key))
         if match is None:
             raise ValueError('Unknown master: '+str(template_key))
         family,n=match.group(1),int(match.group(2))
