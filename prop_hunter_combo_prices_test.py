@@ -135,6 +135,7 @@ assert _real_ticket(qa_live_ticket), qa_live_ticket
 for key, bad in (
     ("combined_quote_calculated", True),
     ("builder_odds_estimated_from_legs", True),
+    ("acca_odds_estimated_from_legs", True),
     ("price_type", "derived_builder"),
     ("price_type", "calculated_from_leg_odds"),
     ("price_type", "estimated"),
@@ -147,6 +148,7 @@ for key, bad in (
 for key, bad in (
     ("combined_quote_calculated", True),
     ("builder_odds_estimated_from_legs", True),
+    ("acca_odds_estimated_from_legs", True),
     ("price_type", "derived_builder"),
     ("price_type", "estimated"),
 ):
