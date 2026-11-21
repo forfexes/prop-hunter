@@ -722,7 +722,7 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         from prop_hunter_owner_clean_ladder import render as render_clean_ladder
         return render_clean_ladder(
             im, subtitle=subtitle, teams=teams, rows=rows,
-            footer=footer, settlement=settlement)
+            footer=footer, settlement=settlement, title=title)
     if family == 'builder' and approved_plate and os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1':
         # Each 2-7-leg ticket is composed from the empty authentic owner
         # source, never patched on top of the old example athletes/odds.
