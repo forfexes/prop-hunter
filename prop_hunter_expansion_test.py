@@ -306,8 +306,19 @@ def test_builder_persistence_and_learning_loop():
     module.history[0]["kombis"]=[dict(row) for _ in range(24)]
     learned=learn_builder_correlations(module.history)
     check("safe" not in learned["profiles"], "synthetic SGP profit entered profile performance")
+    # A fake/derived price must NOT become a bookmaker quote merely
+    # because a stale receipt id was attached later.
     for item in module.history[0]["kombis"]:
         item["features"] = dict(item.get("features") or {}, combined_odds_observed=True, combined_quote_id="fixture-ticket")
+    contradictory_learning=learn_builder_correlations(module.history)
+    check("safe" not in contradictory_learning["profiles"],
+          "estimated builder profit was counted despite contradictory receipt")
+    # Now simulate an actually observed sportsbook-issued combined ticket,
+    # with no estimated/derived provenance flags.
+    for item in module.history[0]["kombis"]:
+        item["features"].pop("builder_odds_estimated_from_legs", None)
+        item["features"].pop("combined_quote_calculated", None)
+        item["features"].pop("price_type", None)
     quoted_learning=learn_builder_correlations(module.history)
     check(quoted_learning["profiles"]["safe"]["n"]==24, "confirmed ticket profile performance missing")
     check(len(learned["pairs"])==1, "builder pair learning missing")
