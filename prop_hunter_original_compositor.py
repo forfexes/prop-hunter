@@ -773,6 +773,22 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         gap = 1 if len(rows) == 5 else 6
         occupied = 49*len(rows) + gap*(len(rows)-1)
         first = 352 + max(0,(254-occupied)//2)
+        # Every owner Ladder must identify its ONE real player visibly in the
+        # artwork. Previously the portrait and stage prices had no name.
+        athlete_name = str(rows[0].get('name') or '').strip()
+        if not athlete_name:
+            raise ValueError('One-player Ladder has no verified player name')
+        # Put the label on the authentic portrait panel, independent of the
+        # number of rungs, so even five stages cannot cover it.
+        _rect(im, (17, 556, 196, 611), NAVY, 7, CYAN, 1)
+        _text(ImageDraw.Draw(im), (106, 582), athlete_name,
+              20, 165, WHITE, 'mm')
+        if first >= 414:
+            # Two/three rungs have room for an additional readable hero name.
+            # Four/five rungs use the compact portrait label above.
+            _rect(im, (213, 355, 676, 409), NAVY, 7)
+            _text(ImageDraw.Draw(im), (442, 382), athlete_name,
+                  27, 448, WHITE, 'mm')
         ys = [first + i*(49+gap) for i in range(len(rows))]
         for index, (y, r) in enumerate(zip(ys, rows), 1):
             _row(im, (204, y), 480, r.get('name'), r.get('label'), r.get('odds'),
