@@ -218,6 +218,7 @@ jobs:
           PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
           PH_NBA_PREMIUM_V2_REQUIRE: '1'  # strict premium-only; never use legacy image design
           PH_NBA_OWNER_ORIGINALS: '1'  # use approved actual user-original Singles Ladders and Builders
+          PH_BLOCK_OVERPAINTED_MASTERS: '1'  # never send opaque-patched owner screenshots
           PH_OWNER_APPROVED_ALL_SPORTS: '1'  # block unapproved other-sport or mixed-league legacy cards
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
