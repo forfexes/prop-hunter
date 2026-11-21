@@ -784,6 +784,12 @@ def _original_photo_caption_only(image_pick) -> bool:
         return False
     if not isinstance(image_pick,dict):
         return True
+    # Historical NBA composites without a real, identified bookmaker ticket
+    # must preserve the ORIGINAL Telegram photo. Edit the same message's
+    # caption only, never repaint its old estimated total.
+    from prop_hunter_combo_prices import publishable_extra
+    if not publishable_extra(image_pick):
+        return True
     from prop_hunter_image_cards import league_of
     hint=(image_pick.get("source_sport") or image_pick.get("sport")
           or image_pick.get("league"))
