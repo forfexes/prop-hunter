@@ -3535,6 +3535,20 @@ def _payload_card_image(payload,picks):
                 return None
         if not png:
             png=cards.build_for_pick(pick)
+        if png and payload.get("premium_required") and (
+                os.getenv("PH_BLOCK_OVERPAINTED_MASTERS", "0") == "1"
+                and os.getenv("PH_ALLOW_VERIFIED_LAYERED_OWNER", "0") == "1"
+                and os.getenv("PH_OWNER_PIXEL_QA", "0") == "1"):
+            # Persist the proven compositor provenance with the actual
+            # message ID. Only these NEW owner-layered photos may later
+            # receive an in-photo settlement. Old overpainted Telegram
+            # screenshots are never promoted by date or design_version.
+            from prop_hunter_owner_pixel_qa import owner_pixel_provenance
+            approved, reason = owner_pixel_provenance(pick, png)
+            if not approved:
+                log.error("OWNER_IMAGE_PUBLISH_BLOCKED: %s", reason)
+                return None
+            payload["image_pick"]["_owner_layered_original_v1"] = True
         if png: payload["media_type"]="photo"
         return png
     except Exception as exc:
