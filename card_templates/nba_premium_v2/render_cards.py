@@ -30,10 +30,25 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
                strict: bool=True, embed_background:bool=True) -> str:
     manifest=json.loads((ROOT/'manifest.json').read_text(encoding='utf-8'))
     info=manifest['templates'].get(template_key)
-    if info is None:raise ValueError('Unknown master: '+str(template_key))
+    if info is None:
+        # Extra 7-leg Builder and 7–12-leg multi-game cards inherit exactly the
+        # same layered NBA v2 visual source, extended in height, not a generic
+        # fallback poster. These are DERIVED masters, not user-uploaded originals.
+        import re as _re
+        match=_re.fullmatch(r'(builder|cross_game|combo|lottery)_(\\d+)',str(template_key))
+        if match is None:
+            raise ValueError('Unknown master: '+str(template_key))
+        family,n=match.group(1),int(match.group(2))
+        max_legs=7 if family=='builder' else 12
+        if not 7<=n<=max_legs:
+            raise ValueError('Unsupported extended master: '+str(template_key))
+        from build_masters import multi
+        info={'family':family,'legs':n,'derived':True}
+        raw=multi(family,n)
+    else:
+        raw=(ROOT/info['file']).read_text(encoding='utf-8')
     if not isinstance(values,dict) or not isinstance(images,dict):
         raise TypeError('values and images must be dictionaries')
-    raw=(ROOT/info['file']).read_text(encoding='utf-8')
     if embed_background:
         bg=(ROOT/'assets'/'arena.jpg').read_bytes()
         raw=raw.replace('xlink:href="assets/arena.jpg"',
@@ -56,7 +71,23 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
                     raise ValueError(f'Verified ladder rung {i} price missing')
         else:
             if not _price(values.get('total_odds')):
-                raise ValueError('Verified combination price missing; do not multiply leg prices')
+                raise ValueError('Valid numeric combination price missing')
+            if values.get('combo_quote_verified') is not True:
+                if values.get('combo_quote_calculated') is not True:
+                    raise ValueError('Neither observed nor calculated combo quote is labelled')
+                # A calculated total is ONLY a display reference. It must
+                # derive from independently observed positive leg quotes.
+                import math
+                prices=[]
+                for i in range(1,info['legs']+1):
+                    raw_price=values.get(f'leg_{i}_odds')
+                    if not _price(raw_price):
+                        raise ValueError(f'Observed individual leg quote {i} missing')
+                    prices.append(float(str(raw_price).replace('@','').replace(',','.')))
+                product=math.prod(prices)
+                reported=float(str(values['total_odds']).replace('@','').replace(',','.'))
+                if not math.isfinite(product) or abs(product-reported)>max(.02,product*.0001):
+                    raise ValueError('Calculated combo quote differs from genuine leg prices')
         multi_game=info['family'] in ('lottery','combo','cross_game')
         if multi_game:
             if not all(str(values.get(f'leg_{i}_game') or '').strip() for i in range(1,info['legs']+1)):
@@ -70,6 +101,12 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
             required.update(f'leg_{i}_photo' for i in range(1,info['legs']+1))
         missing=required-set(k for k,v in images.items() if v)
         if missing:raise ValueError('Missing authentic images: '+', '.join(sorted(missing)))
+    if values.get('combo_quote_calculated') is True:
+        # Relabel the existing total-quote heading within the exact same
+        # premium panel; a multiplied SGP price is NOT book confirmed.
+        for e in root.iter():
+            if (e.tag.endswith('text') and (e.text or '').strip()=='GESAMTQUOTE'):
+                e.text='BERECHNETE QUOTE'
     for e in root.iter():
         key=e.get('data-field')
         if key is not None:
@@ -103,4 +140,7 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
 
 def render_png(template_key:str, values:dict, images:dict[str,bytes],*,strict:bool=True)->bytes:
     svg=render_svg(template_key,values,images,strict=strict)
-    return cairosvg.svg2png(bytestring=svg.encode('utf-8'),output_width=1080,output_height=1440)
+    root=ET.fromstring(svg)
+    height=int(float(root.get('height') or '1440'))
+    return cairosvg.svg2png(bytestring=svg.encode('utf-8'),
+                            output_width=1080,output_height=height)
