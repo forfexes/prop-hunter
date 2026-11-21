@@ -55,8 +55,8 @@ def neon_box(x,y,w,h,color=BLUE,rad=20,fill='url(#panel)'):
 def asset_slot(key,x,y,w,h):
     return f'<g id="slot-{key}" data-image-slot="{key}" data-x="{x}" data-y="{y}" data-width="{w}" data-height="{h}" data-frameless="true"/>'
 
-def svg_start():
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {W} {H}" width="{W}" height="{H}">
+def svg_start(height=H):
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {W} {height}" width="{W}" height="{height}">
 <title>PROP HUNTER NBA premium layered master</title>
 <defs>
 <linearGradient id="panel" x2="0" y2="1"><stop stop-color="#143B64" stop-opacity=".96"/><stop offset=".24" stop-color="#07172E" stop-opacity=".95"/><stop offset="1" stop-color="#020A17" stop-opacity=".98"/></linearGradient>
@@ -67,8 +67,8 @@ def svg_start():
 <linearGradient id="purple" x2="0" y2="1"><stop stop-color="#681580"/><stop offset=".4" stop-color="#250634"/><stop offset="1" stop-color="#0E0924"/></linearGradient>
 <linearGradient id="glass" x2="0" y2="1"><stop stop-color="#0D2C4B" stop-opacity=".35"/><stop offset="1" stop-color="#030C19" stop-opacity=".85"/></linearGradient>
 </defs>
-<g id="layer-01-arena-photo" data-static-background="true"><image x="0" y="0" width="1080" height="1440" preserveAspectRatio="xMidYMid slice" xlink:href="assets/arena.jpg"/></g>
-<g id="layer-02-arena-vignette">{rect(0,0,W,H,0,'#000A18','none',0,.23)}
+<g id="layer-01-arena-photo" data-static-background="true"><image x="0" y="0" width="1080" height="{height}" preserveAspectRatio="xMidYMid slice" xlink:href="assets/arena.jpg"/></g>
+<g id="layer-02-arena-vignette">{rect(0,0,W,height,0,'#000A18','none',0,.23)}
 <path d="M0 1000 H1080 V1250 H0Z" fill="#001328" opacity=".27"/></g>
 '''
 
@@ -210,8 +210,15 @@ def builder_hero(n):
 def multi(family,n):
     if family == 'builder' and n in (2,3):
         return builder_hero(n)
+    # Existing 2-6 masters remain pixel-identical. Longer originals-inspired
+    # cards preserve the premium arena and artwork but extend rows/footer.
+    if family == 'builder' and not 2 <= n <= 7:
+        raise ValueError('Builder only supports 2-7 legs')
+    if family in ('lottery','combo','cross_game') and not 2 <= n <= 12:
+        raise ValueError('Multi-game tickets only support 2-12 legs')
+    extra = max(0, n-6) * (105 if family in ('lottery','combo','cross_game') else 102)
     accent=PURPLE if family=='lottery' else GOLD
-    s=svg_start()+header(f'{FAMILIES[family]} · {n} LEGS',accent=accent)
+    s=svg_start(H+extra)+header(f'{FAMILIES[family]} · {n} LEGS',accent=accent)
     same=family in ('ladder','same_player')
     if same:
         s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-45,175,405,805)}</g>'
@@ -220,10 +227,10 @@ def multi(family,n):
         x,w,top,bottom=298,750,566,1102
     elif family in ('lottery','combo','cross_game'):
         s+=f'<g id="layer-05-multi-game-context">{txt(540,325,"INDIVIDUELLE NBA-SPIELERPROPS",31,GOLD,"middle",italic=True)}{txt(540,373,"SPIELER · MARKT · SPIELZEIT · QUOTE",23,WHITE,"middle")}</g>'
-        x,w,top,bottom=34,1012,(400 if n>=5 else 465),1099
+        x,w,top,bottom=34,1012,(400 if n>=5 else 465),1099+extra
     else:
         s+=crest_pair(267,mini=True)+match_info(845,267)
-        x,w,top,bottom=34,1012,510,1099
+        x,w,top,bottom=34,1012,510,1099+extra
     gap=12 if n>=5 else 16
     row_h=(bottom-top-gap*(n-1))/n
     s+='<g id="layer-08-legs">'
@@ -233,16 +240,16 @@ def multi(family,n):
     if family=='ladder':
         for j,key in enumerate(('l5','l10','l15','prob','stake')):
             xx=28+j*209
-            s+=neon_box(xx,1124,194,97,BLUE if j<4 else GOLD,14)
-            s+=txt(xx+17,1160,key.upper() if key!='prob' else 'MODELL',22,WHITE,italic=True)
-            s+=dynamic(xx+176,1200,key,29,GOLD,'end',True)
+            s+=neon_box(xx,1124+extra,194,97,BLUE if j<4 else GOLD,14)
+            s+=txt(xx+17,1160+extra,key.upper() if key!='prob' else 'MODELL',22,WHITE,italic=True)
+            s+=dynamic(xx+176,1200+extra,key,29,GOLD,'end',True)
     else:
-        s+=neon_box(35,1124,675,97,GOLD,16,'url(#amber)')
-        s+=txt(62,1186,'GESAMTQUOTE',32,WHITE,italic=True)+dynamic(679,1186,'total_odds',38,GOLD,'end',True)
-        s+=neon_box(726,1124,320,97,BLUE,16)
-        s+=txt(746,1186,'EINSATZ',28,WHITE,italic=True)+dynamic(1022,1186,'stake',34,GOLD,'end',True)
+        s+=neon_box(35,1124+extra,675,97,GOLD,16,'url(#amber)')
+        s+=txt(62,1186+extra,'GESAMTQUOTE',32,WHITE,italic=True)+dynamic(679,1186+extra,'total_odds',38,GOLD,'end',True)
+        s+=neon_box(726,1124+extra,320,97,BLUE,16)
+        s+=txt(746,1186+extra,'EINSATZ',28,WHITE,italic=True)+dynamic(1022,1186+extra,'stake',34,GOLD,'end',True)
     s+='</g>'
-    s+=settlement(1240,accent=accent)+'</svg>'
+    s+=settlement(1240+extra,accent=accent)+'</svg>'
     return s
 
 
