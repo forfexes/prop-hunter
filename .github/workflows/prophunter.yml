@@ -213,6 +213,7 @@ jobs:
           python test_prop_hunter_premium_delivery.py
           python -m py_compile prop_hunter_image_publication_gate.py test_prop_hunter_image_publication_gate.py
           python test_prop_hunter_image_publication_gate.py
+          python test_prop_hunter_actual_photo_payload_typed_legs.py
 
       - name: Build and post card
         env:
