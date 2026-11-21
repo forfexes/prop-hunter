@@ -19,7 +19,11 @@ WD = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 def render_owner(pick, key: str, rows: list, teams: list,
                  values: dict, details: list) -> bytes:
     from prop_hunter_original_compositor import original_card
-    family = key.rsplit("_", 1)[0]
+    render_family = key.rsplit("_", 1)[0]
+    # PROP HUNTER has exactly four user originals. Cross-game Combo/ACCA
+    # are a data variant of the user's LOTTERY original, not a generic
+    # fallback or an illicit reuse of an NBA single-match Builder.
+    family = "lottery" if render_family in ("combo", "cross_game") else render_family
     if family not in ("single", "ladder", "builder", "lottery"):
         raise ValueError("Owner original release is not approved for this family")
     if family != "lottery" and (len(teams) != 2 or any(
