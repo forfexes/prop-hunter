@@ -683,8 +683,9 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         distinct = {str(r.get('name') or '').strip().casefold() for r in rows}
         if len(distinct) != 1 or not next(iter(distinct)):
             raise ValueError('Ladder must use exactly one real athlete, not a builder')
-        if len(rows) > 5:
-            raise ValueError('Ladder has more than five rungs')
+        permitted = 6 if os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1' else 5
+        if len(rows) > permitted:
+            raise ValueError(f'Ladder has more than {permitted} verified one-athlete legs')
     if family == 'builder' and len(rows) > 7:
         raise ValueError('Builder has more than seven legs; cannot silently hide picks')
     if family == 'lottery' and len(rows) > 12:
