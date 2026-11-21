@@ -291,8 +291,13 @@ def render_nba_pick(pick, rows, teams):
             values.update(_form(rows[0].get("form")))
         else:
             verified_combo = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
-            # The owner's card keeps a numeric total even without a book-issued
-            # parlay ticket. The unconfirmed value is derived from real leg prices.
+            if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and not verified_combo:
+                # Production and settlement must obey the SAME genuine-price
+                # rule. Never repaint an existing real owner card with a
+                # calculated accumulator when its bookmaker ticket is absent.
+                raise PremiumDataMissing("Original NBA multi-leg requires observed bookmaker combined ticket")
+            # Calculated totals are retained strictly for isolated, non-owner
+            # SVG analysis/QA; they can never reach Telegram owner cards.
             values["combo_quote_verified"] = verified_combo
             values["combo_quote_calculated"] = not verified_combo
             if verified_combo:
