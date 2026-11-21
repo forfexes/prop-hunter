@@ -74,4 +74,40 @@ cross_unpriced = dict(type="lottery", features={}, leg_details=[
 assert publishable_extra_reason(same_unpriced) == "same_game_missing_confirmed_quote"
 assert publishable_extra_reason(cross_unpriced) == "cross_game_missing_confirmed_quote"
 
+
+# The nominal pick type must not let a disguised multi-leg ticket bypass the
+# global price gate in any sport. A real Ladder is ONE player/one market with
+# separately observed finite odds for every threshold.
+for sport in ("NBA", "NFL", "NHL", "MLB", "WNBA", "EUROLEAGUE", "SOCCER"):
+    two_players=[
+        dict(player="PLAYER A",market="Points Over 20.5",odds=1.72,game="A vs B"),
+        dict(player="PLAYER B",market="Points Over 25.5",odds=1.83,game="A vs B"),
+    ]
+    for wrong_type in ("single", "longshot", "ladder"):
+        fake=dict(type=wrong_type, sport=sport, player="PLAYER A",
+                  odds=3.14, leg_details=two_players,
+                  features={"combined_odds_observed":True,
+                            "combined_quote_id":"REAL-OTHER-TICKET"})
+        assert not publishable_extra(fake), (sport,wrong_type)
+    # Alternative serialized containers cannot evade the same check.
+    assert not publishable_extra(dict(type="single",sport=sport,odds=3.14,
+                                      picks=two_players))
+    same_player=[
+        dict(player="PLAYER A",market="Blocks Under 2.5",odds=1.52),
+        dict(player="PLAYER A",market="Blocks Under 1.5",odds=2.43),
+    ]
+    assert publishable_extra(dict(type="ladder",sport=sport,
+                                  player="PLAYER A",leg_details=same_player))
+    assert not publishable_extra(dict(type="ladder",sport=sport,
+        player="PLAYER A",leg_details=[same_player[0],
+        dict(same_player[1],market="Rebounds Under 1.5")]))
+    for bad in (None,float("nan"),float("inf"),1.0):
+        assert not publishable_extra(dict(type="ladder",sport=sport,
+            player="PLAYER A",leg_details=[same_player[0],
+                                           dict(same_player[1],odds=bad)]))
+    assert not publishable_extra(dict(type="ladder",sport=sport,
+        leg_details=[dict(same_player[0],player=""),
+                     dict(same_player[1],player="")]))
+print("ALL-SPORT DISGUISED MULTI-LEG / SINGLE-PLAYER LADDER GATE PASSED")
+
 print("MULTISPORT COMBO QUOTE REGRESSIONS PASSED")
