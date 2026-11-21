@@ -151,6 +151,24 @@ for hint, expected in [("NHL", "hockey"), ("NFL", "football"), ("WNBA", "basketb
     assert cards.league_of(hint)[0] == expected
 print("NFL/NHL/WNBA HAVE SEPARATE TEMPLATE SLOTS, NO CROSS-LEAGUE DESIGN FALLBACK")
 
+# Every non-NBA sport must fail before athlete/crest/network lookup, not
+# silently borrow the NBA premium master or the legacy procedural renderer.
+for isolated_sport in ("NFL", "NHL", "MLB", "WNBA", "NCAAF", "NCAAB", "EUROLEAGUE"):
+    isolated_pick = SimpleNamespace(
+        type="single", player="Synthetic Test Athlete",
+        game="TEST HOME vs TEST AWAY", source_sport=isolated_sport,
+        features={}, odds=1.91, stake=.1, market="points",
+        direction="over", point=15.5)
+    with patch.object(cards, "ON", True), \
+         patch.object(cards, "player_photo", side_effect=AssertionError("non-NBA photo fetch")), \
+         patch.object(cards, "team_logo", side_effect=AssertionError("non-NBA crest fetch")), \
+         patch.object(cards, "render", side_effect=AssertionError("legacy fallback")), \
+         patch("prop_hunter_nba_premium_adapter.render_nba_pick",
+               side_effect=AssertionError("NBA template reused")):
+        assert cards.build_for_pick(isolated_pick) is None, isolated_sport
+print("ALL SEVEN NON-NBA SPORTS BLOCK WRONG-MASTER IMAGES BEFORE NETWORK")
+
+
 # Historical two-leg combination cards must use the builder artwork for settlement repaint.
 assert originals._family('kombi2') == 'builder'
 assert originals._family('kombi') == 'builder'
