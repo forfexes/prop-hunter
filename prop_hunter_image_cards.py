@@ -591,6 +591,13 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         details = list(getattr(pick, "leg_details", None) or [])
         sport_hint = getattr(pick, "source_sport", None) or getattr(pick, "sport", None) or (details[0].get("sport") if details else None)
         league = league_of(sport_hint)
+        # The visual generator (including later in-place Telegram edits) is
+        # itself a hard release gate. Offline leg-products and forged Singles
+        # must never reach a photo, regardless of caller or workflow version.
+        from prop_hunter_combo_prices import publishable_extra
+        if not publishable_extra(pick):
+            print("OWNER_IMAGE_QUOTE_UNVERIFIED: no image produced", flush=True)
+            return None
         # Settlement re-renders bypass the new-pick publication preflight.
         # Recheck each explicitly declared leg league here as well: an NBA
         # parent cannot turn NFL/WNBA/unknown legs into NBA original artwork.
@@ -673,19 +680,9 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             return None
         subtitle = _with_kickoff(subtitle, pick)
         odds = getattr(pick, "odds", None)
-        est = bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
-        combo = typ not in ("single", "longshot", "ladder")
-        verified = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
-        # Missing a combined bookmaker price must not prevent image delivery.
-        if combo and not verified:
-            # Already-published historical photos may be repainted for settlement.
-            # Do not display their old combined price as a VERIFIED bookmaker total.
-            from prop_hunter_combo_prices import calculated_combo_odds
-            calculated = calculated_combo_odds(pick)
-            footer = (f"BERECHNETE QUOTE {calculated:.2f} · NICHT BESTÄTIGT"
-                      if calculated is not None else "GESAMTQUOTE OFFEN")
-        else:
-            footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
+        # Combined bookmaker ticket values are never inferred or multiplied
+        # in this image path. All illegitimate tickets were rejected above.
+        footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
         if stake is not None:footer += f" · Einsatz {float(stake):g}u"
         # Strict premium-only policy: no legacy/procedural card renderer for any sport.
