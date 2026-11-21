@@ -83,7 +83,7 @@ try:
             with patch.object(originals,"_text",side_effect=capture_name):
                 raw=adapter.render_nba_pick(ladder,ladder_rows,teams)
             assert (106,582) in named,(n,named)
-            if n <= 3:
+            if n == 2:
                 assert (442,382) in named,(n,named)
             else:
                 assert (442,382) not in named,(n,named)
