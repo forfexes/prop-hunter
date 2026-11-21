@@ -591,6 +591,18 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         details = list(getattr(pick, "leg_details", None) or [])
         sport_hint = getattr(pick, "source_sport", None) or getattr(pick, "sport", None) or (details[0].get("sport") if details else None)
         league = league_of(sport_hint)
+        # Settlement re-renders bypass the new-pick publication preflight.
+        # Recheck each explicitly declared leg league here as well: an NBA
+        # parent cannot turn NFL/WNBA/unknown legs into NBA original artwork.
+        # Never fetch photos or draw a card on contradictory league evidence.
+        for detail in details:
+            declared = (detail.get("sport") if isinstance(detail, dict)
+                        else getattr(detail, "sport", None))
+            if declared:
+                leg_league = league_of(declared)
+                if not leg_league or not league or leg_league[1] != league[1]:
+                    print("PREMIUM_LEG_LEAGUE_MISMATCH: publication and settlement blocked", flush=True)
+                    return None
         # Fail before any ESPN network/image fetch for sports without approved masters.
         # Other sports remain text-only until their own premium masters are approved.
         if not league or league[1] != "nba":
