@@ -5538,8 +5538,10 @@ def run(dry_run=False,sport_filter=None):
         log.info("verified builder extras: +%d", len(extras))
     except Exception as exc:
         log.warning("verified builder skipped: %s", exc)
-    from prop_hunter_combo_prices import publishable_extra
-    picks = [p for p in picks if publishable_extra(p)]
+    from prop_hunter_combo_prices import publishable_extra, prepare_calculated_combo
+    # One shared bookmaker-leg multiplication path for NBA/NFL/NHL/MLB/WNBA/EuroLeague.
+    # A combined book ticket remains authoritative when actually observed.
+    picks = [prepare_calculated_combo(p) for p in picks if publishable_extra(p)]
     from prop_hunter_form_quality import filter_tickets
     picks, form_rejected = filter_tickets(picks)
     log.info("final form evidence filter: %s", form_rejected)
