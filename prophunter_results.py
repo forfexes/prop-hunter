@@ -761,9 +761,22 @@ def _card_pick(card,picks,combos):
 _EDIT_STATE = {"gone": False, "reason": "", "gateway_unavailable": False, "unchanged": False}
 
 
+def _strict_owner_approval() -> bool:
+    """Keep the photo-immutability rule on even in older scheduled workflows.
+
+    Older results runs already set PH_NBA_OWNER_ORIGINALS=1 but may predate
+    the separate all-sport env flag. The safe default MUST be strict when the
+    user's owner originals are required.
+    """
+    flag=os.getenv("PH_OWNER_APPROVED_ALL_SPORTS")
+    if flag is not None:
+        return flag.strip()=="1"
+    return os.getenv("PH_NBA_OWNER_ORIGINALS","0").strip()=="1"
+
+
 def _original_photo_caption_only(image_pick) -> bool:
     """Protect all non-NBA/unapproved owner originals from image repainting."""
-    if os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0").strip() != "1":
+    if not _strict_owner_approval():
         return False
     if not isinstance(image_pick,dict):
         return True
@@ -934,7 +947,7 @@ def _replace_recent_text_with_photo(card: dict, visual: dict, text: str) -> bool
     delete the old text only after success, and roll back the new photo if
     deleting the old one fails. Never touch messages >=40 hours old.
     """
-    if os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0").strip()=="1":
+    if _strict_owner_approval():
         # In strict premium mode an existing text message is NEVER deleted
         # and re-posted as a different Telegram ID, even if approved artwork
         # exists. Same-message settlement is the user's hard requirement.
