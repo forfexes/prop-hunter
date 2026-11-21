@@ -5589,14 +5589,12 @@ def run(dry_run=False,sport_filter=None):
             _stake_all = float(_flat_all)
             if not (0 < _stake_all <= 5):
                 raise ValueError("flat stake outside 0..5")
+            from prop_hunter_stake_policy import apply_flat_ticket_stake
             for _ticket in picks:
-                _kind = str(getattr(_ticket, "type", "") or "").lower()
-                _market = str(getattr(_ticket, "market", "") or "").lower()
-                _profile = str(getattr(_ticket, "profile", "") or "").lower()
-                _is_lottery = any("lottery" in x for x in (_kind, _market, _profile))
-                # Some historical lottery cards use the "big" ticket type.
-                _is_lottery = _is_lottery or _kind == "big"
-                _ticket.stake = 0.10 if _is_lottery else _stake_all
+                # One published 1u ticket -> ALL its rung stakes must add up to
+                # the same unit displayed in the Telegram premium card and
+                # settled in the bankroll. Previously legs still said 0.05u.
+                apply_flat_ticket_stake(_ticket, _stake_all, lottery_amount=0.10)
         except (ValueError, TypeError) as _stake_exc:
             raise RuntimeError("Invalid PH_FLAT_ALL_STAKE") from _stake_exc
     # Strict owner originals: remove ONLY NBA picks whose authentic portrait,
