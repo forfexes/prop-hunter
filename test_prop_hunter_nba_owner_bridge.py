@@ -211,7 +211,9 @@ originals._source.cache_clear()
 # not only a monkeypatched working directory.
 APPROVED=Path(__file__).resolve().parent/"card_templates"/"approved"
 if all((APPROVED/(family+".png")).is_file() for family in ("single","ladder","builder","lottery")):
-    with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}):
+    with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1",
+                                 "PH_BLOCK_OVERPAINTED_MASTERS":"1",
+                                 "PH_ALLOW_VERIFIED_LAYERED_OWNER":"1"}):
         for family,pick,rows,_ in examples:
             raw=adapter.render_nba_pick(pick,rows,teams)
             with Image.open(BytesIO(raw)) as image:
@@ -227,11 +229,24 @@ if all((APPROVED/(family+".png")).is_file() for family in ("single","ladder","bu
                 up_to_date=(ImageChops.difference(
                     prod.convert("RGB"),clean.convert("RGB")).getbbox() is None)
             pixel_ok,pixel_reason=owner_pixel_provenance(pick,raw)
-            assert pixel_ok is up_to_date,(family,actual,pixel_reason)
+            assert up_to_date and pixel_ok,(family,actual,pixel_reason)
             print("PRODUCTION_APPROVED_ORIGINAL_OK",family,
                   "pixel_gate=",pixel_reason)
 else:
     print("OWNER_PRODUCTION_APPROVED_FILES_NOT_YET_PRESENT")
+
+# Release is NOT a bypass of the universal legacy screenshot ban. Missing
+# approved/cleaned source must reject a posted PNG before photo lookup.
+with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1",
+                              "PH_BLOCK_OVERPAINTED_MASTERS":"1",
+                              "PH_ALLOW_VERIFIED_LAYERED_OWNER":"1"}), \
+     patch.object(bridge,"BASE",CLEAN/"intentionally_missing_approved"):
+    try:
+        adapter.render_nba_pick(examples[0][1],examples[0][2],teams)
+    except ValueError as err:
+        assert "clean_plates_not_ready" in str(err),str(err)
+    else:
+        raise AssertionError("Release accepted missing or unclean owner source")
 
 # If actual approved cleaned source is not present, NO generic SVG fallback.
 with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
