@@ -1,0 +1,88 @@
+name: PROP HUNTER Real Photo & Logo Visual QA (No Telegram)
+
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/workflows/prop_hunter_real_photo_visual_qa.yml'
+permissions:
+  contents: read
+jobs:
+  real-image-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install offline image inspection dependencies
+        run: python -m pip install --quiet pillow requests numpy
+      - name: Probe REAL sourced NBA player photos and correct team crests
+        run: |
+          python - <<'PY'
+          import io, json
+          from pathlib import Path
+          from PIL import Image, ImageDraw, ImageFont
+          import prop_hunter_image_cards as cards
+          from prop_hunter_nba_premium_adapter import _photo
+          from prop_hunter_original_compositor import _source
+          from prop_hunter_owner_clean_single import render
+
+          out=Path("output/real_photo_visual_qa")
+          out.mkdir(parents=True,exist_ok=True)
+          league=cards.LEAGUES["nba"]
+          actual_name=None
+          player=None
+          for name in ("Jrue Holiday","LeBron James","Stephen Curry","Nikola Jokic"):
+              candidate=cards.player_photo(name,league)
+              if candidate is None:
+                  print("QA_REAL_PHOTO_UNAVAILABLE",name)
+                  continue
+              try:
+                  _photo(candidate,"player_photo")
+              except ValueError as exc:
+                  print("QA_PHOTO_CUTOUT_REJECTED",name,str(exc)[:90])
+                  continue
+              actual_name=name
+              player=candidate
+              break
+          logos=[cards.team_logo(name,league) for name in
+                 ("Boston Celtics","New York Knicks")]
+          evidence={
+              "source":"ESPN public team/player image APIs",
+              "player":actual_name,
+              "player_cutout":player is not None,
+              "home_logo":logos[0] is not None,
+              "away_logo":logos[1] is not None,
+              "quote":"NONE - QA, NOT A TIP",
+              "telegram":"DISABLED",
+          }
+          (out/"evidence.json").write_text(json.dumps(evidence,indent=2))
+          print("QA_REAL_IMAGE_EVIDENCE",evidence)
+          if player is None or any(logo is None for logo in logos):
+              raise SystemExit("Authentic NBA portrait/logo gate not ready")
+          # Every betting detail is explicitly EMPTY: there is no invented
+          # sportsbook quote, fixture, kickoff, tip probability or result.
+          raw=render(_source("single"),title="SINGLE",subtitle="",
+              teams=[("Boston Celtics",logos[0]),("New York Knicks",logos[1])],
+              row={"name":actual_name,"photo":player,
+                   "label":"VISUAL QA · KEIN TIPP","odds":"—",
+                   "form":"","model":{}},
+              footer="",settlement="QA · NICHT SENDEN")
+          with Image.open(io.BytesIO(raw)) as test:
+              image=test.convert("RGB")
+          d=ImageDraw.Draw(image)
+          d.text((38,image.height-35),"OFFLINE BILDKONTROLLE · KEINE WETTE",
+                 fill="#FFD966")
+          image.save(out/"real_photo_original_single_QA.png")
+          print("REAL_PHOTO_OWNER_SINGLE_RENDERED_NO_TELEGRAM")
+          PY
+      - name: Export image and no-bookmaker QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nba-owner-authentic-photo-visual-QA-only
+          path: output/real_photo_visual_qa/
+          if-no-files-found: warn
+          retention-days: 2
