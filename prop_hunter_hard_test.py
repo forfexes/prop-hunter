@@ -47,9 +47,12 @@ def test_snapshot_consensus_and_bad_row_filter():
         def execute(self): return R(self.data)
     class SB:
         def table(self,*a,**k): return Q(rows)
-    old=ph._sb_read; ph._sb_read=lambda:SB()
-    try: props=ph.fetch_snapshot_props("MLB")
-    finally: ph._sb_read=old
+    # The snapshot table was moved to the dedicated secondary Supabase
+    # client. Mock THAT exact read boundary, not the obsolete ph._sb_read
+    # (which silently returned no rows and invalidated this entire test).
+    import prop_hunter_shared_utils as shared
+    with patch.object(shared, "snapshot_supabase_client", return_value=SB()):
+        props=ph.fetch_snapshot_props("MLB")
     check(all(p.player!="Over 0.5" for p in props),"bad player row leaked")
     overs=[p for p in props if p.direction=="over"]
     check(len(overs)==1,"best-price dedupe failed")
