@@ -89,3 +89,20 @@ with patch.dict("os.environ",{"PH_OWNER_APPROVED_ALL_SPORTS":"1"}):
     assert all(not hasattr(x,"_verified_owner_png")
                for x in owner_only if x not in screened)
 print("ALL-SPORT OWNER-APPROVAL BLOCK: no overpainted unapproved premium images")
+
+# Historical records can contain model leg objects instead of dictionaries.
+# One malformed or unsupported sport must not throw and block valid NBA cards.
+with patch.dict("os.environ", {"PH_OWNER_APPROVED_ALL_SPORTS": "1"}):
+    object_leg_good=p("good", None, [N(sport="NBA")])
+    object_leg_nhl=p("nhl", None, [N(sport="NHL")])
+    object_leg_unknown=p("fake", None, [N()])
+    object_leg_nhl._verified_owner_png=PNG  # stale preview must be invalidated
+    checked=Cards()
+    accepted,blocked=filter_verified_nba_images(
+        [object_leg_good,object_leg_nhl,object_leg_unknown], checked)
+    assert accepted==[object_leg_good] and blocked==2
+    assert checked.calls==["good"]
+    assert object_leg_good._verified_owner_png==PNG
+    assert not hasattr(object_leg_nhl, "_verified_owner_png")
+    assert not hasattr(object_leg_unknown, "_verified_owner_png")
+print("HISTORICAL OBJECT-LEG PREFLIGHT SAFE: one valid NBA card survives")
