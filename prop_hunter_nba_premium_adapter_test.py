@@ -83,6 +83,20 @@ print("NBA PREMIUM STAKE FINITE-VALUE GATE PASSED")
 
 
 
+# Multiword single markets are genuine owner-Single cards, never a phantom
+# "single_points" family produced by splitting on the last underscore.
+from prop_hunter_nba_premium_adapter import _family_from_key
+for master_key in ("single_points_rebounds", "single_points_assists",
+                   "single_double_double", "single_triple_double"):
+    assert _family_from_key(master_key) == "single", master_key
+for master_key, expected_family in (
+    ("cross_game_3", "cross_game"), ("same_player_3", "same_player"),
+    ("builder_4", "builder"), ("lottery_12", "lottery"),
+    ("longshot", "longshot"),
+):
+    assert _family_from_key(master_key) == expected_family
+print("NBA MULTIWORD SINGLE ORIGINAL FAMILY PASS")
+
 # Unsupported markets must not silently use a generic single-card fallback.
 rejects(SimpleNamespace(**base,type="single",market="unapproved_unsupported_prop",
        odds=2.05),[row],contains="No approved NBA master")
