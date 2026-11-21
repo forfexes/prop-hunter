@@ -83,7 +83,9 @@ def fetch_snapshot_props(sport_filter=None):
     try:
         now_utc=datetime.now(timezone.utc)
         cutoff=(now_utc-timedelta(hours=float(os.getenv('PH_SNAPSHOT_LOOKBACK_HOURS','18')))).isoformat()
-        event_floor=(now_utc-timedelta(minutes=5)).isoformat()
+        # No stale pre-match bookmaker offers after the actual kickoff.
+        # Live/in-play tips belong to an explicitly live-priced model.
+        event_floor=now_utc.isoformat()
         event_ceiling=(now_utc+timedelta(hours=float(os.getenv('PH_SNAPSHOT_EVENT_HORIZON_HOURS','18')))).isoformat()
         fields=('sport,league,source_event_id,player_name,market,market_key,direction,line,odds_decimal,commence_time,created_at,home_team,away_team,bookmaker,source,raw')
         max_rows=max(5000,min(50000,int(os.getenv('PH_SNAPSHOT_MAX_ROWS','30000'))))
@@ -137,7 +139,7 @@ def fetch_snapshot_props(sport_filter=None):
                 ct_check=datetime.fromisoformat(str(ct_raw).replace('Z','+00:00'))
                 if ct_check.tzinfo is None:ct_check=ct_check.replace(tzinfo=timezone.utc)
                 now_utc=datetime.now(timezone.utc)
-                if ct_check < now_utc-timedelta(minutes=5):continue
+                if ct_check <= now_utc:continue  # already started: pre-match quote is stale
                 if ct_check > now_utc+timedelta(hours=float(os.getenv('PH_SNAPSHOT_EVENT_HORIZON_HOURS','72'))):continue
             except Exception:continue
             try:odds=float(r.get('odds_decimal'))
