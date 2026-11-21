@@ -776,10 +776,19 @@ def _strict_owner_approval() -> bool:
 
 def _original_photo_caption_only(image_pick) -> bool:
     """Preserve the SAME Telegram photo: results update its caption only."""
-    # No image repaint is permitted while the source compositor still covers
-    # original art with opaque rectangles. This includes historic NBA images.
+    # The old overlay/screenshot compositor must NEVER modify Telegram
+    # media. Only NEW photos explicitly tagged after a pixel-verified
+    # layered source render can receive a result inside the SAME photo.
+    # Historic screenshots (even if card_design_version=5) stay caption-only.
     if os.getenv("PH_BLOCK_OVERPAINTED_MASTERS", "0").strip() == "1":
-        return True
+        if (not isinstance(image_pick,dict)
+                or image_pick.get("_owner_layered_original_v1") is not True
+                or os.getenv("PH_ALLOW_VERIFIED_LAYERED_OWNER", "0").strip() != "1"
+                or os.getenv("PH_OWNER_PIXEL_QA", "0").strip() != "1"):
+            return True
+        from prop_hunter_nba_owner_bridge import _layered_owner_release_ready
+        if not _layered_owner_release_ready():
+            return True
     if not _strict_owner_approval():
         return False
     if not isinstance(image_pick,dict):
