@@ -143,7 +143,8 @@ try:
         # Visual regression: the owner's Ladder must display the real athlete
         # name, not only a portrait and anonymous numbered stages. Test every
         # owner-approved rung count without Telegram or external lookups.
-        real_text=originals._text
+        import prop_hunter_owner_clean_ladder as clean_ladder
+        real_text=clean_ladder._text
         for n in (2,3,4,5):
             named=[]
             def capture_name(draw, xy, label, *args, **kwargs):
@@ -155,13 +156,11 @@ try:
                                   for i in range(n)])
             ladder_rows=[dict(row,label=f"Under {1.5+i} blocks")
                          for i in range(n)]
-            with patch.object(originals,"_text",side_effect=capture_name):
+            with patch.object(clean_ladder,"_text",side_effect=capture_name):
                 raw=adapter.render_nba_pick(ladder,ladder_rows,teams)
-            assert (106,582) in named,(n,named)
-            if n == 2:
-                assert (442,382) in named,(n,named)
-            else:
-                assert (442,382) not in named,(n,named)
+            # Both original hero name and one-player banner stay readable.
+            assert (443,332) in named,(n,named)
+            assert (127,650) in named,(n,named)
             with Image.open(BytesIO(raw)) as proof:
                 assert proof.width==1080 and proof.height>=1100
             outdir.joinpath(f"ladder_{n}_name_fixed.png").write_bytes(raw)
