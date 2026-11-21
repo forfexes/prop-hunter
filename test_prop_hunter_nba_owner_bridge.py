@@ -171,6 +171,26 @@ finally:
     bridge.BASE=old_base
     originals._source.cache_clear()
 
+# Clean approved owner originals MUST NOT be masked a second time.
+# A synthetic preview is allowed in offline QA; never send it to Telegram.
+# Guard the actual compositor against accidental reintroduction of the
+# legacy screenshot cover-up functions after the clean plate is loaded.
+def _legacy_coverup_forbidden(*_args, **_kwargs):
+    raise AssertionError("Legacy screenshot overpainting on a clean owner master")
+with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS":"1"}), \
+     patch.object(originals, "_erase_template_head_remnants",
+                  side_effect=_legacy_coverup_forbidden), \
+     patch.object(originals, "_fade_baked_lottery_arm",
+                  side_effect=_legacy_coverup_forbidden), \
+     patch.object(originals, "_clean_hero",
+                  side_effect=_legacy_coverup_forbidden):
+    for family,pick,rows,_ in examples:
+        data=adapter.render_nba_pick(pick,rows,teams)
+        with Image.open(BytesIO(data)) as verification:
+            assert verification.format=="PNG" and verification.width==1080
+        print("CLEAN_PLATE_NO_LEGACY_MASK_QA",family)
+print("CLEAN OWNER COMPOSITOR WITHOUT SAMPLE OVERPAINT PASSED")
+
 # Approval-gate: exercise the actual checked-in approved production files,
 # not only a monkeypatched working directory.
 APPROVED=Path(__file__).resolve().parent/"card_templates"/"approved"
