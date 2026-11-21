@@ -700,7 +700,7 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
     approved_plate = (APPROVED_MASTER / (family + '.png')).is_file()
     approved_single = family == 'single' and approved_plate
     im = _source(family).copy()
-    if family == 'single' and approved_single:
+    if family == 'single' and approved_single and os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1':
         # A real sample-free owner source is already loaded. Render its
         # verified dynamic photo/crests/text in separate transparent layers;
         # DO NOT call legacy opaque masks over an uploaded screenshot.
