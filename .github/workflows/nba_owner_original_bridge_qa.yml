@@ -45,6 +45,7 @@ jobs:
               text=Path(wf).read_text()
               assert "PH_NBA_OWNER_ORIGINALS: '1'" in text, wf
               assert "PH_NBA_PREMIUM_V2_REQUIRE: '1'" in text, wf
+              assert "PH_OWNER_PIXEL_QA: '1'" in text, wf
               assert 'python test_prop_hunter_nba_owner_bridge.py' in text, wf
           for family in ('single','ladder','builder','lottery'):
               path=Path('card_templates/approved')/(family+'.png')
