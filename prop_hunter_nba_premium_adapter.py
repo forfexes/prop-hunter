@@ -92,6 +92,11 @@ def _template(pick, rows):
     if typ == "longshot":
         if n != 1:
             raise PremiumDataMissing("Longshot requires exactly one verified selection")
+        # Longshot is a single-leg payout variant, not a bypass of approved
+        # markets or observed direction/threshold integrity checks.
+        _template({"type": "single", "market": _get(pick, "market"),
+                   "direction": _get(pick, "direction"),
+                   "point": _get(pick, "point")}, rows)
         return "longshot"
     if typ == "single" and n == 1:
         # Real source picks often store the numeric line and direction as
