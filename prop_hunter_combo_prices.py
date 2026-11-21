@@ -89,13 +89,22 @@ def prepare_calculated_combo(obj):
     return obj
 
 def publishable_extra(obj):
-    """Publish combos based on observed leg quotes, not a combined-price gate."""
-    if value(obj, 'type') in {'single', 'ladder'} or confirmed_ticket(obj):
+    """Only publish an actual, identified bookmaker combined ticket.
+
+    This filter applies to NBA, NFL, NHL, MLB, WNBA, EuroLeague and other
+    leagues alike. A mathematically valid leg-odds product is NOT a bookmaker
+    quote for a bookable multi-leg ticket, even for cross-game parlays.
+    Single picks and genuine one-player ladder stages are priced separately.
+    """
+    if str(value(obj, 'type') or '').strip().lower() in {'single', 'longshot', 'ladder'}:
         return True
-    # Missing combined bookmaker price must not suppress an otherwise valid combo.
-    # Require observed, positive individual leg quotes; the presentation layer
-    # must clearly mark any resulting product as calculated, not bookable.
-    return calculated_combo_odds(obj) is not None
+    if not confirmed_ticket(obj):
+        return False
+    try:
+        price = float(value(obj, 'odds'))
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return math.isfinite(price) and price > 1
 
 
 def quote_withdrawal_reason(ticket):
