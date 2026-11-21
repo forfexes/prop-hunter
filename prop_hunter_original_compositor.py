@@ -600,10 +600,10 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
             raise ValueError('Ladder must use exactly one real athlete, not a builder')
         if len(rows) > 5:
             raise ValueError('Ladder has more than five rungs')
-    if family == 'builder' and len(rows) > 6:
-        raise ValueError('Builder has more than six legs; cannot silently hide picks')
-    if family == 'lottery' and len(rows) > 9:
-        raise ValueError('Lottery has more than nine legs; cannot silently hide picks')
+    if family == 'builder' and len(rows) > 7:
+        raise ValueError('Builder has more than seven legs; cannot silently hide picks')
+    if family == 'lottery' and len(rows) > 12:
+        raise ValueError('Lottery has more than twelve legs; cannot silently hide picks')
     if family in ('builder', 'lottery'):
         subtitle = str(subtitle or '').split(' @@ ')[0]
     approved_single = family == 'single' and _single_clean_master().is_file()
@@ -745,10 +745,11 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         # Example player/team icon protrudes just above the list border.
         _rect(im, (82, 579, 150, 597), NAVY, 3)
         _rect(im, (82, 590, 646, 710), NAVY, 5, CYAN, 1)
-        for i, r in enumerate(rows[:6]):
-            _text(d, (103, 597+i*18),
+        for i, r in enumerate(rows[:7]):
+            y=597+i*(16 if len(rows)==7 else 18)
+            _text(d, (103, y),
                   f'{i+1}. {r.get("name") or ""} · {r.get("label") or ""}',
-                  15, 530, GOLD)
+                  13 if len(rows)==7 else 15, 530, GOLD)
         # Cover the whole baked-in probability/EV digits, not just their
         # left side. The original was leaking green percentage glyphs.
         _rect(im, (78, 731, 338, 782), NAVY, 5)
@@ -765,7 +766,7 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
                     fill=(148,62,197,255),width=2)
         _portrait(im, rows[0].get('photo'), (6, 62, 197, 280), rows[0].get('name') or '')
         _rect(im, (462, 280, 654, 335), (50, 18, 70, 255), 6, VIOLET, 2)
-        total_quote=re.search(r'Quote\s*(@[\d.,]+)', str(footer), re.I)
+        total_quote=re.search(r'(?:Quote|Berechnet)\s*(@[\d.,]+)', str(footer), re.I)
         _text(d, (559, 305), total_quote.group(1) if total_quote else '—',
               23, 182, GOLD, 'mm')
         _rect(im, (183, 282, 435, 326), (40, 15, 56, 255), 7, VIOLET, 2)
