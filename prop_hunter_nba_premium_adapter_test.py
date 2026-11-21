@@ -154,6 +154,20 @@ with patch.dict(os.environ, {"PH_NBA_PREMIUM_V2": "1"}), \
      patch.object(image_cards, "render", side_effect=AssertionError("Legacy card unexpectedly used")):
     via_pipeline = image_cards.build_for_pick(single)
     assert via_pipeline and Image.open(BytesIO(via_pipeline)).size == (1080,1440)
+# Verify production Longshot is treated as one-player Single artwork, with
+# no fallback into an empty multi-leg ticket or a generic legacy renderer.
+longshot=SimpleNamespace(**base,type="longshot",player="TEST ATHLETE",
+                         market="points",odds=3.25)
+with patch.object(image_cards,"ON",True), \
+     patch.object(image_cards,"player_photo",return_value=img()), \
+     patch.object(image_cards,"team_logo",return_value=img("logo")), \
+     patch.object(image_cards,"render",
+                  side_effect=AssertionError("legacy longshot renderer called")):
+    real_route=image_cards.build_for_pick(longshot)
+    assert real_route is not None,"Longshot lost before premium adapter"
+    assert Image.open(BytesIO(real_route)).size==(1080,1440)
+print("NBA PRODUCTION LONGSHOT ORIGINAL ROUTING PASS")
+
 # Test all four families through the actual production routing, not only the adapter.
 with patch.object(image_cards, "ON", True), \
      patch.object(image_cards, "player_photo", return_value=img()), \
