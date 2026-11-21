@@ -201,7 +201,19 @@ if all((APPROVED/(family+".png")).is_file() for family in ("single","ladder","bu
             with Image.open(BytesIO(raw)) as image:
                 assert image.width==1080 and image.height>=1100
                 image.verify()
-            print("PRODUCTION_APPROVED_ORIGINAL_OK",family)
+            # Compare the ACTUALLY rendered owner-card output, not a blank
+            # master PNG, against the immutable masthead and current clean plate.
+            from prop_hunter_owner_pixel_qa import owner_family,owner_pixel_provenance
+            from PIL import ImageChops
+            actual=owner_family(pick)
+            with Image.open(APPROVED/(actual+".png")) as prod, \
+                 Image.open(CLEAN/(actual+".png")) as clean:
+                up_to_date=(ImageChops.difference(
+                    prod.convert("RGB"),clean.convert("RGB")).getbbox() is None)
+            pixel_ok,pixel_reason=owner_pixel_provenance(pick,raw)
+            assert pixel_ok is up_to_date,(family,actual,pixel_reason)
+            print("PRODUCTION_APPROVED_ORIGINAL_OK",family,
+                  "pixel_gate=",pixel_reason)
 else:
     print("OWNER_PRODUCTION_APPROVED_FILES_NOT_YET_PRESENT")
 
