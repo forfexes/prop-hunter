@@ -77,6 +77,62 @@ jobs:
                  fill="#FFD966")
           image.save(out/"real_photo_original_single_QA.png")
           print("REAL_PHOTO_OWNER_SINGLE_RENDERED_NO_TELEGRAM")
+          from prop_hunter_owner_clean_ladder import render as render_ladder
+          from prop_hunter_owner_clean_builder import render as render_builder
+          from prop_hunter_owner_clean_lottery import render as render_lottery
+
+          # All additional portraits are real independently sourced ESPN NBA
+          # headshots with transparency checks. All betting lines below are
+          # visually marked QA-only; they are NEVER sent to Telegram.
+          actual_athletes=[(actual_name,player)]
+          for name in ("LeBron James","Stephen Curry","Nikola Jokic",
+                       "Luka Doncic","Jayson Tatum","Giannis Antetokounmpo",
+                       "Kevin Durant","Devin Booker","Anthony Edwards"):
+              candidate=cards.player_photo(name,league)
+              if candidate is None:
+                  continue
+              try:
+                  _photo(candidate,"player_photo")
+              except ValueError:
+                  continue
+              actual_athletes.append((name,candidate))
+              if len(actual_athletes)>=6:
+                  break
+          evidence["real_alpha_players"]=[name for name,_ in actual_athletes]
+          (out/"evidence.json").write_text(json.dumps(evidence,indent=2))
+          if len(actual_athletes)<6:
+              raise SystemExit("Insufficient real photo cutouts for 6-leg Builder/Lottery QA")
+
+          def save_qa(label,blob):
+              with Image.open(io.BytesIO(blob)) as src:
+                  verified=src.convert("RGB")
+              ImageDraw.Draw(verified).text((38,verified.height-36),
+                  "OFFLINE QA ONLY - NO REAL ODDS, FIXTURE OR TELEGRAM",
+                  fill="#FFD966")
+              verified.save(out/(label+"_real_photos_QA.png"))
+
+          home_away=[("Boston Celtics",logos[0]),("New York Knicks",logos[1])]
+          ladder_rows=[
+              {"name":actual_name,"photo":player,
+               "label":f"QA STAGE {i+1}","odds":"@—","form":""}
+              for i in range(5)]
+          save_qa("ladder5",render_ladder(_source("ladder"),
+              subtitle="",teams=home_away,rows=ladder_rows,
+              footer="",settlement="QA ONLY"))
+          builder_rows=[
+              {"name":name,"photo":photo,
+               "label":"QA MARKET","odds":"@—","form":""}
+              for name,photo in actual_athletes[:6]]
+          save_qa("builder6",render_builder(_source("builder"),
+              subtitle="",teams=home_away,rows=builder_rows,
+              footer="Quote 9.99 · Einsatz 1u",settlement="QA ONLY"))
+          lottery_rows=[
+              {**row, "game":f"QA GAME {i+1} vs QA TEAM {i+1} · 00.00.0000 00:00"}
+              for i,row in enumerate(builder_rows)]
+          save_qa("lottery6",render_lottery(_source("lottery"),
+              rows=lottery_rows,footer="Quote 9.99 · Einsatz 1u",
+              settlement="QA ONLY"))
+          print("ALL_FOUR_OWNER_FAMILIES_REAL_PHOTOS_PASS_NO_TELEGRAM")
           PY
       - name: Export image and no-bookmaker QA evidence
         if: always()
