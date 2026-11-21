@@ -41,9 +41,14 @@ def filter_verified_nba_images(picks, cards):
     strict_all=os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0").strip()=="1"
     for pick in picks:
         details=list(getattr(pick,"leg_details",None) or [])
+        # Historical builder/lottery legs may be dictionaries or model
+        # objects. A non-dict first leg must not abort the entire send batch.
+        first_leg=details[0] if details else None
+        first_sport=(first_leg.get("sport") if isinstance(first_leg,dict)
+                     else getattr(first_leg,"sport",None))
         hint=(getattr(pick,"source_sport",None)
               or getattr(pick,"sport",None)
-              or (details[0].get("sport") if details else None))
+              or first_sport)
         league=cards.league_of(hint)
         # Never retain an old validated image after price, player, league or
         # approval state changed. This applies even to legacy non-NBA routes.
