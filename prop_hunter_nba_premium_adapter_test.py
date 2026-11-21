@@ -67,6 +67,13 @@ for invalid_quote in (float("nan"), float("inf"), float("-inf"), "NaN", "Infinit
 rejects(SimpleNamespace(**base,type="single",market="points",odds=float("nan")),
         [row],contains="Invalid bookmaker price")
 print("NBA PREMIUM QUOTE FINITE-VALUE GATE PASSED")
+# Stake must be an actual nonnegative finite unit amount.
+for invalid_stake in (float("nan"), float("inf"), float("-inf"), -1, "NaN", "Infinity"):
+    rejects(SimpleNamespace(**{**base, "stake": invalid_stake},
+            type="single", player="TEST ATHLETE", market="points", odds=2.05),
+            [row], contains="Invalid stake")
+print("NBA PREMIUM STAKE FINITE-VALUE GATE PASSED")
+
 
 
 # Unsupported markets must not silently use a generic single-card fallback.
