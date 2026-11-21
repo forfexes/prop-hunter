@@ -152,6 +152,44 @@ with patch.object(image_cards, "ON", True), \
         assert rendered is not None, f"Production route rejected {family}"
         assert Image.open(BytesIO(rendered)).size == (1080, 1440), family
 
+# Extended owner-layout variants: Builder 7 and Lottery/Combo 12.
+# Every test input is synthetic and never eligible for a live Telegram post.
+extended_rows=[dict(row,name=f"TEST PLAYER {i+1}",photo=img()) for i in range(12)]
+extended_details=[
+    {"player":f"TEST PLAYER {i+1}","market":"points","odds":round(1.22+i*.01,2),
+     "game":f"TEAM {i+1} vs TEAM B {i+1}",
+     "commence_time":f"2026-11-{20+i%7:02d}T19:00:00+00:00",
+     "sport":"NBA","bookmaker":"TEST ONLY BOOKMAKER"}
+    for i in range(12)]
+calculated_feats={**feats,"combined_odds_observed":False,"combined_quote_id":""}
+builder_7=SimpleNamespace(**{**base,"features":calculated_feats},
+    type="betbuilder",odds=None,leg_details=extended_details[:7])
+lottery_12=SimpleNamespace(**{**base,"features":calculated_feats},
+    type="lottery",odds=None,leg_details=extended_details)
+cross_12=SimpleNamespace(**{**base,"features":{**calculated_feats,
+                         "combo_scope":"cross_game"}},
+    type="betbuilder",odds=None,leg_details=extended_details)
+with patch.dict(os.environ,{"PH_NBA_OWNER_ORIGINALS":"0"}):
+    for title,pick,rows_ext,teams_ext,height in (
+        ("builder_7",builder_7,extended_rows[:7],teams,1542),
+        ("lottery_12",lottery_12,extended_rows,[],2070),
+        ("cross_game_12",cross_12,extended_rows,[],2070),
+    ):
+        raw=render_nba_pick(pick,rows_ext,teams_ext)
+        assert Image.open(BytesIO(raw)).size==(1080,height),title
+        preview_dir_extended=__import__("pathlib").Path("output/nba_premium_qa")
+        preview_dir_extended.mkdir(parents=True,exist_ok=True)
+        (preview_dir_extended/(title+".png")).write_bytes(raw)
+
+# Cross-game Combos must use the user's Lottery original when owner mode is on,
+# not silently fail solely because there is no fifth artwork family.
+from prop_hunter_nba_owner_bridge import BASE as ORIGINALS
+if (ORIGINALS/"lottery.png").is_file():
+    with patch.dict(os.environ,{"PH_NBA_OWNER_ORIGINALS":"1"}):
+        for title,pick in (("lottery_12",lottery_12),("cross_game_12",cross_12)):
+            raw=render_nba_pick(pick,extended_rows,[])
+            assert Image.open(BytesIO(raw)).width==1080,title
+
 # Never mix WNBA or other-league selections into an NBA-branded ticket.
 mixed_builder=SimpleNamespace(**base,type="betbuilder",odds=5.10,
         leg_details=[{"odds":1.7,"sport":"NBA"},
