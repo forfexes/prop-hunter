@@ -13,6 +13,7 @@ on:
       - 'test_prop_hunter_premium_delivery.py'
       - 'prop_hunter_image_publication_gate.py'
       - 'test_prop_hunter_image_publication_gate.py'
+      - 'test_prop_hunter_actual_photo_payload_typed_legs.py'
       - 'prophunter_core_1391.py'
       - 'card_templates/nba_premium_v2/**'
       - '.github/workflows/prophunter.yml'
@@ -58,6 +59,7 @@ jobs:
           python test_prop_hunter_premium_delivery.py
           python -m py_compile prop_hunter_image_publication_gate.py test_prop_hunter_image_publication_gate.py
           python test_prop_hunter_image_publication_gate.py
+          python test_prop_hunter_actual_photo_payload_typed_legs.py
       - name: Verify old card renderer is never called
         run: python -m pytest -q test_prop_hunter_premium_only.py prop_hunter_image_cards_test.py prop_hunter_nba_premium_adapter_test.py
       - name: Confirm real send AND settlement rebuild up-to-date premium artwork
