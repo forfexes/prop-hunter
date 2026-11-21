@@ -52,7 +52,8 @@ def _fixture_key(leg):
 
 
 def estimate_combo(legs, *, conditional_probabilities=None,
-                   joint_observations=None, observed_ticket=None):
+                   joint_observations=None, observed_ticket=None,
+                   allow_missing_leg_prices=False):
     """Compute labelled estimates only; never synthesise a bookmaker quote.
 
     observed_ticket optional {combined_odds_observed: True,
@@ -64,10 +65,11 @@ def estimate_combo(legs, *, conditional_probabilities=None,
     if not 2 <= len(legs) <= 20:
         raise ValueError("Formula requires 2-20 real selections")
     prices = [_positive_odds(_field(leg, "odds")) for leg in legs]
-    if any(x is None for x in prices):
+    if any(x is None for x in prices) and not allow_missing_leg_prices:
         raise ValueError("Every leg needs a finite positive individual price")
-    indicative = math.prod(prices)
-    if not math.isfinite(indicative) or indicative >= 1000000000:
+    indicative = math.prod(prices) if all(x is not None for x in prices) else None
+    if indicative is not None and (
+            not math.isfinite(indicative) or indicative >= 1000000000):
         raise ValueError("Indicative product exceeds safe numeric range")
     keys = [_fixture_key(leg) for leg in legs]
     if all(keys) and len(set(keys)) == len(keys):
@@ -76,7 +78,7 @@ def estimate_combo(legs, *, conditional_probabilities=None,
         scope = "shared_game_correlated"
     else:
         scope = "event_identity_unknown"
-    verified_legs = all(
+    verified_legs = indicative is not None and all(
         _field(leg, "odds_observed") is True
         or _field(_field(leg, "features") or {}, "odds_observed") is True
         for leg in legs
@@ -113,7 +115,7 @@ def estimate_combo(legs, *, conditional_probabilities=None,
     return {
         "leg_count": len(legs),
         "scope": scope,
-        "indicative_leg_product": round(indicative, 4),
+        "indicative_leg_product": round(indicative, 4) if indicative is not None else None,
         "indicative_label": "BERECHNET – KEINE BUCHMACHERQUOTE",
         "individual_prices_observed": verified_legs,
         "joint_probability": probability,
