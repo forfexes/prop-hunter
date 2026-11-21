@@ -5,6 +5,13 @@ on:
       - 'prop_hunter_combo_prices.py'
       - 'prophunter_core_1391.py'
       - 'prop_hunter_combo_prices_test.py'
+      - 'prop_hunter_nba_owner_bridge.py'
+      - 'prop_hunter_nba_premium_adapter.py'
+      - 'prop_hunter_nba_premium_adapter_test.py'
+      - 'prop_hunter_original_compositor.py'
+      - 'card_templates/nba_premium_v2/render_cards.py'
+      - 'card_templates/nba_premium_v2/build_masters.py'
+      - 'prop_hunter_acca_engine.py'
       - '.github/workflows/combo-odds-hardtest.yml'
   workflow_dispatch:
 jobs:
@@ -22,5 +29,11 @@ jobs:
         run: python -m py_compile prop_hunter_combo_prices.py prophunter_core_1391.py prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py prophunter_results.py prop_hunter_combo_prices_test.py prop_hunter_nba_premium_adapter_test.py
       - name: Multi-sport combo odds and settlement guard regression
         run: python prop_hunter_combo_prices_test.py
-      - name: NBA original premium card regression
+      - name: NBA premium original Builder 7, Combo/Lottery 12 tests and PNG previews
         run: python prop_hunter_nba_premium_adapter_test.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prop-hunter-7leg-builder-12leg-lottery-qa
+          path: output/nba_premium_qa/*.png
+          retention-days: 7
