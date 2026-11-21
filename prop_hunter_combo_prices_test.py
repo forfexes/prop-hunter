@@ -142,4 +142,15 @@ for key, bad in (
     row = {**qa_live_ticket, "features": {**qa_live_ticket["features"], key: bad}}
     assert not _real_ticket(row), (key, bad)
     assert not publishable_extra(row), (key, bad)
+# Old Supabase rows sometimes promote estimated flags to the root document;
+# no stale feature-only receipt may override that contradictory origin.
+for key, bad in (
+    ("combined_quote_calculated", True),
+    ("builder_odds_estimated_from_legs", True),
+    ("price_type", "derived_builder"),
+    ("price_type", "estimated"),
+):
+    root_marked = {**qa_live_ticket, key: bad}
+    assert not _real_ticket(root_marked), (key, bad)
+    assert not publishable_extra(root_marked), (key, bad)
 print("BOOKMAKER_TICKET_CONTRADICTION_HARDSTOP_OK")
