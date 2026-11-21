@@ -291,7 +291,8 @@ def render_nba_pick(pick, rows, teams):
         if typ == "ladder":
             values.update(_form(rows[0].get("form")))
         else:
-            verified_combo = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
+            from prop_hunter_combo_prices import confirmed_ticket
+            verified_combo = confirmed_ticket(pick)
             if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and not verified_combo:
                 # Production and settlement must obey the SAME genuine-price
                 # rule. Never repaint an existing real owner card with a
