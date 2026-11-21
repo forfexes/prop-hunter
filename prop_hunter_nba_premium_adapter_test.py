@@ -295,3 +295,34 @@ for family, blob in samples.items():
     (preview_dir / (family + ".png")).write_bytes(blob)
 print("NBA QA PREVIEWS: " + ", ".join(sorted(samples)))
 print("NBA PREMIUM ADAPTER PASS: verified single, ladder, builder, cross-game, lottery; authentic logos/photos; fail-closed missing tipoff/odds/assets")
+
+
+# Typed upstream leg models (not dictionaries) must render identically.  This
+# catches a production crash before any Telegram transport is attempted.
+typed_ladder = SimpleNamespace(**base, type="ladder", player="TEST ATHLETE",
+    odds=None, leg_details=[
+        SimpleNamespace(player="TEST ATHLETE", market="points", odds=1.75,
+                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER"),
+        SimpleNamespace(player="TEST ATHLETE", market="points", odds=2.45,
+                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER")])
+assert Image.open(BytesIO(render_nba_pick(typed_ladder, rungs, teams))).size == (1080, 1440)
+typed_builder = SimpleNamespace(**base, type="betbuilder", odds=5.10,
+    leg_details=[
+        SimpleNamespace(player="TEST PLAYER A", market="points", odds=1.7,
+                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER"),
+        SimpleNamespace(player="TEST PLAYER B", market="rebounds", odds=1.8,
+                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER")])
+assert Image.open(BytesIO(render_nba_pick(typed_builder, legs, teams))).size == (1080, 1440)
+typed_lottery = SimpleNamespace(**base, type="lottery", odds=18.25,
+    leg_details=[SimpleNamespace(**leg) for leg in multi_legs])
+assert Image.open(BytesIO(render_nba_pick(typed_lottery, legs, []))).size == (1080, 1440)
+typed_bad = SimpleNamespace(**base, type="betbuilder", odds=5.10,
+    leg_details=[SimpleNamespace(odds=1.7, sport="NBA"),
+                 SimpleNamespace(odds=1.8, sport="WNBA")])
+rejects(typed_bad, legs, contains="not NBA")
+# A bookmaker on typed legs is valid evidence when the parent lacks a label.
+typed_leg_book = SimpleNamespace(**{**base, "features": {"venue": "TEST ARENA",
+    "combined_odds_observed": True, "combined_quote_id": "TEST-NOT-REAL"}},
+    type="betbuilder", odds=5.10, leg_details=typed_builder.leg_details)
+assert Image.open(BytesIO(render_nba_pick(typed_leg_book, legs, teams))).width == 1080
+print("NBA TYPED LEG OBJECT COMPATIBILITY PASS: ladder/builder/lottery, bookmaker provenance and mixed-league rejection")
