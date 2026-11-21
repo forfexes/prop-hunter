@@ -155,8 +155,8 @@ def _ladder_stages_are_individual(obj, legs):
     def market_key(raw):
         # Ignore each rung's threshold while keeping the underlying prop.
         market = str(raw or '').strip().casefold()
-        market = re.sub(r'\\b(?:over|under)\\s*\\d+(?:[.,]\\d+)?', '', market)
-        market = re.sub(r'\\s+', ' ', market).strip(' -:')
+        market = re.sub(r'\b(?:over|under)\s*\d+(?:[.,]\d+)?', '', market)
+        market = re.sub(r'\s+', ' ', market).strip(' -:')
         return market
 
     markets = {market_key(value(leg, 'market') or value(obj, 'market')) for leg in legs}
