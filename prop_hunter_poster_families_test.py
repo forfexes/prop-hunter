@@ -12,12 +12,26 @@ import prop_hunter_original_compositor as originals
 from prop_hunter_original_template_registry import SPORTS, FAMILIES, template_location, all_required_templates
 from prop_hunter_image_cards import render
 
+def _render_with_fixture(*args, **kwargs):
+    """Exercise the legacy preview renderer with a known local artwork fixture.
+
+    Production must never replace missing owner assets with a synthetic design.
+    """
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory() as tmp:
+        artwork = Path(tmp) / "fixture.webp"
+        Image.new("RGB", (1122, 1402), (18, 38, 62)).save(artwork, "WEBP")
+        with patch("prop_hunter_original_template_registry.available_template",
+                   return_value=artwork):
+            return cards.render(*args, **kwargs)
+
+
 def test_family(kind, count):
     rows = [{"name": ("One Ladder Player" if kind == "ladder" else "Test Player " + str(i)), "label": "Over 20.5 Points",
              "photo": None, "form": "L10 8/10   L15 12/15", "odds": "@1.90",
              "game": "TEST HOME vs TEST AWAY · 20.11.2026 20:00"}
             for i in range(count)]
-    data = render(kind, kind.upper(), "Verified sample only", "basketball",
+    data = _render_with_fixture(kind, kind.upper(), "Verified sample only", "basketball",
                   [("Home", None), ("Away", None)], rows, "Quote @1.90", "")
     assert data[:8] == bytes([137,80,78,71,13,10,26,10])
     image = Image.open(BytesIO(data))
@@ -62,7 +76,7 @@ ladder_rows = [{"name": "One Ladder Player", "photo": None,
                 "label": f"Points Over {20+i}.5", "odds": "@1.90",
                 "form": "L10 8/10   L15 12/15"} for i in range(3)]
 with patch.object(originals, "_portrait", side_effect=record_portrait):
-    png = cards.render("ladder", "LADDER", "Single athlete / 3 rungs", "basketball", [], ladder_rows)
+    png = _render_with_fixture("ladder", "LADDER", "Single athlete / 3 rungs", "basketball", [], ladder_rows)
 assert png[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10])
 assert len(portraits) == 1, portraits
 
@@ -148,7 +162,7 @@ for rung_count in (2, 4):
     rungs = [{"name": "One Ladder Player", "photo": None,
               "label": f"Points Under {10+i}.5", "odds": "@1.90",
               "form": "L10 8/10   L15 12/15"} for i in range(rung_count)]
-    data = cards.render("ladder", "LADDER", "Verified sample", "basketball", [], rungs)
+    data = _render_with_fixture("ladder", "LADDER", "Verified sample", "basketball", [], rungs)
     assert Image.open(BytesIO(data)).size[0] == 1080
 print('VARIABLE LADDER RUNG COUNT RENDER PASSED')
 
