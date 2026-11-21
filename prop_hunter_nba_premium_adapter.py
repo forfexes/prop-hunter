@@ -247,8 +247,15 @@ def render_nba_pick(pick, rows, teams):
             values.update(_form(rows[0].get("form")))
         else:
             verified_combo = feats.get("combined_odds_observed") is True and bool(feats.get("combined_quote_id"))
-            values["total_odds"] = (_price(_get(pick, "odds")) if verified_combo
-                                   else "BERECHNET" if _get(pick, "odds") else "OFFEN")
+            # The owner's card keeps a numeric total even without a book-issued
+            # parlay ticket. The unconfirmed value is derived from real leg prices.
+            if verified_combo:
+                values["total_odds"] = _price(_get(pick, "odds"))
+            else:
+                from prop_hunter_combo_prices import calculated_combo_odds
+                calculated = calculated_combo_odds(pick)
+                values["total_odds"] = (f"{calculated:.2f}*" if calculated is not None
+                                       else "OFFEN")
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
         "single", "ladder", "builder", "lottery"):
         # No silent fallback: if a true owner-original asset is absent or its
