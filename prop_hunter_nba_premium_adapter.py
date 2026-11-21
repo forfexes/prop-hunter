@@ -199,8 +199,7 @@ def render_nba_pick(pick, rows, teams):
     # Upstream legs may be dictionaries or typed model objects; preserve
     # observed bookmaker and fixture provenance for both representations.
     details = list(_get(pick, "leg_details") or [])
-    books = {str(_get(leg, "bookmaker") or "").strip() for leg in details
-             if isinstance(leg, dict)}
+    books = {str(_get(leg, "bookmaker") or "").strip() for leg in details}
     bookmaker = feats.get("bookmaker") or _get(pick, "bookmaker")
     if not str(bookmaker or "").strip() and len(books)==1 and next(iter(books)):
         bookmaker=next(iter(books))
