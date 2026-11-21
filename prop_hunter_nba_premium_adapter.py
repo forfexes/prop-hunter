@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 import os
 import re
 import sys
+import math
 from PIL import Image
 
 MASTER_DIR = Path(__file__).resolve().parent / "card_templates" / "nba_premium_v2"
@@ -67,7 +68,7 @@ def _price(value):
         n = float(str(value).replace("@", "").strip())
     except (TypeError, ValueError):
         raise PremiumDataMissing("Verified bookmaker price missing")
-    if not 1.0 < n < 100000:
+    if not math.isfinite(n) or not 1.0 < n < 100000:
         raise PremiumDataMissing("Invalid bookmaker price")
     return f"@{n:.2f}"
 
