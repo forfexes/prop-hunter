@@ -193,9 +193,12 @@ def render_nba_pick(pick, rows, teams):
     stake = _get(pick, "stake")
     if stake is not None:
         try:
-            values["stake"] = f"{float(stake):g}u"
-        except (TypeError, ValueError):
+            stake_value = float(stake)
+        except (TypeError, ValueError, OverflowError):
+            raise PremiumDataMissing("Invalid stake") from None
+        if not math.isfinite(stake_value) or stake_value < 0:
             raise PremiumDataMissing("Invalid stake")
+        values["stake"] = f"{stake_value:g}u"
     images = {} if multi_game else {
         "home_logo": _photo(teams[0][1], "home_logo"),
         "away_logo": _photo(teams[1][1], "away_logo"),
