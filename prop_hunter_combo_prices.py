@@ -20,6 +20,14 @@ def features(obj):
 def confirmed_ticket(obj):
     f=features(obj)
     # Whitespace or placeholder IDs are not bookmaker-issued receipts.
+    # A contradictory "observed" marker cannot rehabilitate a product of
+    # individual leg prices. These flags make a same-game or cross-game total
+    # unbookable even when a stale ticket ID remains in storage.
+    if (f.get('combined_quote_calculated') is True
+            or f.get('builder_odds_estimated_from_legs') is True
+            or str(f.get('price_type') or '').strip().lower() in (
+                'estimated', 'derived_builder', 'calculated_from_leg_odds')):
+        return False
     return (f.get('combined_odds_observed') is True
             and bool(str(f.get('combined_quote_id') or '').strip()))
 
