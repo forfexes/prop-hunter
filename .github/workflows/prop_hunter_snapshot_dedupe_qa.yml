@@ -1,0 +1,37 @@
+name: PROP HUNTER Snapshot Dedupe QA
+"on":
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'prop_hunter_hard_test.py'
+      - 'prophunter.py'
+      - 'prop_hunter_shared_utils.py'
+      - 'prop_hunter_market_consensus.py'
+      - 'prop_hunter_quote_guard.py'
+      - '.github/workflows/prop_hunter_snapshot_dedupe_qa.yml'
+permissions:
+  contents: read
+jobs:
+  snapshot-hardtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TELEGRAM_TOKEN: ''
+      TELEGRAM_CHAT_ID: ''
+      SUPABASE_URL: ''
+      SUPABASE_KEY: ''
+      SUPABASE_SECONDARY_URL: ''
+      SUPABASE_SECONDARY_SERVICE_ROLE_KEY: ''
+      PH_EXPECTED_RUNTIME_VERSION: 13.10.1-KEYLESS-HARDENED
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install offline dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Compile exact snapshot boundary
+        run: python -m py_compile prophunter.py prop_hunter_hard_test.py prop_hunter_shared_utils.py
+      - name: Validate bookmaker best-price dedup and no-vig fair, offline
+        run: python prop_hunter_hard_test.py
