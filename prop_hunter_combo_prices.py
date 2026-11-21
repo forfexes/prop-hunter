@@ -68,6 +68,26 @@ def calculated_combo_odds(obj):
     return result if math.isfinite(result) and result>1.01 else None
 
 
+
+def prepare_calculated_combo(obj):
+    """Attach a calculated display quote to an unverified combo, any sport."""
+    if value(obj,'type') in {'single','ladder'} or confirmed_ticket(obj):
+        return obj
+    calculated=calculated_combo_odds(obj)
+    if calculated is None:
+        return obj
+    f=features(obj)
+    f.update(builder_odds_estimated_from_legs=True,
+             combined_odds_observed=False, price_type='calculated_from_leg_odds',
+             calculated_combined_odds=round(calculated,4))
+    if isinstance(obj,dict):
+        obj['features']=f
+        obj['odds']=round(calculated,4)
+    else:
+        setattr(obj,'features',f)
+        setattr(obj,'odds',round(calculated,4))
+    return obj
+
 def publishable_extra(obj):
     """Publish combos based on observed leg quotes, not a combined-price gate."""
     if value(obj, 'type') in {'single', 'ladder'}:
