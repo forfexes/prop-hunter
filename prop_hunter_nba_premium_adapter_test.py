@@ -55,6 +55,20 @@ rejects(SimpleNamespace(**{**base,"commence_time":None},type="single",
 rejects(SimpleNamespace(**{**base,"features":{}},type="single",
        market="points",odds=2.05),[row],contains="bookmaker")
 rejects(single,[dict(row,photo=None)],contains="player_photo")
+# Invalid numeric bookmaker values must never be rendered as @nan or @inf.
+from prop_hunter_nba_premium_adapter import _price
+for invalid_quote in (float("nan"), float("inf"), float("-inf"), "NaN", "Infinity", None, 0, 1):
+    try:
+        _price(invalid_quote)
+    except PremiumDataMissing:
+        pass
+    else:
+        raise AssertionError(f"Invalid premium quote was accepted: {invalid_quote!r}")
+rejects(SimpleNamespace(**base,type="single",market="points",odds=float("nan")),
+        [row],contains="Invalid bookmaker price")
+print("NBA PREMIUM QUOTE FINITE-VALUE GATE PASSED")
+
+
 # Unsupported markets must not silently use a generic single-card fallback.
 rejects(SimpleNamespace(**base,type="single",market="unapproved_unsupported_prop",
        odds=2.05),[row],contains="No approved NBA master")
