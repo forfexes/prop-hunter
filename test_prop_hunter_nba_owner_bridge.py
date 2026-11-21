@@ -65,6 +65,32 @@ try:
             outdir.mkdir(parents=True,exist_ok=True)
             (outdir/(family+".png")).write_bytes(raw)
             print("OWNER_NBA_PREVIEW_OK",family,len(raw))
+        # Visual regression: the owner's Ladder must display the real athlete
+        # name, not only a portrait and anonymous numbered stages. Test every
+        # owner-approved rung count without Telegram or external lookups.
+        real_text=originals._text
+        for n in (2,3,4,5):
+            named=[]
+            def capture_name(draw, xy, label, *args, **kwargs):
+                if str(label).strip()=="TEST PLAYER":
+                    named.append(tuple(xy))
+                return real_text(draw, xy, label, *args, **kwargs)
+            ladder=N(**common,type="ladder",odds=None,
+                     leg_details=[{"odds":round(1.30+i*.2,2),"sport":"NBA"}
+                                  for i in range(n)])
+            ladder_rows=[dict(row,label=f"Under {1.5+i} blocks")
+                         for i in range(n)]
+            with patch.object(originals,"_text",side_effect=capture_name):
+                raw=adapter.render_nba_pick(ladder,ladder_rows,teams)
+            assert (106,582) in named,(n,named)
+            if n <= 3:
+                assert (442,382) in named,(n,named)
+            else:
+                assert (442,382) not in named,(n,named)
+            with Image.open(BytesIO(raw)) as proof:
+                assert proof.width==1080 and proof.height>=1100
+            outdir.joinpath(f"ladder_{n}_name_fixed.png").write_bytes(raw)
+            print("OWNER_LADDER_NAME_VISIBLE_OK",n)
 finally:
     originals.APPROVED_MASTER=old_master
     bridge.BASE=old_base
