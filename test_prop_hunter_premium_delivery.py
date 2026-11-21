@@ -73,7 +73,7 @@ import sys
 from types import ModuleType
 img_func=next(n for n in root.body if isinstance(n,ast.FunctionDef)
               and n.name=="_payload_card_image")
-scope={"os":os}
+scope={"os":os,"log":Logger()}
 exec(compile(ast.Module(body=[img_func],type_ignores=[]),
              "prophunter_core_1391.py","exec"),scope)
 fake=ModuleType("prop_hunter_image_cards")
@@ -95,10 +95,19 @@ with patch.dict(sys.modules,{"prop_hunter_image_cards":fake}), \
         raise AssertionError("second owner artwork generation is forbidden")
     fake.build_for_pick=never_redraw
     card={"kind":"single","single_indices":[0]}
-    cached=N(type="single",sport="NBA",
+    cached=N(type="single",sport="NBA",odds=1.85,
+             features={"bookmaker":"QA_BOOK"},
              _verified_owner_png=b"cached authentic png bytes")
+    from prop_hunter_image_publication_gate import owner_image_signature
+    cached._verified_owner_signature=owner_image_signature(cached)
     assert scope["_payload_card_image"](card,[cached])==b"cached authentic png bytes"
     assert card["media_type"]=="photo"
     assert card["premium_required"] is True
+    # A changed ticket must kill the cached PNG and NEVER redraw or send it.
+    cached.odds=2.10
+    changed={"kind":"single","single_indices":[0]}
+    assert scope["_payload_card_image"](changed,[cached]) is None
+    assert not hasattr(cached,"_verified_owner_png")
+    assert not hasattr(cached,"_verified_owner_signature")
 
 print("PREMIUM TELEGRAM PHOTO-ONLY CONTRACT PASSED: cached identical PNG, NBA classification, preflight, no text fallbacks")
