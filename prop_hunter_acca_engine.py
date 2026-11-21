@@ -21,7 +21,7 @@ PROFILE_BANDS = {
     "aggressive": (15.0, 50.0),
     "lottery": (50.0, 300.0),
 }
-PROFILE_MAX_LEGS = {"safe": 3, "value": 5, "aggressive": 7, "lottery": 10}
+PROFILE_MAX_LEGS = {"safe": 3, "value": 5, "aggressive": 7, "lottery": 12}
 PROFILE_MIN_LEG_PROB = {"safe": 0.50, "value": 0.36, "aggressive": 0.22, "lottery": 0.10}
 PROFILE_MIN_EV = {"safe": 0.02, "value": 0.035, "aggressive": 0.055, "lottery": 0.08}
 PROFILE_FRACTION = {"safe": 0.15, "value": 0.10, "aggressive": 0.05, "lottery": 0.02}
@@ -189,7 +189,7 @@ def cross_game_accas(picks: Sequence[Any], props: Iterable[Any], PickCls: Any) -
             reverse=True,
         )[:28]
         beams = [(i,) for i in range(len(ranked))]
-        for size in range(2, min(10, len(ranked)) + 1):
+        for size in range(2, min(12, len(ranked)) + 1):
             expanded = []
             for idxs in beams:
                 legs0 = [ranked[i] for i in idxs]
