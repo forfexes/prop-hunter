@@ -5539,9 +5539,16 @@ def run(dry_run=False,sport_filter=None):
     except Exception as exc:
         log.warning("verified builder skipped: %s", exc)
     from prop_hunter_combo_prices import publishable_extra, prepare_calculated_combo
-    # One shared bookmaker-leg multiplication path for NBA/NFL/NHL/MLB/WNBA/EuroLeague.
-    # A combined book ticket remains authoritative when actually observed.
-    picks = [prepare_calculated_combo(p) for p in picks if publishable_extra(p)]
+    # Analyse ALL Combo/Builder/Lottery candidates first, including ones
+    # without a combined bookmaker ticket. Independent model probabilities
+    # and same-game conditional/joint evidence are kept separately from
+    # book prices; unbookable tickets are still blocked from Telegram.
+    formula_candidates = [prepare_calculated_combo(p) for p in picks]
+    formula_deferred = [
+        p for p in formula_candidates if not publishable_extra(p)]
+    log.info("Kombi/Builder/Lottery formula analysed: total=%d offline_unbookable=%d",
+             len(formula_candidates), len(formula_deferred))
+    picks = [p for p in formula_candidates if publishable_extra(p)]
     from prop_hunter_form_quality import filter_tickets
     picks, form_rejected = filter_tickets(picks)
     log.info("final form evidence filter: %s", form_rejected)
