@@ -775,7 +775,11 @@ def _strict_owner_approval() -> bool:
 
 
 def _original_photo_caption_only(image_pick) -> bool:
-    """Protect all non-NBA/unapproved owner originals from image repainting."""
+    """Preserve the SAME Telegram photo: results update its caption only."""
+    # No image repaint is permitted while the source compositor still covers
+    # original art with opaque rectangles. This includes historic NBA images.
+    if os.getenv("PH_BLOCK_OVERPAINTED_MASTERS", "0").strip() == "1":
+        return True
     if not _strict_owner_approval():
         return False
     if not isinstance(image_pick,dict):
