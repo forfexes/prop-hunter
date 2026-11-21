@@ -72,13 +72,42 @@ def calculated_combo_odds(obj):
 
 
 def prepare_calculated_combo(obj):
-    """Attach a calculated display quote to an unverified combo, any sport."""
-    if value(obj,'type') in {'single','ladder'} or confirmed_ticket(obj):
+    """Attach formula analysis to Combo/Builder/Lottery without inventing EV.
+
+    The mathematical leg-product is retained in a SEPARATE marked feature.
+    Real combined ticket prices, when present, remain authoritative.
+    Unknown same-game correlations never produce a fair model probability.
+    """
+    if str(value(obj, 'type') or '').lower() in {'single', 'longshot', 'ladder'}:
         return obj
-    calculated=calculated_combo_odds(obj)
-    if calculated is None:
+    legs=value(obj, 'leg_details', []) or []
+    if len(legs)<2:
         return obj
+    from premium_joint_formula import estimate_combo
     f=features(obj)
+    ticket=dict(combined_odds_observed=f.get('combined_odds_observed'),
+                combined_quote_id=f.get('combined_quote_id'),
+                odds=value(obj,'odds'))
+    try:
+        analysis=estimate_combo(
+            legs,
+            conditional_probabilities=f.get('conditional_probabilities'),
+            joint_observations=f.get('joint_observations'),
+            observed_ticket=ticket)
+    except ValueError:
+        return obj
+    calculated=analysis['indicative_leg_product']
+    f.update(formula_indicative_leg_product=calculated,
+             formula_joint_probability=analysis['joint_probability'],
+             formula_fair_odds=analysis['fair_model_odds'],
+             formula_method=analysis['joint_probability_method'],
+             formula_scope=analysis['scope'],
+             formula_ev_real_ticket_only=analysis['ev_percent_using_real_ticket_only'],
+             formula_individual_odds_verified=analysis['individual_prices_observed'])
+    if confirmed_ticket(obj):
+        return obj
+    # Preserve an honest calculation preview for offline diagnostics only.
+    # publishable_extra() still blocks an unbookable combined ticket.
     f.update(builder_odds_estimated_from_legs=True,
              combined_odds_observed=False, price_type='calculated_from_leg_odds',
              calculated_combined_odds=round(calculated,4))
@@ -89,6 +118,7 @@ def prepare_calculated_combo(obj):
         setattr(obj,'features',f)
         setattr(obj,'odds',round(calculated,4))
     return obj
+
 
 def publishable_extra(obj):
     """Only publish an actual, identified bookmaker combined ticket.
