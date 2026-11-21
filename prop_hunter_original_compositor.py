@@ -700,6 +700,14 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
     approved_plate = (APPROVED_MASTER / (family + '.png')).is_file()
     approved_single = family == 'single' and approved_plate
     im = _source(family).copy()
+    if family == 'single' and approved_single:
+        # A real sample-free owner source is already loaded. Render its
+        # verified dynamic photo/crests/text in separate transparent layers;
+        # DO NOT call legacy opaque masks over an uploaded screenshot.
+        from prop_hunter_owner_clean_single import render as render_clean_single
+        return render_clean_single(
+            im, title=title, subtitle=subtitle, teams=teams, row=rows[0],
+            footer=footer, settlement=settlement)
     if family in ('builder','lottery') and not approved_plate:
         _erase_template_head_remnants(im, family)
     # The Golden State bridge in the SINGLE screenshot is misleading for other
