@@ -663,7 +663,10 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         if combo and not verified:
             # Already-published historical photos may be repainted for settlement.
             # Do not display their old combined price as a VERIFIED bookmaker total.
-            footer = "BERECHNETE QUOTE (NICHT BUCHMACHERBESTÄTIGT)"
+            from prop_hunter_combo_prices import calculated_combo_odds
+            calculated = calculated_combo_odds(pick)
+            footer = (f"BERECHNETE QUOTE {calculated:.2f} · NICHT BESTÄTIGT"
+                      if calculated is not None else "GESAMTQUOTE OFFEN")
         else:
             footer = f"Quote @{float(odds):.2f}" if odds and typ != "ladder" else ""
         stake=getattr(pick,"stake",None)
