@@ -23,7 +23,9 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # PROP HUNTER has exactly four user originals. Cross-game Combo/ACCA
     # are a data variant of the user's LOTTERY original, not a generic
     # fallback or an illicit reuse of an NBA single-match Builder.
-    family = "lottery" if render_family in ("combo", "cross_game") else render_family
+    family = ("lottery" if render_family in ("combo", "cross_game")
+              else "ladder" if render_family == "same_player"
+              else render_family)
     if family not in ("single", "ladder", "builder", "lottery"):
         raise ValueError("Owner original release is not approved for this family")
     if family != "lottery" and (len(teams) != 2 or any(
@@ -35,6 +37,8 @@ def render_owner(pick, key: str, rows: list, teams: list,
         raise ValueError("Owner original clean plate not approved")
     if family == "ladder" and not 2 <= len(rows) <= 5:
         raise ValueError("Original Ladder accepts one athlete with 2-5 rungs")
+    # The user has no clean six-row single-athlete owner original yet.
+    # Fail closed instead of reverting to a newly designed SVG in owner mode.
     if family == "builder" and not 2 <= len(rows) <= 7:
         raise ValueError("Original Builder accepts 2-7 verified athletes")
     if family == "lottery":
@@ -77,5 +81,6 @@ def render_owner(pick, key: str, rows: list, teams: list,
     if family == "ladder":
         if len({r["name"].casefold() for r in labels}) != 1:
             raise ValueError("Original Ladder cannot mix athletes")
-    return original_card(family, family.upper(), subtitle,"NBA",teams,
+    title = "SAME PLAYER" if render_family == "same_player" else family.upper()
+    return original_card(family, title, subtitle,"NBA",teams,
                          labels,footer,values.get("settlement") or "OFFEN")
