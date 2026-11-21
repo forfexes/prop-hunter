@@ -226,21 +226,29 @@ for variant, count in [("ladder",2),("ladder",4),("ladder",5),
     out_file.write_bytes(rendered)
     assert Image.open(BytesIO(rendered)).size[0]==1080
 
-# Owner-original screenshot currently has readable space for up to four
-# cross-game fixtures. Six/nine-leg slips must fail closed until a taller
-# verified original layout exists (rather than silently hiding fixture data).
-for count in (6,9):
+# Long Lottery slips are now derived from the actual owner artwork. Every
+# real fixture, athlete and odd must remain on the enlarged card.
+for count in (6,9,12):
+    fixture=_fixture_rows("lottery",count)
+    png=originals.original_card("lottery","LOTTERY","TEST","NBA",[],
+                                fixture,"Berechnet @3.40 · Einsatz 1u","OFFEN")
+    with Image.open(BytesIO(png)) as image:
+        assert image.width==1080 and image.height>1200,(count,image.size)
+    (Path('poster_previews')/f'lottery_{count}_owner_extended.png').write_bytes(png)
+    # No unnamed fixture allowed, regardless of how many legs are drawn.
+    broken=[dict(row) for row in fixture]
+    broken[-1]["game"]=""
     try:
         originals.original_card("lottery","LOTTERY","TEST","NBA",[],
-                                _fixture_rows("lottery",count),"","OFFEN")
+                                broken,"Berechnet @3.40","OFFEN")
     except ValueError as error:
-        assert "max four legs" in str(error),str(error)
+        assert "verified name, market, price and game" in str(error),str(error)
     else:
-        raise AssertionError("Unapproved large Lottery omitted per-leg fixtures")
+        raise AssertionError("Lottery hid an unverified game in a long slip")
 
-# All builder players, not just the first three, receive a distinct photo
-# slot even when there are 4, 5 or 6 legs.
-for size in (4,5,6):
+# All builder players, not just the first three, receive a distinct
+# non-overlapping photo slot, including the 7th athlete.
+for size in (4,5,6,7):
     used=[]
     original_portrait=originals._portrait
     def capture_portrait(im,person,rect,name='',prominent=False):
@@ -251,6 +259,9 @@ for size in (4,5,6):
                                 _fixture_rows("builder",size),"Quote @2.05")
     assert len(used)==size,(size,used)
     assert len(set(used))==size,(size,used)
+    (Path('poster_previews')/f'builder_{size}_owner_extended.png').write_bytes(
+        originals.original_card("builder","BUILDER","Fixture","NBA",[],
+                                _fixture_rows("builder",size),"Berechnet @2.05"))
 
 # Every ladder row finishes above the lower box starting at y=615.
 for count in range(2,6):
