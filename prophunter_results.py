@@ -956,7 +956,7 @@ def _performance_rows(history: list) -> list:
     Singles and combo tickets count once. Ladder rungs count individually because
     each rung carries its own stake/price and therefore its own realised P/L.
     """
-    from prop_hunter_combo_prices import unpriced_sgp
+    from prop_hunter_combo_prices import unpriced_sgp, confirmed_ticket
     rows=[]
     for entry in history or []:
         for p in entry.get("picks") or []:
@@ -966,7 +966,10 @@ def _performance_rows(history: list) -> list:
                 row=dict(p); row["_bucket"]="HR/Longshots" if "hr" in str(p.get("category") or "").lower() or "home run" in str(p.get("market") or "").lower() else "Singles"
                 rows.append(row)
         for c in entry.get("kombis") or []:
-            if c.get("settlement_invalidated") or unpriced_sgp(c):
+            if (c.get("settlement_invalidated") or unpriced_sgp(c) or
+                    (c.get("type")!="ladder" and not confirmed_ticket(c))):
+                # Unquoted combo outcomes can be displayed, but estimated
+                # multiples are never a basis for realised financial ROI.
                 continue
             if c.get("type")=="ladder":
                 for leg in c.get("settlement_legs") or c.get("ladder_legs") or []:
