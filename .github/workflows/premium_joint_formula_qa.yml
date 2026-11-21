@@ -1,0 +1,40 @@
+name: Premium Joint Formula QA
+"on":
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "premium_joint_formula.py"
+      - "test_premium_joint_formula.py"
+      - "prop_hunter_combo_prices.py"
+      - "prop_hunter_combo_prices_test.py"
+      - "netrattler_combo_owner_original.py"
+      - "netrattler_stats_match_cards.py"
+      - "test_netrattler_combo_dynamic_cards.py"
+      - ".github/workflows/premium_joint_formula_qa.yml"
+permissions:
+  contents: read
+jobs:
+  formula:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TELEGRAM_TOKEN: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_CHAT_ID: ""
+      SUPABASE_URL: ""
+      SUPABASE_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install isolated formula QA
+        run: python -m pip install -q 'pytest>=8' 'Pillow>=10' 'requests>=2.31'
+      - name: Verify joint and conditional math without invented bookmaker quotes
+        run: |
+          python -m pytest -q test_premium_joint_formula.py
+      - name: Regression against all-sport quote provenance
+        run: python prop_hunter_combo_prices_test.py
+      - name: Confirm no live publication
+        run: echo 'Formula QA only; no Telegram send or Supabase mutation'
