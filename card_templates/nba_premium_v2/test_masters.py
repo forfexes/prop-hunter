@@ -20,6 +20,10 @@ for key,meta in m['templates'].items():
     assert 'Jokic' not in raw,key
     assert '1 offen' not in raw,key
     assert 'PRO TIP</text>' not in raw,key
+    if key == 'single_single':
+        # The banner already reads PRO TIP — SINGLE; do not paste a
+        # second PRO TIP label into the owner's clean player-name area.
+        assert 'PRO TIP · SINGLE' not in raw,key
     assert 'layer-01-arena-photo' in raw,key
     assert 'data-static-nba-logo="true"' in raw,key
     assert 'assets/nba_logo.png' in raw,key
