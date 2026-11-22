@@ -136,20 +136,12 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
     _text(d, (597, 553), amount.group(1) if amount else "—",
           size=24, max_width=115, color=GOLD)
     state = str(settlement or "OFFEN").strip()
+    # Match the owner's AUSWERTUNG label: one baseline, NO new black/gold
+    # sticker, NO opacity/tint layer. This leaves the original stadium floor
+    # exactly as supplied. Pending = same white as "AUSWERTUNG".
     status_color = (GREEN if "gewonnen" in state.casefold()
-                    else RED if "verloren" in state.casefold() else GOLD)
-    # Extend the original gold/black settlement ribbon into the available
-    # stadium floor; "OFFEN" must sit INSIDE a continuous footer, never
-    # float unframed to the right of the owner's AUSWERTUNG label.
-    ribbon = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    rf = ImageDraw.Draw(ribbon)
-    rf.polygon(((324, 652), (489, 652), (477, 709), (324, 709)),
-               fill=(8, 16, 25, 255))
-    rf.line(((324, 652), (489, 652), (477, 709), (324, 709)),
-            fill=(218, 166, 60, 245), width=2, joint="curve")
-    im = Image.alpha_composite(im, ribbon)
-    d = ImageDraw.Draw(im)
-    _text(d, (406, 681), state, size=21, max_width=135,
+                    else RED if "verloren" in state.casefold() else WHITE)
+    _text(d, (405, 669), state, size=21, max_width=135,
           color=status_color)
 
     scaled = im.convert("RGB").resize(
