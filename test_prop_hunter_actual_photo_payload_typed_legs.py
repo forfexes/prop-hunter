@@ -93,3 +93,23 @@ with patch.dict(sys.modules, {
 assert "_owner_layered_original_v1" not in payload["image_pick"]
 assert payload.get("media_type") != "photo"
 print("IN_PHOTO_SETTLEMENT_MARKER_REQUIRES_REAL_PIXEL_QA_PASS")
+
+# Exact uploaded user original: a new NBA Single receives the persistent
+# master-version marker only AFTER a pixel-verified image is available.
+pixel.owner_pixel_provenance = lambda pick, data: (True, "source_original_pixels_verified")
+single = N(type="single", sport="NBA", source_sport=None, leg_details=[])
+for released in (True,False):
+    payload = {"kind":"single","single_indices":[0]}
+    with patch.dict(sys.modules,{
+            "prop_hunter_image_cards":fake,
+            "prop_hunter_owner_pixel_qa":pixel}), \
+         patch.dict(os.environ,{
+            "PH_NBA_OWNER_ORIGINALS":"1",
+            "PH_BLOCK_OVERPAINTED_MASTERS":"1",
+            "PH_ALLOW_VERIFIED_LAYERED_OWNER":"1",
+            "PH_OWNER_PIXEL_QA":"1",
+            "PH_NBA_USER_SINGLE_20261122":"1" if released else "0"}):
+        assert render(payload,[single]) == b"PIXEL_QA_ONLY"
+    assert payload["image_pick"]["_owner_layered_original_v1"] is True
+    assert payload["image_pick"].get("_owner_single_master_20261122") is (True if released else None)
+print("OWNER_SINGLE_VERSION_PERSISTED_FOR_SETTLEMENT_PASS")
