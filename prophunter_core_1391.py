@@ -5254,6 +5254,14 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         except Exception:
             rejected["hr_build_error"] += 1
 
+    # The production photo release currently has ONLY authentic NBA owner
+    # plates. Prefer all independently qualified NBA picks BEFORE allocating
+    # scarce rescue slots, rather than selecting NFL/NHL cards that Telegram
+    # then rejects. This retains all-sports source scouting/diagnostics.
+    from prop_hunter_owner_rescue_select import select_publishable_owner_rescue
+    candidates, owner_release_stats = select_publishable_owner_rescue(candidates)
+    if owner_release_stats.get("mode") == "nba_originals_only":
+        log.info("owner original rescue pool: %s", owner_release_stats)
     diversity = os.getenv("PH_RESCUE_SPORT_MIN", "1")
     out = _rescue_select_diverse(candidates, max_picks, min_per_sport=diversity)
     from collections import Counter
