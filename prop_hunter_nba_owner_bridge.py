@@ -115,5 +115,10 @@ def render_owner(pick, key: str, rows: list, teams: list,
             raise ValueError("Original Ladder cannot mix athletes")
     title = ("SAME PLAYER" if render_family == "same_player" else
              "LONGSHOT" if render_family == "longshot" else family.upper())
-    return original_card(family, title, subtitle,"NBA",teams,
-                         labels,footer,values.get("settlement") or "OFFEN")
+    from prop_hunter_telegram_safe_zone import append_owner_margin
+    # Telegram overlays its message time/edited status at bottom right.
+    # Preserve the entire approved owner poster; append an EMPTY scanline-only
+    # metadata margin AFTER rendering (never cover original text or artwork).
+    owner_png = original_card(family, title, subtitle,"NBA",teams,
+                              labels,footer,values.get("settlement") or "OFFEN")
+    return append_owner_margin(owner_png)
