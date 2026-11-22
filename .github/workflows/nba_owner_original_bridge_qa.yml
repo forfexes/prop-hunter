@@ -13,6 +13,7 @@ name: PROP HUNTER NBA Actual Owner Originals Integration QA
       - 'prop_hunter_owner_clean_builder.py'
       - 'prop_hunter_owner_clean_lottery.py'
       - 'test_prop_hunter_nba_owner_bridge.py'
+      - 'test_prop_hunter_owner_ladder_settlement_rows.py'
       - 'prop_hunter_borderless_portrait_test.py'
       - 'prop_hunter_owner_pixel_qa.py'
       - 'test_prop_hunter_owner_pixel_qa.py'
@@ -55,13 +56,14 @@ jobs:
       - name: Compile source and run strict approved-owner adapter regression
         run: |
           python -m py_compile prop_hunter_nba_owner_bridge.py prop_hunter_nba_premium_adapter.py
-          python -m py_compile prop_hunter_original_compositor.py test_prop_hunter_nba_owner_bridge.py
+          python -m py_compile prop_hunter_original_compositor.py test_prop_hunter_nba_owner_bridge.py test_prop_hunter_owner_ladder_settlement_rows.py
           python -m py_compile prop_hunter_owner_clean_single.py prop_hunter_borderless_portrait_test.py
           python -m py_compile prop_hunter_owner_clean_ladder.py test_prop_hunter_ladder_form_windows.py
           python -m py_compile prop_hunter_owner_clean_builder.py
           python -m py_compile prop_hunter_owner_clean_lottery.py
           python test_prop_hunter_nba_owner_bridge.py
           python test_prop_hunter_ladder_form_windows.py
+          python test_prop_hunter_owner_ladder_settlement_rows.py
           python prop_hunter_borderless_portrait_test.py
           python test_prop_hunter_owner_pixel_qa.py
       - name: Check BOTH Telegram workflows use approved originals and never legacy
