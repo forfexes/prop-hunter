@@ -29,8 +29,14 @@ def owner_image_signature(pick):
     keys = (
         "type", "sport", "source_sport", "game", "commence_time", "date",
         "player", "market", "point", "direction", "odds", "stake",
-        "home_team", "away_team", "leg_details", "ladder_legs",
-        "legs", "picks", "features",
+        # A confirmed card may become stale even when its decimal odds do not.
+        # The rendered probability, edge, identity and settlement all matter.
+        "probability", "edge_pct", "confidence", "value", "model",
+        "status", "result", "settlement", "settlement_status",
+        "game_id", "event_id", "bookmaker", "odds_source",
+        "combined_odds", "total_odds", "combined_quote_id",
+        "combined_odds_observed", "home_team", "away_team",
+        "leg_details", "ladder_legs", "legs", "picks", "features",
     )
     record = {}
     for key in keys:
