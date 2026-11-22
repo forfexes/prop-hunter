@@ -1346,11 +1346,20 @@ def main() -> int:
             # Einmaliges Force-Re-Render fuer gesettlete Ladders, deren Karte die
             # Stufen-Auswertung (Ist: N je Stufe) noch nicht zeigt. LADDER_RUNG_CARD_VERSION
             # hochzaehlen, um kuenftig erneut alle Ladder-Karten aufzufrischen.
-            LADDER_RUNG_CARD_VERSION=2
+            LADDER_RUNG_CARD_VERSION=3  # per-rung status now reaches the actual owner plate
             _is_graded_ladder=bool(legacy_source and legacy_source.get("type")=="ladder"
                 and str(legacy_source.get("result") or "pending").lower() in CLOSED
                 and any(l.get("result") is not None for l in (legacy_source.get("leg_details") or [])))
-            _rung_upgrade_due=_is_graded_ladder and int(card.get("ladder_rung_version") or 0)<LADDER_RUNG_CARD_VERSION
+            # Owner-only refresh, never broad repainting of old screenshot cards.
+            # A 21 Nov NBA slate may have a real 22 Nov Telegram timestamp.
+            _rung_upgrade_due=(
+                _is_graded_ladder
+                and card.get("media_type") == "photo"
+                and isinstance(card.get("image_pick"), dict)
+                and card["image_pick"].get("_owner_layered_original_v1") is True
+                and _recent_owner_visual_window(card, day)
+                and int(card.get("ladder_rung_version") or 0)<LADDER_RUNG_CARD_VERSION
+            )
             # Einmaliges Re-Render fuer Datum+Anstoss auf der Karte (auch OFFENE):
             # alte Karten zeigen noch keine Kickoff-Zeit. Nur Foto-Karten, deren
             # image_pick eine commence_time/game_date traegt, kommen in Frage.
@@ -1363,7 +1372,7 @@ def main() -> int:
             # One-time design v3 upgrade for already published PHOTO tips, even
             # while result is pending. Keep original message_id and settlement.
             # Never attempt editMessageMedia on a text-only message.
-            CARD_DESIGN_VERSION=6  # v6: same approved owner artwork plus Telegram-safe bottom margin
+            CARD_DESIGN_VERSION=7  # v7: source-original safe margin + authentic per-leg settlement
             _visual_age=(datetime.now(timezone.utc).date()-timedelta(days=14)).isoformat()
             _today_visual_only=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="today"
                                 and _recent_owner_visual_window(card, day))
