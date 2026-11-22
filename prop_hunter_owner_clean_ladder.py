@@ -20,7 +20,7 @@ def _observed_form_windows(form):
     raw = str(form or "")
     windows = []
     for n in (5, 10, 15):
-        match = re.search(r"\\bL" + str(n) + r"\\s+(\\d+)/(\\d+)\\b", raw, re.I)
+        match = re.search(r"\bL" + str(n) + r"\s+(\d+)/(\d+)\b", raw, re.I)
         if match and 0 <= int(match[1]) <= int(match[2]) <= n and int(match[2]) > 0:
             windows.append(f"L{n} {match[1]}/{match[2]}")
         else:
