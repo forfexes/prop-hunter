@@ -16,6 +16,23 @@ BASE = Path(__file__).resolve().parent / "card_templates" / "approved"
 WD = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
 
+def user_single_original_enabled(pick) -> bool:
+    """Select the same original for first Telegram send and later settlement.
+
+    Fresh picks follow the explicit rollout flag. A saved Telegram image_pick
+    carries an immutable per-card bool; a historical False prevents unrelated
+    691px cards from being silently converted to the new 512px artwork.
+    """
+    marker = (pick.get("_owner_single_master_20261122")
+              if isinstance(pick, dict)
+              else getattr(pick, "_owner_single_master_20261122", None))
+    if type(marker) is bool:
+        return marker
+    import os
+    return os.getenv("PH_NBA_USER_SINGLE_20261122", "0") == "1"
+
+
+
 def _layered_owner_release_ready() -> bool:
     """Release only if all four clean owner-derived plates are current.
 
@@ -127,7 +144,7 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # Unlike the older stadium master, it has different field geometry.
     # Never reuse the old text coordinates or silently switch to a substitute.
     if (family == "single" and title == "SINGLE"
-            and os.getenv("PH_NBA_USER_SINGLE_20261122", "0") == "1"):
+            and user_single_original_enabled(pick)):
         from prop_hunter_owner_supplied_single import render as render_supplied_single
         if len(labels) != 1:
             raise ValueError("User original SINGLE requires one actual athlete")
