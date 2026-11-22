@@ -7,6 +7,7 @@ from unittest.mock import patch
 from PIL import Image, ImageDraw
 
 from prop_hunter_owner_leg_status import leg_result_mark
+from prop_hunter_telegram_safe_zone import append_owner_margin
 import prop_hunter_owner_clean_builder as builder
 import prop_hunter_owner_clean_lottery as lottery
 import prop_hunter_original_compositor as compositor
@@ -59,7 +60,7 @@ with patch.object(compositor, "_background_portrait", return_value=True), \
 from pathlib import Path
 outdir=Path("output/nba_owner_qa")
 outdir.mkdir(parents=True,exist_ok=True)
-outdir.joinpath("builder_settlement_status_owner.png").write_bytes(result)
+outdir.joinpath("builder_settlement_status_owner.png").write_bytes(append_owner_margin(result))
 with Image.open(BytesIO(result)) as checked:
     assert checked.width == 1080
 assert "1✓" in records, records
@@ -78,7 +79,7 @@ with patch.object(compositor, "_background_portrait", return_value=True), \
         Image.open(Path(__file__).resolve().parent / "card_templates/approved/lottery.png"),
         rows=rows, footer="Quote @6.00 · Einsatz 1u",
         settlement="VERLOREN")
-outdir.joinpath("lottery_settlement_status_owner.png").write_bytes(result)
+outdir.joinpath("lottery_settlement_status_owner.png").write_bytes(append_owner_margin(result))
 with Image.open(BytesIO(result)) as checked:
     assert checked.width == 1080
 assert "1✓ ATHLETE" in records, records
