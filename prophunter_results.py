@@ -803,6 +803,35 @@ def _recent_owner_visual_window(card, slate_date, *, now_utc=None) -> bool:
     ).date().isoformat()
 
 
+def _verified_owner_rung_refresh_due(card, source, slate_day, version=3, *, now_utc=None) -> bool:
+    """Permit in-place stage-result refresh ONLY for recent owner-origin photos.
+
+    Keeps all historic screenshot images unchanged.  Results must be verified
+    for at least one saved Ladder leg; a proposed tip is not a settlement.
+    """
+    if not isinstance(card,dict) or not isinstance(source,dict):
+        return False
+    if card.get("media_type") != "photo":
+        return False
+    image_pick=card.get("image_pick")
+    if (not isinstance(image_pick,dict)
+            or image_pick.get("_owner_layered_original_v1") is not True):
+        return False
+    if source.get("type") != "ladder":
+        return False
+    if str(source.get("result") or "pending").lower() not in CLOSED:
+        return False
+    if not any(isinstance(l,dict) and l.get("result") is not None
+               for l in (source.get("leg_details") or [])):
+        return False
+    try:
+        if int(card.get("ladder_rung_version") or 0) >= version:
+            return False
+    except (TypeError,ValueError,OverflowError):
+        return False
+    return _recent_owner_visual_window(card, slate_day, now_utc=now_utc)
+
+
 def _original_photo_caption_only(image_pick) -> bool:
     """Preserve the SAME Telegram photo: results update its caption only."""
     # The old overlay/screenshot compositor must NEVER modify Telegram
@@ -1352,13 +1381,8 @@ def main() -> int:
                 and any(l.get("result") is not None for l in (legacy_source.get("leg_details") or [])))
             # Owner-only refresh, never broad repainting of old screenshot cards.
             # A 21 Nov NBA slate may have a real 22 Nov Telegram timestamp.
-            _rung_upgrade_due=(
-                _is_graded_ladder
-                and card.get("media_type") == "photo"
-                and isinstance(card.get("image_pick"), dict)
-                and card["image_pick"].get("_owner_layered_original_v1") is True
-                and _recent_owner_visual_window(card, day)
-                and int(card.get("ladder_rung_version") or 0)<LADDER_RUNG_CARD_VERSION
+            _rung_upgrade_due=_is_graded_ladder and _verified_owner_rung_refresh_due(
+                card, legacy_source, day, LADDER_RUNG_CARD_VERSION
             )
             # Einmaliges Re-Render fuer Datum+Anstoss auf der Karte (auch OFFENE):
             # alte Karten zeigen noch keine Kickoff-Zeit. Nur Foto-Karten, deren
