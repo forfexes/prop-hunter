@@ -49,12 +49,24 @@ assert pristine.size==mutated.size
 scale=pristine.width/original.width
 def scaled_rect(r):
     return tuple(round(v*scale) for v in r)
+# Source is already an EMPTY approved master. Its actual neon market
+# rails must remain visible after dynamic text is drawn. If the renderer
+# pastes old-style opaque rectangles, the two cards would look identical
+# here even though the underlying source rails were deliberately changed.
 for source_rect in ((239,401,446,423),(499,402,596,422)):
     rect=scaled_rect(source_rect)
     delta=ImageChops.difference(pristine.crop(rect),mutated.crop(rect))
-    assert delta.getbbox() is None,("TRANSPARENT_STICKER_UNDERLYING_PIXELS_VISIBLE",source_rect)
+    assert delta.getbbox() is not None,(
+        "ORIGINAL_SINGLE_NEON_RAIL_WAS_COVERED",source_rect)
 assert any(text=="Under 12.5 points" and xy==(340,410) and mx==236 for text,xy,mx in seen)
 assert any(text=="@1.76" and xy==(547,410) and mx==125 for text,xy,mx in seen)
+# No bulk tint/rectangle layer. The photographed background is untouched.
+for x,y in ((235,390),(600,390),(225,434),(610,434)):
+    sx,sy=round(x*scale),round(y*scale)
+    source_scaled=original.resize(pristine.size,Image.Resampling.LANCZOS)
+    assert pristine.getpixel((sx,sy))==source_scaled.getpixel((sx,sy)),(
+        "SINGLE_MASKED_ORIGINAL_ARTWORK",(x,y))
+
 # Pending is transparent (no added shape), the same white as the owner's
 # AUSWERTUNG text, and on the SAME baseline.
 assert any(text=="OFFEN" and xy==(405,669) and mx<=135 for text,xy,mx in seen)
@@ -68,5 +80,5 @@ for point in ((342,659),(463,697),(480,662)):
     assert pristine.getpixel((sx,sy))==source_scaled.getpixel((sx,sy)),(
         "FLOATING_BLACK_FOOTER_STATUS_STICKER",point
     )
-assert single.DARK_GREEN[3]==255 and single.DARK_GOLD[3]==255
-print("SINGLE_OPAQUE_MARKET_ODDS_NO_SHOWTHROUGH_AND_RESULT_IN_RIBBON_PASS")
+assert "p.rounded_rectangle((211, 387, 470, 437)" not in __import__("inspect").getsource(single.render)
+print("SINGLE_CLEAN_ORIGINAL_NEON_RAILS_AND_RESULT_IN_RIBBON_PASS")
