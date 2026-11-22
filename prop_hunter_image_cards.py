@@ -755,6 +755,12 @@ def snapshot(pick):
 def settled_image(data, text):
     from types import SimpleNamespace
     obj=dict(data)
+    # The persistent Telegram card snapshot, not today's global flag,
+    # determines which owner Single master may be used for its in-place
+    # settlement. Old photos without an explicit version stay on their
+    # ORIGINAL 691px artwork instead of being silently redesigned.
+    if str(obj.get("type") or "").lower()=="single":
+        obj.setdefault("_owner_single_master_20261122", False)
     obj["picks"]=[SimpleNamespace(**x) for x in obj.get("picks",[]) or []]
     summary=next((ln for ln in text.splitlines() if "Auswertung:" in ln), "")
     summary=re.sub(r"[^\w\s:.,+%/−-]", "", summary)
