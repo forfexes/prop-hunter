@@ -232,6 +232,7 @@ jobs:
           PH_NBA_PREMIUM_V2: '1'  # use layered NBA masters for verified complete picks
           PH_NBA_PREMIUM_V2_REQUIRE: '1'  # strict premium-only; incomplete photo/odds never trigger legacy image
           PH_NBA_OWNER_ORIGINALS: '1'  # settle in the SAME approved original artwork as the posted tip
+          PH_NBA_USER_SINGLE_20261122: '1'  # only source-tagged new Singles; historical originals retain old template
           PH_BLOCK_OVERPAINTED_MASTERS: '1'  # never replace original Telegram photo with opaque-rectangle redraw
           PH_ALLOW_VERIFIED_LAYERED_OWNER: '1'  # only NEW source-tagged NBA photos get same-message in-photo settlement
           PH_OWNER_PIXEL_QA: '1'  # strict approved-vs-cleaned and immutable-original pixel QA before Telegram
