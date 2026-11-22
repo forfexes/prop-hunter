@@ -11,6 +11,7 @@ import hashlib
 import os
 
 from prop_hunter_telegram_safe_zone import split_owner_margin
+from prop_hunter_nba_owner_bridge import user_single_original_enabled
 
 from PIL import Image, ImageChops
 
@@ -63,7 +64,7 @@ def owner_pixel_provenance(pick, png_bytes):
     # The user supplied a *different* 512x512 SINGLE source on 22.11.26:
     # no comparison against the unrelated old 691px stadium header.
     if (family == "single" and str(field(pick,"type","")).strip().lower()=="single"
-            and os.getenv("PH_NBA_USER_SINGLE_20261122","0")=="1"):
+            and user_single_original_enabled(pick)):
         try:
             from prop_hunter_owner_supplied_single import SOURCE, EDITABLE, SOURCE_SHA256
             if hashlib.sha256(SOURCE.read_bytes()).hexdigest()!=SOURCE_SHA256:
