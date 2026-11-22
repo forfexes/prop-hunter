@@ -225,6 +225,7 @@ jobs:
           PH_OWNER_PIXEL_QA: '1'  # strict approved-vs-cleaned and immutable-original pixel QA before Telegram
           PH_REQUIRE_TELEGRAM_SAFE_MARGIN: '1'  # require a blank bottom UI zone; no original pixels may be covered
           PH_OWNER_QUOTE_QA: '1'  # observed bookmaker singles and future pre-match kickoff only
+          PH_ENFORCE_OWNER_QUALITY: '1'  # Singles: real odds 1.70-3.00, probability >=67%, edge >=8pp
           PH_OWNER_APPROVED_ALL_SPORTS: '1'  # block unapproved other-sport or mixed-league legacy cards
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
