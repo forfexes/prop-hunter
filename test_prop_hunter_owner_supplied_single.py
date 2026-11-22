@@ -126,6 +126,33 @@ class SourceOriginalQA(unittest.TestCase):
         self.assertFalse(accepted)
         self.assertIn("masthead",why)
 
+    def test_telegram_card_version_pins_original_for_settlement(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from prop_hunter_nba_owner_bridge import user_single_original_enabled
+        from prop_hunter_image_cards import settled_image
+        import os
+        with patch.dict(os.environ,{"PH_NBA_USER_SINGLE_20261122":"1"}):
+            self.assertTrue(user_single_original_enabled(
+                SimpleNamespace(type="single")))
+            self.assertFalse(user_single_original_enabled(
+                SimpleNamespace(type="single",
+                                _owner_single_master_20261122=False)))
+        with patch.dict(os.environ,{"PH_NBA_USER_SINGLE_20261122":"0"}):
+            self.assertTrue(user_single_original_enabled(
+                SimpleNamespace(type="single",
+                                _owner_single_master_20261122=True)))
+        captured=[]
+        def capture(pick):
+            captured.append(getattr(pick,"_owner_single_master_20261122",None))
+            return b"QA_ONLY"
+        with patch("prop_hunter_image_cards.build_for_pick",side_effect=capture):
+            settled_image({"type":"single","features":{}},"Auswertung: OFFEN")
+            settled_image({"type":"single","features":{},
+                           "_owner_single_master_20261122":True},
+                          "Auswertung: GEWONNEN")
+        self.assertEqual(captured,[False,True])
+
     def test_no_translucent_opaque_repaint_runtime(self):
         import inspect
         code=inspect.getsource(owner.render)
