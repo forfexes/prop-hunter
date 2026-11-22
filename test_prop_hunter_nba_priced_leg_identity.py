@@ -74,6 +74,15 @@ class NBAPricedLegIdentityQA(unittest.TestCase):
                 render_nba_pick(pick,rows,teams)
         renderer.assert_not_called()
 
+    def test_missing_bookmaker_player_identity_must_never_be_guessed(self):
+        pick,rows,teams=examples()
+        pick.leg_details[0].pop("player")
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as renderer:
+            with self.assertRaisesRegex(PremiumDataMissing,"no verified bookmaker player identity"):
+                render_nba_pick(pick,rows,teams)
+        renderer.assert_not_called()
+
     def test_unicode_accent_is_not_another_athlete(self):
         pick,rows,teams=examples()
         rows[1]["name"]="Jaylén Brown"
