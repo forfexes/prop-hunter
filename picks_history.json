@@ -376816,8 +376816,8 @@
           "bookmaker": "bovada",
           "source": "bovada_direct"
         },
-        "result": "pending",
-        "profit": null,
+        "result": "loss",
+        "profit": -1.0,
         "closing_odds": null,
         "clv_pct": null,
         "created_at": "2026-11-21T19:47:23.664466+00:00",
@@ -376856,7 +376856,10 @@
           },
           "gamelog_n": 15,
           "venue": "Golden 1 Center|Sacramento"
-        }
+        },
+        "actual_value": 5,
+        "settled_at": "2026-11-22T14:25:33.27435+00:00",
+        "settlement_source": "prop_hunter_results"
       },
       {
         "date": "2026-11-21",
@@ -386837,9 +386840,9 @@
             "venue": "Golden 1 Center|Sacramento"
           },
           "leg_details": null,
-          "result": "pending",
-          "actual_value": null,
-          "profit": null,
+          "result": "loss",
+          "actual_value": 5,
+          "profit": -1.0,
           "stake": 1.0,
           "commence_time": "2026-11-22T03:00:00+00:00",
           "game_date": null,
@@ -386853,8 +386856,8 @@
         },
         "card_design_version": 7,
         "image_settlement_version": 1,
-        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 21.11.2026\n\n🏀 Paul George\n🏟 Boston Celtics @ Sacramento Kings\n\n• assists Under 4.5 @2.10 → 1.0u\n📈 Prob 66% · Edge +18.2% · Confidence 86/100\n💡 src:bovada | Form L5 4/5 · L15(+9 Vorsaison) avg 3.2, 86% unter Linie\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
-        "settlement_updated_at": "2026-11-22T05:24:28.414532+00:00"
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 21.11.2026\n\n🏀 Paul George\n🏟 Boston Celtics @ Sacramento Kings\n\n   ❌ • assists Under 4.5 @2.10 → 1.0u · Ergebnis 5 · -1.00u\n📈 Prob 66% · Edge +18.2% · Confidence 86/100\n💡 src:bovada | Form L5 4/5 · L15(+9 Vorsaison) avg 3.2, 86% unter Linie\n\n🏁 Auswertung: 0✅ 1❌ · -1.00u\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:49.376643+00:00"
       },
       {
         "created_at": "2026-11-21T19:47:26.841381+00:00",
@@ -388308,7 +388311,7 @@
             "source_market": "assists",
             "direction": "under",
             "point": 5.5,
-            "odds": 1.5556,
+            "odds": 1.56,
             "probability": 0.7177,
             "edge_pct": 11.7,
             "gamelog_l15_hits": 13,
@@ -388352,7 +388355,12 @@
               "gamelog_n": 15,
               "venue": "Golden 1 Center|Sacramento"
             },
-            "commence_time": "2026-11-22 03:00:00+00:00"
+            "commence_time": "2026-11-22 03:00:00+00:00",
+            "stake": 0.34,
+            "date": "2026-11-22",
+            "created_at": "2026-11-22T01:10:55.828972+00:00",
+            "result": "win",
+            "actual_value": 5
           },
           {
             "player": "Paul George",
@@ -388405,7 +388413,12 @@
               "gamelog_n": 15,
               "venue": "Golden 1 Center|Sacramento"
             },
-            "commence_time": "2026-11-22 03:00:00+00:00"
+            "commence_time": "2026-11-22 03:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-22",
+            "created_at": "2026-11-22T01:10:55.828972+00:00",
+            "result": "loss",
+            "actual_value": 5
           },
           {
             "player": "Paul George",
@@ -388458,7 +388471,12 @@
               "gamelog_n": 15,
               "venue": "Golden 1 Center|Sacramento"
             },
-            "commence_time": "2026-11-22 03:00:00+00:00"
+            "commence_time": "2026-11-22 03:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-22",
+            "created_at": "2026-11-22T01:10:55.828972+00:00",
+            "result": "loss",
+            "actual_value": 5
           }
         ],
         "odds": 1.56,
@@ -388473,7 +388491,7 @@
         "commence_time": "2026-11-22T03:00:00+00:00",
         "event_id": null,
         "probability": 0.7177,
-        "result": "pending",
+        "result": "loss",
         "created_at": "2026-11-22T01:10:55.828972+00:00",
         "ladder_legs": [
           {
@@ -388521,7 +388539,184 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
         "same_player_multistat": false,
-        "date": "2026-11-22"
+        "date": "2026-11-22",
+        "profit": -0.47,
+        "settlement_legs": [
+          {
+            "player": "Paul George",
+            "sport": "NBA",
+            "market": "Assists Under 5.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 5.5,
+            "odds": 1.56,
+            "probability": 0.7177,
+            "edge_pct": 11.7,
+            "gamelog_l15_hits": 13,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "Boston Celtics @ Sacramento Kings",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-22",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-16",
+              "gamelog_l15_hits": 13,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 5.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 5.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 2.8
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 9,
+                  "avg": 3.0
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 13,
+                  "avg": 3.2
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 9
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Golden 1 Center|Sacramento"
+            },
+            "commence_time": "2026-11-22 03:00:00+00:00",
+            "stake": 0.34,
+            "date": "2026-11-22",
+            "created_at": "2026-11-22T01:10:55.828972+00:00",
+            "result": "win",
+            "actual_value": 5
+          },
+          {
+            "player": "Paul George",
+            "sport": "NBA",
+            "market": "Assists Under 4.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 4.5,
+            "odds": 2.1,
+            "probability": 0.7177,
+            "edge_pct": 50.7,
+            "gamelog_l15_hits": 13,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "Boston Celtics @ Sacramento Kings",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-22",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-16",
+              "gamelog_l15_hits": 13,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 4.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 4.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 2.8
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 9,
+                  "avg": 3.0
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 13,
+                  "avg": 3.2
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 9
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Golden 1 Center|Sacramento"
+            },
+            "commence_time": "2026-11-22 03:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-22",
+            "created_at": "2026-11-22T01:10:55.828972+00:00",
+            "result": "loss",
+            "actual_value": 5
+          },
+          {
+            "player": "Paul George",
+            "sport": "NBA",
+            "market": "Assists Under 3.5",
+            "source_market": "assists",
+            "direction": "under",
+            "point": 3.5,
+            "odds": 3.1,
+            "probability": 0.5012,
+            "edge_pct": 55.4,
+            "gamelog_l15_hits": 10,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "Boston Celtics @ Sacramento Kings",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-22",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-16",
+              "gamelog_l15_hits": 10,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 3.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 3.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 2.8
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 7,
+                  "avg": 3.0
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 10,
+                  "avg": 3.2
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 6
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Golden 1 Center|Sacramento"
+            },
+            "commence_time": "2026-11-22 03:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-22",
+            "created_at": "2026-11-22T01:10:55.828972+00:00",
+            "result": "loss",
+            "actual_value": 5
+          }
+        ]
       },
       {
         "type": "ladder",
@@ -388813,7 +389008,8 @@
         "builder_odds_estimated_from_legs": false,
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
-        "same_player_multistat": false
+        "same_player_multistat": false,
+        "date": "2026-11-22"
       },
       {
         "type": "ladder",
@@ -389042,7 +389238,8 @@
         "builder_odds_estimated_from_legs": false,
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
-        "same_player_multistat": false
+        "same_player_multistat": false,
+        "date": "2026-11-22"
       }
     ],
     "cards": [
@@ -389075,39 +389272,183 @@
           },
           "leg_details": [
             {
+              "player": "Paul George",
+              "sport": "NBA",
               "market": "Assists Under 5.5",
-              "odds": 1.56,
-              "stake": 0.34,
-              "point": 5.5,
+              "source_market": "assists",
               "direction": "under",
+              "point": 5.5,
+              "odds": 1.56,
               "probability": 0.7177,
               "edge_pct": 11.7,
-              "bookmaker": "bovada"
+              "gamelog_l15_hits": 13,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "bovada",
+              "game": "Boston Celtics @ Sacramento Kings",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-22",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-16",
+                "gamelog_l15_hits": 13,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 5.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 5.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 2.8
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 9,
+                    "avg": 3.0
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 13,
+                    "avg": 3.2
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 9
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Golden 1 Center|Sacramento"
+              },
+              "commence_time": "2026-11-22 03:00:00+00:00",
+              "stake": 0.34,
+              "date": "2026-11-22",
+              "created_at": "2026-11-22T01:10:55.828972+00:00",
+              "result": "win",
+              "actual_value": 5
             },
             {
+              "player": "Paul George",
+              "sport": "NBA",
               "market": "Assists Under 4.5",
-              "odds": 2.1,
-              "stake": 0.33,
-              "point": 4.5,
+              "source_market": "assists",
               "direction": "under",
+              "point": 4.5,
+              "odds": 2.1,
               "probability": 0.7177,
               "edge_pct": 50.7,
-              "bookmaker": "bovada"
+              "gamelog_l15_hits": 13,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "bovada",
+              "game": "Boston Celtics @ Sacramento Kings",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-22",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-16",
+                "gamelog_l15_hits": 13,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 4.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 4.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 2.8
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 9,
+                    "avg": 3.0
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 13,
+                    "avg": 3.2
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 9
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Golden 1 Center|Sacramento"
+              },
+              "commence_time": "2026-11-22 03:00:00+00:00",
+              "stake": 0.33,
+              "date": "2026-11-22",
+              "created_at": "2026-11-22T01:10:55.828972+00:00",
+              "result": "loss",
+              "actual_value": 5
             },
             {
+              "player": "Paul George",
+              "sport": "NBA",
               "market": "Assists Under 3.5",
-              "odds": 3.1,
-              "stake": 0.33,
-              "point": 3.5,
+              "source_market": "assists",
               "direction": "under",
+              "point": 3.5,
+              "odds": 3.1,
               "probability": 0.5012,
               "edge_pct": 55.4,
-              "bookmaker": "bovada"
+              "gamelog_l15_hits": 10,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "bovada",
+              "game": "Boston Celtics @ Sacramento Kings",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-22",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-16",
+                "gamelog_l15_hits": 10,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 3.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 3.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 2.8
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 7,
+                    "avg": 3.0
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 10,
+                    "avg": 3.2
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 6
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Golden 1 Center|Sacramento"
+              },
+              "commence_time": "2026-11-22 03:00:00+00:00",
+              "stake": 0.33,
+              "date": "2026-11-22",
+              "created_at": "2026-11-22T01:10:55.828972+00:00",
+              "result": "loss",
+              "actual_value": 5
             }
           ],
-          "result": "pending",
+          "result": "loss",
           "actual_value": null,
-          "profit": null,
+          "profit": -0.47,
           "stake": 1.0,
           "commence_time": "2026-11-22T03:00:00+00:00",
           "game_date": null,
@@ -389184,8 +389525,9 @@
         },
         "card_design_version": 7,
         "image_settlement_version": 1,
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 22.11.2026\n\n🏀 Paul George\n🏟 Boston Celtics @ Sacramento Kings\n\n• Assists Under 5.5 @1.56 → 0.34u\n  📈 Prob konservativ 72% · EV konservativ +11.7% · L15 13/15\n• Assists Under 4.5 @2.10 → 0.33u\n  📈 Prob konservativ 72% · EV konservativ +50.7% · L15 13/15\n• Assists Under 3.5 @3.10 → 0.33u\n  📈 Prob konservativ 50% · EV konservativ +55.4% · L15 10/15\n\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
-        "settlement_updated_at": "2026-11-22T05:24:08.041116+00:00"
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 22.11.2026\n\n🏀 Paul George\n🏟 Boston Celtics @ Sacramento Kings\n\n✅ Assists Under 5.5 @1.56 → 0.34u · Ergebnis 5 · +0.19u\n  📈 Prob konservativ 72% · EV konservativ +11.7% · L15 13/15\n❌ Assists Under 4.5 @2.10 → 0.33u · Ergebnis 5 · -0.33u\n  📈 Prob konservativ 72% · EV konservativ +50.7% · L15 13/15\n❌ Assists Under 3.5 @3.10 → 0.33u · Ergebnis 5 · -0.33u\n  📈 Prob konservativ 50% · EV konservativ +55.4% · L15 10/15\n\n\n🏁 Auswertung: 0✅ 1❌ · -0.47u\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:01.532115+00:00",
+        "ladder_rung_version": 3
       },
       {
         "created_at": "2026-11-22T05:00:12.345643+00:00",
@@ -389529,13 +389871,13 @@
             "venue": "Madison Square Garden|New York"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-23T01:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.799,
           "edge_pct": 23.38,
           "confidence_score": null,
@@ -389543,7 +389885,10 @@
           "picks": [],
           "_owner_layered_original_v1": true
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 22.11.2026\n\n🏀 Andrew Nembhard\n🏟 Indiana Pacers @ New York Knicks\n\n• rebounds Under 2.5 @1.77 → 1.0u\n📈 Prob 80% · Edge +23.4% · Confidence 95/100\n💡 src:bovada | Form L5 5/5 · L13(+9 Vorsaison) avg 2.1, 76% unter Linie\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:06.773905+00:00"
       },
       {
         "created_at": "2026-11-22T13:52:10.905078+00:00",
@@ -389643,13 +389988,13 @@
             "venue": "Madison Square Garden|New York"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-23T01:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.7904,
           "edge_pct": 22.52,
           "confidence_score": null,
@@ -389657,7 +390002,10 @@
           "picks": [],
           "_owner_layered_original_v1": true
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 22.11.2026\n\n🏀 Jalen Brunson\n🏟 Indiana Pacers @ New York Knicks\n\n• assists Under 6.5 @1.77 → 1.0u\n📈 Prob 79% · Edge +22.5% · Confidence 95/100\n💡 src:bovada | Form L5 4/5 · L15(+10 Vorsaison) avg 4.5, 80% unter Linie\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:11.710218+00:00"
       },
       {
         "created_at": "2026-11-22T13:52:10.905086+00:00",
@@ -389758,13 +390106,13 @@
             "venue": "State Farm Arena|Atlanta"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
-          "commence_time": null,
+          "commence_time": "2026-11-22T20:30:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.7578,
           "edge_pct": 29.91,
           "confidence_score": null,
@@ -389772,7 +390120,10 @@
           "picks": [],
           "_owner_layered_original_v1": true
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 22.11.2026\n\n🏀 Cade Cunningham\n🏟 Detroit Pistons @ Atlanta Hawks\n\n• blocks Under 1.5 @2.18 → 1.0u\n📈 Prob 76% · Edge +29.9% · Confidence 92/100\n💡 src:kambi_ub | Form L5 5/5 · L14(+6 Vorsaison) avg 0.6, 85% unter Linie\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:17.886943+00:00"
       },
       {
         "created_at": "2026-11-22T13:52:10.905093+00:00",
@@ -389873,13 +390224,13 @@
             "venue": "State Farm Arena|Atlanta"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
-          "commence_time": null,
+          "commence_time": "2026-11-22T20:30:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.7215,
           "edge_pct": 20.34,
           "confidence_score": null,
@@ -389887,7 +390238,10 @@
           "picks": [],
           "_owner_layered_original_v1": true
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 22.11.2026\n\n🏀 Nickeil Alexander-Walker\n🏟 Detroit Pistons @ Atlanta Hawks\n\n• blocks Under 1.5 @1.93 → 1.0u\n📈 Prob 72% · Edge +20.3% · Confidence 91/100\n💡 src:kambi_ub | Form L5 5/5 · L15(+6 Vorsaison) avg 0.2, 100% unter Linie\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:23.156914+00:00"
       },
       {
         "created_at": "2026-11-22T13:52:10.905099+00:00",
@@ -389988,13 +390342,13 @@
             "venue": "State Farm Arena|Atlanta"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
-          "commence_time": null,
+          "commence_time": "2026-11-22T20:30:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.6905,
           "edge_pct": 19.05,
           "confidence_score": null,
@@ -390002,7 +390356,10 @@
           "picks": [],
           "_owner_layered_original_v1": true
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 22.11.2026\n\n🏀 Ausar Thompson\n🏟 Detroit Pistons @ Atlanta Hawks\n\n• blocks Under 2.5 @2.00 → 1.0u\n📈 Prob 69% · Edge +19.1% · Confidence 89/100\n💡 src:kambi_ub | Form L5 5/5 · L14(+9 Vorsaison) avg 0.9, 92% unter Linie\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:28.521559+00:00"
       },
       {
         "created_at": "2026-11-22T13:52:10.905105+00:00",
@@ -390103,13 +390460,13 @@
             "venue": "American Airlines Center|Dallas"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-23T00:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.6815,
           "edge_pct": 10.7,
           "confidence_score": null,
@@ -390117,7 +390474,10 @@
           "picks": [],
           "_owner_layered_original_v1": true
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🎯 PROP HUNTER PRO TIP — SINGLE — 22.11.2026\n\n🏀 Cooper Flagg\n🏟 Dallas Mavericks @ Utah Jazz\n\n• assists Under 6.5 @1.74 → 1.0u\n📈 Prob 68% · Edge +10.7% · Confidence 80/100\n💡 src:bovada | Form L5 4/5 · L15(+8 Vorsaison) avg 5.0, 80% unter Linie\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:33.678635+00:00"
       },
       {
         "created_at": "2026-11-22T13:52:10.905111+00:00",
@@ -390148,225 +390508,53 @@
           },
           "leg_details": [
             {
-              "player": "Nikola Jokic",
-              "sport": "NBA",
               "market": "Rebounds Under 13.5",
-              "source_market": "rebounds",
-              "direction": "under",
+              "odds": 1.45,
+              "stake": 0.25,
               "point": 13.5,
-              "odds": 1.4545,
+              "direction": "under",
               "probability": 0.7177,
               "edge_pct": 4.4,
-              "gamelog_l15_hits": 13,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Denver Nuggets @ Chicago Bulls",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-23",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 13,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 13.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 13.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 4,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 8,
-                    "avg": 9.1
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 13,
-                    "avg": 8.2667
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 9
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "United Center|Chicago"
-              },
-              "commence_time": "2026-11-23 00:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Nikola Jokic",
-              "sport": "NBA",
               "market": "Rebounds Under 12.5",
-              "source_market": "rebounds",
-              "direction": "under",
+              "odds": 1.69,
+              "stake": 0.25,
               "point": 12.5,
-              "odds": 1.6897,
+              "direction": "under",
               "probability": 0.7177,
               "edge_pct": 21.3,
-              "gamelog_l15_hits": 13,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Denver Nuggets @ Chicago Bulls",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-23",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 13,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 12.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 12.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 4,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 8,
-                    "avg": 9.1
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 13,
-                    "avg": 8.2667
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 9
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "United Center|Chicago"
-              },
-              "commence_time": "2026-11-23 00:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Nikola Jokic",
-              "sport": "NBA",
               "market": "Rebounds Under 11.5",
-              "source_market": "rebounds",
-              "direction": "under",
-              "point": 11.5,
               "odds": 2.05,
+              "stake": 0.25,
+              "point": 11.5,
+              "direction": "under",
               "probability": 0.7177,
               "edge_pct": 47.1,
-              "gamelog_l15_hits": 13,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Denver Nuggets @ Chicago Bulls",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-23",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 13,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 11.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 11.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 4,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 8,
-                    "avg": 9.1
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 13,
-                    "avg": 8.2667
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 9
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "United Center|Chicago"
-              },
-              "commence_time": "2026-11-23 00:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Nikola Jokic",
-              "sport": "NBA",
               "market": "Rebounds Under 10.5",
-              "source_market": "rebounds",
-              "direction": "under",
-              "point": 10.5,
               "odds": 2.6,
+              "stake": 0.25,
+              "point": 10.5,
+              "direction": "under",
               "probability": 0.6413,
               "edge_pct": 66.7,
-              "gamelog_l15_hits": 12,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Denver Nuggets @ Chicago Bulls",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-23",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 12,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 10.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 10.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 4,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 8,
-                    "avg": 9.1
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 12,
-                    "avg": 8.2667
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 8
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "United Center|Chicago"
-              },
-              "commence_time": "2026-11-23 00:00:00+00:00"
+              "bookmaker": "bovada"
             }
           ],
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-23T00:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.7177,
           "edge_pct": 4.4,
           "confidence_score": null,
@@ -390413,9 +390601,54 @@
               "bookmaker": "bovada"
             }
           ],
-          "_owner_layered_original_v1": true
+          "_owner_layered_original_v1": true,
+          "ladder_legs": [
+            {
+              "market": "Rebounds Under 13.5",
+              "odds": 1.45,
+              "stake": 0.25,
+              "point": 13.5,
+              "direction": "under",
+              "probability": 0.7177,
+              "edge_pct": 4.4,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Rebounds Under 12.5",
+              "odds": 1.69,
+              "stake": 0.25,
+              "point": 12.5,
+              "direction": "under",
+              "probability": 0.7177,
+              "edge_pct": 21.3,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Rebounds Under 11.5",
+              "odds": 2.05,
+              "stake": 0.25,
+              "point": 11.5,
+              "direction": "under",
+              "probability": 0.7177,
+              "edge_pct": 47.1,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Rebounds Under 10.5",
+              "odds": 2.6,
+              "stake": 0.25,
+              "point": 10.5,
+              "direction": "under",
+              "probability": 0.6413,
+              "edge_pct": 66.7,
+              "bookmaker": "bovada"
+            }
+          ]
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 22.11.2026\n\n🏀 Nikola Jokic\n🏟 Denver Nuggets @ Chicago Bulls\n\n• Rebounds Under 13.5 @1.45 → 0.25u\n  📈 Prob konservativ 72% · EV konservativ +4.4% · L15 13/15\n• Rebounds Under 12.5 @1.69 → 0.25u\n  📈 Prob konservativ 72% · EV konservativ +21.3% · L15 13/15\n• Rebounds Under 11.5 @2.05 → 0.25u\n  📈 Prob konservativ 72% · EV konservativ +47.1% · L15 13/15\n• Rebounds Under 10.5 @2.60 → 0.25u\n  📈 Prob konservativ 64% · EV konservativ +66.7% · L15 12/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:38.789929+00:00"
       },
       {
         "created_at": "2026-11-22T13:52:10.905116+00:00",
@@ -390446,172 +390679,43 @@
           },
           "leg_details": [
             {
-              "player": "Christian Braun",
-              "sport": "NBA",
               "market": "Points Under 12.5",
-              "source_market": "points",
-              "direction": "under",
-              "point": 12.5,
               "odds": 2.05,
+              "stake": 0.34,
+              "point": 12.5,
+              "direction": "under",
               "probability": 0.5695,
               "edge_pct": 16.7,
-              "gamelog_l15_hits": 11,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Denver Nuggets @ Chicago Bulls",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-23",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 11,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 12.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 12.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 3,
-                    "avg": 12.2
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 6,
-                    "avg": 10.4
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 11,
-                    "avg": 9.0
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 8
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "United Center|Chicago"
-              },
-              "commence_time": "2026-11-23 00:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Christian Braun",
-              "sport": "NBA",
               "market": "Points Under 11.5",
-              "source_market": "points",
-              "direction": "under",
-              "point": 11.5,
               "odds": 2.4,
+              "stake": 0.33,
+              "point": 11.5,
+              "direction": "under",
               "probability": 0.5695,
               "edge_pct": 36.7,
-              "gamelog_l15_hits": 11,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Denver Nuggets @ Chicago Bulls",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-23",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 11,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 11.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 11.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 3,
-                    "avg": 12.2
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 6,
-                    "avg": 10.4
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 11,
-                    "avg": 9.0
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 8
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "United Center|Chicago"
-              },
-              "commence_time": "2026-11-23 00:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Christian Braun",
-              "sport": "NBA",
               "market": "Points Under 10.5",
-              "source_market": "points",
-              "direction": "under",
-              "point": 10.5,
               "odds": 2.9,
+              "stake": 0.33,
+              "point": 10.5,
+              "direction": "under",
               "probability": 0.5695,
               "edge_pct": 65.2,
-              "gamelog_l15_hits": 11,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Denver Nuggets @ Chicago Bulls",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-23",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 11,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 10.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 10.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 3,
-                    "avg": 12.2
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 6,
-                    "avg": 10.4
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 11,
-                    "avg": 9.0
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 8
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "United Center|Chicago"
-              },
-              "commence_time": "2026-11-23 00:00:00+00:00"
+              "bookmaker": "bovada"
             }
           ],
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-23T00:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-22",
           "probability": 0.5695,
           "edge_pct": 16.7,
           "confidence_score": null,
@@ -390648,9 +390752,44 @@
               "bookmaker": "bovada"
             }
           ],
-          "_owner_layered_original_v1": true
+          "_owner_layered_original_v1": true,
+          "ladder_legs": [
+            {
+              "market": "Points Under 12.5",
+              "odds": 2.05,
+              "stake": 0.34,
+              "point": 12.5,
+              "direction": "under",
+              "probability": 0.5695,
+              "edge_pct": 16.7,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Points Under 11.5",
+              "odds": 2.4,
+              "stake": 0.33,
+              "point": 11.5,
+              "direction": "under",
+              "probability": 0.5695,
+              "edge_pct": 36.7,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Points Under 10.5",
+              "odds": 2.9,
+              "stake": 0.33,
+              "point": 10.5,
+              "direction": "under",
+              "probability": 0.5695,
+              "edge_pct": 65.2,
+              "bookmaker": "bovada"
+            }
+          ]
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 22.11.2026\n\n🏀 Christian Braun\n🏟 Denver Nuggets @ Chicago Bulls\n\n• Points Under 12.5 @2.05 → 0.34u\n  📈 Prob konservativ 57% · EV konservativ +16.7% · L15 11/15\n• Points Under 11.5 @2.40 → 0.33u\n  📈 Prob konservativ 57% · EV konservativ +36.7% · L15 11/15\n• Points Under 10.5 @2.90 → 0.33u\n  📈 Prob konservativ 57% · EV konservativ +65.2% · L15 11/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-22T14:29:43.939550+00:00"
       }
     ]
   }
