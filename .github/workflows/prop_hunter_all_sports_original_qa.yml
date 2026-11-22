@@ -9,6 +9,7 @@ name: PROP HUNTER All-Sports Original-Only QA
       - "prop_hunter_nba_owner_bridge.py"
       - "prop_hunter_owner_pixel_qa.py"
       - "test_prop_hunter_telegram_safe_zone.py"
+      - "test_prop_hunter_final_quality_gate.py"
       - "prop_hunter_image_cards.py"
       - "test_prop_hunter_mixed_league_settlement_guard.py"
       - "test_prop_hunter_image_publication_gate.py"
@@ -38,12 +39,13 @@ jobs:
       - name: Install isolated QA dependencies
         run: python -m pip install --quiet 'Pillow>=10' 'pytest>=8' 'requests>=2.31'
       - name: Syntax safety
-        run: python -m py_compile prop_hunter_image_publication_gate.py prop_hunter_image_cards.py test_prop_hunter_image_publication_gate.py test_prop_hunter_mixed_league_settlement_guard.py prop_hunter_combo_prices.py prop_hunter_telegram_safe_zone.py prop_hunter_owner_pixel_qa.py prop_hunter_nba_owner_bridge.py test_prop_hunter_telegram_safe_zone.py
+        run: python -m py_compile prop_hunter_image_publication_gate.py prop_hunter_image_cards.py test_prop_hunter_image_publication_gate.py test_prop_hunter_mixed_league_settlement_guard.py prop_hunter_combo_prices.py prop_hunter_telegram_safe_zone.py prop_hunter_owner_pixel_qa.py prop_hunter_nba_owner_bridge.py test_prop_hunter_telegram_safe_zone.py test_prop_hunter_final_quality_gate.py
       - name: No unapproved sports, old-text overlays or unverified ticket
         run: |
           python test_prop_hunter_image_publication_gate.py
           python test_prop_hunter_mixed_league_settlement_guard.py
           python test_prop_hunter_telegram_safe_zone.py
+          python test_prop_hunter_final_quality_gate.py
           python test_prop_hunter_owner_pixel_qa.py
           python prop_hunter_combo_prices_test.py
       - name: Verify live original-only approval flag
@@ -53,6 +55,7 @@ jobs:
           text=Path(".github/workflows/prophunter.yml").read_text()
           assert "PH_NBA_OWNER_ORIGINALS: '1'" in text
           assert "PH_REQUIRE_TELEGRAM_SAFE_MARGIN: '1'" in text
+          assert "PH_ENFORCE_OWNER_QUALITY: '1'" in text
           assert "PH_OWNER_APPROVED_ALL_SPORTS: '1'" in text
           assert "PH_ESTIMATED_SAME_GAME_BUILDERS: '0'" in text
           print("LIVE-SPORTS PH PREMIUM OWNER AND REAL-TICKET GATES VERIFIED")
