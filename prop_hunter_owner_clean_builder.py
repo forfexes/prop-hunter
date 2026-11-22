@@ -11,7 +11,7 @@ import re
 from PIL import Image, ImageDraw
 
 from prop_hunter_owner_clean_single import (
-    _text, _verified_time, GOLD, GREEN, RED, WHITE,
+    owner_settlement_state, _text, _verified_time, GOLD, GREEN, RED, WHITE,
 )
 
 
@@ -137,9 +137,8 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     stake = re.search(r"Einsatz\s+([\d.,]+u)", str(footer or ""), re.I)
     _text(d, (599, 746), stake.group(1) if stake else "—",
           size=22, max_width=95, color=GOLD)
-    state = str(settlement or "OFFEN").strip()
-    color = (GREEN if "gewonnen" in state.casefold()
-             else RED if "verloren" in state.casefold() else WHITE)
+    state, color = owner_settlement_state(
+        settlement, green=GREEN, red=RED, white=WHITE)
     # Owner-approved footer: a single floating AUSWERTUNG / status line,
     # WHITE when pending, without any extra sticker or opaque rectangle.
     # The sample-free stadium below the real quote has room for this text.
