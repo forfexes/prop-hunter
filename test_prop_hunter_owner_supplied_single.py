@@ -83,7 +83,7 @@ class SourceOriginalQA(unittest.TestCase):
         ):
             with self.subTest(raw=raw):
                 self.assertEqual(owner._status(raw)[0],expected)
-                self.assertTrue(self.render(settlement=raw).startswith(b"\\x89PNG"))
+                self.assertTrue(self.render(settlement=raw).startswith(b"\x89PNG"))
         for ambiguous in ("1 gewonnen · 1 verloren",
                           "0 gewonnen · 0 verloren","2 gewonnen",
                           "unverified result 1"):
