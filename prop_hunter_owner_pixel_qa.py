@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
+import hashlib
 import os
 
 from prop_hunter_telegram_safe_zone import split_owner_margin
@@ -59,6 +60,43 @@ def owner_pixel_provenance(pick, png_bytes):
         return False, "unapproved_card_family"
     if not isinstance(png_bytes, (bytes, bytearray)):
         return False, "missing_png"
+    # The user supplied a *different* 512x512 SINGLE source on 22.11.26:
+    # no comparison against the unrelated old 691px stadium header.
+    if (family == "single" and str(field(pick,"type","")).strip().lower()=="single"
+            and os.getenv("PH_NBA_USER_SINGLE_20261122","0")=="1"):
+        try:
+            from prop_hunter_owner_supplied_single import SOURCE, EDITABLE, SOURCE_SHA256
+            if hashlib.sha256(SOURCE.read_bytes()).hexdigest()!=SOURCE_SHA256:
+                return False, "owner_new_single_source_changed"
+            with Image.open(SOURCE) as original, Image.open(EDITABLE) as clean, \
+                 Image.open(BytesIO(png_bytes)) as sent:
+                if original.size!=(512,512) or clean.size!=(512,512):
+                    return False, "owner_new_single_source_size_changed"
+                # Derived master only removes the original baked OFFEN word.
+                discrepancy=ImageChops.difference(original.convert("RGB"),
+                                                   clean.convert("RGB")).getbbox()
+                if (not discrepancy or discrepancy[0]<231 or discrepancy[1]<455
+                        or discrepancy[2]>316 or discrepancy[3]>490):
+                    return False, "owner_new_single_clean_plate_overpainted"
+                if sent.format!="PNG" or sent.width!=1080:
+                    return False, "not_full_resolution_owner_png"
+                try:
+                    body, has_margin=split_owner_margin(sent,(1080,))
+                except ValueError:
+                    return False, "owner_telegram_margin_missing_or_modified"
+                if (os.getenv("PH_REQUIRE_TELEGRAM_SAFE_MARGIN","0")=="1"
+                        and not has_margin):
+                    return False, "owner_telegram_margin_missing"
+                expected=clean.convert("RGB").resize((1080,1080),
+                                                       Image.Resampling.LANCZOS)
+                # Masthead is static source artwork, never a field overlay.
+                region=tuple(round(v*1080/512) for v in (140,2,385,64))
+                if ImageChops.difference(expected.crop(region),
+                                         body.crop(region)).getbbox():
+                    return False, "owner_new_single_masthead_pixel_overlap"
+            return True, "source_original_pixels_verified"
+        except (ValueError,OSError,SyntaxError):
+            return False, "owner_new_single_source_unreadable"
     try:
         with Image.open(APPROVED / (family + ".png")) as a, \
              Image.open(CLEANED / (family + ".png")) as c, \
