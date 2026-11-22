@@ -140,7 +140,11 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     state = str(settlement or "OFFEN").strip()
     color = (GREEN if "gewonnen" in state.casefold()
              else RED if "verloren" in state.casefold() else WHITE)
-    _text(d, (371, 782), state, size=17, max_width=170, color=color)
+    # Owner-approved footer: a single floating AUSWERTUNG / status line,
+    # WHITE when pending, without any extra sticker or opaque rectangle.
+    # The sample-free stadium below the real quote has room for this text.
+    _text(d, (350, 786), "AUSWERTUNG: " + state,
+          size=17, max_width=355, color=color)
 
     output = im.convert("RGB").resize(
         (1080, round(1080 * im.height / im.width)),
