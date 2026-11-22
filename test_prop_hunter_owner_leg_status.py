@@ -55,6 +55,10 @@ with patch.object(compositor, "_background_portrait", return_value=True), \
         subtitle="HOME TEST vs AWAY TEST · So 22.11. · 04:00",
         teams=clubs, rows=rows, footer="Quote @6.00 · Einsatz 1u",
         settlement="VERLOREN")
+from pathlib import Path
+outdir=Path("output/nba_owner_qa")
+outdir.mkdir(parents=True,exist_ok=True)
+outdir.joinpath("builder_settlement_status_owner.png").write_bytes(result)
 with Image.open(BytesIO(result)) as checked:
     assert checked.width == 1080
 assert "1✓" in records, records
@@ -73,6 +77,7 @@ with patch.object(compositor, "_background_portrait", return_value=True), \
         Image.new("RGB", (691, 753), (2, 18, 34)),
         rows=rows, footer="Quote @6.00 · Einsatz 1u",
         settlement="VERLOREN")
+outdir.joinpath("lottery_settlement_status_owner.png").write_bytes(result)
 with Image.open(BytesIO(result)) as checked:
     assert checked.width == 1080
 assert "1✓ ATHLETE" in records, records
