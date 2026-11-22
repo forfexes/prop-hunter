@@ -45,6 +45,7 @@ def owner_image_signature(pick):
         "all_sports":os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0"),
         "pixel_qa":os.getenv("PH_OWNER_PIXEL_QA","0"),
         "quote_qa":os.getenv("PH_OWNER_QUOTE_QA","0"),
+        "premium_quality":os.getenv("PH_ENFORCE_OWNER_QUALITY","0"),
     }
     raw=json.dumps(record,sort_keys=True,default=str,ensure_ascii=True,
                    allow_nan=False).encode("utf-8")
@@ -53,6 +54,32 @@ def owner_image_signature(pick):
 
 def _pick_value(pick, key, default=None):
     return pick.get(key, default) if isinstance(pick, dict) else getattr(pick, key, default)
+
+
+def owner_single_quality(pick):
+    """Final NBA Single minimums; rescue and AI picks share the SAME gate.
+
+    Odds must be an observed bookmaker price (separate quote-provenance gate).
+    Probability is 0..1 and edge_pct is in percentage POINTS, not a fraction.
+    No unknown or missing forecast may be filled with fabricated statistics.
+    """
+    if str(_pick_value(pick, "type", "") or "").strip().lower() != "single":
+        return True, "other_owner_family"
+    try:
+        odds = float(_pick_value(pick, "odds"))
+        prob = float(_pick_value(pick, "probability"))
+        edge = float(_pick_value(pick, "edge_pct"))
+    except (TypeError, ValueError, OverflowError):
+        return False, "single_minimums_missing_observed_model"
+    if not (math.isfinite(odds) and math.isfinite(prob) and math.isfinite(edge)):
+        return False, "single_minimums_nonfinite"
+    if not 1.70 <= odds <= 3.00:
+        return False, "single_odds_outside_1_70_to_3_00"
+    if not 0.67 <= prob <= 1.0:
+        return False, "single_probability_below_67_percent"
+    if edge < 8.0:
+        return False, "single_edge_below_8pp"
+    return True, "premium_single_minimums_passed"
 
 
 def pre_match_quote_provenance(pick):
@@ -177,6 +204,12 @@ def filter_verified_nba_images(picks, cards):
         if not league or league[1]!="nba":
             accepted.append(pick)
             continue
+        if os.getenv("PH_ENFORCE_OWNER_QUALITY", "0").strip() == "1":
+            qualified, reason = owner_single_quality(pick)
+            if not qualified:
+                print("OWNER_PREMIUM_QUALITY_BLOCKED reason=" + reason, flush=True)
+                blocked += 1
+                continue
         if os.getenv("PH_OWNER_QUOTE_QA", "0").strip() == "1":
             proven, reason=pre_match_quote_provenance(pick)
             if not proven:
