@@ -145,6 +145,12 @@ known_visual_blockers={
         "VS_BLACK_PANEL_SOURCE_ART_STILL_VISUALLY_UNAPPROVED",
     ],
 }
+# All variants built from the same owner plate inherit its VS concern.
+# A green technical preview is never permission to post an unapproved source.
+for variant in report:
+    if variant.startswith(("single_", "longshot_", "ladder_", "same_player_")):
+        family = "single" if variant.startswith(("single_", "longshot_")) else "ladder"
+        known_visual_blockers.setdefault(variant, list(known_visual_blockers[family]))
 for family,issues in known_visual_blockers.items():
     if family in report:
         report[family]["owner_visual_signoff"]="PENDING"
