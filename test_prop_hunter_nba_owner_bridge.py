@@ -173,9 +173,9 @@ try:
                          for i in range(n)]
             with patch.object(clean_ladder,"_text",side_effect=capture_name):
                 raw=adapter.render_nba_pick(ladder,ladder_rows,teams)
-            # Both original hero name and one-player banner stay readable.
-            assert (443,332) in named,(n,named)
-            assert (127,770 if n==6 else 650) in named,(n,named)
+            # Athlete name appears once ABOVE the price ladder; the second
+            # caption below the portrait was rejected by the owner.
+            assert named == [(443,332)], (n,named)
             with Image.open(BytesIO(raw)) as proof:
                 assert proof.width==1080 and proof.height>=1100
             outdir.joinpath(f"ladder_{n}_name_fixed.png").write_bytes(raw)
