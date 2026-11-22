@@ -15,6 +15,19 @@ from prop_hunter_owner_clean_single import (
 )
 
 
+def _observed_form_windows(form):
+    """Always print L5/L10/L15, without inventing missing gamelog samples."""
+    raw = str(form or "")
+    windows = []
+    for n in (5, 10, 15):
+        match = re.search(r"\\bL" + str(n) + r"\\s+(\\d+)/(\\d+)\\b", raw, re.I)
+        if match and 0 <= int(match[1]) <= int(match[2]) <= n and int(match[2]) > 0:
+            windows.append(f"L{n} {match[1]}/{match[2]}")
+        else:
+            windows.append(f"L{n} —")
+    return " · ".join(windows)
+
+
 def render(plate: Image.Image, *, subtitle: str, teams: list,
            rows: list, footer: str, settlement: str, title: str = "LADDER") -> bytes:
     if plate.size != (691, 865) or len(teams) != 2 or not 2 <= len(rows) <= 6:
@@ -95,13 +108,8 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
 
     # Form windows belong to the ONE actual athlete. Stages retain their own
     # per-threshold L15 row without copying an unrelated player form.
-    form = str(rows[0].get("form") or "")
-    windows = []
-    for n in (5, 10, 15):
-        match = re.search(r"\bL" + str(n) + r"\s+(\d+)/(\d+)\b", form, re.I)
-        if match and 0 <= int(match[1]) <= int(match[2]) <= n:
-            windows.append(f"L{n} {match[1]}/{match[2]}")
-    _text(d, (374, 681 + extra), " · ".join(windows),
+    form = _observed_form_windows(rows[0].get("form"))
+    _text(d, (374, 681 + extra), form,
           size=17, max_width=359, color=GREEN)
 
     state = str(settlement or "OFFEN").strip()
