@@ -55,8 +55,18 @@ for source_rect in ((239,401,446,423),(499,402,596,422)):
     assert delta.getbbox() is None,("TRANSPARENT_STICKER_UNDERLYING_PIXELS_VISIBLE",source_rect)
 assert any(text=="Under 12.5 points" and xy==(340,410) and mx==236 for text,xy,mx in seen)
 assert any(text=="@1.76" and xy==(547,410) and mx==125 for text,xy,mx in seen)
-# Owner ribbon's augmented dark/gold portion must contain the whole status text
-# within (324,652)-(489,709); no "OFFEN" floating on bare arena floor.
-assert any(text=="OFFEN" and xy==(406,681) and mx<=135 for text,xy,mx in seen)
+# Pending is transparent (no added shape), the same white as the owner's
+# AUSWERTUNG text, and on the SAME baseline.
+assert any(text=="OFFEN" and xy==(405,669) and mx<=135 for text,xy,mx in seen)
+assert single.WHITE == (250,251,253)
+# In the region previously covered by the gigantic new status rectangle,
+# untouched source-floor pixels must remain untouched except for glyphs.
+source_scaled=original.resize(pristine.size,Image.Resampling.LANCZOS)
+for point in ((342,659),(463,697),(480,662)):
+    x,y=point
+    sx,sy=round(x*scale),round(y*scale)
+    assert pristine.getpixel((sx,sy))==source_scaled.getpixel((sx,sy)),(
+        "FLOATING_BLACK_FOOTER_STATUS_STICKER",point
+    )
 assert single.DARK_GREEN[3]==255 and single.DARK_GOLD[3]==255
 print("SINGLE_OPAQUE_MARKET_ODDS_NO_SHOWTHROUGH_AND_RESULT_IN_RIBBON_PASS")
