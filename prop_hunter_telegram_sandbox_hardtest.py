@@ -156,6 +156,20 @@ for family,issues in known_visual_blockers.items():
         report[family]["owner_visual_signoff"]="PENDING"
         report[family]["unresolved_design_issues"]=issues
         report[family]["production_visual_acceptance_claim"]=False
+# A new Single/Ladder derivative must not accidentally escape the unresolved
+# VS concern merely because its filename has an unfamiliar suffix.
+for variant, entry in report.items():
+    if entry.get("status") != "PASS":
+        continue
+    source_family = (
+        "single" if variant.startswith(("single", "longshot")) else
+        "ladder" if variant.startswith(("ladder", "same_player")) else None
+    )
+    if source_family:
+        issues = known_visual_blockers[source_family]
+        entry["unresolved_design_issues"] = list(issues)
+        entry["owner_visual_signoff"] = "PENDING"
+        entry["production_visual_acceptance_claim"] = False
 # Create a contact sheet from the EXACT mock Telegram screenshots so people
 # can review all 19+ variants without opening one artifact at a time.
 screens=sorted(DEST.glob("telegram_chat_*.png"))
