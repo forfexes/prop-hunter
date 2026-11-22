@@ -129,9 +129,22 @@ def _status(value):
     aliases={'win':'GEWONNEN','won':'GEWONNEN','loss':'VERLOREN',
              'lost':'VERLOREN','open':'OFFEN','pending':'OFFEN',
              'push':'PUSH','void':'VOID'}
-    state=aliases.get(str(value or 'OFFEN').strip().casefold(),str(value or 'OFFEN').strip().upper())
+    raw=str(value or 'OFFEN').strip()
+    state=aliases.get(raw.casefold(),raw.upper())
     if state not in ('OFFEN','GEWONNEN','VERLOREN','PUSH','VOID'):
-        raise ValueError('Only verified single status may be inserted')
+        # Stored result summaries can be count-based (e.g. '1 gewonnen ·
+        # 0 verloren · +0.74u'). Do not mistake a mixed or absent result for
+        # a verified single win. Exactly ONE positive result is required.
+        counted=re.findall(r'\\b(\\d+)\\s+(gewonnen|verloren|offen|push|void)\\b',
+                           raw.casefold())
+        values={}
+        for number,kind in counted:
+            values[kind]=values.get(kind,0)+int(number)
+        if sum(values.values())!=1:
+            raise ValueError('Single settlement count must identify exactly one actual result')
+        state=next({'gewonnen':'GEWONNEN','verloren':'VERLOREN',
+                    'offen':'OFFEN','push':'PUSH','void':'VOID'}[key]
+                   for key,count in values.items() if count==1)
     return state, WHITE if state in ('OFFEN','PUSH','VOID') else GREEN if state=='GEWONNEN' else RED
 
 
