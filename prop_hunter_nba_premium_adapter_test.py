@@ -33,11 +33,11 @@ rungs=[dict(row,label="Over 20.5 points"),dict(row,label="Over 25.5 points")]
 assert Image.open(BytesIO(render_nba_pick(ladder,rungs,teams))).size==(1080,1440)
 
 builder=SimpleNamespace(**base,type="betbuilder",odds=5.10,
-                        leg_details=[{"odds":1.7},{"odds":1.8}])
+                        leg_details=[{"player":"TEST PLAYER A","odds":1.7},{"player":"TEST PLAYER B","odds":1.8}])
 legs=[dict(row,name="TEST PLAYER A"),dict(row,name="TEST PLAYER B")]
 assert Image.open(BytesIO(render_nba_pick(builder,legs,teams))).size==(1080,1440)
 builder_3=SimpleNamespace(**base,type="betbuilder",odds=6.40,
-                          leg_details=[{"odds":1.7},{"odds":1.8},{"odds":1.9}])
+                          leg_details=[{"player":"TEST PLAYER A","odds":1.7},{"player":"TEST PLAYER B","odds":1.8},{"player":"TEST PLAYER C","odds":1.9}])
 legs_3=[dict(row,name="TEST PLAYER A"),dict(row,name="TEST PLAYER B"),
         dict(row,name="TEST PLAYER C")]
 assert Image.open(BytesIO(render_nba_pick(builder_3,legs_3,teams))).size==(1080,1440)
@@ -129,10 +129,10 @@ rejects(ladder,[dict(row,name="TEST A"),dict(row,name="TEST B")],
         contains="exactly one athlete")
 unconfirmed=SimpleNamespace(**{**base,"features":{**feats,"combined_odds_observed":False}},
        type="betbuilder",odds=None,
-       leg_details=[{"odds":1.7},{"odds":1.8}])
+       leg_details=[{"player":"TEST PLAYER A","odds":1.7},{"player":"TEST PLAYER B","odds":1.8}])
 assert Image.open(BytesIO(render_nba_pick(unconfirmed,legs,teams))).size==(1080,1440)
-multi_legs=[{"odds":1.7,"game":"TEAM A vs TEAM B","commence_time":"2026-11-20T19:00:00+00:00","sport":"NBA"},
-            {"odds":1.8,"game":"TEAM C vs TEAM D","commence_time":"2026-11-21T20:00:00+00:00","sport":"NBA"}]
+multi_legs=[{"player":"TEST PLAYER A","odds":1.7,"game":"TEAM A vs TEAM B","commence_time":"2026-11-20T19:00:00+00:00","sport":"NBA"},
+            {"player":"TEST PLAYER B","odds":1.8,"game":"TEAM C vs TEAM D","commence_time":"2026-11-21T20:00:00+00:00","sport":"NBA"}]
 cross=SimpleNamespace(**{**base,"features":{**feats,"combo_scope":"cross_game"}},
                       type="betbuilder",odds=5.10,leg_details=multi_legs)
 assert Image.open(BytesIO(render_nba_pick(cross,legs,[]))).size==(1080,1440)
@@ -267,8 +267,8 @@ if (ORIGINALS/"lottery.png").is_file():
 
 # Never mix WNBA or other-league selections into an NBA-branded ticket.
 mixed_builder=SimpleNamespace(**base,type="betbuilder",odds=5.10,
-        leg_details=[{"odds":1.7,"sport":"NBA"},
-                     {"odds":1.8,"sport":"WNBA"}])
+        leg_details=[{"player":"TEST PLAYER A","odds":1.7,"sport":"NBA"},
+                     {"player":"TEST PLAYER B","odds":1.8,"sport":"WNBA"}])
 rejects(mixed_builder,legs,contains="not NBA")
 mixed_ladder=SimpleNamespace(**base,type="ladder",player="TEST ATHLETE",
         leg_details=[{"odds":1.75,"sport":"NBA"},
@@ -317,8 +317,8 @@ typed_lottery = SimpleNamespace(**base, type="lottery", odds=18.25,
     leg_details=[SimpleNamespace(**leg) for leg in multi_legs])
 assert Image.open(BytesIO(render_nba_pick(typed_lottery, legs, []))).size == (1080, 1440)
 typed_bad = SimpleNamespace(**base, type="betbuilder", odds=5.10,
-    leg_details=[SimpleNamespace(odds=1.7, sport="NBA"),
-                 SimpleNamespace(odds=1.8, sport="WNBA")])
+    leg_details=[SimpleNamespace(player="TEST PLAYER A", odds=1.7, sport="NBA"),
+                 SimpleNamespace(player="TEST PLAYER B", odds=1.8, sport="WNBA")])
 rejects(typed_bad, legs, contains="not NBA")
 # A bookmaker on typed legs is valid evidence when the parent lacks a label.
 typed_leg_book = SimpleNamespace(**{**base, "features": {"venue": "TEST ARENA",
