@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install isolated QA dependencies
-        run: python -m pip install --quiet 'Pillow>=10' 'pytest>=8' 'requests>=2.31'
+        run: python -m pip install --quiet 'Pillow>=10' 'pytest>=8' 'requests>=2.31' 'CairoSVG>=2.7'
       - name: Syntax safety
         run: python -m py_compile prop_hunter_image_publication_gate.py prop_hunter_image_cards.py test_prop_hunter_image_publication_gate.py test_prop_hunter_mixed_league_settlement_guard.py prop_hunter_combo_prices.py prop_hunter_telegram_safe_zone.py prop_hunter_owner_pixel_qa.py prop_hunter_nba_owner_bridge.py test_prop_hunter_telegram_safe_zone.py test_prop_hunter_final_quality_gate.py prop_hunter_owner_rescue_select.py test_prop_hunter_owner_rescue_select.py prop_hunter_player_fixture_guard.py test_prop_hunter_player_fixture_guard.py
       - name: Reject wrong athlete on a priced NBA card before artwork
