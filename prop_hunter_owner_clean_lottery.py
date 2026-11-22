@@ -123,7 +123,7 @@ def render(plate: Image.Image, *, rows: list,
           size=18, max_width=183, color=GOLD)
     state = str(settlement or "OFFEN").strip()
     color = (GREEN if "gewonnen" in state.casefold()
-             else RED if "verloren" in state.casefold() else GOLD)
+             else RED if "verloren" in state.casefold() else WHITE)
     _text(d, (405, 673 + extra), state,
           size=20, max_width=150, color=color)
 
