@@ -135,7 +135,7 @@ def _status(value):
         # Stored result summaries can be count-based (e.g. '1 gewonnen ·
         # 0 verloren · +0.74u'). Do not mistake a mixed or absent result for
         # a verified single win. Exactly ONE positive result is required.
-        counted=re.findall(r'\\b(\\d+)\\s+(gewonnen|verloren|offen|push|void)\\b',
+        counted=re.findall(r'\b(\d+)\s+(gewonnen|verloren|offen|push|void)\b',
                            raw.casefold())
         values={}
         for number,kind in counted:
