@@ -269,11 +269,15 @@ def render_nba_pick(pick, rows, teams):
             # this leg's bookmaker price.  Do not accept approximate matches:
             # players with the same surname can be distinct athletes.
             declared_name = _get(detail, "player") or _get(detail, "player_name")
-            if declared_name:
-                actual_name = row.get("name")
-                if (not _verified_player_key(actual_name)
-                        or _verified_player_key(declared_name) != _verified_player_key(actual_name)):
-                    raise PremiumDataMissing(f"NBA leg {i} player identity mismatches bookmaker selection")
+            actual_name = row.get("name")
+            if not _verified_player_key(declared_name):
+                # A leg's model row cannot attest its own bookmaker selection.
+                # In particular a missing identity must not be completed by
+                # the unrelated player photo on an approved owner artwork.
+                raise PremiumDataMissing(f"NBA leg {i} has no verified bookmaker player identity")
+            if (not _verified_player_key(actual_name)
+                    or _verified_player_key(declared_name) != _verified_player_key(actual_name)):
+                raise PremiumDataMissing(f"NBA leg {i} player identity mismatches bookmaker selection")
             # A NBA-branded premium card must NEVER contain a WNBA, college,
             # EuroLeague or other sport's individual leg, even if the parent
             # pick was accidentally labelled NBA by an upstream source.
