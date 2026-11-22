@@ -115,8 +115,13 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     d = ImageDraw.Draw(im)
     for i, row in enumerate(rows, 1):
         yy = round(start + (i - 0.5) * row_step) + 1
-        _text(d, (55, yy), f"{i}.", size=16 if n < 7 else 13,
-              max_width=30, color=GOLD)
+        # Show the real settlement of each leg in the EXISTING number slot;
+        # do not cover any name, price or approved original artwork.
+        from prop_hunter_owner_leg_status import leg_result_mark
+        marker, status = leg_result_mark(i, row.get("result"))
+        tone = GREEN if status == "won" else RED if status == "lost" else GOLD
+        _text(d, (55, yy), marker, size=16 if n < 7 else 13,
+              max_width=30, color=tone)
         _text(d, (181, yy), row.get("name"),
               size=16 if n < 6 else 12, max_width=180)
         _text(d, (430, yy), row.get("label"),
