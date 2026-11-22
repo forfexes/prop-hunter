@@ -14,7 +14,8 @@ for module in (single,ladder,builder,lottery):
     ast.parse(src)
     assert "owner_settlement_state(" in src, module.__name__
     assert "Image.alpha_composite(im, ribbon)" not in src, module.__name__
-    assert "OFFEN" in src
+    # The common rendering helper supplies the OFFEN default. Individual
+    # family renderers no longer have to hardcode it a second time.
     assert module.WHITE==(250,251,253), module.__name__
 print("OWNER_SINGLE_LADDER_BUILDER_LOTTERY_PENDING_WHITE_UNFRAMED_PASS")
 
@@ -34,4 +35,5 @@ for value,expected in [
     assert ink==expected,(value,label,ink,expected)
 assert owner_settlement_state("WON",green="green",red="red",white="white")[0]=="GEWONNEN"
 assert owner_settlement_state("LOST",green="green",red="red",white="white")[0]=="VERLOREN"
+assert owner_settlement_state(None,green="green",red="red",white="white")==("OFFEN","white")
 print("OWNER_SETTLEMENT_MIXED_RESULT_COLOR_PASS")
