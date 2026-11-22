@@ -10,8 +10,8 @@ import re
 
 from PIL import Image, ImageDraw, ImageFont
 
-DARK_GREEN = (4, 46, 34, 110)
-DARK_GOLD = (70, 41, 5, 118)
+DARK_GREEN = (3, 20, 25, 255)  # OPAQUE: never show old arena/player through odds text
+DARK_GOLD = (27, 20, 7, 255)  # OPAQUE: bookmaker price must not show through
 GOLD = (255, 218, 101)
 WHITE = (250, 251, 253)
 GREEN = (63, 243, 155)
@@ -115,17 +115,18 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
     if title and title not in ("SINGLE",):
         _text(d, (402, 347), title, size=16, max_width=280, color=GOLD)
 
-    # New translucent empty UI slots preserve the original stadium texture.
-    # No dark, opaque rectangles are used to hide sample players or words.
+    # Slot artwork is an already-clean owner plate. In production the old
+    # semi-transparent green/gold fills let the athlete/arena show THROUGH the
+    # market and price. Use solid, matte ink inside the native neon rail
+    # without redrawing a fake glowing frame or hiding baked example text.
+    # Start at x=211, not 168: the photo is no longer boxed over his jersey.
     tint = Image.new("RGBA", im.size, (0, 0, 0, 0))
     p = ImageDraw.Draw(tint)
-    p.rounded_rectangle((168, 382, 471, 439), radius=9,
-                        fill=DARK_GREEN, outline=(47, 239, 151, 232), width=2)
-    p.rounded_rectangle((473, 382, 621, 439), radius=9,
-                        fill=DARK_GOLD, outline=(252, 205, 81, 232), width=2)
+    p.rounded_rectangle((211, 387, 470, 437), radius=8, fill=DARK_GREEN)
+    p.rounded_rectangle((475, 387, 620, 437), radius=8, fill=DARK_GOLD)
     im = Image.alpha_composite(im, tint)
     d = ImageDraw.Draw(im)
-    _text(d, (319, 410), row.get("label"), size=28, max_width=277)
+    _text(d, (340, 410), row.get("label"), size=27, max_width=236)
     _text(d, (547, 410), row.get("odds"), size=27,
           max_width=125, color=GOLD)
     _text(d, (159, 476), "LETZTE SPIELE", size=18, max_width=168)
@@ -137,7 +138,18 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
     state = str(settlement or "OFFEN").strip()
     status_color = (GREEN if "gewonnen" in state.casefold()
                     else RED if "verloren" in state.casefold() else GOLD)
-    _text(d, (405, 683), state, size=21, max_width=135,
+    # Extend the original gold/black settlement ribbon into the available
+    # stadium floor; "OFFEN" must sit INSIDE a continuous footer, never
+    # float unframed to the right of the owner's AUSWERTUNG label.
+    ribbon = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    rf = ImageDraw.Draw(ribbon)
+    rf.polygon(((324, 652), (489, 652), (477, 709), (324, 709)),
+               fill=(8, 16, 25, 255))
+    rf.line(((324, 652), (489, 652), (477, 709), (324, 709)),
+            fill=(218, 166, 60, 245), width=2, joint="curve")
+    im = Image.alpha_composite(im, ribbon)
+    d = ImageDraw.Draw(im)
+    _text(d, (406, 681), state, size=21, max_width=135,
           color=status_color)
 
     scaled = im.convert("RGB").resize(
