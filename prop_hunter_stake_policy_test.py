@@ -21,6 +21,10 @@ for kind in ("single","betbuilder","combo","kombi2"):
 for kind in ("big","lottery"):
     p=P(type=kind,stake=1.0,market="lottery",picks=None)
     flat(p,1.0)
+    assert p.stake == 1.0,kind
+    # A lower Lottery stake is permitted only by explicit opt-in, never as
+    # the production default or an unnoticed ledger/image discrepancy.
+    flat(p,1.0,lottery_amount=.1)
     assert p.stake == 0.1,kind
 for wrong in (0, -1, float("nan"), "bad", 6):
     try:flat(P(type="single",market="points",stake=.2),wrong)
