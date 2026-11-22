@@ -28,6 +28,12 @@ def user_single_original_enabled(pick) -> bool:
               else getattr(pick, "_owner_single_master_20261122", None))
     if type(marker) is bool:
         return marker
+    # Historical Telegram snapshots already have an earlier verified owner
+    # source marker. Their missing 20261122 flag means the OLD 691px master,
+    # even when fresh Singles have moved to the new source globally.
+    if (isinstance(pick,dict)
+            and pick.get("_owner_layered_original_v1") is True):
+        return False
     import os
     return os.getenv("PH_NBA_USER_SINGLE_20261122", "0") == "1"
 
