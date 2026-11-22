@@ -115,6 +115,15 @@ for file in sorted(ROOT.glob("*.png")):
         "bookmaker_source":"TEST DATA ONLY",
     }
 
+# Passing a simulated Telegram screenshot is NOT an approval of a real
+# Telegram Android/iOS render. Every card family remains pending owner signoff.
+for key,entry in report.items():
+    if entry.get("status")=="PASS":
+        entry["technical_visual_geometry"]="PASS"
+        entry["owner_visual_signoff"]="PENDING"
+        entry["real_telegram_client_visual_match"]="NOT_VERIFIED"
+        entry["production_visual_acceptance_claim"]=False
+
 # Preserve the user's actual design review, independent of the green
 # transport/geometry test. This must not be silently treated as owner signoff.
 # In particular the dark rectangular VS source is baked into the supplied
@@ -165,6 +174,8 @@ for sport in ("NFL","NHL","MLB","WNBA","EUROLEAGUE"):
 )
 assert len([v for v in report.values() if v["status"]=="PASS"])>=len(required)
 assert report["single"]["owner_visual_signoff"]=="PENDING"
+assert all(not item.get("production_visual_acceptance_claim",False)
+           for item in report.values())
 assert not report["single"]["production_visual_acceptance_claim"]
 print("OWNER_DESIGN_REVIEW_PENDING_SINGLE_VS_AND_SETTLEMENT_NOT_FALSELY_APPROVED")
 print("TELEGRAM_OFFLINE_CHAT_HARDTEST_PASS",len(required),
