@@ -138,6 +138,8 @@ class SourceOriginalQA(unittest.TestCase):
             self.assertFalse(user_single_original_enabled(
                 SimpleNamespace(type="single",
                                 _owner_single_master_20261122=False)))
+            self.assertFalse(user_single_original_enabled({
+                "type":"single","_owner_layered_original_v1":True}))
         with patch.dict(os.environ,{"PH_NBA_USER_SINGLE_20261122":"0"}):
             self.assertTrue(user_single_original_enabled(
                 SimpleNamespace(type="single",
