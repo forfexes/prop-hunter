@@ -194,3 +194,30 @@ assert not pre_match_quote_provenance(cross)[0]
 cross.leg_details[1]["commence_time"]=future
 assert pre_match_quote_provenance(cross)[0]
 print("PREMATCH SOURCE / BOOKMAKER / STARTED-FIXTURE BLOCK PASSED")
+
+
+# Cached owner artwork must be recomputed even when odds remain unchanged
+# but model confidence, bookmaker ticket, or settled status changes.
+# This prevents old percentages / stale OPEN results appearing on Telegram.
+unchanged_price=N(type="single",sport="NBA",player="QA Athlete",
+                  odds=1.95,probability=0.72,edge_pct=11.0,
+                  confidence=4,status="pending",result=None,
+                  bookmaker="QA Bookmaker",game_id="GAME-1",
+                  features={"odds_observed":True,"bookmaker":"QA Bookmaker"})
+original_fingerprint=owner_image_signature(unchanged_price)
+for attribute,updated in (
+    ("probability",0.67),("edge_pct",8.0),("confidence",3),
+    ("status","won"),("result","win"),("bookmaker","Other Book"),
+    ("game_id","GAME-2"),("combined_quote_id","REAL-TICKET-2"),
+    ("settlement_status","lost"),
+):
+    old_value=getattr(unchanged_price,attribute,None)
+    existed=hasattr(unchanged_price,attribute)
+    setattr(unchanged_price,attribute,updated)
+    assert owner_image_signature(unchanged_price)!=original_fingerprint, attribute
+    if existed:
+        setattr(unchanged_price,attribute,old_value)
+    else:
+        delattr(unchanged_price,attribute)
+    assert owner_image_signature(unchanged_price)==original_fingerprint, attribute
+print("OWNER IMAGE SIGNATURE INVALIDATES STALE MODEL, QUOTE AND SETTLEMENT")
