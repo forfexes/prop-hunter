@@ -40,6 +40,42 @@ def _text(draw, position, value, *, size=20, max_width=240,
     draw.text(position, value, fill=color, font=font, anchor=anchor)
 
 
+def owner_settlement_state(raw, *, green, red, white):
+    """Return (display, ink) without inferring results from model confidence.
+
+    Mixed winning/losing original Builder & Lottery tickets must NOT be green.
+    Counted 0 losses are not losses, and any unsettled leg stays neutral.
+    """
+    original = str(raw or "OFFEN").strip() or "OFFEN"
+    canonical = {
+        "won": "GEWONNEN", "win": "GEWONNEN",
+        "lost": "VERLOREN", "loss": "VERLOREN",
+        "pending": "OFFEN", "open": "OFFEN",
+        "void": "VOID", "push": "PUSH",
+    }
+    state = canonical.get(original.casefold(), original)
+    normalized = state.casefold()
+    counts = re.findall(r"\b(\d+)\s+(gewonnen|verloren|offen|push|void)\b", normalized)
+    if counts:
+        by_kind = {}
+        for number, label in counts:
+            by_kind[label] = by_kind.get(label, 0) + int(number)
+        if by_kind.get("verloren", 0) > 0:
+            return state, red
+        if by_kind.get("offen", 0) > 0:
+            return state, white
+        if by_kind.get("gewonnen", 0) > 0:
+            return state, green
+        return state, white
+    if re.search(r"\b(verloren|lost|loss)\b", normalized):
+        return state, red
+    if re.search(r"\b(offen|pending|open|void|push)\b", normalized):
+        return state, white
+    if re.search(r"\b(gewonnen|won|win)\b", normalized):
+        return state, green
+    return state, white
+
+
 def _floating_team(im, team, cx):
     if (not team or not str(team[0] or "").strip()
             or not isinstance(team[1], Image.Image)):
@@ -135,12 +171,10 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
     amount = re.search(r"Einsatz\s+([\d.,]+u)", str(footer or ""), re.I)
     _text(d, (597, 553), amount.group(1) if amount else "—",
           size=24, max_width=115, color=GOLD)
-    state = str(settlement or "OFFEN").strip()
     # Match the owner's AUSWERTUNG label: one baseline, NO new black/gold
-    # sticker, NO opacity/tint layer. This leaves the original stadium floor
-    # exactly as supplied. Pending = same white as "AUSWERTUNG".
-    status_color = (GREEN if "gewonnen" in state.casefold()
-                    else RED if "verloren" in state.casefold() else WHITE)
+    # sticker or opacity layer. Mixed results and pending legs are not wins.
+    state, status_color = owner_settlement_state(
+        settlement, green=GREEN, red=RED, white=WHITE)
     _text(d, (405, 669), state, size=21, max_width=135,
           color=status_color)
 
