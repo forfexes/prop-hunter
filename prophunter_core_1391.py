@@ -3549,6 +3549,12 @@ def _payload_card_image(payload,picks):
                 log.error("OWNER_IMAGE_PUBLISH_BLOCKED: %s", reason)
                 return None
             payload["image_pick"]["_owner_layered_original_v1"] = True
+            # Preserve which REAL user-original card was rendered. Settlement
+            # must never repaint an older 691px Single with the new 512px
+            # source just because today's production feature flag changed.
+            if (str(getattr(pick,"type","")).lower()=="single"
+                    and os.getenv("PH_NBA_USER_SINGLE_20261122","0")=="1"):
+                payload["image_pick"]["_owner_single_master_20261122"] = True
         if png: payload["media_type"]="photo"
         return png
     except Exception as exc:
