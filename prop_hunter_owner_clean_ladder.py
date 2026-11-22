@@ -11,7 +11,7 @@ import re
 from PIL import Image, ImageDraw
 
 from prop_hunter_owner_clean_single import (
-    _text, _floating_team, _verified_time, GOLD, GREEN, RED, WHITE,
+    owner_settlement_state, _text, _floating_team, _verified_time, GOLD, GREEN, RED, WHITE,
 )
 
 
@@ -112,9 +112,8 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     _text(d, (374, 681 + extra), form,
           size=17, max_width=359, color=GREEN)
 
-    state = str(settlement or "OFFEN").strip()
-    color = (GREEN if "gewonnen" in state.casefold()
-             else RED if "verloren" in state.casefold() else WHITE)
+    state, color = owner_settlement_state(
+        settlement, green=GREEN, red=RED, white=WHITE)
     _text(d, (422, 784 + extra), state, size=21, max_width=148, color=color)
 
     output = im.convert("RGB").resize(
