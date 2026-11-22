@@ -221,3 +221,30 @@ for attribute,updated in (
         delattr(unchanged_price,attribute)
     assert owner_image_signature(unchanged_price)==original_fingerprint, attribute
 print("OWNER IMAGE SIGNATURE INVALIDATES STALE MODEL, QUOTE AND SETTLEMENT")
+
+
+# Rendering failures are isolated: a broken photo must not prevent the
+# following verified original card from being sent to its own destination.
+class BrokenPhotoCards(Cards):
+    def build_for_pick(self, pick):
+        self.calls.append(pick.player)
+        if pick.player == "broken_photo":
+            raise ValueError("unreadable verified athlete source image")
+        return PNG
+
+with patch.dict("os.environ", {
+    "PH_OWNER_APPROVED_ALL_SPORTS":"1",
+    "PH_OWNER_PIXEL_QA":"0",
+    "PH_OWNER_QUOTE_QA":"0",
+    "PH_ENFORCE_OWNER_QUALITY":"0",
+}):
+    broken=p("broken_photo","NBA")
+    good_neighbour=p("good","NBA")
+    renderer=BrokenPhotoCards()
+    survivors,blocked=filter_verified_nba_images(
+        [broken,good_neighbour], renderer)
+    assert survivors==[good_neighbour] and blocked==1
+    assert renderer.calls==["broken_photo","good"]
+    assert not hasattr(broken,"_verified_owner_png")
+    assert good_neighbour._verified_owner_png==PNG
+print("OWNER IMAGE PER-PICK RENDER EXCEPTION ISOLATION PASSED")
