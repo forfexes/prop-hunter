@@ -81,6 +81,51 @@ class SourceOriginalQA(unittest.TestCase):
             with self.subTest(vals=vals), self.assertRaises(ValueError):
                 self.render(**vals)
 
+    def test_real_bridge_uses_user_single_and_pixel_proof(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from prop_hunter_nba_owner_bridge import render_owner
+        from prop_hunter_owner_pixel_qa import owner_pixel_provenance
+        import os
+        pick=SimpleNamespace(type="single",sport="NBA",market="assists",
+                             player="QA TEST ATHLETE",odds=1.74,features={})
+        values={"date":"23.11.2026","time":"01:00","stake":"1u",
+                "odds":"@1.74","settlement":"OFFEN"}
+        with patch.dict(os.environ,{
+                "PH_NBA_USER_SINGLE_20261122":"1",
+                "PH_NBA_OWNER_ORIGINALS":"1",
+                "PH_BLOCK_OVERPAINTED_MASTERS":"1",
+                "PH_ALLOW_VERIFIED_LAYERED_OWNER":"1",
+                "PH_REQUIRE_TELEGRAM_SAFE_MARGIN":"1"
+             }), patch("prop_hunter_original_compositor.original_card",
+                       side_effect=AssertionError("Never render old 691px Single")):
+            picture=render_owner(pick,"single_assists",[self.fields["row"]],
+                                 self.fields["teams"],values,[])
+            approved,why=owner_pixel_provenance(pick,picture)
+        self.assertEqual((approved,why),(True,"source_original_pixels_verified"))
+        with Image.open(BytesIO(picture)) as image:
+            self.assertEqual(image.width,1080)
+            self.assertGreater(image.height,1080)
+        (ROOT/"preview_single_owner_telegram_safe.png").write_bytes(picture)
+
+    def test_tampered_user_single_title_is_rejected_by_pixel_gate(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from prop_hunter_owner_pixel_qa import owner_pixel_provenance
+        from prop_hunter_telegram_safe_zone import append_owner_margin
+        import os
+        raw=self.render()
+        with Image.open(BytesIO(raw)) as im:
+            source=im.convert("RGB")
+            ImageDraw.Draw(source).rectangle((370,15,650,86),fill=(255,5,8))
+            out=BytesIO()
+            source.save(out,"PNG")
+        pick=SimpleNamespace(type="single",sport="NBA",features={})
+        with patch.dict(os.environ,{"PH_NBA_USER_SINGLE_20261122":"1"}):
+            accepted,why=owner_pixel_provenance(pick,append_owner_margin(out.getvalue()))
+        self.assertFalse(accepted)
+        self.assertIn("masthead",why)
+
     def test_no_translucent_opaque_repaint_runtime(self):
         import inspect
         code=inspect.getsource(owner.render)
