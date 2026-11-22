@@ -1,0 +1,114 @@
+"""NBA owner premium: priced leg identity must equal displayed athlete.
+
+Hermetic QA: never accesses a Telegram bot, network or game-data provider.
+"""
+import unittest
+from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from PIL import Image, ImageDraw
+from prop_hunter_nba_premium_adapter import PremiumDataMissing, render_nba_pick
+
+
+def cutout():
+    img=Image.new("RGBA",(110,150),(0,0,0,0))
+    ImageDraw.Draw(img).ellipse((20,5,93,82),fill=(130,175,210,255))
+    return img
+
+
+def examples():
+    logo=Image.new("RGBA",(90,90),(30,45,80,255))
+    teams=[("BOSTON CELTICS",logo),("NEW YORK KNICKS",logo)]
+    when=(datetime.now(timezone.utc)+timedelta(days=3)).isoformat()
+    common={
+        "sport":"NBA","game":"Boston Celtics vs New York Knicks",
+        "commence_time":when,"stake":1.0,
+        "features":{"bookmaker":"OFFLINE_QA_BOOKMAKER",
+                    "combined_odds_observed":True,
+                    "combined_quote_id":"OFFLINE-QUOTE-123"}
+    }
+    rows=[
+        {"name":"Jayson Tatum","label":"Points Over 20.5",
+         "photo":cutout(),"form":"L5 4/5 L10 8/10 L15 11/15"},
+        {"name":"Jaylen Brown","label":"Assists Over 3.5",
+         "photo":cutout(),"form":"L5 3/5 L10 7/10 L15 10/15"},
+    ]
+    ticket=SimpleNamespace(
+        **common,type="betbuilder",market="builder",odds=3.88,
+        leg_details=[
+            {"player":"Jayson Tatum","market":"points","odds":1.85,
+             "sport":"NBA","game":common["game"]},
+            {"player":"Jaylen Brown","market":"assists","odds":2.12,
+             "sport":"NBA","game":common["game"]},
+        ])
+    return ticket,rows,teams
+
+
+class NBAPricedLegIdentityQA(unittest.TestCase):
+    def test_matching_builder_players_reach_only_owner_bridge(self):
+        pick,rows,teams=examples()
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner",
+                   return_value=b"OFFLINE_OWNER_ONLY") as renderer:
+            raw=render_nba_pick(pick,rows,teams)
+        self.assertEqual(raw,b"OFFLINE_OWNER_ONLY")
+        self.assertEqual(renderer.call_count,1)
+        self.assertEqual(renderer.call_args.args[1],"builder_2")
+
+    def test_swapped_athletes_cannot_receive_others_bookmaker_odds(self):
+        pick,rows,teams=examples()
+        rows[0],rows[1]=rows[1],rows[0]
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as renderer:
+            with self.assertRaisesRegex(PremiumDataMissing,"player identity"):
+                render_nba_pick(pick,rows,teams)
+        renderer.assert_not_called()
+
+    def test_distinct_players_with_same_surname_are_not_equivalent(self):
+        pick,rows,teams=examples()
+        pick.leg_details[0]["player"]="Another Tatum"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as renderer:
+            with self.assertRaisesRegex(PremiumDataMissing,"player identity"):
+                render_nba_pick(pick,rows,teams)
+        renderer.assert_not_called()
+
+    def test_unicode_accent_is_not_another_athlete(self):
+        pick,rows,teams=examples()
+        rows[1]["name"]="Jaylén Brown"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner",
+                   return_value=b"QA_OWNER_BYTES") as renderer:
+            self.assertEqual(render_nba_pick(pick,rows,teams),b"QA_OWNER_BYTES")
+        renderer.assert_called_once()
+
+    def test_single_player_must_match_parent_ticket_identity(self):
+        pick,rows,teams=examples()
+        pick.type="single"
+        pick.market="points"
+        pick.player="Jayson Tatum"
+        pick.odds=1.87
+        pick.leg_details=[]
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as renderer:
+            with self.assertRaisesRegex(PremiumDataMissing,"displayed athlete"):
+                render_nba_pick(pick,[rows[1]],teams)
+        renderer.assert_not_called()
+
+    def test_single_matching_identity_can_use_approved_original(self):
+        pick,rows,teams=examples()
+        pick.type="single"
+        pick.market="points"
+        pick.player="Jayson Tatum"
+        pick.odds=1.87
+        pick.leg_details=[]
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner",
+                   return_value=b"OWNER_SINGLE") as renderer:
+            self.assertEqual(render_nba_pick(pick,[rows[0]],teams),b"OWNER_SINGLE")
+        self.assertEqual(renderer.call_args.args[1],"single_points")
+
+
+if __name__=="__main__":
+    unittest.main(verbosity=2)
