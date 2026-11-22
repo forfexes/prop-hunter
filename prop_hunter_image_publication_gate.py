@@ -230,7 +230,17 @@ def filter_verified_nba_images(picks, cards):
         # bookmaker price AND its ticket identifier. Multiplying authentic
         # single-leg odds is useful for offline analysis, but is not a
         # bookable parlay price and must never reach Telegram as a pick.
-        result=cards.build_for_pick(pick)
+        # A single malformed athlete photo, empty source asset or rejected
+        # owner render must never abort neighbouring valid picks in the batch.
+        # Catch only expected image/validation failures; programmer defects
+        # remain visible to CI rather than being silently swallowed.
+        try:
+            result=cards.build_for_pick(pick)
+        except (ValueError, TypeError, OSError) as exc:
+            print("OWNER_CARD_RENDER_BLOCKED reason=" + type(exc).__name__,
+                  flush=True)
+            blocked += 1
+            continue
         if _valid_owner_png(result):
             # A structurally valid image is NOT sufficient. In owner release
             # mode, compare the real NBA original masthead pixel-for-pixel
