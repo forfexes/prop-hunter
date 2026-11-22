@@ -84,5 +84,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: nba-true-owner-single-ladder-builder-qa
-          path: output/nba_owner_qa/*.png
+          path: |
+            output/nba_owner_qa/*.png
+            card_templates/originals/single.jpg
+            card_templates/originals/ladder.jpg
           retention-days: 7
