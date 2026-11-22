@@ -774,6 +774,35 @@ def _strict_owner_approval() -> bool:
     return os.getenv("PH_NBA_OWNER_ORIGINALS","0").strip()=="1"
 
 
+def _recent_owner_visual_window(card, slate_date, *, now_utc=None) -> bool:
+    """Today's Telegram photo may belong to YESTERDAY's US sports slate.
+
+    Only photo messages genuinely published within 36 hours are eligible for
+    today's owner-original visual refresh. History timestamp is UTC, while
+    betting slate date may be the previous day in Switzerland.
+    """
+    from zoneinfo import ZoneInfo
+    now = now_utc or datetime.now(timezone.utc)
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("UTC-aware current time required")
+    now = now.astimezone(timezone.utc)
+    value = str(card.get("created_at") or "").strip() if isinstance(card, dict) else ""
+    if value:
+        try:
+            published = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if published.tzinfo is None or published.utcoffset() is None:
+                return False
+            age = (now - published.astimezone(timezone.utc)).total_seconds()
+            return 0 <= age <= 36 * 3600
+        except (TypeError, ValueError, OverflowError):
+            return False
+    # Older records with no authenticated message creation timestamp are only
+    # eligible when their OWN slate date is the current Swiss date.
+    return str(slate_date or "")[:10] == now.astimezone(
+        ZoneInfo("Europe/Zurich")
+    ).date().isoformat()
+
+
 def _original_photo_caption_only(image_pick) -> bool:
     """Preserve the SAME Telegram photo: results update its caption only."""
     # The old overlay/screenshot compositor must NEVER modify Telegram
@@ -1336,7 +1365,8 @@ def main() -> int:
             # Never attempt editMessageMedia on a text-only message.
             CARD_DESIGN_VERSION=6  # v6: same approved owner artwork plus Telegram-safe bottom margin
             _visual_age=(datetime.now(timezone.utc).date()-timedelta(days=14)).isoformat()
-            _today_visual_only=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="today" and day==datetime.now(__import__("zoneinfo").ZoneInfo("Europe/Zurich")).date().isoformat())
+            _today_visual_only=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="today"
+                                and _recent_owner_visual_window(card, day))
             _design_due=((os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" or _today_visual_only) and day>=_visual_age and card.get("media_type")=="photo"
                 and bool(card.get("image_pick"))
                 and (not _today_visual_only or (
