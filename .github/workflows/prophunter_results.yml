@@ -235,6 +235,7 @@ jobs:
           PH_BLOCK_OVERPAINTED_MASTERS: '1'  # never replace original Telegram photo with opaque-rectangle redraw
           PH_ALLOW_VERIFIED_LAYERED_OWNER: '1'  # only NEW source-tagged NBA photos get same-message in-photo settlement
           PH_OWNER_PIXEL_QA: '1'  # strict approved-vs-cleaned and immutable-original pixel QA before Telegram
+          PH_REQUIRE_TELEGRAM_SAFE_MARGIN: '1'  # no photo refresh without an empty Telegram status zone
           PH_OWNER_APPROVED_ALL_SPORTS: '1'  # NHL/NFL/MLB/WNBA historical images: caption-only, never re-render
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
