@@ -2,6 +2,7 @@
 Builder/Lottery row-number slots without painting over user artwork.
 """
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 from PIL import Image, ImageDraw
 
@@ -51,7 +52,7 @@ def builder_spy(draw, position, caption, *args, **kwargs):
 with patch.object(compositor, "_background_portrait", return_value=True), \
      patch.object(builder, "_text", side_effect=builder_spy):
     result = builder.render(
-        Image.new("RGB", (691, 867), (2, 18, 34)),
+        Image.open(Path(__file__).resolve().parent / "card_templates/approved/builder.png"),
         subtitle="HOME TEST vs AWAY TEST · So 22.11. · 04:00",
         teams=clubs, rows=rows, footer="Quote @6.00 · Einsatz 1u",
         settlement="VERLOREN")
@@ -74,7 +75,7 @@ def lottery_spy(draw, position, caption, *args, **kwargs):
 with patch.object(compositor, "_background_portrait", return_value=True), \
      patch.object(lottery, "_text", side_effect=lottery_spy):
     result = lottery.render(
-        Image.new("RGB", (691, 753), (2, 18, 34)),
+        Image.open(Path(__file__).resolve().parent / "card_templates/approved/lottery.png"),
         rows=rows, footer="Quote @6.00 · Einsatz 1u",
         settlement="VERLOREN")
 outdir.joinpath("lottery_settlement_status_owner.png").write_bytes(result)
