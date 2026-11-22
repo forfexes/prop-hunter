@@ -166,7 +166,7 @@ try:
                 if str(label).strip()=="TEST PLAYER":
                     named.append(tuple(xy))
                 return real_text(draw, xy, label, *args, **kwargs)
-            ladder=N(**common,type="ladder",odds=None,
+            ladder=N(**common,type="ladder",player="TEST PLAYER",odds=None,
                      leg_details=[{"odds":round(1.30+i*.2,2),"sport":"NBA"}
                                   for i in range(n)])
             ladder_rows=[dict(row,label=f"Under {1.5+i} blocks")
