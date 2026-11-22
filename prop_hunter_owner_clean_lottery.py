@@ -93,8 +93,13 @@ def render(plate: Image.Image, *, rows: list,
         if not _background_portrait(im, row.get("photo"),
                                     (50, y + 6, 97, y + 75)):
             raise ValueError(f"Lottery leg {i}: authentic alpha cutout missing")
-        _text(d, (111, y + 16), f"{i}. {row['name']}",
-              size=17, max_width=232, anchor="lm")
+        # Exact source result, displayed in the already-reserved leg label.
+        # Do NOT overlay the original footer or overwrite any game's odds.
+        from prop_hunter_owner_leg_status import leg_result_mark
+        marker, status = leg_result_mark(i, row.get("result"))
+        tone = GREEN if status == "won" else RED if status == "lost" else WHITE
+        _text(d, (111, y + 16), f"{marker} {row['name']}",
+              size=17, max_width=232, anchor="lm", color=tone)
         _text(d, (339, y + 36), row["label"],
               size=16, max_width=452, color=GOLD)
         _text(d, (345, y + 56), row["game"],
