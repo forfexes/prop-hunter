@@ -101,7 +101,13 @@ for file in sorted(ROOT.glob("*.png")):
     )
     box=(x+photo_w-127,overlay_y-1,x+photo_w-7,overlay_y+15)
     draw.rounded_rectangle(box,radius=4,fill=(15,22,38))
-    draw.text((box[0]+5,overlay_y+2),"bearbeitet 23:01",font=font,fill=(247,249,254))
+    # Prevent clipped edited/time text and accidental card-footer collisions.
+    label="bearbeitet 23:01"
+    bbox=draw.textbbox((box[0]+5,overlay_y+2),label,font=font)
+    assert bbox[2] <= box[2]-2 and bbox[3] <= y+photo_h, (
+        file.name,"Telegram metadata clipped outside bottom strip"
+    )
+    draw.text((box[0]+5,overlay_y+2),label,font=font,fill=(247,249,254))
     draw.text((18,y+photo_h+15),"SANDBOX · NICHT AN TELEGRAM GESENDET",
               font=font,fill=(210,208,153))
     name="telegram_chat_"+file.stem+".png"
