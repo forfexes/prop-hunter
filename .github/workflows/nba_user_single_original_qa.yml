@@ -9,6 +9,9 @@ name: PROP HUNTER User Original NBA Single QA
       - "test_prop_hunter_owner_supplied_single.py"
       - "prop_hunter_nba_owner_bridge.py"
       - "prop_hunter_owner_pixel_qa.py"
+      - "prophunter_core_1391.py"
+      - "prop_hunter_image_cards.py"
+      - "test_prop_hunter_actual_photo_payload_typed_legs.py"
       - ".github/workflows/nba_user_single_original_qa.yml"
 permissions:
   contents: read
@@ -32,6 +35,7 @@ jobs:
         run: |
           python -m py_compile prop_hunter_owner_supplied_single.py test_prop_hunter_owner_supplied_single.py
           python -m unittest -v test_prop_hunter_owner_supplied_single
+          python test_prop_hunter_actual_photo_payload_typed_legs.py
       - name: Archive real source, clean plate, synthetic open/won, and Telegram margin proof
         if: always()
         uses: actions/upload-artifact@v4
