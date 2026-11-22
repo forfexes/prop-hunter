@@ -630,6 +630,29 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             return None
         sport = league[0]
         game = str(getattr(pick, "game", "") or "")
+        # A valid athlete face must belong to a team actually participating
+        # in the posted fixture. Do this before downloading any portraits.
+        # Only definite franchise-identity contradictions fail closed; unknown
+        # source aliases are not silently guessed into new clubs.
+        from prop_hunter_player_fixture_guard import definite_team_fixture_conflict
+        for claimed_team in (
+            getattr(pick, "team", None),
+            feats.get("roster_team"),
+            feats.get("actual_team"),
+            feats.get("player_team"),
+        ):
+            if definite_team_fixture_conflict(claimed_team, game):
+                print("NBA_PLAYER_TEAM_FIXTURE_MISMATCH: no original photo published", flush=True)
+                return None
+        for det in details:
+            if not isinstance(det, dict):
+                continue
+            candidate_game = (det.get("game") or det.get("match") or game)
+            for claimed_team in (det.get("team"), (det.get("features") or {}).get("player_team")
+                                 if isinstance(det.get("features"), dict) else None):
+                if definite_team_fixture_conflict(claimed_team, candidate_game):
+                    print("NBA_LEG_TEAM_FIXTURE_MISMATCH: no original photo published", flush=True)
+                    return None
         teams: List[Tuple[str, Optional["Image.Image"]]] = []
         cross = feats.get("combo_scope") == "cross_game"
         if " vs " in game or " @ " in game:
