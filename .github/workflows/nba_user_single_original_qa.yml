@@ -1,0 +1,47 @@
+name: PROP HUNTER User Original NBA Single QA
+"on":
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "card_templates/owner_supplied/**"
+      - "prop_hunter_owner_supplied_single.py"
+      - "test_prop_hunter_owner_supplied_single.py"
+      - "prop_hunter_nba_owner_bridge.py"
+      - "prop_hunter_owner_pixel_qa.py"
+      - ".github/workflows/nba_user_single_original_qa.yml"
+permissions:
+  contents: read
+jobs:
+  exact-user-master:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      TELEGRAM_TOKEN: ""
+      TELEGRAM_BOT_TOKEN: ""
+      SUPABASE_URL: ""
+      PH_NBA_USER_SINGLE_20261122: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install isolated pixel-test dependencies
+        run: python -m pip install --quiet Pillow numpy requests cairosvg
+      - name: Compile and validate actual uploaded 512px master and finished PNGs
+        run: |
+          python -m py_compile prop_hunter_owner_supplied_single.py test_prop_hunter_owner_supplied_single.py
+          python -m unittest -v test_prop_hunter_owner_supplied_single
+      - name: Archive real source, clean plate, synthetic open/won, and Telegram margin proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prop-hunter-user-nba-single-20261122-original-qa
+          path: |
+            card_templates/owner_supplied/single_blank_20261122.png
+            card_templates/owner_supplied/single_blank_editable_20261122.png
+            preview_single_open.png
+            preview_single_won.png
+            preview_single_owner_telegram_safe.png
+          retention-days: 7
+          if-no-files-found: error
