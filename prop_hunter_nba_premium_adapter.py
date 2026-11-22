@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import math
+import unicodedata
 from PIL import Image
 
 MASTER_DIR = Path(__file__).resolve().parent / "card_templates" / "nba_premium_v2"
@@ -25,6 +26,14 @@ class PremiumDataMissing(ValueError):
 
 def _get(obj, key, default=None):
     return obj.get(key, default) if isinstance(obj, dict) else getattr(obj, key, default)
+
+def _verified_player_key(value):
+    """Normalise accents and punctuation, not identities; no fuzzy matching."""
+    value = unicodedata.normalize("NFKD", str(value or "").casefold())
+    value = "".join(ch for ch in value if not unicodedata.combining(ch))
+    return " ".join(re.findall(r"[a-z0-9]+", value))
+
+
 
 
 def _photo(img, slot):
@@ -239,6 +248,10 @@ def render_nba_pick(pick, rows, teams):
         values["player_name"] = str(rows[0]["name"])
         images["player_photo"] = _photo(rows[0].get("photo"), "player_photo")
     if typ in ("single", "longshot"):
+        # No unrelated athlete may be drawn over this pick's observed odds.
+        identity = _get(pick, "player")
+        if identity and _verified_player_key(identity) != _verified_player_key(rows[0].get("name")):
+            raise PremiumDataMissing("NBA single displayed athlete differs from ticket")
         values["market"] = str(rows[0].get("label") or "")
         values["odds"] = _price(_get(pick, "odds"))
         values.update(_form(rows[0].get("form")))
@@ -252,6 +265,15 @@ def render_nba_pick(pick, rows, teams):
         if len(details) != len(rows):
             raise PremiumDataMissing("Exact leg provenance required")
         for i, (row, detail) in enumerate(zip(rows, details), 1):
+            # A stale photo/row from another ticket must never be paired with
+            # this leg's bookmaker price.  Do not accept approximate matches:
+            # players with the same surname can be distinct athletes.
+            declared_name = _get(detail, "player") or _get(detail, "player_name")
+            if declared_name:
+                actual_name = row.get("name")
+                if (not _verified_player_key(actual_name)
+                        or _verified_player_key(declared_name) != _verified_player_key(actual_name)):
+                    raise PremiumDataMissing(f"NBA leg {i} player identity mismatches bookmaker selection")
             # A NBA-branded premium card must NEVER contain a WNBA, college,
             # EuroLeague or other sport's individual leg, even if the parent
             # pick was accidentally labelled NBA by an upstream source.
