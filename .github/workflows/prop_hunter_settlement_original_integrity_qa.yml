@@ -7,6 +7,7 @@ name: PROP HUNTER Settlement Original-Integrity QA
     paths:
       - "prophunter_results.py"
       - "test_prop_hunter_recent_original_photo_refresh.py"
+      - "test_prop_hunter_owner_rung_safe_migration.py"
       - "prop_hunter_media_settlement_test.py"
       - ".github/workflows/prophunter_results.yml"
       - ".github/workflows/prop_hunter_settlement_original_integrity_qa.yml"
@@ -34,11 +35,12 @@ jobs:
       - name: Install isolated media QA dependencies
         run: python -m pip install -q requests 'Pillow>=10' cairosvg numpy
       - name: Compile Telegram settlement and approval tests
-        run: python -m py_compile prophunter_results.py prop_hunter_media_settlement_test.py test_prop_hunter_recent_original_photo_refresh.py
+        run: python -m py_compile prophunter_results.py prop_hunter_media_settlement_test.py test_prop_hunter_recent_original_photo_refresh.py test_prop_hunter_owner_rung_safe_migration.py
       - name: Test exact original message and caption-only settlement
         run: |
           python prop_hunter_media_settlement_test.py
           python test_prop_hunter_recent_original_photo_refresh.py
+          python test_prop_hunter_owner_rung_safe_migration.py
       - name: Assert settlement production never overwrites non-approved media
         run: |
           python - <<'PY'
