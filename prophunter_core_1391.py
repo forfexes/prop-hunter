@@ -5623,7 +5623,7 @@ def run(dry_run=False,sport_filter=None):
                 # One published 1u ticket -> ALL its rung stakes must add up to
                 # the same unit displayed in the Telegram premium card and
                 # settled in the bankroll. Previously legs still said 0.05u.
-                apply_flat_ticket_stake(_ticket, _stake_all, lottery_amount=0.10)
+                apply_flat_ticket_stake(_ticket, _stake_all)
         except (ValueError, TypeError) as _stake_exc:
             raise RuntimeError("Invalid PH_FLAT_ALL_STAKE") from _stake_exc
     # Strict owner originals: remove ONLY NBA picks whose authentic portrait,
