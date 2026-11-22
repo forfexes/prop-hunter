@@ -103,7 +103,8 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
         _text(d, (618, y + 21), row.get("odds"),
               size=20, max_width=99, color=GOLD)
 
-    _text(d, (127, 650 + extra), rows[0]["name"], size=21, max_width=220)
+    # Owner request: athlete is identified ONCE at (443, 332), above the
+    # rung list. Do not repeat his name under the portrait at the bottom.
     stake = re.search(r"Einsatz\s+([\d.,]+u)", str(footer or ""), re.I)
     _text(d, (583, 697 + extra),
           "EINSATZ " + stake.group(1) if stake else "",
