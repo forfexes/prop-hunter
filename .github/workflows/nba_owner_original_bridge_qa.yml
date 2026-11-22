@@ -8,6 +8,8 @@ name: PROP HUNTER NBA Actual Owner Originals Integration QA
       - 'prop_hunter_nba_premium_adapter.py'
       - 'prop_hunter_original_compositor.py'
       - 'prop_hunter_owner_clean_single.py'
+      - 'test_prop_hunter_single_overlay_geometry.py'
+      - 'prop_hunter_telegram_sandbox_hardtest.py'
       - 'prop_hunter_owner_clean_ladder.py'
       - 'test_prop_hunter_ladder_form_windows.py'
       - 'prop_hunter_owner_clean_builder.py'
@@ -59,16 +61,29 @@ jobs:
         run: |
           python -m py_compile prop_hunter_nba_owner_bridge.py prop_hunter_nba_premium_adapter.py
           python -m py_compile prop_hunter_original_compositor.py test_prop_hunter_nba_owner_bridge.py test_prop_hunter_owner_ladder_settlement_rows.py
-          python -m py_compile prop_hunter_owner_clean_single.py prop_hunter_borderless_portrait_test.py
+          python -m py_compile prop_hunter_owner_clean_single.py prop_hunter_borderless_portrait_test.py test_prop_hunter_single_overlay_geometry.py prop_hunter_telegram_sandbox_hardtest.py
           python -m py_compile prop_hunter_owner_clean_ladder.py test_prop_hunter_ladder_form_windows.py
           python -m py_compile prop_hunter_owner_clean_builder.py prop_hunter_owner_leg_status.py test_prop_hunter_owner_leg_status.py
           python -m py_compile prop_hunter_owner_clean_lottery.py
+          python test_prop_hunter_single_overlay_geometry.py
           python test_prop_hunter_nba_owner_bridge.py
           python test_prop_hunter_ladder_form_windows.py
           python test_prop_hunter_owner_ladder_settlement_rows.py
           python test_prop_hunter_owner_leg_status.py
           python prop_hunter_borderless_portrait_test.py
           python test_prop_hunter_owner_pixel_qa.py
+      - name: Telegram Android-style OFFLINE visual hardtest of ALL owner card variants
+        run: |
+          python prop_hunter_telegram_sandbox_hardtest.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('output/telegram_sandbox/manifest.json').read_text())
+          assert sum(v['status']=='PASS' for v in d.values())>=19
+          assert all(d['unapproved_'+s]['status']=='BLOCKED_NO_OWNER_ART'
+                     for s in ('NFL','NHL','MLB','WNBA','EUROLEAGUE'))
+          print('OFFLINE TG SCREENSHOT CONTRACT PASS; NO LIVE TELEGRAM SEND')
+          PY
       - name: Check BOTH Telegram workflows use approved originals and never legacy
         run: |
           python - <<'PY'
@@ -107,6 +122,8 @@ jobs:
           name: nba-true-owner-single-ladder-builder-qa
           path: |
             output/nba_owner_qa/*.png
+            output/telegram_sandbox/*.png
+            output/telegram_sandbox/manifest.json
             card_templates/originals/single.jpg
             card_templates/originals/ladder.jpg
           retention-days: 7
