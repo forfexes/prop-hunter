@@ -188,7 +188,9 @@ def render(*, title, subtitle, teams, row, footer, settlement):
     stake=re.search(r'\bEinsatz\s+([\d.,]+u)\b',str(footer or ''),re.I)
     _write(d,(434,386),stake.group(1) if stake else '—',87,22,GOLD)
     state,color=_status(settlement)
-    _write(d,(274,471),state,91,17,color,italic=True)
+    # Keep the longer GEWONNEN text separated from the baked owner label
+    # AUSWERTUNG: – one baseline, no overlap, no runtime sticker.
+    _write(d,(281,471),state,80,15,color,italic=True)
     _write(d,(453,502),'@prophunter',100,11,WHITE,italic=True)
     im=im.convert('RGB').resize((1080,1080),Image.Resampling.LANCZOS)
     out=BytesIO();im.save(out,format='PNG',optimize=True)
