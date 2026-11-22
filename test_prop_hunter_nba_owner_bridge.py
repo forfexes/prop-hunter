@@ -36,19 +36,19 @@ examples=[
      market="points rebounds",odds=1.90),[row],[]),
     ("single_double_double_owner",N(**common,type="single",
      market="double double",odds=2.45),[row],[]),
-    ("ladder",N(**common,type="ladder",odds=2.4,leg_details=[
+    ("ladder",N(**common,type="ladder",player="TEST PLAYER",odds=2.4,leg_details=[
          {"odds":1.8,"sport":"NBA"},{"odds":2.4,"sport":"NBA"}]),
      [row,dict(row,label="Over 25.5 points")],[]),
     ("builder",N(**common,type="betbuilder",odds=3.45,leg_details=[
-         {"odds":1.75,"sport":"NBA"},{"odds":1.9,"sport":"NBA"},
-         {"odds":2.0,"sport":"NBA"}]),
+         {"player":"TEST PLAYER","odds":1.75,"sport":"NBA"},{"player":"TEST PLAYER TWO","odds":1.9,"sport":"NBA"},
+         {"player":"TEST PLAYER THREE","odds":2.0,"sport":"NBA"}]),
      [row,dict(row,name="TEST PLAYER TWO"),dict(row,name="TEST PLAYER THREE")],[]),
     ("lottery",N(**common,type="lottery",odds=13.80,leg_details=[
-         {"odds":1.75,"sport":"NBA","game":"HOME TEST vs AWAY TEST",
+         {"player":"TEST PLAYER","odds":1.75,"sport":"NBA","game":"HOME TEST vs AWAY TEST",
           "commence_time":"2026-11-20T19:00:00+00:00"},
-         {"odds":2.30,"sport":"NBA","game":"TEAM C vs TEAM D",
+         {"player":"TEST PLAYER TWO","odds":2.30,"sport":"NBA","game":"TEAM C vs TEAM D",
           "commence_time":"2026-11-21T19:00:00+00:00"},
-         {"odds":3.40,"sport":"NBA","game":"TEAM E vs TEAM F",
+         {"player":"TEST PLAYER THREE","odds":3.40,"sport":"NBA","game":"TEAM E vs TEAM F",
           "commence_time":"2026-11-22T19:00:00+00:00"}]),
      [row,dict(row,name="TEST PLAYER TWO"),dict(row,name="TEST PLAYER THREE")],[]),
 ]
