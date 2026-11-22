@@ -96,7 +96,7 @@ for file in sorted(ROOT.glob("*.png")):
     # Place the metadata on the very last baseline of the reserved gutter,
     # not 24px above it where it looks like a tall sticker.
     overlay_y=y+photo_h-17
-    assert overlay_y >= y+scaled_body+8,
+    assert overlay_y >= y+scaled_body+8, (
         file.name,"Telegram metadata overlaps original owner artwork"
     )
     box=(x+photo_w-127,overlay_y-1,x+photo_w-7,overlay_y+15)
