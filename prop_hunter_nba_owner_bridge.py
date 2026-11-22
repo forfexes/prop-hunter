@@ -107,6 +107,10 @@ def render_owner(pick, key: str, rows: list, teams: list,
             "name": str(row["name"]), "photo": photo,
             "label": str(row.get("label") or "").strip(),
             "odds": price, "form": row.get("form") or "",
+            # Critical: the result of EACH Ladder/Builder/ Lottery leg is
+            # settled in its ORIGINAL Telegram photo. Without this field
+            # the clean original renderer gets a blank result for every rung.
+            "result": str(row.get("result") or "").strip(),
             "model": row.get("model") or {},
             "game": values.get(f"leg_{i+1}_game") if family == "lottery" else "",
         })
