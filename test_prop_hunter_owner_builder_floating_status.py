@@ -29,7 +29,10 @@ rows=[{
 
 for state, tone in (("OFFEN",builder.WHITE),
                     ("GEWONNEN",builder.GREEN),
-                    ("VERLOREN",builder.RED)):
+                    ("VERLOREN",builder.RED),
+                    ("2 gewonnen · 1 verloren",builder.RED),
+                    ("2 gewonnen · 0 verloren",builder.GREEN),
+                    ("1 gewonnen · 1 offen",builder.WHITE)):
     texts=[]
     real=builder._text
     def track(draw,xy,value,*args,**kwargs):
