@@ -93,13 +93,15 @@ for file in sorted(ROOT.glob("*.png")):
     canvas.paste(photo,(x,y))
     draw=ImageDraw.Draw(canvas)
     # "bearbeitet" and local clock are drawn in the bottom metadata gutter.
-    overlay_y=y+photo_h-24
-    assert overlay_y >= y+scaled_body+8,(
+    # Place the metadata on the very last baseline of the reserved gutter,
+    # not 24px above it where it looks like a tall sticker.
+    overlay_y=y+photo_h-17
+    assert overlay_y >= y+scaled_body+8,
         file.name,"Telegram metadata overlaps original owner artwork"
     )
-    box=(x+photo_w-127,overlay_y-1,x+photo_w-7,overlay_y+17)
-    draw.rounded_rectangle(box,radius=6,fill=(15,22,38))
-    draw.text((box[0]+5,overlay_y+3),"bearbeitet 23:01",font=font,fill=(247,249,254))
+    box=(x+photo_w-127,overlay_y-1,x+photo_w-7,overlay_y+15)
+    draw.rounded_rectangle(box,radius=4,fill=(15,22,38))
+    draw.text((box[0]+5,overlay_y+2),"bearbeitet 23:01",font=font,fill=(247,249,254))
     draw.text((18,y+photo_h+15),"SANDBOX · NICHT AN TELEGRAM GESENDET",
               font=font,fill=(210,208,153))
     name="telegram_chat_"+file.stem+".png"
