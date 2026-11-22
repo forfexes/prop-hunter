@@ -7,6 +7,9 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
+import os
+
+from prop_hunter_telegram_safe_zone import split_owner_margin
 
 from PIL import Image, ImageChops
 
@@ -84,13 +87,21 @@ def owner_pixel_provenance(pick, png_bytes):
             factor = 1080.0 / master.width
             box = tuple(round(v * factor) for v in STATIC_CROWN)
             exact_height = round(1080 * master.height / master.width)
-            if sent.height < exact_height:
-                return False, "owner_png_truncated"
+            permitted = [exact_height]
+            if family == "ladder" and master.size == (691, 865):
+                permitted.append(round(1080 * (master.height + 120) / master.width))
+            try:
+                owner_body, has_safe_margin = split_owner_margin(sent, tuple(permitted))
+            except ValueError:
+                return False, "owner_telegram_margin_missing_or_modified"
+            if (os.getenv("PH_REQUIRE_TELEGRAM_SAFE_MARGIN", "0") == "1"
+                    and not has_safe_margin):
+                return False, "owner_telegram_margin_missing"
             comparison = master
-            if family == "ladder" and sent.height != exact_height:
+            if family == "ladder" and owner_body.height != exact_height:
                 extra, cut = 120, 730
                 allowed_height = round(1080 * (master.height + extra) / master.width)
-                if master.size != (691, 865) or sent.height != allowed_height:
+                if master.size != (691, 865) or owner_body.height != allowed_height:
                     return False, "unapproved_ladder_extension"
                 comparison = Image.new(
                     "RGB", (691, 865 + extra), (3, 15, 29)
@@ -101,10 +112,10 @@ def owner_pixel_provenance(pick, png_bytes):
                     master.crop((0, cut, 691, 865)), (0, cut + extra)
                 )
             expected = comparison.resize(
-                (1080, sent.height if family == "ladder" else exact_height),
+                (1080, owner_body.height if family == "ladder" else exact_height),
                 Image.Resampling.LANCZOS
             ).crop(box)
-            actual = sent.convert("RGB").crop(box)
+            actual = owner_body.crop(box)
             if ImageChops.difference(expected, actual).getbbox() is not None:
                 return False, "owner_masthead_pixel_overlap"
     except (OSError, ValueError, SyntaxError):
