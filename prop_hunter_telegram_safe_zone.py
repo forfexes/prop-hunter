@@ -18,7 +18,10 @@ PNG = b"\x89PNG\r\n\x1a\n"
 def margin_height(body_height: int) -> int:
     if body_height < 400:
         raise ValueError("Owner card too short for Telegram-safe preview")
-    return max(200, round(body_height * 0.16))
+    # Minimal Telegram metadata room: about 36px in a 354px-wide
+    # Android chat thumbnail (rather than the former ~70px black band).
+    # Keep the actual artwork pixel-exact; never move the original footer.
+    return max(112, round(body_height * 0.075))
 
 
 def append_owner_margin(png: bytes) -> bytes:
