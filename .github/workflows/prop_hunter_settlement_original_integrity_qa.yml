@@ -6,6 +6,7 @@ name: PROP HUNTER Settlement Original-Integrity QA
     branches: [main]
     paths:
       - "prophunter_results.py"
+      - "test_prop_hunter_recent_original_photo_refresh.py"
       - "prop_hunter_media_settlement_test.py"
       - ".github/workflows/prophunter_results.yml"
       - ".github/workflows/prop_hunter_settlement_original_integrity_qa.yml"
@@ -33,15 +34,18 @@ jobs:
       - name: Install isolated media QA dependencies
         run: python -m pip install -q requests 'Pillow>=10' cairosvg numpy
       - name: Compile Telegram settlement and approval tests
-        run: python -m py_compile prophunter_results.py prop_hunter_media_settlement_test.py
+        run: python -m py_compile prophunter_results.py prop_hunter_media_settlement_test.py test_prop_hunter_recent_original_photo_refresh.py
       - name: Test exact original message and caption-only settlement
-        run: python prop_hunter_media_settlement_test.py
+        run: |
+          python prop_hunter_media_settlement_test.py
+          python test_prop_hunter_recent_original_photo_refresh.py
       - name: Assert settlement production never overwrites non-approved media
         run: |
           python - <<'PY'
           from pathlib import Path
           source=Path('.github/workflows/prophunter_results.yml').read_text()
           assert "PH_OWNER_APPROVED_ALL_SPORTS: '1'" in source
+          assert "PH_REQUIRE_TELEGRAM_SAFE_MARGIN: '1'" in source
           assert "PH_NBA_OWNER_ORIGINALS: '1'" in source
           print("NON-NBA IMAGE IMMUTABILITY AND SAME-MESSAGE SETTLEMENT ENABLED")
           print("OFFLINE QA ONLY; no Telegram or DB writes")
