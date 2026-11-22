@@ -5,6 +5,15 @@ name: Prop Hunter Sandbox Hardtest
     paths:
       - '.github/workflows/prop_hunter_sandbox_hardtest.yml'
       - 'prop_hunter_combo_prices_test.py'
+      - 'prop_hunter_nba_owner_bridge.py'
+      - 'prop_hunter_owner_clean_single.py'
+      - 'prop_hunter_owner_clean_ladder.py'
+      - 'prop_hunter_owner_clean_builder.py'
+      - 'prop_hunter_owner_clean_lottery.py'
+      - 'prop_hunter_telegram_sandbox_hardtest.py'
+      - 'test_prop_hunter_single_overlay_geometry.py'
+      - 'test_prop_hunter_owner_ladder_settlement_rows.py'
+      - 'test_prop_hunter_owner_leg_status.py'
 permissions:
   contents: read
 jobs:
@@ -37,6 +46,26 @@ jobs:
           python prop_hunter_mixed_builders_test.py
           python prop_hunter_ladder_l15_test.py
           python prop_hunter_runtime_guard.py
+      - name: Mandatory original-card Telegram preview Hardtest (19+ variants)
+        timeout-minutes: 9
+        run: |
+          python -m py_compile prop_hunter_telegram_sandbox_hardtest.py test_prop_hunter_single_overlay_geometry.py
+          python test_prop_hunter_single_overlay_geometry.py
+          python test_prop_hunter_nba_owner_bridge.py
+          python test_prop_hunter_owner_ladder_settlement_rows.py
+          python test_prop_hunter_owner_leg_status.py
+          python prop_hunter_telegram_sandbox_hardtest.py
+      - name: Upload simulated Telegram Android chat screenshots and approval manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prop-hunter-all-owners-sandbox-telegram
+          path: |
+            output/telegram_sandbox/*.png
+            output/telegram_sandbox/manifest.json
+            output/nba_owner_qa/*.png
+          retention-days: 7
+          if-no-files-found: warn
       - name: Verify test did not mutate tracked runtime state
         if: always()
         run: |
