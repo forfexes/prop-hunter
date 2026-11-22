@@ -6,6 +6,8 @@ name: PROP HUNTER NBA Actual Owner Originals Integration QA
     paths:
       - 'prop_hunter_nba_owner_bridge.py'
       - 'prop_hunter_nba_premium_adapter.py'
+      - 'prop_hunter_nba_premium_adapter_test.py'
+      - 'test_prop_hunter_nba_priced_leg_identity.py'
       - 'prop_hunter_original_compositor.py'
       - 'prop_hunter_owner_clean_single.py'
       - 'test_prop_hunter_single_overlay_geometry.py'
@@ -72,6 +74,8 @@ jobs:
           python test_prop_hunter_owner_pending_status.py
           python test_prop_hunter_owner_builder_floating_status.py
           python test_prop_hunter_nba_owner_bridge.py
+          python prop_hunter_nba_premium_adapter_test.py
+          python -m unittest -v test_prop_hunter_nba_priced_leg_identity
           python -m unittest -v test_prop_hunter_owner_date_integrity
           python test_prop_hunter_ladder_form_windows.py
           python test_prop_hunter_owner_ladder_settlement_rows.py
