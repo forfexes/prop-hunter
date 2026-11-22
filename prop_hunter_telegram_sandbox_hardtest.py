@@ -115,6 +115,44 @@ for file in sorted(ROOT.glob("*.png")):
         "bookmaker_source":"TEST DATA ONLY",
     }
 
+# Preserve the user's actual design review, independent of the green
+# transport/geometry test. This must not be silently treated as owner signoff.
+# In particular the dark rectangular VS source is baked into the supplied
+# clean plate, and a successful PNG render does not resolve that objection.
+known_visual_blockers={
+    "single":[
+        "VS_BLACK_PANEL_SOURCE_ART_STILL_VISUALLY_UNAPPROVED",
+        "OFFEN_SETTLEMENT_INTEGRATION_REQUIRES_FINAL_VISUAL_ACCEPTANCE",
+    ],
+    "ladder":[
+        "VS_BLACK_PANEL_SOURCE_ART_STILL_VISUALLY_UNAPPROVED",
+    ],
+}
+for family,issues in known_visual_blockers.items():
+    if family in report:
+        report[family]["owner_visual_signoff"]="PENDING"
+        report[family]["unresolved_design_issues"]=issues
+        report[family]["production_visual_acceptance_claim"]=False
+# Create a contact sheet from the EXACT mock Telegram screenshots so people
+# can review all 19+ variants without opening one artifact at a time.
+screens=sorted(DEST.glob("telegram_chat_*.png"))
+tile_w,tile_h=215,520
+columns=5
+rows=(len(screens)+columns-1)//columns
+sheet=Image.new("RGB",(tile_w*columns,tile_h*rows),(21,28,42))
+annotation=ImageDraw.Draw(sheet)
+for i,png in enumerate(screens):
+    with Image.open(png) as original_preview:
+        tile=original_preview.convert("RGB")
+        tile.thumbnail((tile_w-12,tile_h-32),Image.Resampling.LANCZOS)
+    px=(i%columns)*tile_w+6
+    py=(i//columns)*tile_h+25
+    sheet.paste(tile,(px,py))
+    annotation.text((px,py-20),png.stem.replace("telegram_chat_","")[:28],
+                    font=font,fill=(248,250,255))
+sheet.save(DEST/"contact_sheet.png",optimize=True)
+print("TELEGRAM_SCREENSHOT_CONTACT_SHEET",len(screens),"cards; original VS acceptance pending")
+
 # Unapproved sports are not quietly treated as eligible just because a
 # technical SVG fallback exists. This is release readiness, not a test failure.
 for sport in ("NFL","NHL","MLB","WNBA","EUROLEAGUE"):
@@ -126,6 +164,9 @@ for sport in ("NFL","NHL","MLB","WNBA","EUROLEAGUE"):
     json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8"
 )
 assert len([v for v in report.values() if v["status"]=="PASS"])>=len(required)
+assert report["single"]["owner_visual_signoff"]=="PENDING"
+assert not report["single"]["production_visual_acceptance_claim"]
+print("OWNER_DESIGN_REVIEW_PENDING_SINGLE_VS_AND_SETTLEMENT_NOT_FALSELY_APPROVED")
 print("TELEGRAM_OFFLINE_CHAT_HARDTEST_PASS",len(required),
       "owner variants; no Telegram token, no SMS, no API")
 print("UNAPPROVED_SPORTS_BLOCKED",5)
