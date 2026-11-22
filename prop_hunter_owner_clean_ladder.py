@@ -93,9 +93,12 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
                   size=12, max_width=140, color=GREEN)
         result = str(row.get("result") or "")
         if result:
-            state_color = (GREEN if "gewonnen" in result.casefold()
-                           else RED if "verloren" in result.casefold() else GOLD)
-            _text(d, (529, y + 43), result, size=11,
+            # Each rung has an independent, observed result. Support English
+            # source settlement codes while preserving real measured values,
+            # instead of treating a real WON/LOST as unknown gold ink.
+            state_label, state_color = owner_settlement_state(
+                result, green=GREEN, red=RED, white=WHITE)
+            _text(d, (529, y + 43), state_label, size=11,
                   max_width=132, color=state_color)
         _text(d, (618, y + 21), row.get("odds"),
               size=20, max_width=99, color=GOLD)
