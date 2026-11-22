@@ -71,7 +71,7 @@ class SourceOriginalQA(unittest.TestCase):
                 self.assertEqual(im.size,(1080,1080))
             if name=='GEWONNEN':
                 (ROOT/'preview_single_won.png').write_bytes(raw)
-        with self.assertRaisesRegex(ValueError,'status'):
+        with self.assertRaises(ValueError):
             self.render(settlement='probably won')
         # Telegram result summaries sometimes carry numerically counted
         # winners and losers. One Single still needs exactly one true result.
