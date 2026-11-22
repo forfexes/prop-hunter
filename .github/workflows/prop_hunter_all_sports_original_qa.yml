@@ -7,6 +7,8 @@ name: PROP HUNTER All-Sports Original-Only QA
       - "prop_hunter_image_publication_gate.py"
       - "prop_hunter_telegram_safe_zone.py"
       - "prop_hunter_nba_owner_bridge.py"
+      - "prop_hunter_nba_premium_adapter.py"
+      - "test_prop_hunter_nba_priced_leg_identity.py"
       - "prop_hunter_owner_pixel_qa.py"
       - "test_prop_hunter_telegram_safe_zone.py"
       - "test_prop_hunter_final_quality_gate.py"
@@ -45,6 +47,10 @@ jobs:
         run: python -m pip install --quiet 'Pillow>=10' 'pytest>=8' 'requests>=2.31'
       - name: Syntax safety
         run: python -m py_compile prop_hunter_image_publication_gate.py prop_hunter_image_cards.py test_prop_hunter_image_publication_gate.py test_prop_hunter_mixed_league_settlement_guard.py prop_hunter_combo_prices.py prop_hunter_telegram_safe_zone.py prop_hunter_owner_pixel_qa.py prop_hunter_nba_owner_bridge.py test_prop_hunter_telegram_safe_zone.py test_prop_hunter_final_quality_gate.py prop_hunter_owner_rescue_select.py test_prop_hunter_owner_rescue_select.py prop_hunter_player_fixture_guard.py test_prop_hunter_player_fixture_guard.py
+      - name: Reject wrong athlete on a priced NBA card before artwork
+        run: |
+          python -m py_compile prop_hunter_nba_premium_adapter.py test_prop_hunter_nba_priced_leg_identity.py
+          python -m unittest -v test_prop_hunter_nba_priced_leg_identity
       - name: No unapproved sports, old-text overlays or unverified ticket
         run: |
           python test_prop_hunter_image_publication_gate.py
