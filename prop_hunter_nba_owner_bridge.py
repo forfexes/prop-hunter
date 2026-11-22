@@ -123,6 +123,18 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # Telegram overlays its message time/edited status at bottom right.
     # Preserve the entire approved owner poster; append an EMPTY scanline-only
     # metadata margin AFTER rendering (never cover original text or artwork).
-    owner_png = original_card(family, title, subtitle,"NBA",teams,
-                              labels,footer,values.get("settlement") or "OFFEN")
+    # New user's actual 22.11.26 SINGLE is an independent, 512px source.
+    # Unlike the older stadium master, it has different field geometry.
+    # Never reuse the old text coordinates or silently switch to a substitute.
+    if (family == "single" and title == "SINGLE"
+            and os.getenv("PH_NBA_USER_SINGLE_20261122", "0") == "1"):
+        from prop_hunter_owner_supplied_single import render as render_supplied_single
+        if len(labels) != 1:
+            raise ValueError("User original SINGLE requires one actual athlete")
+        owner_png = render_supplied_single(
+            title=title, subtitle=subtitle, teams=teams, row=labels[0],
+            footer=footer, settlement=values.get("settlement") or "OFFEN")
+    else:
+        owner_png = original_card(family, title, subtitle,"NBA",teams,
+                                  labels,footer,values.get("settlement") or "OFFEN")
     return append_owner_margin(owner_png)
