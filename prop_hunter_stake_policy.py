@@ -6,11 +6,11 @@ displayed rung stakes MUST sum to its total stake. Never invent betting prices.
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
-def apply_flat_ticket_stake(ticket, amount: float, *, lottery_amount: float = 0.10):
+def apply_flat_ticket_stake(ticket, amount: float, *, lottery_amount: float | None = None):
     """Mutate a validated Pick before image preflight, text and DB persistence.
 
-    Every standard ticket totals the configured flat unit. Lottery tickets
-    remain explicitly low-risk. Each Ladder rung receives an exact 0.01u
+    Every published ticket, INCLUDING Lottery, totals the configured unit.
+    A different lottery stake is possible only via explicit opt-in. Each Ladder rung receives an exact 0.01u
     allocation, with any rounding cents assigned deterministically to the
     earliest rungs; no extra bankroll is quietly risked.
     """
@@ -37,7 +37,7 @@ def apply_flat_ticket_stake(ticket, amount: float, *, lottery_amount: float = 0.
     lottery = kind == "big" or any(
         "lottery" in part for part in (kind, market, profile)
     )
-    total_cents = cents(lottery_amount if lottery else amount)
+    total_cents = cents(lottery_amount if lottery and lottery_amount is not None else amount)
     if kind == "ladder":
         rungs = list(get("picks", []) or [])
         if not 2 <= len(rungs) <= 6 or total_cents < len(rungs):
