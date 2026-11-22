@@ -60,6 +60,11 @@ def capture_text(draw, xy, caption, *args, **kwargs):
 with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS": "1"}), \
      patch.object(ladder, "_text", side_effect=capture_text):
     rendered = bridge.render_owner(pick, "ladder_3", rows, teams, values, pick.leg_details)
+# Archive this real compositor output for visual review, never Telegram.
+from pathlib import Path
+preview_dir=Path("output/nba_owner_qa")
+preview_dir.mkdir(parents=True,exist_ok=True)
+preview_dir.joinpath("ladder_settlement_status_owner.png").write_bytes(rendered)
 with Image.open(BytesIO(rendered)) as photo:
     assert photo.width == 1080 and photo.height > 1300
     body, blank = split_owner_margin(photo, (round(1080 * 865 / 691),))
