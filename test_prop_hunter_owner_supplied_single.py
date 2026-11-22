@@ -73,6 +73,22 @@ class SourceOriginalQA(unittest.TestCase):
                 (ROOT/'preview_single_won.png').write_bytes(raw)
         with self.assertRaisesRegex(ValueError,'status'):
             self.render(settlement='probably won')
+        # Telegram result summaries sometimes carry numerically counted
+        # winners and losers. One Single still needs exactly one true result.
+        for raw, expected in (
+            ("1 gewonnen · 0 verloren · +0.74u", "GEWONNEN"),
+            ("0 gewonnen · 1 verloren", "VERLOREN"),
+            ("1 offen · 0 gewonnen", "OFFEN"),
+            ("1 void · 0 verloren", "VOID"),
+        ):
+            with self.subTest(raw=raw):
+                self.assertEqual(owner._status(raw)[0],expected)
+                self.assertTrue(self.render(settlement=raw).startswith(b"\\x89PNG"))
+        for ambiguous in ("1 gewonnen · 1 verloren",
+                          "0 gewonnen · 0 verloren","2 gewonnen",
+                          "unverified result 1"):
+            with self.subTest(ambiguous=ambiguous),self.assertRaises(ValueError):
+                self.render(settlement=ambiguous)
 
     def test_no_fabricated_time_quote_photo_or_name(self):
         for vals in ({'subtitle':'yesterday'}, {'row':{**self.fields['row'],'odds':'@NA'}},
