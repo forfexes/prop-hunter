@@ -73,7 +73,8 @@ with Image.open(BytesIO(rendered)) as photo:
 for state in ("GEWONNEN", "VERLOREN", "Ist: 1 · VERLOREN"):
     assert state in seen, (state, seen)
 assert "L5 4/5 · L10 7/10 · L15 13/15" in seen
-assert sum(x == "SAME VERIFIED ATHLETE" for x in seen) >= 2
+# Owner request: one athlete name above rungs; no duplicate under photo.
+assert sum(x == "SAME VERIFIED ATHLETE" for x in seen) == 1
 
 # Missing evidence stays blank: never guess the result from its odds or form.
 rows_unknown = [{**r, "result": ""} for r in rows]
