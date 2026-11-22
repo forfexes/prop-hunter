@@ -174,7 +174,7 @@ def _erase_redundant_match_box(im, family):
 
 def _verified_kickoff_label(subtitle):
     """Extract date/time already appended from a real commence_time field."""
-    matched=re.search(r'\b(?:Mo|Di|Mi|Do|Fr|Sa|So)\s+\d{2}\.\d{2}\.(?:\s*·\s*\d{2}:\d{2})?',str(subtitle or ''))
+    matched=re.search(r'\b(?:Mo|Di|Mi|Do|Fr|Sa|So)\s+\d{2}\.\d{2}\.(?:\d{4})?(?:\s*·\s*\d{2}:\d{2})?',str(subtitle or ''))
     return matched.group(0) if matched else ''
 
 
@@ -201,13 +201,15 @@ def _panel_fields(subtitle):
     venue = ''
     if ' @@ ' in text:
         text, venue = text.split(' @@ ', 1)
-    m = re.search(r'\b(Mo|Di|Mi|Do|Fr|Sa|So)\s+(\d{2})\.(\d{2})\.(?:\s*·\s*(\d{2}:\d{2}))?', text)
+    m = re.search(r'\b(Mo|Di|Mi|Do|Fr|Sa|So)\s+(\d{2})\.(\d{2})\.(\d{4})?(?:\s*·\s*(\d{2}:\d{2}))?', text)
     date_s = time_s = ''
     if m:
-        wd, dd, mm, hhmm = m.group(1), int(m.group(2)), int(m.group(3)), m.group(4)
-        today = _dt.date.today()
-        year = today.year + (1 if mm < today.month - 6 else -1 if mm > today.month + 6 else 0)
-        date_s = f'{wd}, {dd}. {_DE_MON[mm-1]} {year}'
+        wd, dd, mm, yyyy, hhmm = m.group(1), int(m.group(2)), int(m.group(3)), m.group(4), m.group(5)
+        if not (1 <= mm <= 12 and 1 <= dd <= 31):
+            raise ValueError('Invalid verified NBA date in original card')
+        # Never invent a season year based on today's date. Legacy captions
+        # without a year retain only the information actually verified.
+        date_s = f'{wd}, {dd}. {_DE_MON[mm-1]}' + (f' {yyyy}' if yyyy else '')
         time_s = f'{hhmm} Uhr' if hhmm else ''
     v1 = v2 = ''
     if venue:
