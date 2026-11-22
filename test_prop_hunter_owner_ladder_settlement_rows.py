@@ -83,4 +83,23 @@ with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS": "1"}), \
     bridge.render_owner(pick, "ladder_3", rows_unknown, teams, values, pick.leg_details)
 assert "GEWONNEN" not in seen and "VERLOREN" in seen  # Only ticket status
 assert "Ist: 1 · VERLOREN" not in seen
+# ESPN/bookmaker rows sometimes store English settlement codes. Each
+# original Ladder stage must display the exact source outcome in the correct
+# colour, not mark "WON" or "LOST" as an unknown gold placeholder.
+rows_codes=[
+    {**rows[0], "result": "WON"},
+    {**rows[1], "result": "LOST"},
+    {**rows[2], "result": "PUSH"},
+]
+coloured=[]
+def colour_text(draw, xy, caption, *args, **kwargs):
+    coloured.append((str(caption), kwargs.get("color")))
+    return real_text(draw, xy, caption, *args, **kwargs)
+with patch.dict("os.environ", {"PH_NBA_OWNER_ORIGINALS":"1"}), \
+     patch.object(ladder, "_text", side_effect=colour_text):
+    bridge.render_owner(pick, "ladder_3", rows_codes, teams,
+                        {**values, "settlement":"OFFEN"},pick.leg_details)
+assert ("GEWONNEN", ladder.GREEN) in coloured,coloured
+assert ("VERLOREN", ladder.RED) in coloured,coloured
+assert ("PUSH", ladder.WHITE) in coloured,coloured
 print("OWNER_NBA_LADDER_PER_RUNG_SETTLEMENT_IN_ORIGINAL_IMAGE_PASS")
