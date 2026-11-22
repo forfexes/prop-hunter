@@ -269,6 +269,10 @@ def render_nba_pick(pick, rows, teams):
             # this leg's bookmaker price.  Do not accept approximate matches:
             # players with the same surname can be distinct athletes.
             declared_name = _get(detail, "player") or _get(detail, "player_name")
+            if not _verified_player_key(declared_name) and (typ == "ladder" or family == "same_player"):
+                # One-athlete ladder legs may omit redundant player names,
+                # but the parent ticket must independently identify him.
+                declared_name = _get(pick, "player") or _get(pick, "player_name")
             actual_name = row.get("name")
             if not _verified_player_key(declared_name):
                 # A leg's model row cannot attest its own bookmaker selection.
