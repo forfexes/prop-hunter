@@ -27,7 +27,7 @@ def _font(size):
 
 
 def _text(draw, position, value, *, size=20, max_width=240,
-          color=WHITE, anchor="mm"):
+          color=WHITE, anchor="mm", stroke_width=0, stroke_fill=None):
     value = str(value or "").strip()
     if not value:
         return
@@ -37,7 +37,8 @@ def _text(draw, position, value, *, size=20, max_width=240,
         font = _font(size)
     if draw.textlength(value, font=font) > max_width:
         raise ValueError("Owner Single text too long for its actual source slot")
-    draw.text(position, value, fill=color, font=font, anchor=anchor)
+    draw.text(position, value, fill=color, font=font, anchor=anchor,
+              stroke_width=stroke_width, stroke_fill=stroke_fill)
 
 
 def owner_settlement_state(raw, *, green, red, white):
@@ -151,20 +152,17 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
     if title and title not in ("SINGLE",):
         _text(d, (402, 347), title, size=16, max_width=280, color=GOLD)
 
-    # Slot artwork is an already-clean owner plate. In production the old
-    # semi-transparent green/gold fills let the athlete/arena show THROUGH the
-    # market and price. Use solid, matte ink inside the native neon rail
-    # without redrawing a fake glowing frame or hiding baked example text.
-    # Start at x=211, not 168: the photo is no longer boxed over his jersey.
-    tint = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    p = ImageDraw.Draw(tint)
-    p.rounded_rectangle((211, 387, 470, 437), radius=8, fill=DARK_GREEN)
-    p.rounded_rectangle((475, 387, 620, 437), radius=8, fill=DARK_GOLD)
-    im = Image.alpha_composite(im, tint)
+    # The supplied clean SINGLE master already contains the empty
+    # neon market and price rails.  Render ONLY new text on those rails:
+    # never paste black/gold rectangles or paint over the owner's artwork.
+    # A tiny glyph-level outline keeps type legible without repainting the
+    # stadium, the portrait or any of the template's original light effects.
     d = ImageDraw.Draw(im)
-    _text(d, (340, 410), row.get("label"), size=27, max_width=236)
+    _text(d, (340, 410), row.get("label"), size=27, max_width=236,
+          stroke_width=1, stroke_fill=(3, 12, 22))
     _text(d, (547, 410), row.get("odds"), size=27,
-          max_width=125, color=GOLD)
+          max_width=125, color=GOLD,
+          stroke_width=1, stroke_fill=(3, 12, 22))
     _text(d, (159, 476), "LETZTE SPIELE", size=18, max_width=168)
     _observed_form(d, row.get("form"))
     _models(d, row.get("model"))
