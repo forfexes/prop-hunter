@@ -12,6 +12,8 @@ name: PROP HUNTER All-Sports Original-Only QA
       - "test_prop_hunter_final_quality_gate.py"
       - "prop_hunter_owner_rescue_select.py"
       - "test_prop_hunter_owner_rescue_select.py"
+      - "prop_hunter_player_fixture_guard.py"
+      - "test_prop_hunter_player_fixture_guard.py"
       - "prophunter_core_1391.py"
       - "prop_hunter_image_cards.py"
       - "test_prop_hunter_mixed_league_settlement_guard.py"
@@ -42,7 +44,7 @@ jobs:
       - name: Install isolated QA dependencies
         run: python -m pip install --quiet 'Pillow>=10' 'pytest>=8' 'requests>=2.31'
       - name: Syntax safety
-        run: python -m py_compile prop_hunter_image_publication_gate.py prop_hunter_image_cards.py test_prop_hunter_image_publication_gate.py test_prop_hunter_mixed_league_settlement_guard.py prop_hunter_combo_prices.py prop_hunter_telegram_safe_zone.py prop_hunter_owner_pixel_qa.py prop_hunter_nba_owner_bridge.py test_prop_hunter_telegram_safe_zone.py test_prop_hunter_final_quality_gate.py prop_hunter_owner_rescue_select.py test_prop_hunter_owner_rescue_select.py
+        run: python -m py_compile prop_hunter_image_publication_gate.py prop_hunter_image_cards.py test_prop_hunter_image_publication_gate.py test_prop_hunter_mixed_league_settlement_guard.py prop_hunter_combo_prices.py prop_hunter_telegram_safe_zone.py prop_hunter_owner_pixel_qa.py prop_hunter_nba_owner_bridge.py test_prop_hunter_telegram_safe_zone.py test_prop_hunter_final_quality_gate.py prop_hunter_owner_rescue_select.py test_prop_hunter_owner_rescue_select.py prop_hunter_player_fixture_guard.py test_prop_hunter_player_fixture_guard.py
       - name: No unapproved sports, old-text overlays or unverified ticket
         run: |
           python test_prop_hunter_image_publication_gate.py
@@ -50,6 +52,7 @@ jobs:
           python test_prop_hunter_telegram_safe_zone.py
           python test_prop_hunter_final_quality_gate.py
           python test_prop_hunter_owner_rescue_select.py
+          python test_prop_hunter_player_fixture_guard.py
           python test_prop_hunter_owner_pixel_qa.py
           python prop_hunter_combo_prices_test.py
       - name: Verify live original-only approval flag
