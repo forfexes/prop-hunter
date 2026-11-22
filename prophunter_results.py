@@ -1334,11 +1334,14 @@ def main() -> int:
             # One-time design v3 upgrade for already published PHOTO tips, even
             # while result is pending. Keep original message_id and settlement.
             # Never attempt editMessageMedia on a text-only message.
-            CARD_DESIGN_VERSION=5
+            CARD_DESIGN_VERSION=6  # v6: same approved owner artwork plus Telegram-safe bottom margin
             _visual_age=(datetime.now(timezone.utc).date()-timedelta(days=14)).isoformat()
             _today_visual_only=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="today" and day==datetime.now(__import__("zoneinfo").ZoneInfo("Europe/Zurich")).date().isoformat())
             _design_due=((os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" or _today_visual_only) and day>=_visual_age and card.get("media_type")=="photo"
                 and bool(card.get("image_pick"))
+                and (not _today_visual_only or (
+                    isinstance(card.get("image_pick"), dict)
+                    and card["image_pick"].get("_owner_layered_original_v1") is True))
                 and int(card.get("card_design_version") or 0)<CARD_DESIGN_VERSION
                 and image_migrations<migration_limit)
             _text_design_due=(os.getenv("PH_CARD_VISUAL_MIGRATIONS","0")=="1" and card.get("media_type","text")=="text" and bool(legacy_source)
