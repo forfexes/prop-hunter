@@ -83,7 +83,7 @@ def render_owner(pick, key: str, rows: list, teams: list,
         if not values.get("time"):
             raise ValueError("Verified NBA start time missing")
         source = f"{teams[0][0]} vs {teams[1][0]}"
-        when = f"{WD[dt.weekday()]} {dt:%d.%m}. · {values['time']}"
+        when = f"{WD[dt.weekday()]} {dt:%d.%m.%Y} · {values['time']}"
         subtitle = source + " · " + when
     stake = values.get("stake")
     observed_quote = values.get("total_odds") or values.get("odds")
