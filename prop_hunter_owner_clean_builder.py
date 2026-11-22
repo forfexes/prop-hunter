@@ -139,7 +139,7 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
           size=22, max_width=95, color=GOLD)
     state = str(settlement or "OFFEN").strip()
     color = (GREEN if "gewonnen" in state.casefold()
-             else RED if "verloren" in state.casefold() else GOLD)
+             else RED if "verloren" in state.casefold() else WHITE)
     _text(d, (371, 782), state, size=17, max_width=170, color=color)
 
     output = im.convert("RGB").resize(
