@@ -54,10 +54,11 @@ for file in sorted(ROOT.glob("*.png")):
         original=incoming.convert("RGB")
     if original.width != 1080:
         raise AssertionError(f"{file.name}: not full 1080px owner source")
-    # Work out exact body height from the documented fixed-size 16% UI gap;
-    # verify the entire band is actually an EMPTY scanline-only continuation.
+    # Find the original height from the new 7.5% / min-112px metadata area.
+    # Max displayed gutter is intentionally small, but large enough for
+    # Telegram's real 'bearbeitet' label in a 354px thumbnail.
     candidates=[
-        h for h in range(max(400, original.height-900), original.height-179)
+        h for h in range(max(400, original.height-300), original.height-95)
         if h+margin_height(h)==original.height
     ]
     valid=[]
@@ -73,6 +74,8 @@ for file in sorted(ROOT.glob("*.png")):
             f"{file.name}: Telegram safe strip missing, forged or ambiguous: {valid}"
         )
     body_h=valid[0]
+    assert original.height-body_h <= max(160, round(body_h*.09)), (
+        file.name, "excessive black strip under original owner card")
     frame_w=390
     margin=18
     photo_w=frame_w-2*margin
