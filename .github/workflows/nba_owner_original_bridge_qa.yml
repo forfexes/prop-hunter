@@ -26,6 +26,22 @@ permissions:
   contents: read
 
 jobs:
+  # Archive the untouched owner screenshots separately from synthetic render
+  # previews. Helps verify design provenance without any overlay or rewrite.
+  export-unchanged-owner-jpg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: original-owner-nba-single-ladder-jpg
+          path: |
+            card_templates/originals/single.jpg
+            card_templates/originals/ladder.jpg
+          retention-days: 7
+          if-no-files-found: error
+
   no-telegram-owner-cards:
     runs-on: ubuntu-latest
     timeout-minutes: 10
