@@ -14,7 +14,7 @@ assert nba_code("76ers") == "PHI"
 assert nba_code("BOS Celtics") == "BOS"
 assert nba_code("Sacramento Kings") == "SAC"
 assert nba_code("New Orleans Pelicans") == "NOP"
-assert nba_code("SA Spurs") == "SAS" if nba_code("SA Spurs") else True
+assert nba_code("SA Spurs") == "SAS"
 
 def fixture_conflict(team, game):
     return definite_team_fixture_conflict(team, game)
