@@ -30,6 +30,10 @@ feats={"bookmaker":"TEST ONLY BOOKMAKER","venue":"TEST ARENA",
 base={"source_sport":"NBA","game":"HOME TEAM vs AWAY TEAM",
       "commence_time":"2026-11-20T19:00:00+00:00","features":feats,
       "settlement_summary":"OFFEN","stake":1}
+# Every genuine SAME-GAME Builder leg must independently attest this exact
+# fixture/time; a parent ticket alone never proves its child fixture.
+same_fixture={"game":base["game"],"commence_time":base["commence_time"],
+              "sport":"NBA","fixture_id":"NBA-QA-SAME-MATCH"}
 single=SimpleNamespace(**base,type="single",player="TEST ATHLETE",
                        market="points",odds=2.05)
 row={"name":"TEST ATHLETE","photo":img(),"label":"Over 20.5 points",
@@ -45,11 +49,11 @@ rungs=[dict(row,label="Over 20.5 points"),dict(row,label="Over 25.5 points")]
 assert Image.open(BytesIO(render_nba_pick(ladder,rungs,teams))).size==(1080,1440)
 
 builder=SimpleNamespace(**base,type="betbuilder",odds=5.10,
-                        leg_details=[{"player":"TEST PLAYER A","odds":1.7},{"player":"TEST PLAYER B","odds":1.8}])
+                        leg_details=[{"player":"TEST PLAYER A","odds":1.7,**same_fixture},{"player":"TEST PLAYER B","odds":1.8,**same_fixture}])
 legs=[dict(row,name="TEST PLAYER A"),dict(row,name="TEST PLAYER B")]
 assert Image.open(BytesIO(render_nba_pick(builder,legs,teams))).size==(1080,1440)
 builder_3=SimpleNamespace(**base,type="betbuilder",odds=6.40,
-                          leg_details=[{"player":"TEST PLAYER A","odds":1.7},{"player":"TEST PLAYER B","odds":1.8},{"player":"TEST PLAYER C","odds":1.9}])
+                          leg_details=[{"player":"TEST PLAYER A","odds":1.7,**same_fixture},{"player":"TEST PLAYER B","odds":1.8,**same_fixture},{"player":"TEST PLAYER C","odds":1.9,**same_fixture}])
 legs_3=[dict(row,name="TEST PLAYER A"),dict(row,name="TEST PLAYER B"),
         dict(row,name="TEST PLAYER C")]
 assert Image.open(BytesIO(render_nba_pick(builder_3,legs_3,teams))).size==(1080,1440)
@@ -141,7 +145,7 @@ rejects(ladder,[dict(row,name="TEST A"),dict(row,name="TEST B")],
         contains="exactly one athlete")
 unconfirmed=SimpleNamespace(**{**base,"features":{**feats,"combined_odds_observed":False}},
        type="betbuilder",odds=None,
-       leg_details=[{"player":"TEST PLAYER A","odds":1.7},{"player":"TEST PLAYER B","odds":1.8}])
+       leg_details=[{"player":"TEST PLAYER A","odds":1.7,**same_fixture},{"player":"TEST PLAYER B","odds":1.8,**same_fixture}])
 assert Image.open(BytesIO(render_nba_pick(unconfirmed,legs,teams))).size==(1080,1440)
 multi_legs=[{"player":"TEST PLAYER A","odds":1.7,"game":"TEAM A vs TEAM B","commence_time":"2026-11-20T19:00:00+00:00","sport":"NBA"},
             {"player":"TEST PLAYER B","odds":1.8,"game":"TEAM C vs TEAM D","commence_time":"2026-11-21T20:00:00+00:00","sport":"NBA"}]
@@ -239,7 +243,7 @@ extended_details=[
     for i in range(12)]
 calculated_feats={**feats,"combined_odds_observed":False,"combined_quote_id":""}
 builder_7=SimpleNamespace(**{**base,"features":calculated_feats},
-    type="betbuilder",odds=None,leg_details=extended_details[:7])
+    type="betbuilder",odds=None,leg_details=[dict(detail, **same_fixture) for detail in extended_details[:7]])
 lottery_12=SimpleNamespace(**{**base,"features":calculated_feats},
     type="lottery",odds=None,leg_details=extended_details)
 cross_12=SimpleNamespace(**{**base,"features":{**calculated_feats,
@@ -321,9 +325,9 @@ assert Image.open(BytesIO(render_nba_pick(typed_ladder, rungs, teams))).size == 
 typed_builder = SimpleNamespace(**base, type="betbuilder", odds=5.10,
     leg_details=[
         SimpleNamespace(player="TEST PLAYER A", market="points", odds=1.7,
-                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER"),
+                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER", **same_fixture),
         SimpleNamespace(player="TEST PLAYER B", market="rebounds", odds=1.8,
-                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER")])
+                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER", **same_fixture)])
 assert Image.open(BytesIO(render_nba_pick(typed_builder, legs, teams))).size == (1080, 1440)
 typed_lottery = SimpleNamespace(**base, type="lottery", odds=18.25,
     leg_details=[SimpleNamespace(**leg) for leg in multi_legs])
