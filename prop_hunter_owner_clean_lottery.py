@@ -106,15 +106,11 @@ def render(plate: Image.Image, *, rows: list,
               size=12, max_width=452, color=WHITE)
         _text(d, (594, y + 16), row["odds"],
               size=19, max_width=94, color=GREEN)
-        form = str(row.get("form") or "")
-        windows = []
-        for count in (5, 10, 15):
-            match = re.search(
-                r"\bL" + str(count) + r"\s+(\d+)/(\d+)\b", form, re.I
-            )
-            if match and 0 <= int(match[1]) <= int(match[2]) <= count:
-                windows.append(f"L{count} {match[1]}/{match[2]}")
-        _text(d, (346, y + 75), " · ".join(windows),
+        # Every cross-game selection gets its OWN observed form window.
+        # The runner may have no real gamelog for one athlete; write "—"
+        # instead of leaving a misleading blank row or copying another leg.
+        from prop_hunter_owner_clean_ladder import _observed_form_windows
+        _text(d, (346, y + 75), _observed_form_windows(row.get("form")),
               size=12, max_width=445, color=GREEN)
 
     stake = re.search(r"Einsatz\s+([\d.,]+u)", str(footer or ""), re.I)
