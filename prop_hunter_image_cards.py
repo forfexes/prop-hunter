@@ -140,7 +140,9 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
         return None
     tkey = f"teams:{league[1]}"
     if tkey not in _CACHE:
-        data = _get_json(f"https://site.api.espn.com/apis/site/v2/sports/{league[0]}/{league[1]}/teams")
+        # ESPN college team endpoints may otherwise return only a small first page.
+        params = {"limit": 500} if league[1] in {"college-football", "mens-college-basketball"} else None
+        data = _get_json(f"https://site.api.espn.com/apis/site/v2/sports/{league[0]}/{league[1]}/teams", params)
         teams = []
         for grp in ((data or {}).get("sports") or [{}])[0].get("leagues", [{}])[0].get("teams", []) if data else []:
             t = grp.get("team") or {}
@@ -173,6 +175,9 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
             "nygiants": "newyorkgiants",
         },
     }
+    if league[1] in {"college-football", "mens-college-basketball"}:
+        # Sportsbook feed text sometimes prefixes rankings, e.g. "(23) Florida".
+        team = re.sub(r"^\s*\(\d{1,2}\)\s*", "", team)
     want = _verified_aliases.get(league[1], {}).get(_norm(team), _norm(team))
     matches=[t for t in _CACHE[tkey] if want in t["names"]]
     if len(matches)!=1 and league[1]=="nba":
