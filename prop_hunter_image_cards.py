@@ -110,11 +110,17 @@ def player_photo(name: str, league: Optional[Tuple[str, str]]) -> Optional["Imag
     if key in _CACHE:
         return _CACHE[key]
     img = None
-    data = _get_json("https://site.web.api.espn.com/apis/common/v3/search", {"query": name, "limit": 6, "type": "player"})
-    for it in (data or {}).get("items") or []:
-        if str(it.get("league") or "").lower() == league[1] and _norm(it.get("displayName")) == _norm(name) and it.get("id"):
-            img = _get_image(f"https://a.espncdn.com/i/headshots/{league[1]}/players/full/{it['id']}.png")
-            break
+    data = _get_json("https://site.web.api.espn.com/apis/common/v3/search", {"query": name, "limit": 12, "type": "player"})
+    # Never choose the first result if multiple distinct athletes have the
+    # exact same name in the same league. ESPN identities must be unambiguous.
+    matches = {
+        str(it["id"]) for it in (data or {}).get("items") or []
+        if str(it.get("league") or "").lower() == league[1]
+        and _norm(it.get("displayName")) == _norm(name) and it.get("id")
+    }
+    if len(matches) == 1:
+        athlete_id = next(iter(matches))
+        img = _get_image(f"https://a.espncdn.com/i/headshots/{league[1]}/players/full/{athlete_id}.png")
     _CACHE[key] = img
     return img
 
