@@ -50,6 +50,23 @@ class TeamCrestGeometry(unittest.TestCase):
             _fit_authentic_crest(
                 Image.new("RGBA", (12, 12), (246, 32, 45, 255)), 71)
 
+    def test_opaque_badge_tile_never_pastes_a_sticker_on_any_owner_card(self):
+        # Shared Single/Ladder/Builder and newest 512px Single use this helper.
+        for mode in ("RGB", "RGBA"):
+            with self.subTest(mode=mode):
+                opaque=Image.new(mode,(90,90),
+                                 (247,247,247) if mode=="RGB" else (247,247,247,255))
+                ImageDraw.Draw(opaque).ellipse((8,8,81,81),
+                                               fill=(32,145,220))
+                with self.assertRaisesRegex(ValueError,"Opaque crest sticker"):
+                    _fit_authentic_crest(opaque,71)
+                clean=Image.new("RGBA",(512,512),(4,12,25,255))
+                original=clean.copy()
+                with self.assertRaisesRegex(ValueError,"Opaque crest sticker"):
+                    user_single_logo(clean,("QA VERIFIED CLUB",opaque),191)
+                from PIL import ImageChops
+                self.assertIsNone(ImageChops.difference(clean,original).getbbox())
+
     def test_trim_transparency_preserves_shape_and_no_fake_sticker(self):
         icon = _fit_authentic_crest(padded_logo(), 54)
         self.assertLessEqual(max(icon.size), 54)
