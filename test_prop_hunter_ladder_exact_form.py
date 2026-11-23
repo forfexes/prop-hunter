@@ -77,6 +77,8 @@ class LadderExactForm(unittest.TestCase):
                  player="QA ATHLETE", features={}, odds=1.82,stake=1.0,
                  leg_details=rows_in)
         portrait=Image.new("RGBA",(90,110),(80,110,150,255))
+        home_crest=Image.new("RGBA",(90,110),(18,70,142,255))
+        away_crest=Image.new("RGBA",(90,110),(186,36,54,255))
         captured={}
         def fake_adapter(ticket, rows, teams):
             captured["rows"]=rows
@@ -85,7 +87,7 @@ class LadderExactForm(unittest.TestCase):
         with patch("prop_hunter_combo_prices.publishable_extra",
                    return_value=True), \
              patch.object(cards,"league_of",return_value=("basketball","nba")), \
-             patch.object(cards,"team_logo",return_value=portrait), \
+             patch.object(cards,"team_logo",side_effect=[home_crest,away_crest]), \
              patch.object(cards,"player_photo",return_value=portrait), \
              patch("prop_hunter_nba_premium_adapter.render_nba_pick",
                    side_effect=fake_adapter):
