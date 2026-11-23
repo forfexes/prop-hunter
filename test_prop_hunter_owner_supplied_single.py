@@ -64,6 +64,26 @@ class SourceOriginalQA(unittest.TestCase):
                              image.getpixel((round(x*1080/512),round(y*1080/512))), (x,y))
         (ROOT/'preview_single_open.png').write_bytes(raw)
 
+    def test_real_portrait_size_does_not_shrink_with_transparent_padding(self):
+        # The same athlete must occupy exactly the same large source slot
+        # whether ESPN returns a tight cutout or an overly padded PNG.
+        _,_,photo=qa_assets()
+        padded=Image.new('RGBA',(460,490),(0,0,0,0))
+        padded.alpha_composite(photo,(155,140))
+        a=Image.new('RGBA',(512,512),(0,0,0,0))
+        b=Image.new('RGBA',(512,512),(0,0,0,0))
+        owner._portrait(a,photo)
+        owner._portrait(b,padded)
+        self.assertIsNone(ImageChops.difference(a,b).getbbox(),
+                          'Transparent ESPN padding changed the player size')
+        visible=a.getchannel('A').getbbox()
+        self.assertIsNotNone(visible)
+        self.assertLessEqual(visible[1],90)
+        self.assertGreaterEqual(visible[3],230)
+        # Empty, unverified athlete pixels may not become a black silhouette.
+        with self.assertRaisesRegex(ValueError,'visible portrait'):
+            owner._portrait(a,Image.new('RGBA',(300,300),(0,0,0,0)))
+
     def test_settlement_in_same_original_banner(self):
         for name in ('OFFEN','GEWONNEN','VERLOREN','PUSH','VOID'):
             raw=self.render(settlement=name)
