@@ -186,7 +186,7 @@ longshot=SimpleNamespace(**base,type="longshot",player="TEST ATHLETE",
                          market="points",odds=3.25)
 with patch.object(image_cards,"ON",True), \
      patch.object(image_cards,"player_photo",return_value=img()), \
-     patch.object(image_cards,"team_logo",return_value=img("logo")), \
+     patch.object(image_cards,"team_logo",side_effect=fixture_logo), \
      patch.object(image_cards,"render",
                   side_effect=AssertionError("legacy longshot renderer called")):
     real_route=image_cards.build_for_pick(longshot)
