@@ -578,7 +578,7 @@ def _ladder_exact_form(detail: Dict[str, Any]) -> str:
                         feats.get(f"gamelog_{key}_n"),window)
         # Explicitly saved L15 from the actual selected ladder leg. Never
         # invent L5/L10 by scaling its last-15 rate or using parent features.
-        if value is None and window==15 and (valid_ref or not reference["line"]):
+        if value is None and window==15 and (valid_ref or reference["line"] is None):
             value=ratio(detail.get("gamelog_l15_hits"),
                         detail.get("gamelog_l15_n"),window)
         pieces.append(f"L{window} {value or '—'}")
