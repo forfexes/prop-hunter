@@ -117,7 +117,9 @@ def _portrait(im, photo):
     # Contain the ENTIRE head and both natural shoulders in a stadium slot.
     # A fixed polygon body silhouette used to clip off real hair/faces and
     # expose a second gold-edged fake athlete. That masking is prohibited.
-    scale=min(205/img.height,174/img.width)
+    # Keep the real athlete BELOW the immutable NBA shield and gold header.
+    # Never hide forehead pixels behind a protected owner masthead.
+    scale=min(189/img.height,174/img.width)
     w,h=max(1,round(img.width*scale)),max(1,round(img.height*scale))
     img=img.resize((w,h),Image.Resampling.LANCZOS)
     layer=Image.new('RGBA',(512,512),(0,0,0,0))
