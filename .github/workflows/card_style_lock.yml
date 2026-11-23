@@ -1,0 +1,34 @@
+name: Card Style Lock - Original Artwork Unchanged
+"on":
+  push:
+    paths:
+      - "assets/original_templates/**"
+      - "card_templates/approved/**"
+      - "card_templates/originals/**"
+      - "CARD_STYLE_LOCK.md"
+      - "scripts/check_card_style_lock.py"
+      - ".github/workflows/card_style_lock.yml"
+  pull_request:
+    paths:
+      - "assets/original_templates/**"
+      - "card_templates/approved/**"
+      - "card_templates/originals/**"
+      - "CARD_STYLE_LOCK.md"
+      - "scripts/check_card_style_lock.py"
+      - ".github/workflows/card_style_lock.yml"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  check-original-master-artwork:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Protect existing original card styles
+        run: |
+          python -m py_compile scripts/check_card_style_lock.py
+          python scripts/check_card_style_lock.py
