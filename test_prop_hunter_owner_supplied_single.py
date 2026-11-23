@@ -84,13 +84,38 @@ class SourceOriginalQA(unittest.TestCase):
             self.assertEqual(im.size,(1080,1080))
             self.assertEqual(im.format,'PNG')
             image=im.convert('RGB')
-        master=Image.open(owner.EDITABLE).convert('RGB').resize((1080,1080),Image.Resampling.LANCZOS)
+        master=Image.open(owner.NO_SILHOUETTE).convert('RGB').resize((1080,1080),Image.Resampling.LANCZOS)
         # Existing neon and all source art outside dynamic slots unchanged.
         for x,y in ((8,10),(480,15),(1,250),(490,260),(280,445),(340,482),
                     (180,305),(8,447),(25,485)):
             self.assertEqual(master.getpixel((round(x*1080/512),round(y*1080/512))),
                              image.getpixel((round(x*1080/512),round(y*1080/512))), (x,y))
         (ROOT/'preview_single_open.png').write_bytes(raw)
+
+    def test_actual_owner_blank_contains_no_fake_gold_body_or_shadow(self):
+        import inspect
+        with Image.open(owner.FLOATING) as old, Image.open(owner.NO_SILHOUETTE) as new:
+            old=old.convert("RGB")
+            new=new.convert("RGB")
+            self.assertEqual(new.size,(512,512))
+            self.assertEqual(hashlib.sha256(new.tobytes()).hexdigest(),
+                             owner.NO_SILHOUETTE_PIXEL_SHA)
+            def gold_count(pic):
+                n=0
+                for y in range(65,162):
+                    for x in range(22,135):
+                        r,g,b=pic.getpixel((x,y))
+                        n += r>130 and g>75 and r>1.3*b
+                return n
+            self.assertGreater(gold_count(old),400)
+            self.assertLess(gold_count(new),gold_count(old)//12)
+            self.assertEqual(old.crop((190,0,512,512)).tobytes(),
+                             new.crop((190,0,512,512)).tobytes())
+        renderer=inspect.getsource(owner._portrait)
+        self.assertNotIn(".polygon(",renderer,
+                         "No hard-edged, fake silhouette mask over real faces")
+        self.assertNotIn("stroke_width",renderer)
+        self.assertIn("scale=min(",renderer)
 
     def test_real_portrait_size_does_not_shrink_with_transparent_padding(self):
         # The same athlete must occupy exactly the same large source slot
