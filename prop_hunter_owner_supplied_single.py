@@ -130,7 +130,7 @@ def _portrait(im, photo):
     fade=Image.new('L',(512,512),255)
     d=ImageDraw.Draw(fade)
     for yy in range(215,255):
-        opacity=round(255*max(0,(254-yy)/39))
+        opacity=round(255*max(0,(249-yy)/34))
         d.line((0,yy,511,yy),fill=opacity)
     layer.putalpha(ImageChops.multiply(layer.getchannel('A'),fade))
     im.alpha_composite(layer)
