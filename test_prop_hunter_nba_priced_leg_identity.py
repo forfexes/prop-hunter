@@ -38,9 +38,11 @@ def examples():
         **common,type="betbuilder",market="builder",odds=3.88,
         leg_details=[
             {"player":"Jayson Tatum","market":"points","odds":1.85,
-             "sport":"NBA","game":common["game"]},
+             "sport":"NBA","game":common["game"],
+             "commence_time":when,"fixture_id":"NBA_QA_SAME_FIXTURE"},
             {"player":"Jaylen Brown","market":"assists","odds":2.12,
-             "sport":"NBA","game":common["game"]},
+             "sport":"NBA","game":common["game"],
+             "commence_time":when,"fixture_id":"NBA_QA_SAME_FIXTURE"},
         ])
     return ticket,rows,teams
 
