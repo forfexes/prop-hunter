@@ -35,7 +35,11 @@ jobs:
           import prop_hunter_image_cards as cards
           from prop_hunter_nba_premium_adapter import _photo
           from prop_hunter_original_compositor import _source
-          from prop_hunter_owner_supplied_single import render as render_latest_single
+          from prop_hunter_owner_supplied_single import (
+              _plate as latest_single_plate,
+              _portrait as latest_single_portrait,
+              _logo as latest_single_logo,
+          )
 
           out=Path("output/real_photo_visual_qa")
           out.mkdir(parents=True,exist_ok=True)
@@ -75,14 +79,14 @@ jobs:
               raise SystemExit("Authentic NBA portrait/logo gate not ready")
           # Every betting detail is explicitly EMPTY: there is no invented
           # sportsbook quote, fixture, kickoff, tip probability or result.
-          raw=render_latest_single(title="SINGLE",subtitle="",
-              teams=[("Boston Celtics",logos[0]),("New York Knicks",logos[1])],
-              row={"name":actual_name,"photo":player,
-                   "label":"VISUAL QA · KEIN TIPP","odds":"—",
-                   "form":"","model":{}},
-              footer="",settlement="QA · NICHT SENDEN")
-          with Image.open(io.BytesIO(raw)) as test:
-              image=test.convert("RGB")
+          # Actual newest 22.11 source: render ONLY the authentic image
+          # components. No fake fixture, bookmaker quote, time or pick line
+          # is provided to the production-only owner renderer.
+          source=latest_single_plate()
+          latest_single_portrait(source,player)
+          latest_single_logo(source,("Boston Celtics",logos[0]),191)
+          latest_single_logo(source,("New York Knicks",logos[1]),322)
+          image=source.convert("RGB")
           d=ImageDraw.Draw(image)
           d.text((38,image.height-35),"OFFLINE BILDKONTROLLE · KEINE WETTE",
                  fill="#FFD966")
