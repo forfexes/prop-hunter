@@ -16,6 +16,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageChops
 BASE = Path(__file__).resolve().parent / 'card_templates' / 'owner_supplied'
 SOURCE = BASE / 'single_blank_20261122.png'
 EDITABLE = BASE / 'single_blank_editable_20261122.png'
+FLOATING = BASE / 'single_blank_floating_20261123.png'
+RING_REGIONS = ((150, 64, 234, 145), (280, 64, 365, 145))
 SOURCE_SHA256 = '499ed837eb187b672c9a7781553eb9889c9fe37bb501aef3df61da1010019692'
 WHITE=(248,251,255)
 GOLD=(255,216,105)
@@ -49,14 +51,30 @@ def _write(draw, pos, value, max_px, size=17, color=WHITE, italic=False, anchor=
 
 
 def _plate():
-    if not SOURCE.is_file() or not EDITABLE.is_file():
-        raise ValueError('User-provided original and derived clean master missing')
+    if not SOURCE.is_file() or not EDITABLE.is_file() or not FLOATING.is_file():
+        raise ValueError('User original or separately cleaned floating-crest master missing')
     if hashlib.sha256(SOURCE.read_bytes()).hexdigest()!=SOURCE_SHA256:
         raise ValueError('User-provided source original was modified')
-    with Image.open(SOURCE) as source, Image.open(EDITABLE) as editable:
-        if source.size!=(512,512) or editable.size!=(512,512):
+    with Image.open(SOURCE) as source, Image.open(EDITABLE) as editable, \
+         Image.open(FLOATING) as floating:
+        if source.size!=(512,512) or editable.size!=(512,512) or floating.size!=(512,512):
             raise ValueError('Source size changed; do not scale to another design')
-        return editable.convert('RGBA').copy()
+        # The new static plate is a genuine source-derived master, not a
+        # screenshot repaint at Telegram render time. Only owner-gold
+        # circle slots may differ from the already verified empty plate.
+        from PIL import ImageOps
+        base=editable.convert('RGB')
+        plate=floating.convert('RGB')
+        difference=ImageChops.difference(base,plate)
+        allowed=Image.new('L',(512,512),0)
+        mask_draw=ImageDraw.Draw(allowed)
+        for x0,y0,x1,y1 in RING_REGIONS:
+            mask_draw.rectangle((x0,y0,x1-1,y1-1),fill=255)
+        outside=Image.composite(difference,Image.new('RGB',(512,512)),
+                                ImageOps.invert(allowed))
+        if outside.getbbox() or not difference.getbbox():
+            raise ValueError('Floating master alters original artwork outside old ring slots')
+        return plate.convert('RGBA').copy()
 
 
 def _logo(im, entry, center):
