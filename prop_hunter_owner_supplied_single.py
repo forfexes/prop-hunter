@@ -68,7 +68,7 @@ def _logo(im, entry, center):
     # Real emblem inside the owner's ORIGINAL circle. Crop the transparent
     # source margin and align both axes; never paste a new ring/sticker.
     from prop_hunter_owner_clean_single import _place_authentic_crest
-    _place_authentic_crest(im,picture,center,108,54)
+    _place_authentic_crest(im,picture,center,108,70)
     _write(ImageDraw.Draw(im),(center,154),name,94,11,WHITE)
 
 
