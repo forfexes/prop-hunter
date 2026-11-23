@@ -1,0 +1,45 @@
+name: PROP HUNTER Owner Builder 2-10 Visual Hardtest
+"on":
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "prop_hunter_owner_clean_builder.py"
+      - "prop_hunter_nba_owner_bridge.py"
+      - "prop_hunter_nba_premium_adapter.py"
+      - "prop_hunter_original_compositor.py"
+      - "test_prop_hunter_owner_builder_2_to_10.py"
+      - ".github/workflows/prop_hunter_owner_builder_2_to_10_qa.yml"
+permissions:
+  contents: read
+jobs:
+  offline-2-through-10:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_TOKEN: ""
+      SUPABASE_URL: ""
+      PROP_OWNER_BUILDER_2_TO_10_QA: output/builder_2_to_10
+      PH_NBA_OWNER_ORIGINALS: "1"
+      PH_BLOCK_OVERPAINTED_MASTERS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install isolated image dependencies
+        run: python -m pip install --quiet pillow requests
+      - name: All NINE 2..10 variants, photos, every market and price visible
+        run: |
+          python -m py_compile prop_hunter_owner_clean_builder.py test_prop_hunter_owner_builder_2_to_10.py
+          python -m unittest -v test_prop_hunter_owner_builder_2_to_10
+          echo 'OFFLINE QA ONLY - no live Telegram, no release permission'
+      - name: Export all nine genuine-source-derived previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROP-HUNTER-NBA-BUILDER-ALL-2-TO-10-NO-TELEGRAM
+          path: output/builder_2_to_10/*.png
+          retention-days: 3
+          if-no-files-found: ignore
