@@ -181,6 +181,29 @@ jobs:
           print("ALL_FOUR_OWNER_FAMILIES_REAL_ASSET_SLOTS_PASS")
           print("LOTTERY_FULL_TICKET_NOT_VERIFIED_NO_OBSERVED_QUOTE")
           PY
+      - name: Emit small REAL-player inline visual proofs for source-original review
+        run: |
+          python - <<'PY'
+          # Genuine public ESPN team/player imagery; never a betting pick.
+          from PIL import Image
+          from pathlib import Path
+          import base64,io
+          root=Path("output/real_photo_visual_qa")
+          for family,filename in (
+              ("single","real_photo_original_single_QA.png"),
+              ("ladder","ladder5_real_photos_QA.png"),
+              ("builder","builder6_real_photos_QA.png"),
+              ("lottery","lottery6_real_photos_QA.png"),
+          ):
+              with Image.open(root/filename) as raw:
+                  picture=raw.convert("RGB")
+                  picture.thumbnail((370,525),Image.Resampling.LANCZOS)
+                  b=io.BytesIO()
+                  picture.save(b,"JPEG",quality=58,optimize=True)
+              # Only offline test card images, tagged with QA text.
+              print("PROP_HUNTER_REAL_INLINE_QA "+family+" "+
+                    base64.b64encode(b.getvalue()).decode("ascii"))
+          PY
       - name: Export image and no-bookmaker QA evidence
         if: always()
         uses: actions/upload-artifact@v4
