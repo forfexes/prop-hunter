@@ -12,6 +12,7 @@ name: PROP HUNTER Real Photo & Logo Visual QA (No Telegram)
       - 'prop_hunter_owner_clean_ladder.py'
       - 'prop_hunter_owner_clean_builder.py'
       - 'prop_hunter_owner_clean_lottery.py'
+      - 'test_prop_hunter_owner_all_leg_form_windows.py'
       - 'prop_hunter_image_cards.py'
       - 'card_templates/owner_supplied/**'
       - 'card_templates/approved/**'
@@ -32,6 +33,7 @@ jobs:
         run: |
           python -m py_compile prop_hunter_owner_clean_single.py test_prop_hunter_crest_slots.py
           python -m unittest -v test_prop_hunter_crest_slots
+          python -m unittest -v test_prop_hunter_owner_all_leg_form_windows
       - name: Probe REAL sourced NBA player photos and correct team crests
         run: |
           python - <<'PY'
