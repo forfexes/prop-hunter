@@ -110,14 +110,24 @@ def player_photo(name: str, league: Optional[Tuple[str, str]]) -> Optional["Imag
     if key in _CACHE:
         return _CACHE[key]
     img = None
-    data = _get_json("https://site.web.api.espn.com/apis/common/v3/search", {"query": name, "limit": 12, "type": "player"})
+    endpoint = "https://site.web.api.espn.com/apis/common/v3/search"
+    data = _get_json(endpoint, {"query": name, "limit": 12, "type": "player"})
     # Never choose the first result if multiple distinct athletes have the
     # exact same name in the same league. ESPN identities must be unambiguous.
-    matches = {
-        str(it["id"]) for it in (data or {}).get("items") or []
-        if str(it.get("league") or "").lower() == league[1]
-        and _norm(it.get("displayName")) == _norm(name) and it.get("id")
-    }
+    def matching_ids(data):
+        return {
+            str(it["id"]) for it in (data or {}).get("items") or []
+            if str(it.get("league") or "").lower() == league[1]
+            and _norm(it.get("displayName")) == _norm(name) and it.get("id")
+        }
+    matches = matching_ids(data)
+    if not matches:
+        # ESPN search sometimes indexes accented names without diacritics.
+        # Keep exact normalized name + league matching after the fallback.
+        ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+        if ascii_name != name and ascii_name.strip():
+            matches = matching_ids(_get_json(endpoint,
+                {"query": ascii_name, "limit": 12, "type": "player"}))
     if len(matches) == 1:
         athlete_id = next(iter(matches))
         img = _get_image(f"https://a.espncdn.com/i/headshots/{league[1]}/players/full/{athlete_id}.png")
