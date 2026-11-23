@@ -8,6 +8,8 @@ name: PROP HUNTER All-Sports Original-Only QA
       - "prop_hunter_telegram_safe_zone.py"
       - "prop_hunter_nba_owner_bridge.py"
       - "prop_hunter_nba_premium_adapter.py"
+      - "prop_hunter_owner_builder_fixture_guard.py"
+      - "test_prop_hunter_owner_builder_fixture_guard.py"
       - "test_prop_hunter_nba_priced_leg_identity.py"
       - "prop_hunter_owner_pixel_qa.py"
       - "test_prop_hunter_telegram_safe_zone.py"
@@ -61,6 +63,11 @@ jobs:
           python test_prop_hunter_player_fixture_guard.py
           python test_prop_hunter_owner_pixel_qa.py
           python prop_hunter_combo_prices_test.py
+      - name: Reject fake same-match NBA Builder matchups
+        run: |
+          python -m py_compile prop_hunter_owner_builder_fixture_guard.py prop_hunter_nba_premium_adapter.py
+          python -m pytest -q test_prop_hunter_owner_builder_fixture_guard.py
+          echo "VERIFIED FIXTURE GUARD ACTIVE - NO TELEGRAM ACTIVITY"
       - name: Verify live original-only approval flag
         run: |
           python - <<'PY'
