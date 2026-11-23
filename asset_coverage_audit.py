@@ -154,7 +154,10 @@ def main():
         n = norm(name)
         if n in {"alternatetotal", "alternatespread", "alternateline",
                  "teamtotal", "gametotal", "matchtotal", "overtotal",
-                 "undertotal", "playerprops", "playerprop", "handicap"}:
+                 "undertotal", "playerprops", "playerprop", "handicap",
+                 "game", "totalgoals", "totalgoalsbycoloradoavalanche",
+                 "gamespread", "totalpoints", "altspread",
+                 "alternategametotal"} or re.search(r"(?i)\bstandings$", str(name or "")) or str(name or "").lower().startswith("total goals by "):
             blank["market_label_not_player"] += 1
             return
         if not n or len(n) < 4:
