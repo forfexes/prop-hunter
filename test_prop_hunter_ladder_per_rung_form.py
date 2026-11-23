@@ -54,10 +54,11 @@ class PerRungFormQA(unittest.TestCase):
         per_rung = [(xy, text) for xy, text, kw in seen
                     if xy[0] == 378 and "L5" in text]
         self.assertEqual(len(per_rung),4)
-        self.assertEqual([text for _, text in per_rung],[
-            ladder._observed_form_windows(
-                f"L5 {i}/5 L10 {i+2}/10 L15 {i+4}/15")
-            for i in range(1,5)
+        self.assertEqual([text for _, text in per_rung], [
+            "L5 1/5 · L10 3/10 · L15 5/15",
+            "L5 2/5 · L10 5/10 · L15 8/15",
+            "L5 3/5 · L10 6/10 · L15 9/15",
+            "L5 4/5 · L10 7/10 · L15 10/15",
         ])
         self.assertEqual(len(set(text for _, text in per_rung)),4)
         self.assertNotIn((374, 681), [xy for xy, _, _ in per_rung])
