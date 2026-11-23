@@ -130,6 +130,11 @@ def main():
 
     def person(name, team="", sport="", boost=0):
         n = norm(name)
+        if n in {"alternatetotal", "alternatespread", "alternateline",
+                 "teamtotal", "gametotal", "matchtotal", "overtotal",
+                 "undertotal", "playerprops", "playerprop", "handicap"}:
+            blank["market_label_not_player"] += 1
+            return
         if not n or len(n) < 4:
             blank["invalid_player"] += 1
             return
