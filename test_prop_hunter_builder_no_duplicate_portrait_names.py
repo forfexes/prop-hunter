@@ -23,7 +23,7 @@ class PortraitDuplicatesQA(unittest.TestCase):
                 source=Image.new("RGBA",(691,867),(2,15,29,255))
                 legs=[
                     {"name":f"PLAYER {i}", "label":f"Over {17+i}.5 points",
-                     "odds":"@1.87", "photo":None,
+                     "odds":"@1.87", "photo":logo(),
                      "form":"L5 4/5 L10 7/10 L15 9/15"}
                     for i in range(1,n+1)
                 ]
