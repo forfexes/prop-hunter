@@ -5,6 +5,9 @@ name: PROP HUNTER NBA Actual Owner Originals Integration QA
   push:
     paths:
       - 'prop_hunter_nba_owner_bridge.py'
+      - 'prop_hunter_image_cards.py'
+      - 'prop_hunter_confidence_display.py'
+      - 'test_prop_hunter_confidence_display.py'
       - 'prop_hunter_owner_supplied_single.py'
       - 'test_prop_hunter_owner_supplied_single.py'
       - 'card_templates/owner_supplied/**'
@@ -88,6 +91,8 @@ jobs:
           python -m unittest -v test_prop_hunter_owner_date_integrity
           python test_prop_hunter_ladder_form_windows.py
           python -m unittest -v test_prop_hunter_ladder_per_rung_form
+          python -m py_compile prop_hunter_confidence_display.py test_prop_hunter_confidence_display.py
+          python -m unittest -v test_prop_hunter_confidence_display
           python test_prop_hunter_owner_ladder_settlement_rows.py
           python test_prop_hunter_owner_leg_status.py
           python prop_hunter_borderless_portrait_test.py
