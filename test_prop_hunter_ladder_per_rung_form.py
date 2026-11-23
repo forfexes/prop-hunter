@@ -61,7 +61,7 @@ class PerRungFormQA(unittest.TestCase):
             "L5 4/5 · L10 7/10 · L15 10/15",
         ])
         self.assertEqual(len(set(text for _, text in per_rung)),4)
-        self.assertNotIn((374, 681), [xy for xy, _, _ in per_rung])
+        self.assertNotIn((374, 681), [xy for xy, _ in per_rung])
 
     def test_six_rungs_keep_unknown_values_unknown(self):
         seen = self.run_card(6)
