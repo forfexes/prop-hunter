@@ -18,6 +18,7 @@ name: PROP HUNTER NBA Actual Owner Originals Integration QA
       - 'prop_hunter_telegram_sandbox_hardtest.py'
       - 'prop_hunter_owner_clean_ladder.py'
       - 'test_prop_hunter_ladder_form_windows.py'
+      - 'test_prop_hunter_ladder_per_rung_form.py'
       - 'prop_hunter_owner_clean_builder.py'
       - 'test_prop_hunter_crest_slots.py'
       - 'test_prop_hunter_owner_builder_floating_status.py'
@@ -86,6 +87,7 @@ jobs:
           python -m unittest -v test_prop_hunter_nba_priced_leg_identity
           python -m unittest -v test_prop_hunter_owner_date_integrity
           python test_prop_hunter_ladder_form_windows.py
+          python -m unittest -v test_prop_hunter_ladder_per_rung_form
           python test_prop_hunter_owner_ladder_settlement_rows.py
           python test_prop_hunter_owner_leg_status.py
           python prop_hunter_borderless_portrait_test.py
