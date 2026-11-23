@@ -105,6 +105,26 @@ class AllOwnerBuilderLegCounts(unittest.TestCase):
                     self.assertEqual(im.width,1080)
         self.assertEqual(self.plate.size,(691,867))
 
+    def test_extended_owner_stadium_has_no_repeated_lightstripe_seams(self):
+        for count in (8, 9, 10):
+            with self.subTest(count=count):
+                im, portrait_extra, ticket_extra = builder._extend_owner_clean_builder(
+                    self.plate, count)
+                for start, end in (
+                    (365, 365 + portrait_extra),
+                    (625 + portrait_extra, 625 + portrait_extra + ticket_extra),
+                ):
+                    for x in (0, 35, 190, 350, 658, 690):
+                        # A repeated 18px cut from the screenshot would
+                        # introduce major seams. A continuous source-derived
+                        # stadium interpolation changes smoothly row to row.
+                        for y in range(start + 1, end - 1):
+                            before = im.getpixel((x, y-1))
+                            after = im.getpixel((x, y))
+                            self.assertLessEqual(
+                                max(abs(a-b) for a, b in zip(before, after)),
+                                4, (count,x,y,before,after))
+
     def test_invalid_counts_and_unverifiable_selection_fail_closed(self):
         for n in (1,11):
             with self.subTest(n=n),self.assertRaises(ValueError):
