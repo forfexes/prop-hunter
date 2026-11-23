@@ -112,10 +112,8 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
           "EINSATZ " + stake.group(1) if stake else "",
           size=20, max_width=190, color=GOLD)
 
-    # L5/L10/L15 are printed for EACH priced threshold above, not
-    # duplicated from the first rung as a misleading ladder-wide figure.
-    _text(d, (374, 681 + extra), "L5 / L10 / L15 JE STUFE",
-          size=16, max_width=359, color=GREEN)
+    # L5/L10/L15 is already printed within each respective rung above.
+    # Leave the stadium floor clear; no oversized duplicate green caption.
 
     state, color = owner_settlement_state(
         settlement, green=GREEN, red=RED, white=WHITE)
