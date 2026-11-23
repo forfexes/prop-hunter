@@ -11,7 +11,8 @@ import re
 from PIL import Image, ImageDraw
 
 from prop_hunter_owner_clean_single import (
-    owner_settlement_state, _text, _verified_time, GOLD, GREEN, RED, WHITE,
+    owner_settlement_state, _text, _verified_time, _place_authentic_crest,
+    GOLD, GREEN, RED, WHITE,
 )
 
 
@@ -19,9 +20,7 @@ def _team(im, team, cx):
     if (not team or not str(team[0] or "").strip()
             or not isinstance(team[1], Image.Image)):
         raise ValueError("Verified team name and genuine logo required")
-    icon = team[1].convert("RGBA")
-    icon.thumbnail((52, 52), Image.Resampling.LANCZOS)
-    im.alpha_composite(icon, (int(cx - icon.width / 2), 416))
+    _place_authentic_crest(im, team[1], cx, 442, 52)
     _text(ImageDraw.Draw(im), (cx, 487),
           team[0], size=16, max_width=175)
 
