@@ -34,5 +34,19 @@ class VerifiedTeamAliases(unittest.TestCase):
                     self.assertIsNone(cards.team_logo("Other Team", cards.LEAGUES[sport]))
 
 
+    def test_full_college_team_list_and_rank_prefix(self):
+        logo = object()
+        feed = {"sports":[{"leagues":[{"teams":[{"team":{
+            "displayName":"Florida Gators", "shortDisplayName":"Florida",
+            "name":"Gators", "abbreviation":"FLA",
+            "nickname":"Gators", "logos":[{"href":"https://a.espncdn.com/florida.png"}]
+        }}]}]}]}
+        with patch.object(cards,"_CACHE",{}), \
+             patch.object(cards,"_get_json",return_value=feed) as get, \
+             patch.object(cards,"_get_image",return_value=logo):
+            self.assertIs(cards.team_logo("(23) Florida", cards.LEAGUES["ncaaf"]),logo)
+            self.assertEqual(get.call_args.args[1], {"limit": 500})
+
+
 if __name__ == "__main__":
     unittest.main()
