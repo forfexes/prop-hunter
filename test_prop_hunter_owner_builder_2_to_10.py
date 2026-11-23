@@ -125,6 +125,16 @@ class AllOwnerBuilderLegCounts(unittest.TestCase):
                                 max(abs(a-b) for a, b in zip(before, after)),
                                 4, (count,x,y,before,after))
 
+    def test_extended_length_never_goes_to_telegram_without_visual_release(self):
+        from prop_hunter_nba_owner_bridge import render_owner
+        for n in (8, 9, 10):
+            with self.subTest(n=n),patch.dict(os.environ,{
+                    "PH_BLOCK_OVERPAINTED_MASTERS":"0",
+                    "PH_OWNER_BUILDER_8_10_TG_APPROVED":"0"}):
+                with self.assertRaisesRegex(ValueError,
+                                            "owner_extended_builder_visual_approval_required"):
+                    render_owner(None,f"builder_{n}",rows(n),self.teams,{},[])
+
     def test_invalid_counts_and_unverifiable_selection_fail_closed(self):
         for n in (1,11):
             with self.subTest(n=n),self.assertRaises(ValueError):
