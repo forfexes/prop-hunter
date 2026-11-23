@@ -76,11 +76,27 @@ def _portrait(im, photo):
     if not isinstance(photo,Image.Image):
         raise ValueError('Actual transparent player photo mandatory')
     img=photo.convert('RGBA')
-    if img.getchannel('A').getextrema()[0]>45:
+    alpha=img.getchannel('A')
+    if alpha.getextrema()[0]>45:
         raise ValueError('Player photo has no transparent cutout')
-    # Letterbox *inside* the source silhouette, preserving the owner's gold
-    # outer outline, neckline and slot artwork without repainting it.
-    img.thumbnail((153,216),Image.Resampling.LANCZOS)
+    # ESPN/Wikimedia portrait PNGs often have huge INVISIBLE side margins.
+    # Fitting the whole transparent rectangle made a tiny pasted-looking
+    # portrait within the much larger owner gold outline. Fit ONLY actual
+    # visible player pixels, never a generated silhouette or fake head.
+    visible=alpha.point(lambda a: 255 if a>=32 else 0).getbbox()
+    if visible is None:
+        raise ValueError('Player image contains no real visible portrait')
+    img=img.crop(visible)
+    if min(img.size)<24:
+        raise ValueError('Player photo has insufficient visible detail')
+    # Fill height of the original owner portrait slot without stretching
+    # proportions. Wide shoulders are clipped solely by the owner's
+    # original silhouette mask, never by a black rectangle or new border.
+    height=216
+    width=max(1,round(img.width*height/img.height))
+    if width>280:
+        raise ValueError('Player cutout aspect ratio incompatible with portrait slot')
+    img=img.resize((width,height),Image.Resampling.LANCZOS)
     layer=Image.new('RGBA',(512,512),(0,0,0,0))
     start_x=17+int((138-img.width)/2)
     start_y=250-img.height
