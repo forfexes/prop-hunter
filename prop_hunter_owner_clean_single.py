@@ -80,13 +80,18 @@ def owner_settlement_state(raw, *, green, red, white):
 def _fit_authentic_crest(source: Image.Image, diameter: int) -> Image.Image:
     """Trim unused transparent padding; keep the REAL logo's proportions.
 
-    The source master supplies the decorative circle. Never paste a second
-    badge, repaint the existing plate, or stretch an emblem to fake a disc.
+    This emblem floats freely on the clean owner stadium: no disk, ring,
+    opaque rectangle, painted backing, or synthetic badge may be added.
     """
     if not isinstance(source, Image.Image) or diameter < 1:
         raise ValueError("Authentic team crest required")
     icon = source.convert("RGBA")
     alpha = icon.getchannel("A")
+    # A rectangular JPEG/PNG with a white photographic background becomes
+    # a visibly pasted-on sticker; do not fabricate a transparent cutout.
+    # The original downloaded emblem must already have transparent pixels.
+    if alpha.getextrema()[0] >= 255:
+        raise ValueError("Opaque crest sticker rejected: original transparency required")
     visible = alpha.point(lambda a: 255 if a >= 24 else 0).getbbox()
     if visible is None:
         raise ValueError("Team crest contains no visible artwork")
