@@ -33,6 +33,23 @@ def red_bounds(im):
 
 
 class TeamCrestGeometry(unittest.TestCase):
+    def test_small_real_crest_fills_ring_instead_of_floating_as_sticker(self):
+        emblem = Image.new("RGBA", (140, 140), (0, 0, 0, 0))
+        ImageDraw.Draw(emblem).rectangle((55, 55, 84, 84),
+                                         fill=(246, 32, 45, 255))
+        fitted = _fit_authentic_crest(emblem, 71)
+        self.assertEqual(fitted.size, (71, 71))
+        canvas = Image.new("RGBA", (180, 180), (4, 12, 25, 255))
+        original_corner = canvas.getpixel((0, 0))
+        _place_authentic_crest(canvas, emblem, 90, 90, 71)
+        self.assertEqual(canvas.getpixel((0, 0)), original_corner)
+        self.assertEqual(red_bounds(canvas), (54, 54, 125, 125))
+        # A miniature provider file must fail, not become a blurry pasted-on
+        # badge or leave a mostly empty owner ring.
+        with self.assertRaises(ValueError):
+            _fit_authentic_crest(
+                Image.new("RGBA", (12, 12), (246, 32, 45, 255)), 71)
+
     def test_trim_transparency_preserves_shape_and_no_fake_sticker(self):
         icon = _fit_authentic_crest(padded_logo(), 54)
         self.assertLessEqual(max(icon.size), 54)
