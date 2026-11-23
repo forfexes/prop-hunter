@@ -93,8 +93,14 @@ def _fit_authentic_crest(source: Image.Image, diameter: int) -> Image.Image:
     icon = icon.crop(visible)
     if min(icon.size) < 12:
         raise ValueError("Team crest visible artwork too small")
-    icon.thumbnail((diameter, diameter), Image.Resampling.LANCZOS)
-    return icon
+    # The real emblem, not its transparent provider canvas, must fill the
+    # existing owner ring. thumbnail() never enlarges a small source crest.
+    scale = diameter / max(icon.size)
+    if scale > 4:
+        raise ValueError("Team crest source resolution too low for premium image")
+    size = (max(1, round(icon.width * scale)),
+            max(1, round(icon.height * scale)))
+    return icon.resize(size, Image.Resampling.LANCZOS)
 
 
 def _place_authentic_crest(im: Image.Image, source: Image.Image,
