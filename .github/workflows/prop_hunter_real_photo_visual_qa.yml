@@ -103,10 +103,30 @@ jobs:
                   original.crop(box),source.crop(box)).getbbox():
                   raise SystemExit("Actual original PROP HUNTER/NBA logo altered")
           print("REAL_ASSET_OWNER_STATIC_LOGOS_PIXEL_IDENTICAL")
-          image=source.convert("RGB")
-          d=ImageDraw.Draw(image)
-          d.text((38,image.height-35),"OFFLINE BILDKONTROLLE · KEINE WETTE",
-                 fill="#FFD966")
+          # QA stamp belongs on a NEW margin below the ENTIRE original,
+          # never over the owner's real AUSWERTUNG / @prophunter banner.
+          def qa_margin(original, label):
+              original=original.convert("RGB")
+              margin=34
+              framed=Image.new("RGB",(original.width,original.height+margin),
+                               (4,14,27))
+              framed.paste(original,(0,0))
+              stamp=ImageDraw.Draw(framed)
+              font=ImageFont.truetype(
+                  "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                  12 if original.width<=512 else 16)
+              if stamp.textbbox((0,0),label,font=font)[2] > original.width-18:
+                  font=ImageFont.truetype(
+                      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",10)
+              if stamp.textbbox((0,0),label,font=font)[2] > original.width-18:
+                  raise ValueError("QA label does not fit outside original poster")
+              stamp.text((9,original.height+8),label,fill="#FFD966",font=font)
+              if ImageChops.difference(
+                     framed.crop((0,0,original.width,original.height)),original
+                     ).getbbox() is not None:
+                  raise AssertionError("QA stamp overwrote original owner artwork")
+              return framed
+          image=qa_margin(source,"OFFLINE BILDKONTROLLE · KEINE WETTE")
           image.save(out/"real_photo_original_single_QA.png")
           print("REAL_PHOTO_OWNER_SINGLE_RENDERED_NO_TELEGRAM")
           from prop_hunter_owner_clean_ladder import render as render_ladder
@@ -137,9 +157,8 @@ jobs:
           def save_qa(label,blob):
               with Image.open(io.BytesIO(blob)) as src:
                   verified=src.convert("RGB")
-              ImageDraw.Draw(verified).text((38,verified.height-36),
-                  "OFFLINE QA ONLY - NO REAL ODDS, FIXTURE OR TELEGRAM",
-                  fill="#FFD966")
+              verified=qa_margin(
+                  verified,"QA ONLY - KEINE ECHTE QUOTE / KEIN TELEGRAM")
               verified.save(out/(label+"_real_photos_QA.png"))
 
           home_away=[("Boston Celtics",logos[0]),("New York Knicks",logos[1])]
@@ -173,10 +192,8 @@ jobs:
               if not _background_portrait(lottery_frame,cutout,
                                           (50,y+6,97,y+75)):
                   raise SystemExit("Lottery original athlete portrait cannot fit")
-          out_image=lottery_frame.convert("RGB")
-          ImageDraw.Draw(out_image).text((38,out_image.height-36),
-              "ONLY REAL PHOTOS · NO GAME / NO BOOKMAKER ODDS / NO TELEGRAM",
-              fill="#FFD966")
+          out_image=qa_margin(
+              lottery_frame,"ECHTE SPIELERFOTOS · KEINE SPIELE/QUOTEN · NUR QA")
           out_image.save(out/"lottery6_real_photos_QA.png")
           print("ALL_FOUR_OWNER_FAMILIES_REAL_ASSET_SLOTS_PASS")
           print("LOTTERY_FULL_TICKET_NOT_VERIFIED_NO_OBSERVED_QUOTE")
