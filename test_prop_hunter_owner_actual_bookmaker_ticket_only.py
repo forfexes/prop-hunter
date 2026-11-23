@@ -84,8 +84,8 @@ class RealTicketOnly(unittest.TestCase):
                     return_value=actual.getvalue()) as render:
             result=bridge.render_owner(pick,"builder_2",self.rows,
                                        self.teams,self.values,[])
-            self.assertTrue(result.startswith(b"\\x89PNG".decode("unicode_escape").encode("latin1")))
-            footer=render.call_args.args[7]
+            self.assertEqual(result[:8],bytes((137,80,78,71,13,10,26,10)))
+            footer=render.call_args.args[6]
             self.assertIn("Quote 62.40",footer)
             self.assertNotIn("Berechnet",footer)
 
