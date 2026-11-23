@@ -106,8 +106,17 @@ def _portrait(im, photo):
     m.polygon([(65,67),(97,64),(114,80),(124,105),(120,142),
                (130,170),(144,199),(148,223),(137,246),
                (22,247),(16,216),(29,177),(43,148),(46,111),(52,83)],fill=255)
+    # The owner's portrait slot ends above the betting market strip.
+    # A straight opaque ESPN jersey edge used to look like a white
+    # rectangle pasted over the original gold frame. Feather ONLY the
+    # bottom of the dynamic player layer; never paint on the master.
+    feather=Image.new('L',(512,512),255)
+    fd=ImageDraw.Draw(feather)
+    for y in range(214,251):
+        opacity=round(255*max(0,(250-y)/36))
+        fd.line((0,y,511,y),fill=opacity)
     a=ImageChops.multiply(layer.getchannel('A'),mask)
-    layer.putalpha(a)
+    layer.putalpha(ImageChops.multiply(a,feather))
     im.alpha_composite(layer)
 
 
