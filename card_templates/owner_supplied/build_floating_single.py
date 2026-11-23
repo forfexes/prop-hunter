@@ -38,8 +38,14 @@ def make_master(source=BASE, target=TARGET):
     # invented team artwork or dynamic screenshot overpaint is introduced.
     cleaned=original.copy()
     allowed=np.zeros((512,512),dtype=np.uint8)
-    safe=original[70:99,244:272].reshape(-1,3).astype(np.float32)
-    safe=safe[np.max(safe,axis=1)<105]
+    safe=np.concatenate((
+        original[80:104,174:209].reshape(-1,3),
+        original[80:104,300:340].reshape(-1,3),
+        original[70:99,244:272].reshape(-1,3)
+    )).astype(np.float32)
+    safe=safe[(np.max(safe,axis=1)<120) &
+              (safe[:,2]>safe[:,0]*1.15) &
+              (safe[:,2]>=safe[:,1]*0.85)]
     if not len(safe):
         raise AssertionError("Owner source lacks a dark unchanged stadium donor")
     dark_stadium=np.median(safe,axis=0)
@@ -48,8 +54,12 @@ def make_master(source=BASE, target=TARGET):
             left=original[y,max(0,x0-19):x0-4].astype(np.float32)
             right=original[y,x1+4:min(512,x1+19)].astype(np.float32)
             # Reject gold outlines/text, only use natural dark stadium.
-            left=left[np.max(left,axis=1)<105]
-            right=right[np.max(right,axis=1)<105]
+            left=left[(np.max(left,axis=1)<110) &
+                      (left[:,2]>left[:,0]*1.15) &
+                      (left[:,2]>=left[:,1]*0.85)]
+            right=right[(np.max(right,axis=1)<110) &
+                        (right[:,2]>right[:,0]*1.15) &
+                        (right[:,2]>=right[:,1]*0.85)]
             # Fixture labels/VS sometimes occupy a whole border row.
             # In that case borrow the genuinely dark upper-center ARENA
             # pixels from the same uploaded original, never the bright rim.
@@ -61,7 +71,8 @@ def make_master(source=BASE, target=TARGET):
         # Smooth within the original source slots, never in the surrounding
         # crown, VS label, name rails or NBA shield.
         restored=cleaned[y0:y1,x0:x1].copy()
-        cleaned[y0:y1,x0:x1]=cv2.GaussianBlur(restored,(0,0),1.6)
+        cleaned[y0:y1,x0:x1]=cv2.GaussianBlur(
+            restored,(0,0),sigmaX=4.0,sigmaY=8.0)
         allowed[y0:y1,x0:x1]=255
     changed=np.any(cleaned!=original,axis=2)
     if np.any(changed & (allowed==0)):
