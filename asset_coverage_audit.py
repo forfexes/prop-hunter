@@ -34,12 +34,24 @@ def endpoint(url, key, table, columns):
     base = url.rstrip("/") + "/rest/v1/" + table
     auth = {"apikey": key, "Authorization": "Bearer " + key}
     start = 0
+    # Large secondary snapshots have a unique indexed text PK; OFFSET gets
+    # progressively slower and eventually times out. Use stable keyset paging.
+    keyset = table == "prop_hunter_prop_snapshots"
+    last_snapshot_id = None
     while True:
         response = None
         for retry in range(3):
             try:
-                response = SESSION.get(base, headers={**auth, "Range": f"{start}-{start+PAGE-1}"},
-                    params={"select": columns}, timeout=45)
+                params = {"select": columns}
+                headers = dict(auth)
+                if keyset:
+                    params.update({"select": columns + ",snapshot_id",
+                                   "order": "snapshot_id.asc", "limit": str(PAGE)})
+                    if last_snapshot_id:
+                        params["snapshot_id"] = "gt." + last_snapshot_id
+                else:
+                    headers["Range"] = f"{start}-{start+PAGE-1}"
+                response = SESSION.get(base, headers=headers, params=params, timeout=45)
                 if response.status_code in (429, 500, 502, 503, 504):
                     time.sleep(2 * (retry + 1))
                     continue
@@ -56,9 +68,15 @@ def endpoint(url, key, table, columns):
             raise RuntimeError(f"{table}: unexpected response type")
         for row in rows:
             yield row
-        if len(rows) < PAGE:
+        if not rows or len(rows) < PAGE:
             break
-        start += len(rows)
+        if keyset:
+            next_id = rows[-1]["snapshot_id"]
+            if next_id == last_snapshot_id:
+                raise RuntimeError("Snapshot cursor did not advance")
+            last_snapshot_id = next_id
+        else:
+            start += len(rows)
 
 def image_ok(url, transparent=False):
     """Actually download and decode bounded image bytes; reject HTML and tiny placeholders."""
