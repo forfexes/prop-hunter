@@ -70,19 +70,34 @@ def owner_pixel_provenance(pick, png_bytes):
     if (family == "single" and str(field(pick,"type","")).strip().lower()=="single"
             and user_single_original_enabled(pick)):
         try:
-            from prop_hunter_owner_supplied_single import SOURCE, EDITABLE, SOURCE_SHA256
+            from prop_hunter_owner_supplied_single import (
+                SOURCE, EDITABLE, FLOATING, RING_REGIONS, SOURCE_SHA256,
+            )
             if hashlib.sha256(SOURCE.read_bytes()).hexdigest()!=SOURCE_SHA256:
                 return False, "owner_new_single_source_changed"
-            with Image.open(SOURCE) as original, Image.open(EDITABLE) as clean, \
-                 Image.open(BytesIO(png_bytes)) as sent:
-                if original.size!=(512,512) or clean.size!=(512,512):
+            with Image.open(SOURCE) as original, Image.open(EDITABLE) as earlier, \
+                 Image.open(FLOATING) as clean, Image.open(BytesIO(png_bytes)) as sent:
+                if any(a.size!=(512,512) for a in (original,earlier,clean)):
                     return False, "owner_new_single_source_size_changed"
-                # Derived master only removes the original baked OFFEN word.
+                # Stage 1: the old approved empty plate removes only OFFEN.
                 discrepancy=ImageChops.difference(original.convert("RGB"),
-                                                   clean.convert("RGB")).getbbox()
+                                                   earlier.convert("RGB")).getbbox()
                 if (not discrepancy or discrepancy[0]<231 or discrepancy[1]<455
                         or discrepancy[2]>316 or discrepancy[3]>490):
                     return False, "owner_new_single_clean_plate_overpainted"
+                # Stage 2: remove only the preprinted team circles in a
+                # separate clean master. The crown/NBA logo/VS/frames are immutable.
+                from PIL import ImageOps
+                delta=ImageChops.difference(earlier.convert("RGB"),clean.convert("RGB"))
+                allowed=Image.new("L",(512,512),0)
+                from PIL import ImageDraw
+                marker=ImageDraw.Draw(allowed)
+                for x0,y0,x1,y1 in RING_REGIONS:
+                    marker.rectangle((x0,y0,x1-1,y1-1),fill=255)
+                outside=Image.composite(delta,Image.new("RGB",(512,512)),
+                                        ImageOps.invert(allowed))
+                if not delta.getbbox() or outside.getbbox():
+                    return False, "owner_new_single_floating_master_altered_art"
                 if sent.format!="PNG" or sent.width!=1080:
                     return False, "not_full_resolution_owner_png"
                 try:
