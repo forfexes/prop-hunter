@@ -12,6 +12,11 @@ class VerifiedTeamAliases(unittest.TestCase):
             ("nba", "UTA Jazz", "Utah Jazz", "UTAH"),
             ("nhl", "UTA Mammoth", "Utah Mammoth", "UTA"),
             ("nfl", "LA Chargers", "Los Angeles Chargers", "LAC"),
+            ("nba", "LA Lakers", "Los Angeles Lakers", "LAL"),
+            ("nhl", "NY Rangers", "New York Rangers", "NYR"),
+            ("nhl", "WAS Capitals", "Washington Capitals", "WSH"),
+            ("nfl", "WAS Commanders", "Washington Commanders", "WSH"),
+            ("nfl", "NY Giants", "New York Giants", "NYG"),
         ]
         for sport, feed_name, official, abbr in cases:
             with self.subTest(feed_name=feed_name):
