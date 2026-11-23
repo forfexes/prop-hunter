@@ -523,6 +523,68 @@ def _form_text(features: Dict[str, Any]) -> str:
     return txt
 
 
+
+def _ladder_exact_form(detail: Dict[str, Any]) -> str:
+    """Actual L5/L10/L15 for this rung's threshold, never the first rung's.
+
+    Fresh bookmaker legs carry a selected point/direction and their own
+    gamelog evidence. The 15-game counts may also be stored directly on that
+    leg. Unverified/mismatched historical data stay UNKNOWN, not copied from
+    the parent pick or a different threshold.
+    """
+    if not isinstance(detail, dict):
+        return "L5 — · L10 — · L15 —"
+    feats=detail.get("features") or {}
+    if not isinstance(feats,dict):
+        feats={}
+    point=detail.get("point")
+    direction=str(detail.get("direction") or "").strip().lower()
+    direction={"yes":"over","no":"under"}.get(direction,direction)
+    def same_threshold(source):
+        if not isinstance(source,dict) or point is None or direction not in ("over","under"):
+            return False
+        try:
+            target=float(point)
+            observed=float(source.get("line"))
+        except (TypeError, ValueError, OverflowError):
+            return False
+        return (math.isfinite(target) and math.isfinite(observed)
+                and abs(target-observed) <= 1e-6
+                and str(source.get("direction") or "").lower()==direction)
+
+    reference={"line":feats.get("gamelog_l15_line"),
+               "direction":feats.get("gamelog_l15_direction")}
+    profile=feats.get("recent_form") or {}
+    valid_ref=same_threshold(reference)
+    valid_profile=valid_ref and same_threshold(profile)
+
+    def ratio(hits,total,window):
+        if type(hits) is not int or type(total) is not int:
+            return None
+        if not 0 < total <= window or not 0 <= hits <= total:
+            return None
+        return f"{hits}/{total}"
+
+    pieces=[]
+    for window in (5,10,15):
+        key=f"l{window}"
+        value=None
+        if valid_profile:
+            observed=profile.get(key)
+            if isinstance(observed,dict):
+                value=ratio(observed.get("hits"),observed.get("n"),window)
+        if value is None and valid_ref:
+            value=ratio(feats.get(f"gamelog_{key}_hits"),
+                        feats.get(f"gamelog_{key}_n"),window)
+        # Explicitly saved L15 from the actual selected ladder leg. Never
+        # invent L5/L10 by scaling its last-15 rate or using parent features.
+        if value is None and window==15 and (valid_ref or not reference["line"]):
+            value=ratio(detail.get("gamelog_l15_hits"),
+                        detail.get("gamelog_l15_n"),window)
+        pieces.append(f"L{window} {value or '—'}")
+    return " · ".join(pieces)
+
+
 def _label(detail: Dict[str, Any]) -> str:
     pt = detail.get("point")
     d = str(detail.get("direction") or "over").lower()
@@ -690,7 +752,7 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
                 rows.append({"name": name, "photo": photo,
                              "label": str(det.get("market", "")).replace("_", " "),
                              "result": _result_text(det),
-                             "form": (f"L15 {int(det['gamelog_l15_hits'])}/{int(det['gamelog_l15_n'])} verfügbare Spiele" if det.get("gamelog_l15_n") else _form_text(det.get("features"))),
+                             "form": _ladder_exact_form(det),
                              "odds": f"@{float(_odds):.2f}" if _odds else ""})
             title, subtitle = "LADDER", f"{name} · {len(rows)} Stufen"
             if not teams and game and game.lower() != "verified ladder":
