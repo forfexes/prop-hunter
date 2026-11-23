@@ -40,8 +40,12 @@ examples=[
          {"odds":1.8,"sport":"NBA"},{"odds":2.4,"sport":"NBA"}]),
      [row,dict(row,label="Over 25.5 points")],[]),
     ("builder",N(**common,type="betbuilder",odds=3.45,leg_details=[
-         {"player":"TEST PLAYER","odds":1.75,"sport":"NBA"},{"player":"TEST PLAYER TWO","odds":1.9,"sport":"NBA"},
-         {"player":"TEST PLAYER THREE","odds":2.0,"sport":"NBA"}]),
+         {"player":"TEST PLAYER","odds":1.75,"sport":"NBA","game":common["game"],
+          "commence_time":common["commence_time"],"fixture_id":"OWNER-QA-123"},
+         {"player":"TEST PLAYER TWO","odds":1.9,"sport":"NBA","game":common["game"],
+          "commence_time":common["commence_time"],"fixture_id":"OWNER-QA-123"},
+         {"player":"TEST PLAYER THREE","odds":2.0,"sport":"NBA","game":common["game"],
+          "commence_time":common["commence_time"],"fixture_id":"OWNER-QA-123"}]),
      [row,dict(row,name="TEST PLAYER TWO"),dict(row,name="TEST PLAYER THREE")],[]),
     ("lottery",N(**common,type="lottery",odds=13.80,leg_details=[
          {"player":"TEST PLAYER","odds":1.75,"sport":"NBA","game":"HOME TEST vs AWAY TEST",
