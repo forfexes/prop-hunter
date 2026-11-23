@@ -85,22 +85,24 @@ class AllOwnerBuilderLegCounts(unittest.TestCase):
                     (p/f"nba_owner_builder_{count}_LEGS_SANDBOX.png").write_bytes(result)
 
     def test_long_extension_preserves_original_header_while_adding_empty_rows(self):
-        clean=self.plate.convert("RGB")
+        clean=self.plate.convert("RGBA")
         for count in (8,9,10):
             with self.subTest(count=count):
+                expanded, pextra, textra = builder._extend_owner_clean_builder(
+                    self.plate, count)
+                self.assertEqual(pextra,190)
+                self.assertGreater(textra,0)
+                # Verify BEFORE raster scaling: preserving owner pixels exactly
+                # is stronger and avoids interpolation rounding differences.
+                a=clean.crop((0,0,691,83))
+                b=expanded.crop((0,0,691,83))
+                self.assertIsNone(ImageChops.difference(a,b).getbbox())
                 pic=builder.render(
                     self.plate,subtitle=SUBTITLE,teams=self.teams,
                     rows=rows(count),footer="Quote @15.42 · Einsatz 1u",
                     settlement="OFFEN")
                 with Image.open(BytesIO(pic)) as im:
-                    r=im.convert("RGB")
-                    # Compare in the *same pixel scale* as the final output;
-                    # round-trip resizing otherwise introduces test artifacts.
-                    expected=clean.resize(
-                        (1080,round(1080*867/691)),Image.Resampling.LANCZOS)
-                    a=expected.crop((0,0,1080,108))
-                    b=r.crop((0,0,1080,108))
-                    self.assertIsNone(ImageChops.difference(a,b).getbbox())
+                    self.assertEqual(im.width,1080)
         self.assertEqual(self.plate.size,(691,867))
 
     def test_invalid_counts_and_unverifiable_selection_fail_closed(self):
