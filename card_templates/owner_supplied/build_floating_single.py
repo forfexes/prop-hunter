@@ -38,6 +38,11 @@ def make_master(source=BASE, target=TARGET):
     # invented team artwork or dynamic screenshot overpaint is introduced.
     cleaned=original.copy()
     allowed=np.zeros((512,512),dtype=np.uint8)
+    safe=original[70:99,244:272].reshape(-1,3).astype(np.float32)
+    safe=safe[np.max(safe,axis=1)<105]
+    if not len(safe):
+        raise AssertionError("Owner source lacks a dark unchanged stadium donor")
+    dark_stadium=np.median(safe,axis=0)
     for x0,y0,x1,y1 in RINGS:
         for y in range(y0,y1):
             left=original[y,max(0,x0-19):x0-4].astype(np.float32)
@@ -45,10 +50,11 @@ def make_master(source=BASE, target=TARGET):
             # Reject gold outlines/text, only use natural dark stadium.
             left=left[np.max(left,axis=1)<105]
             right=right[np.max(right,axis=1)<105]
-            if not len(left) or not len(right):
-                raise AssertionError("Cannot restore source stadium without bright decorations")
-            a=np.median(left,axis=0)
-            b=np.median(right,axis=0)
+            # Fixture labels/VS sometimes occupy a whole border row.
+            # In that case borrow the genuinely dark upper-center ARENA
+            # pixels from the same uploaded original, never the bright rim.
+            a=np.median(left,axis=0) if len(left) else dark_stadium
+            b=np.median(right,axis=0) if len(right) else dark_stadium
             blend=np.linspace(0,1,x1-x0,dtype=np.float32)[:,None]
             cleaned[y,x0:x1]=np.clip(a[None,:]*(1-blend)+b[None,:]*blend,
                                      0,255).astype(np.uint8)
