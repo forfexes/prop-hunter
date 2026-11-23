@@ -651,6 +651,33 @@ def _display_model_evidence(pick: Any) -> Dict[str, str]:
     return result
 
 
+
+def _same_visible_team_crest(teams: List[Tuple[str, Optional["Image.Image"]]]) -> bool:
+    """Detect a provider returning the same actual badge for two NBA clubs.
+
+    Strip transparent whitespace, normalise size, and compare real pixels.
+    Only used for TWO team slots of the SAME fixture, never across games.
+    If image source identity is ambiguous, fail closed upstream instead of
+    fabricating or selecting a different emblem.
+    """
+    if len(teams) != 2:
+        return False
+    logos = [entry[1] for entry in teams]
+    if not all(isinstance(logo, Image.Image) for logo in logos):
+        return False
+    normalized = []
+    for source in logos:
+        rgba = source.convert("RGBA")
+        rect = rgba.getchannel("A").point(
+            lambda a: 255 if a >= 24 else 0).getbbox()
+        if rect is None:
+            return True
+        img = rgba.crop(rect)
+        img.thumbnail((96, 96), Image.Resampling.LANCZOS)
+        normalized.append((img.size, img.tobytes()))
+    return normalized[0] == normalized[1]
+
+
 def build_for_pick(pick: Any) -> Optional[bytes]:
     """PNG-Bytes fuer einen Pick (single/ladder/betbuilder/kombi) oder None."""
     if not ON:
@@ -728,6 +755,9 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
             parts = re.split(r"\s+(?:vs\.?|@|-)\s+", game)
             if len(parts) == 2 and not cross:
                 teams = [(parts[0].strip(), team_logo(parts[0].strip(), league)), (parts[1].strip(), team_logo(parts[1].strip(), league))]
+                if _norm(teams[0][0]) == _norm(teams[1][0]) or _same_visible_team_crest(teams):
+                    print("NBA_DUPLICATE_TEAM_BADGE: image publication blocked", flush=True)
+                    return None
         rows: List[Dict[str, Any]] = []
         if typ == "ladder":
             name = str(getattr(pick, "player", "") or (details[0].get("player") if details else "") or "").strip()
