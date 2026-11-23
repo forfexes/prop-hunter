@@ -137,7 +137,18 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
                           "nickname": _norm(t.get("nickname") or t.get("name")),
                           "logo": logos[0].get("href") if logos else None})
         _CACHE[tkey] = teams
-    want = _norm(team)
+    # Exact, independently verified feed-name aliases only. Never fuzzy-match
+    # a city/nickname to an unrelated team or cross from another sport.
+    _verified_aliases = {
+        "nba": {
+            "losangelesclippers": "laclippers",
+            "waswizards": "washingtonwizards",
+            "utajazz": "utahjazz",
+        },
+        "nhl": {"utamammoth": "utahmammoth"},
+        "nfl": {"lachargers": "losangeleschargers"},
+    }
+    want = _verified_aliases.get(league[1], {}).get(_norm(team), _norm(team))
     matches=[t for t in _CACHE[tkey] if want in t["names"]]
     if len(matches)!=1 and league[1]=="nba":
         # Some bookmaker feeds use PHO Suns whereas ESPN calls the same
