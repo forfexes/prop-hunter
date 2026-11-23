@@ -577,6 +577,13 @@ def _display_model_evidence(pick: Any) -> Dict[str, str]:
         confidence=number(_get("confidence_score"))
         if confidence is None:
             confidence=number(_get("model_confidence"))
+        if confidence is None:
+            # The same calibrated formula already used in PROP HUNTER's
+            # published text, now shown in the original NBA picture too.
+            # No probability, edge or genuine odds => no derived CONF.
+            from prop_hunter_confidence_display import normal_pick_confidence
+            confidence=normal_pick_confidence(
+                _get("probability"),_get("edge_pct"),_get("odds"))
         if confidence is not None and 0 <= confidence <= 100:
             result["confidence"]=f"{round(confidence)}/100"
     return result
