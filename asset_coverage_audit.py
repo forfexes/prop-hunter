@@ -7,6 +7,7 @@ No secrets or complete private rosters are written to output.
 from __future__ import annotations
 import argparse
 import collections
+from datetime import datetime, timezone
 import io
 import json
 import os
@@ -113,11 +114,32 @@ def image_ok(url, transparent=False):
     except (requests.RequestException, OSError, ValueError):
         return False
 
+def select_batch(items, cap, *, rotate=False, anchor=20, ordinal=None):
+    """Bounded coverage: priority identities every run, then a new daily roster slice.
+
+    This is deterministic for a given day and sorted roster. No API calls/writes.
+    """
+    cap = max(1, min(int(cap), 500))
+    if not rotate or len(items) <= cap:
+        return items[:cap], {"mode": "priority", "slice": 0, "slices": 1}
+    anchors = items[:min(anchor, cap)]
+    rest = items[len(anchors):]
+    width = max(1, cap - len(anchors))
+    slices = (len(rest) + width - 1) // width
+    day = int(ordinal if ordinal is not None else datetime.now(timezone.utc).date().toordinal())
+    index = day % slices
+    batch = anchors + rest[index*width:(index+1)*width]
+    return batch, {"mode": "daily_rotation", "slice": index+1, "slices": slices,
+                   "priority_count": len(anchors), "rotation_capacity": width}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--bot", choices=("netrattler", "prop"), required=True)
     ap.add_argument("--max-photos", type=int, default=int(os.getenv("ASSET_MAX_PHOTOS", "80")))
     ap.add_argument("--max-teams", type=int, default=int(os.getenv("ASSET_MAX_TEAMS", "100")))
+    ap.add_argument("--rotate", action="store_true",
+                    help="Keep high-priority identities and cover a new historical roster slice each UTC day")
     args = ap.parse_args()
     root = os.getenv("SUPABASE_URL", "").rstrip("/")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY") or ""
@@ -283,15 +305,18 @@ def main():
 
     plist = sorted(people.items(), key=lambda kv: (-priority[kv[0]], -kv[1]["count"], kv[0]))
     tlist = sorted(teams.items(), key=lambda kv: (-priority[("team",) + kv[0]], -kv[1]["count"], kv[0]))
-    report["not_probed_photo"] = max(0, len(plist)-args.max_photos)
-    report["not_probed_crest"] = max(0, len(tlist)-args.max_teams)
-    for _, p in plist[:args.max_photos]:
+    photo_batch, photo_plan = select_batch(plist, args.max_photos, rotate=args.rotate)
+    team_batch, team_plan = select_batch(tlist, args.max_teams, rotate=args.rotate)
+    report["coverage_plan"] = {"photos": photo_plan, "crests": team_plan}
+    report["not_probed_photo"] = max(0, len(plist)-len(photo_batch))
+    report["not_probed_crest"] = max(0, len(tlist)-len(team_batch))
+    for _, p in photo_batch:
         ok, evidence = photo_test(p)
         report["photo_checked"] += 1
         report["verified_photos" if ok else "missing_or_unverified_photos"] += 1
         if not ok and len(report["missing_photo_samples"]) < 50:
             report["missing_photo_samples"].append({"name": p["name"], "sport": p["sport"], "status": evidence})
-    for _, t in tlist[:args.max_teams]:
+    for _, t in team_batch:
         ok, evidence = crest_test(t)
         report["crest_checked"] += 1
         report["verified_crests" if ok else "missing_or_unverified_crests"] += 1
