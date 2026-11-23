@@ -31,7 +31,7 @@ jobs:
           python - <<'PY'
           import io, json
           from pathlib import Path
-          from PIL import Image, ImageDraw, ImageFont
+          from PIL import Image, ImageDraw, ImageFont, ImageChops
           import prop_hunter_image_cards as cards
           from prop_hunter_nba_premium_adapter import _photo
           from prop_hunter_original_compositor import _source
@@ -83,9 +83,18 @@ jobs:
           # components. No fake fixture, bookmaker quote, time or pick line
           # is provided to the production-only owner renderer.
           source=latest_single_plate()
+          original=source.copy()
           latest_single_portrait(source,player)
           latest_single_logo(source,("Boston Celtics",logos[0]),191)
           latest_single_logo(source,("New York Knicks",logos[1]),322)
+          # Real sports assets are allowed ONLY in their dynamic slots.
+          # The owner's PROP HUNTER masthead and NBA shield stay literally
+          # pixel-identical, not AI-drawn or pasted over.
+          for box in ((140,2,385,64),(12,2,58,55)):
+              if ImageChops.difference(
+                  original.crop(box),source.crop(box)).getbbox():
+                  raise SystemExit("Actual original PROP HUNTER/NBA logo altered")
+          print("REAL_ASSET_OWNER_STATIC_LOGOS_PIXEL_IDENTICAL")
           image=source.convert("RGB")
           d=ImageDraw.Draw(image)
           d.text((38,image.height-35),"OFFLINE BILDKONTROLLE · KEINE WETTE",
