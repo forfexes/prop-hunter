@@ -156,7 +156,7 @@ def _template(pick, rows):
         return key
     if n < 2 or n > 12:
         raise PremiumDataMissing("Only 2–12 legs are supported")
-    # 7+ is supported for Builder only through 7, and for multi-game
+    # 8-10 Builder legs require the verified extendable owner source; multi-game
     # Combo/Lottery through 12. Ladder/same-player remain separately approved.
     if n > 6 and typ in ("ladder",):
         raise PremiumDataMissing("Ladder currently supports 2–6 original rungs")
@@ -173,8 +173,8 @@ def _template(pick, rows):
             if n > 6:
                 raise PremiumDataMissing("Same-player master only supports 2–6 rungs")
             return f"same_player_{n}"
-        if n > 7:
-            raise PremiumDataMissing("Same-game Builder master only supports 2–7 legs")
+        if n > 10 or (n > 7 and os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() != "1"):
+            raise PremiumDataMissing("Same-game Builder supports 2-10 only with verified owner original")
         return f"builder_{n}"
     raise PremiumDataMissing(f"Unsupported NBA pick type: {typ}")
 
