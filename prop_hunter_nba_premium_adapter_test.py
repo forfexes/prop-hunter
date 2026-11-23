@@ -325,9 +325,9 @@ assert Image.open(BytesIO(render_nba_pick(typed_ladder, rungs, teams))).size == 
 typed_builder = SimpleNamespace(**base, type="betbuilder", odds=5.10,
     leg_details=[
         SimpleNamespace(player="TEST PLAYER A", market="points", odds=1.7,
-                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER", **same_fixture),
+                        bookmaker="TEST ONLY BOOKMAKER", **same_fixture),
         SimpleNamespace(player="TEST PLAYER B", market="rebounds", odds=1.8,
-                        sport="NBA", bookmaker="TEST ONLY BOOKMAKER", **same_fixture)])
+                        bookmaker="TEST ONLY BOOKMAKER", **same_fixture)])
 assert Image.open(BytesIO(render_nba_pick(typed_builder, legs, teams))).size == (1080, 1440)
 typed_lottery = SimpleNamespace(**base, type="lottery", odds=18.25,
     leg_details=[SimpleNamespace(**leg) for leg in multi_legs])
