@@ -80,14 +80,14 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
         for i, row in enumerate(rows):
             cx = centers[i % 3]
             top = 133 + (i // 3) * 130
-            _text(d, (cx, top + 108), _form_label(row.get("form")),
-                  size=12, max_width=202, color=GREEN)
+            _text(d, (cx, top + 108), _form_label(row.get("form"), True),
+                  size=11, max_width=202, color=GREEN)
     else:
         for i, row in enumerate(rows):
             cx = centers[i % 3]
             top = 129 + (i // 3) * 91
-            _text(d, (cx, top + 78), _form_label(row.get("form")),
-                  size=11, max_width=198, color=GREEN)
+            _text(d, (cx, top + 78), _form_label(row.get("form"), True),
+                  size=10, max_width=198, color=GREEN)
 
     date, clock = _verified_time(subtitle)
     _text(d, (344, 506), (date + " · " + clock).strip(" ·"),
