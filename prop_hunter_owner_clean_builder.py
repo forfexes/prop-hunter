@@ -50,25 +50,33 @@ def _extend_owner_clean_builder(plate: Image.Image, count: int):
     ticket_extra = max(0, count * 32 - 177 + 12) if count > 7 else 0
     if not portrait_extra:
         return plate.convert("RGBA").copy(), 0, 0
-    cut1, cut2 = 365, 710
+    cut1, cut2 = 365, 625
     original = plate.convert("RGBA")
     canvas = Image.new("RGBA",
                        (original.width, original.height + portrait_extra + ticket_extra),
                        (4, 16, 31, 255))
     canvas.alpha_composite(original.crop((0, 0, original.width, cut1)), (0, 0))
-    for offset in range(0, portrait_extra, 18):
-        band = original.crop((0, 345, original.width, 363))
-        h = min(18, portrait_extra-offset)
-        canvas.alpha_composite(band.crop((0, 0, original.width, h)),
-                               (0, cut1+offset))
+
+    def blended_empty_band(cut: int, height: int):
+        # Only rows on either side of a blank original-source stadium/ticket
+        # region contribute. Interpolate, rather than repeat a strip of the
+        # owner's cyan border/glow over multiple rows.
+        upper = original.crop((0, cut-1, original.width, cut)).resize(
+            (original.width, height))
+        lower = original.crop((0, cut, original.width, cut+1)).resize(
+            (original.width, height))
+        mask = Image.linear_gradient("L").resize(
+            (original.width, height), Image.Resampling.BILINEAR)
+        return Image.composite(lower, upper, mask)
+
+    canvas.alpha_composite(
+        blended_empty_band(cut1, portrait_extra), (0, cut1))
     canvas.alpha_composite(
         original.crop((0, cut1, original.width, cut2)),
         (0, cut1 + portrait_extra))
-    for offset in range(0, ticket_extra, 18):
-        band = original.crop((0, 690, original.width, 708))
-        h = min(18, ticket_extra-offset)
-        canvas.alpha_composite(band.crop((0, 0, original.width, h)),
-                               (0, cut2+portrait_extra+offset))
+    canvas.alpha_composite(
+        blended_empty_band(cut2, ticket_extra),
+        (0, cut2 + portrait_extra))
     canvas.alpha_composite(
         original.crop((0, cut2, original.width, original.height)),
         (0, cut2 + portrait_extra + ticket_extra))
