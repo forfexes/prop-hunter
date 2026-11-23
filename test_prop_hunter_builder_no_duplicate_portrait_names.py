@@ -18,7 +18,7 @@ def logo():
 
 class PortraitDuplicatesQA(unittest.TestCase):
     def test_no_name_or_market_below_photo_for_all_builder_sizes(self):
-        for n in (2,3,4,5,6,7):
+        for n in range(2, 11):
             with self.subTest(legs=n):
                 source=Image.new("RGBA",(691,867),(2,15,29,255))
                 legs=[
