@@ -38,6 +38,15 @@ for family, pick in families.items():
         bad=BytesIO()
         painted.save(bad,"PNG")
         assert not owner_pixel_provenance(pick,bad.getvalue())[0], family
+        # A false NBA badge at top-left must be rejected as firmly as
+        # a forged PROP HUNTER header. Do not accept a pasted-on logo.
+        badge_forgery=ready.copy()
+        ImageDraw.Draw(badge_forgery).rectangle(
+            (64,40,124,89),fill=(255,0,0))
+        impostor=BytesIO()
+        badge_forgery.save(impostor,"PNG")
+        assert owner_pixel_provenance(pick,impostor.getvalue()) == (
+            False,"owner_masthead_pixel_overlap"),family
         assert owner_family(pick)==family
         print("OWNER_ORIGINAL_PIXEL_QA",family,"approved_current="+str(up_to_date))
 # A six-prop one-player Ladder expands only empty stadium rows. Its crown
