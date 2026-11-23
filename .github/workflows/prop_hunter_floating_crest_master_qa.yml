@@ -5,6 +5,7 @@ name: PROP HUNTER Floating Original Crests - Build and QA
     branches: [main]
     paths:
       - "card_templates/owner_supplied/build_floating_single.py"
+      - "card_templates/owner_supplied/build_clean_player_single.py"
       - "prop_hunter_owner_supplied_single.py"
       - "prop_hunter_owner_pixel_qa.py"
       - "test_prop_hunter_owner_supplied_single.py"
@@ -37,19 +38,21 @@ jobs:
         run: |
           python -m py_compile card_templates/owner_supplied/build_floating_single.py prop_hunter_owner_supplied_single.py prop_hunter_owner_pixel_qa.py
           python card_templates/owner_supplied/build_floating_single.py
+          python -m py_compile card_templates/owner_supplied/build_clean_player_single.py
+          python card_templates/owner_supplied/build_clean_player_single.py
       - name: Test ALL original NBA card slots and Telegram provenance OFFLINE
         run: |
           python -m unittest -v test_prop_hunter_owner_supplied_single test_prop_hunter_crest_slots
           python -m unittest -v test_prop_hunter_real_portrait_head_visibility
       - name: Commit newly derived master only after green pixel checks
         run: |
-          git add card_templates/owner_supplied/single_blank_floating_20261123.png
+          git add card_templates/owner_supplied/single_blank_floating_20261123.png card_templates/owner_supplied/single_blank_no_silhouette_20261123.png
           if git diff --cached --quiet; then
             echo "No new generated pixels"
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Save verified NBA Single master without preprinted team circles"
+            git commit -m "Save verified NBA Single master without circles OR fake gold player silhouette"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -61,6 +64,7 @@ jobs:
           path: |
             card_templates/owner_supplied/single_blank_20261122.png
             card_templates/owner_supplied/single_blank_floating_20261123.png
+            card_templates/owner_supplied/single_blank_no_silhouette_20261123.png
             preview_single_open.png
             preview_single_won.png
             preview_single_owner_telegram_safe.png
