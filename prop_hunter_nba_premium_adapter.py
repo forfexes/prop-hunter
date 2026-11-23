@@ -319,7 +319,10 @@ def render_nba_pick(pick, rows, teams):
             if family in ("builder", "cross_game", "lottery"):
                 images[f"leg_{i}_photo"] = _photo(row.get("photo"), f"leg_{i}_photo")
         if typ == "ladder":
-            values.update(_form(rows[0].get("form")))
+            # A ladder contains several DIFFERENT thresholds. Never present
+            # the first rung's form as if it described every rung.
+            # leg_i_l5/l10/l15 are already supplied independently above.
+            pass
         else:
             from prop_hunter_combo_prices import confirmed_ticket
             verified_combo = confirmed_ticket(pick)
