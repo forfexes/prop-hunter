@@ -71,13 +71,16 @@ def owner_pixel_provenance(pick, png_bytes):
             and user_single_original_enabled(pick)):
         try:
             from prop_hunter_owner_supplied_single import (
-                SOURCE, EDITABLE, FLOATING, RING_REGIONS, SOURCE_SHA256,
+                SOURCE, EDITABLE, FLOATING, NO_SILHOUETTE, NO_SILHOUETTE_PIXEL_SHA,
+                RING_REGIONS, SOURCE_SHA256,
             )
             if hashlib.sha256(SOURCE.read_bytes()).hexdigest()!=SOURCE_SHA256:
                 return False, "owner_new_single_source_changed"
             with Image.open(SOURCE) as original, Image.open(EDITABLE) as earlier, \
-                 Image.open(FLOATING) as clean, Image.open(BytesIO(png_bytes)) as sent:
-                if any(a.size!=(512,512) for a in (original,earlier,clean)):
+                 Image.open(FLOATING) as rings_removed, \
+                 Image.open(NO_SILHOUETTE) as clean, \
+                 Image.open(BytesIO(png_bytes)) as sent:
+                if any(a.size!=(512,512) for a in (original,earlier,rings_removed,clean)):
                     return False, "owner_new_single_source_size_changed"
                 # Stage 1: the old approved empty plate removes only OFFEN.
                 discrepancy=ImageChops.difference(original.convert("RGB"),
@@ -88,7 +91,7 @@ def owner_pixel_provenance(pick, png_bytes):
                 # Stage 2: remove only the preprinted team circles in a
                 # separate clean master. The crown/NBA logo/VS/frames are immutable.
                 from PIL import ImageOps
-                delta=ImageChops.difference(earlier.convert("RGB"),clean.convert("RGB"))
+                delta=ImageChops.difference(earlier.convert("RGB"),rings_removed.convert("RGB"))
                 allowed=Image.new("L",(512,512),0)
                 from PIL import ImageDraw
                 marker=ImageDraw.Draw(allowed)
@@ -98,6 +101,15 @@ def owner_pixel_provenance(pick, png_bytes):
                                         ImageOps.invert(allowed))
                 if not delta.getbbox() or outside.getbbox():
                     return False, "owner_new_single_floating_master_altered_art"
+                actual_sha=hashlib.sha256(clean.convert("RGB").tobytes()).hexdigest()
+                if actual_sha != NO_SILHOUETTE_PIXEL_SHA:
+                    return False, "owner_gold_player_silhouette_not_removed"
+                portrait_delta=ImageChops.difference(
+                    rings_removed.convert("RGB"),clean.convert("RGB")).getbbox()
+                if (not portrait_delta or portrait_delta[0]<0 or
+                        portrait_delta[1]<51 or portrait_delta[2]>160 or
+                        portrait_delta[3]>327):
+                    return False, "owner_silhouette_edit_outside_allowed_mask"
                 if sent.format!="PNG" or sent.width!=1080:
                     return False, "not_full_resolution_owner_png"
                 try:
