@@ -93,12 +93,13 @@ class AllOwnerBuilderLegCounts(unittest.TestCase):
                     rows=rows(count),footer="Quote @15.42 · Einsatz 1u",
                     settlement="OFFEN")
                 with Image.open(BytesIO(pic)) as im:
-                    r=im.convert("RGB").resize(
-                        (691, im.height*691//1080), Image.Resampling.NEAREST)
-                    # Branding and crown are above all photo/date/leg slots.
-                    # Actual owner header is never obscured by opaque rerenders.
-                    a=clean.crop((0,0,691,83))
-                    b=r.crop((0,0,691,83))
+                    r=im.convert("RGB")
+                    # Compare in the *same pixel scale* as the final output;
+                    # round-trip resizing otherwise introduces test artifacts.
+                    expected=clean.resize(
+                        (1080,round(1080*867/691)),Image.Resampling.LANCZOS)
+                    a=expected.crop((0,0,1080,108))
+                    b=r.crop((0,0,1080,108))
                     self.assertIsNone(ImageChops.difference(a,b).getbbox())
         self.assertEqual(self.plate.size,(691,867))
 
