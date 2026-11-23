@@ -5,6 +5,14 @@ name: PROP HUNTER Real Photo & Logo Visual QA (No Telegram)
   push:
     paths:
       - '.github/workflows/prop_hunter_real_photo_visual_qa.yml'
+      - 'prop_hunter_owner_supplied_single.py'
+      - 'prop_hunter_owner_clean_single.py'
+      - 'prop_hunter_owner_clean_ladder.py'
+      - 'prop_hunter_owner_clean_builder.py'
+      - 'prop_hunter_owner_clean_lottery.py'
+      - 'prop_hunter_image_cards.py'
+      - 'card_templates/owner_supplied/**'
+      - 'card_templates/approved/**'
 permissions:
   contents: read
 jobs:
@@ -27,7 +35,7 @@ jobs:
           import prop_hunter_image_cards as cards
           from prop_hunter_nba_premium_adapter import _photo
           from prop_hunter_original_compositor import _source
-          from prop_hunter_owner_clean_single import render
+          from prop_hunter_owner_supplied_single import render as render_latest_single
 
           out=Path("output/real_photo_visual_qa")
           out.mkdir(parents=True,exist_ok=True)
@@ -49,6 +57,9 @@ jobs:
               break
           logos=[cards.team_logo(name,league) for name in
                  ("Boston Celtics","New York Knicks")]
+          if cards._same_visible_team_crest([
+                  ("Boston Celtics",logos[0]),("New York Knicks",logos[1])]):
+              raise SystemExit("Wrong provider: both NBA team crests identical")
           evidence={
               "source":"ESPN public team/player image APIs",
               "player":actual_name,
@@ -64,7 +75,7 @@ jobs:
               raise SystemExit("Authentic NBA portrait/logo gate not ready")
           # Every betting detail is explicitly EMPTY: there is no invented
           # sportsbook quote, fixture, kickoff, tip probability or result.
-          raw=render(_source("single"),title="SINGLE",subtitle="",
+          raw=render_latest_single(title="SINGLE",subtitle="",
               teams=[("Boston Celtics",logos[0]),("New York Knicks",logos[1])],
               row={"name":actual_name,"photo":player,
                    "label":"VISUAL QA · KEIN TIPP","odds":"—",
@@ -125,12 +136,12 @@ jobs:
               for name,photo in actual_athletes[:6]]
           save_qa("builder6",render_builder(_source("builder"),
               subtitle="",teams=home_away,rows=builder_rows,
-              footer="Quote 9.99 · Einsatz 1u",settlement="QA ONLY"))
+              footer="KEINE BUCHMACHERQUOTE · QA ONLY",settlement="QA ONLY"))
           lottery_rows=[
               {**row, "game":f"QA GAME {i+1} vs QA TEAM {i+1} · 00.00.0000 00:00"}
               for i,row in enumerate(builder_rows)]
           save_qa("lottery6",render_lottery(_source("lottery"),
-              rows=lottery_rows,footer="Quote 9.99 · Einsatz 1u",
+              rows=lottery_rows,footer="KEINE BUCHMACHERQUOTE · QA ONLY",
               settlement="QA ONLY"))
           print("ALL_FOUR_OWNER_FAMILIES_REAL_PHOTOS_PASS_NO_TELEGRAM")
           PY
