@@ -65,10 +65,10 @@ def _logo(im, entry, center):
     name,picture=entry
     if not str(name or '').strip() or not isinstance(picture,Image.Image):
         raise ValueError('Authentic NBA club and emblem missing')
-    thumb=picture.convert('RGBA').copy()
-    thumb.thumbnail((54,54),Image.Resampling.LANCZOS)
-    x=int(center-thumb.width/2)
-    im.alpha_composite(thumb,(x,81))
+    # Real emblem inside the owner's ORIGINAL circle. Crop the transparent
+    # source margin and align both axes; never paste a new ring/sticker.
+    from prop_hunter_owner_clean_single import _place_authentic_crest
+    _place_authentic_crest(im,picture,center,108,54)
     _write(ImageDraw.Draw(im),(center,154),name,94,11,WHITE)
 
 
