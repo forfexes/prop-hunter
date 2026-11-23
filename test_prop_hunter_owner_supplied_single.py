@@ -84,6 +84,18 @@ class SourceOriginalQA(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'visible portrait'):
             owner._portrait(a,Image.new('RGBA',(300,300),(0,0,0,0)))
 
+    def test_actual_jersey_bottom_is_feathered_no_hard_rectangular_cutout(self):
+        # ESPN player cutouts can end with a straight, opaque white jersey.
+        # It must blend inside the source outline, not appear glued on top.
+        _,_,photo=qa_assets()
+        overlay=Image.new('RGBA',(512,512),(0,0,0,0))
+        owner._portrait(overlay,photo)
+        alpha=overlay.getchannel('A')
+        self.assertGreater(alpha.getpixel((90,213)),200)
+        self.assertLess(alpha.getpixel((90,241)),130)
+        self.assertEqual(alpha.getpixel((90,250)),0)
+        self.assertEqual(alpha.getpixel((250,140)),0)
+
     def test_settlement_in_same_original_banner(self):
         for name in ('OFFEN','GEWONNEN','VERLOREN','PUSH','VOID'):
             raw=self.render(settlement=name)
