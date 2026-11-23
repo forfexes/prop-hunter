@@ -692,8 +692,8 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
         permitted = 6 if os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1' else 5
         if len(rows) > permitted:
             raise ValueError(f'Ladder has more than {permitted} verified one-athlete legs')
-    if family == 'builder' and len(rows) > 7:
-        raise ValueError('Builder has more than seven legs; cannot silently hide picks')
+    if family == 'builder' and len(rows) > (10 if os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1' else 7):
+        raise ValueError('Builder exceeds approved visible leg capacity; cannot silently hide picks')
     if family == 'lottery' and len(rows) > 12:
         raise ValueError('Lottery has more than twelve legs; cannot silently hide picks')
     if family == 'lottery' and os.getenv('PH_NBA_OWNER_ORIGINALS', '0') == '1':
