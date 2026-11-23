@@ -38,3 +38,18 @@ def test_no_name_or_league_rejected_before_search():
     with patch.object(cards, "_get_json", side_effect=AssertionError("Unexpected search")):
         assert cards.player_photo("", cards.LEAGUES["nba"]) is None
         assert cards.player_photo("Alex Smith", None) is None
+
+
+def test_accented_player_name_uses_ascii_query_but_exact_identity():
+    cards._CACHE.clear()
+    marker = object()
+    with patch.object(cards, "_get_json", side_effect=[
+        {"items": []},
+        {"items": [_item(123, "Julio Rodriguez", "mlb")]}
+    ]) as search, patch.object(cards, "_get_image", return_value=marker) as load:
+        assert cards.player_photo("Julio Rodríguez", cards.LEAGUES["mlb"]) is marker
+        assert search.call_count == 2
+        assert search.call_args_list[0].args[1]["query"] == "Julio Rodríguez"
+        assert search.call_args_list[1].args[1]["query"] == "Julio Rodriguez"
+        assert "/123.png" in load.call_args.args[0]
+    cards._CACHE.clear()
