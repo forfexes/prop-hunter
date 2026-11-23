@@ -345,6 +345,18 @@ def render_nba_pick(pick, rows, teams):
                 # Keep the value numeric for SVG's strict arithmetic check;
                 # the original total-quote label becomes BERECHNETE QUOTE.
                 values["total_odds"] = f"@{calculated:.2f}"
+    if family == "builder":
+        # Same-match owner artwork is only correct when EVERY priced leg
+        # independently confirms the very same game and tipoff. Mixed-match
+        # tickets must be explicitly classified cross_game/lottery upstream,
+        # never assigned one false team pair on a Builder card.
+        from prop_hunter_owner_builder_fixture_guard import (
+            assert_same_game_owner_builder, WrongBuilderFixture)
+        try:
+            assert_same_game_owner_builder(
+                list(_get(pick, "leg_details") or []), teams, values)
+        except WrongBuilderFixture as exc:
+            raise PremiumDataMissing(str(exc)) from exc
     if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and family in (
         "single", "ladder", "builder", "lottery", "combo", "cross_game",
         "same_player", "longshot"):
