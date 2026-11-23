@@ -47,7 +47,10 @@ class PortraitDuplicatesQA(unittest.TestCase):
                         matches=[xy for xy,v in texts if v==item[field]]
                         self.assertEqual(len(matches),1,(n,item[field],matches))
                         self.assertGreaterEqual(matches[0][1],531)
-                self.assertTrue(any("L15 9/15" in v for _,v in texts))
+                # All three observed windows for EACH player, even 7 legs.
+                self.assertEqual(sum(
+                    v=="L5 4/5 · L10 7/10 · L15 9/15"
+                    for _,v in texts),n)
 
 
 if __name__=="__main__":
