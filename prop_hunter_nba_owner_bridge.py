@@ -94,8 +94,8 @@ def render_owner(pick, key: str, rows: list, teams: list,
         raise ValueError("Original Ladder or Same Player requires one athlete with 2-6 verified legs")
     # Six-row Ladder uses only an owner-source-derived EMPTY stadium extension.
     # Fail closed instead of reverting to a newly designed SVG in owner mode.
-    if family == "builder" and not 2 <= len(rows) <= 7:
-        raise ValueError("Original Builder accepts 2-7 verified athletes")
+    if family == "builder" and not 2 <= len(rows) <= 10:
+        raise ValueError("Original Builder accepts 2-10 verified athletes")
     if family == "lottery":
         # No fictitious single date/opponent for multi-game tickets. Exact
         # game and tipoff are printed for EVERY individual leg instead.
