@@ -96,6 +96,12 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # Fail closed instead of reverting to a newly designed SVG in owner mode.
     if family == "builder" and not 2 <= len(rows) <= 10:
         raise ValueError("Original Builder accepts 2-10 verified athletes")
+    # The newly lengthened 8-10-leg original-style artwork passed geometry
+    # tests but is not yet visually approved in the real Telegram client.
+    # Keep those lengths sandbox-only until an explicit, separate release.
+    if family == "builder" and len(rows) > 7 and (
+            os.getenv("PH_OWNER_BUILDER_8_10_TG_APPROVED", "0").strip() != "1"):
+        raise ValueError("owner_extended_builder_visual_approval_required")
     if family == "lottery":
         # No fictitious single date/opponent for multi-game tickets. Exact
         # game and tipoff are printed for EVERY individual leg instead.
