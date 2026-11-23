@@ -1,0 +1,68 @@
+name: PROP HUNTER Floating Original Crests - Build and QA
+"on":
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "card_templates/owner_supplied/build_floating_single.py"
+      - "prop_hunter_owner_supplied_single.py"
+      - "prop_hunter_owner_pixel_qa.py"
+      - "test_prop_hunter_owner_supplied_single.py"
+      - "test_prop_hunter_crest_slots.py"
+      - ".github/workflows/prop_hunter_floating_crest_master_qa.yml"
+permissions:
+  contents: write
+concurrency:
+  group: floating-nba-single-master
+  cancel-in-progress: false
+jobs:
+  clean-master:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_TOKEN: ""
+      TELEGRAM_CHAT_ID: ""
+      PH_NBA_USER_SINGLE_20261122: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline source-derived master dependencies
+        run: python -m pip install --quiet 'Pillow>=10' 'opencv-python-headless>=4.8' 'numpy>=1.24,<3' requests cairosvg
+      - name: Compile and create genuine NO-RING derived Single master
+        run: |
+          python -m py_compile card_templates/owner_supplied/build_floating_single.py prop_hunter_owner_supplied_single.py prop_hunter_owner_pixel_qa.py
+          python card_templates/owner_supplied/build_floating_single.py
+      - name: Test ALL original NBA card slots and Telegram provenance OFFLINE
+        run: |
+          python -m unittest -v test_prop_hunter_owner_supplied_single test_prop_hunter_crest_slots
+          python -m unittest -v test_prop_hunter_real_portrait_head_visibility
+      - name: Commit newly derived master only after green pixel checks
+        run: |
+          git add card_templates/owner_supplied/single_blank_floating_20261123.png
+          if git diff --cached --quiet; then
+            echo "No new generated pixels"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Save verified NBA Single master without preprinted team circles"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Archive original, ring-free master and QA renders - NO Telegram
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nba-floating-original-crest-qa
+          path: |
+            card_templates/owner_supplied/single_blank_20261122.png
+            card_templates/owner_supplied/single_blank_floating_20261123.png
+            preview_single_open.png
+            preview_single_won.png
+            preview_single_owner_telegram_safe.png
+          if-no-files-found: warn
+          retention-days: 7
