@@ -94,7 +94,6 @@ jobs:
           print("REAL_PHOTO_OWNER_SINGLE_RENDERED_NO_TELEGRAM")
           from prop_hunter_owner_clean_ladder import render as render_ladder
           from prop_hunter_owner_clean_builder import render as render_builder
-          from prop_hunter_owner_clean_lottery import render as render_lottery
 
           # All additional portraits are real independently sourced ESPN NBA
           # headshots with transparency checks. All betting lines below are
@@ -141,13 +140,29 @@ jobs:
           save_qa("builder6",render_builder(_source("builder"),
               subtitle="",teams=home_away,rows=builder_rows,
               footer="KEINE BUCHMACHERQUOTE · QA ONLY",settlement="QA ONLY"))
-          lottery_rows=[
-              {**row, "game":f"QA GAME {i+1} vs QA TEAM {i+1} · 00.00.0000 00:00"}
-              for i,row in enumerate(builder_rows)]
-          save_qa("lottery6",render_lottery(_source("lottery"),
-              rows=lottery_rows,footer="KEINE BUCHMACHERQUOTE · QA ONLY",
-              settlement="QA ONLY"))
-          print("ALL_FOUR_OWNER_FAMILIES_REAL_PHOTOS_PASS_NO_TELEGRAM")
+          # Lottery's PRODUCTION renderer rightly requires a genuine
+          # combined ticket price and verified independent fixtures.
+          # In photo-only QA, exercise its true image geometry WITHOUT
+          # inventing either a quote, a match or a kickoff.
+          from prop_hunter_owner_clean_lottery import _extended
+          from prop_hunter_original_compositor import _background_portrait
+          lottery_frame,extra=_extended(_source("lottery"),len(builder_rows))
+          if not _background_portrait(lottery_frame,actual_athletes[0][1],
+                                     (0,148,199,321)):
+              raise SystemExit("Lottery original hero portrait cannot fit")
+          first_y=342+max(0,(295-len(builder_rows)*85)//2)
+          for i,(_,cutout) in enumerate(actual_athletes[:len(builder_rows)]):
+              y=first_y+i*85
+              if not _background_portrait(lottery_frame,cutout,
+                                          (50,y+6,97,y+75)):
+                  raise SystemExit("Lottery original athlete portrait cannot fit")
+          out_image=lottery_frame.convert("RGB")
+          ImageDraw.Draw(out_image).text((38,out_image.height-36),
+              "ONLY REAL PHOTOS · NO GAME / NO BOOKMAKER ODDS / NO TELEGRAM",
+              fill="#FFD966")
+          out_image.save(out/"lottery6_real_photos_QA.png")
+          print("ALL_FOUR_OWNER_FAMILIES_REAL_ASSET_SLOTS_PASS")
+          print("LOTTERY_FULL_TICKET_NOT_VERIFIED_NO_OBSERVED_QUOTE")
           PY
       - name: Export image and no-bookmaker QA evidence
         if: always()
