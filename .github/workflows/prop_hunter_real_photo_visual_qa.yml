@@ -9,6 +9,7 @@ name: PROP HUNTER Real Photo & Logo Visual QA (No Telegram)
       - 'prop_hunter_owner_clean_single.py'
       - 'test_prop_hunter_crest_slots.py'
       - 'test_prop_hunter_verified_team_aliases.py'
+      - 'test_prop_hunter_player_photo_identity.py'
       - 'prop_hunter_original_compositor.py'
       - 'prop_hunter_owner_clean_ladder.py'
       - 'prop_hunter_owner_clean_builder.py'
@@ -31,12 +32,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install offline image inspection dependencies
-        run: python -m pip install --quiet pillow requests numpy
+        run: python -m pip install --quiet pillow requests numpy pytest
       - name: Original crest full-circle placement without stickers (offline)
         run: |
           python -m py_compile prop_hunter_owner_clean_single.py test_prop_hunter_crest_slots.py
           python -m unittest -v test_prop_hunter_crest_slots
           python -m unittest -v test_prop_hunter_verified_team_aliases
+          python -m pytest -q test_prop_hunter_player_photo_identity.py
           python -m unittest -v test_prop_hunter_owner_all_leg_form_windows
           python -m unittest -v test_prop_hunter_owner_actual_bookmaker_ticket_only
       - name: Probe REAL sourced NBA player photos and correct team crests
