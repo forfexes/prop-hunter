@@ -17,6 +17,8 @@ BASE = Path(__file__).resolve().parent / 'card_templates' / 'owner_supplied'
 SOURCE = BASE / 'single_blank_20261122.png'
 EDITABLE = BASE / 'single_blank_editable_20261122.png'
 FLOATING = BASE / 'single_blank_floating_20261123.png'
+NO_SILHOUETTE = BASE / 'single_blank_no_silhouette_20261123.png'
+NO_SILHOUETTE_PIXEL_SHA = 'da3d86b160113cdc3cc593202ff3c570f763d52fb5372389781ac62c1b73b50c'
 RING_REGIONS = ((140, 64, 374, 145),)  # entire empty crest band, including verified original VS
 SOURCE_SHA256 = '499ed837eb187b672c9a7781553eb9889c9fe37bb501aef3df61da1010019692'
 WHITE=(248,251,255)
@@ -51,13 +53,13 @@ def _write(draw, pos, value, max_px, size=17, color=WHITE, italic=False, anchor=
 
 
 def _plate():
-    if not SOURCE.is_file() or not EDITABLE.is_file() or not FLOATING.is_file():
-        raise ValueError('User original or separately cleaned floating-crest master missing')
+    if not all(path.is_file() for path in (SOURCE, EDITABLE, FLOATING, NO_SILHOUETTE)):
+        raise ValueError('Owner Single original, empty crests and NO-SILHOUETTE master mandatory')
     if hashlib.sha256(SOURCE.read_bytes()).hexdigest()!=SOURCE_SHA256:
         raise ValueError('User-provided source original was modified')
     with Image.open(SOURCE) as source, Image.open(EDITABLE) as editable, \
-         Image.open(FLOATING) as floating:
-        if source.size!=(512,512) or editable.size!=(512,512) or floating.size!=(512,512):
+         Image.open(FLOATING) as floating, Image.open(NO_SILHOUETTE) as blank:
+        if any(im.size!=(512,512) for im in (source,editable,floating,blank)):
             raise ValueError('Source size changed; do not scale to another design')
         # The new static plate is a genuine source-derived master, not a
         # screenshot repaint at Telegram render time. Only owner-gold
@@ -74,7 +76,15 @@ def _plate():
                                 ImageOps.invert(allowed))
         if outside.getbbox() or not difference.getbbox():
             raise ValueError('Floating master alters original artwork outside old ring slots')
-        return plate.convert('RGBA').copy()
+        clean = blank.convert('RGB')
+        if hashlib.sha256(clean.tobytes()).hexdigest()!=NO_SILHOUETTE_PIXEL_SHA:
+            raise ValueError('Owner master still contains a second, gold player silhouette')
+        # Only the OLD athlete silhouette may differ from the ring-free source.
+        changed=ImageChops.difference(plate,clean).getbbox()
+        if not changed or not (0 <= changed[0] and 51 <= changed[1] and
+                               changed[2] <= 160 and changed[3] <= 327):
+            raise ValueError('No-silhouette master changed other source artwork')
+        return blank.convert('RGBA').copy()
 
 
 def _logo(im, entry, center):
@@ -91,52 +101,37 @@ def _logo(im, entry, center):
 
 
 def _portrait(im, photo):
+    """Only real ALPHA-cutout athlete pixels; no ghost, hard body mask or halo."""
     if not isinstance(photo,Image.Image):
-        raise ValueError('Actual transparent player photo mandatory')
+        raise ValueError('Actual transparent athlete cutout photo mandatory')
     img=photo.convert('RGBA')
     alpha=img.getchannel('A')
     if alpha.getextrema()[0]>45:
-        raise ValueError('Player photo has no transparent cutout')
-    # ESPN/Wikimedia portrait PNGs often have huge INVISIBLE side margins.
-    # Fitting the whole transparent rectangle made a tiny pasted-looking
-    # portrait within the much larger owner gold outline. Fit ONLY actual
-    # visible player pixels, never a generated silhouette or fake head.
-    visible=alpha.point(lambda a: 255 if a>=32 else 0).getbbox()
-    if visible is None:
+        raise ValueError('Player image must have genuinely transparent edges')
+    visible=alpha.point(lambda a:255 if a>=32 else 0).getbbox()
+    if not visible:
         raise ValueError('Player image contains no real visible portrait')
     img=img.crop(visible)
     if min(img.size)<24:
         raise ValueError('Player photo has insufficient visible detail')
-    # Fill height of the original owner portrait slot without stretching
-    # proportions. Wide shoulders are clipped solely by the owner's
-    # original silhouette mask, never by a black rectangle or new border.
-    height=216
-    width=max(1,round(img.width*height/img.height))
-    if width>280:
-        raise ValueError('Player cutout aspect ratio incompatible with portrait slot')
-    img=img.resize((width,height),Image.Resampling.LANCZOS)
+    # Contain the ENTIRE head and both natural shoulders in a stadium slot.
+    # A fixed polygon body silhouette used to clip off real hair/faces and
+    # expose a second gold-edged fake athlete. That masking is prohibited.
+    scale=min(205/img.height,174/img.width)
+    w,h=max(1,round(img.width*scale)),max(1,round(img.height*scale))
+    img=img.resize((w,h),Image.Resampling.LANCZOS)
     layer=Image.new('RGBA',(512,512),(0,0,0,0))
-    start_x=17+int((138-img.width)/2)
-    start_y=250-img.height
-    layer.alpha_composite(img,(start_x,start_y))
-    mask=Image.new('L',(512,512),0)
-    m=ImageDraw.Draw(mask)
-    m.polygon([(65,67),(97,64),(114,80),(124,105),(120,142),
-               (130,170),(144,199),(148,223),(137,246),
-               (22,247),(16,216),(29,177),(43,148),(46,111),(52,83)],fill=255)
-    # The owner's portrait slot ends above the betting market strip.
-    # A straight opaque ESPN jersey edge used to look like a white
-    # rectangle pasted over the original gold frame. Feather ONLY the
-    # bottom of the dynamic player layer; never paint on the master.
-    feather=Image.new('L',(512,512),255)
-    fd=ImageDraw.Draw(feather)
-    for y in range(214,251):
-        opacity=round(255*max(0,(250-y)/36))
-        fd.line((0,y,511,y),fill=opacity)
-    a=ImageChops.multiply(layer.getchannel('A'),mask)
-    layer.putalpha(ImageChops.multiply(a,feather))
+    x=max(0,round(88-w/2))
+    y=254-h
+    layer.alpha_composite(img,(x,y))
+    # Only a short natural fade at the jersey hem, never over the face.
+    fade=Image.new('L',(512,512),255)
+    d=ImageDraw.Draw(fade)
+    for yy in range(215,255):
+        opacity=round(255*max(0,(254-yy)/39))
+        d.line((0,yy,511,yy),fill=opacity)
+    layer.putalpha(ImageChops.multiply(layer.getchannel('A'),fade))
     im.alpha_composite(layer)
-
 
 def _label_parts(raw):
     v=' '.join(str(raw or '').split())
