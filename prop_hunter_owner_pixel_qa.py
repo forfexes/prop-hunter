@@ -28,6 +28,10 @@ CROP = {
 # The owner logo/crown is immutable for all four real NBA cards. This rectangle
 # deliberately avoids player/match/market/quote/result areas.
 STATIC_CROWN = (230, 5, 480, 42)
+# NBA shield at top-left belongs to the owner, just like the PROP HUNTER
+# crown. Neither may be replaced, painted over or regenerated.
+STATIC_NBA_SHIELD = (33, 12, 93, 110)
+STATIC_BRAND_PATCHES = (STATIC_CROWN, STATIC_NBA_SHIELD)
 
 
 def field(obj, key, default=None):
@@ -90,11 +94,13 @@ def owner_pixel_provenance(pick, png_bytes):
                     return False, "owner_telegram_margin_missing"
                 expected=clean.convert("RGB").resize((1080,1080),
                                                        Image.Resampling.LANCZOS)
-                # Masthead is static source artwork, never a field overlay.
-                region=tuple(round(v*1080/512) for v in (140,2,385,64))
-                if ImageChops.difference(expected.crop(region),
-                                         body.crop(region)).getbbox():
-                    return False, "owner_new_single_masthead_pixel_overlap"
+                # Preserve both immutable owner marks: original header
+                # AND the actual NBA shield, no fabricated replacement.
+                for source_patch in ((140,2,385,64),(14,2,72,70)):
+                    region=tuple(round(v*1080/512) for v in source_patch)
+                    if ImageChops.difference(expected.crop(region),
+                                             body.crop(region)).getbbox():
+                        return False, "owner_new_single_masthead_pixel_overlap"
             return True, "source_original_pixels_verified"
         except (ValueError,OSError,SyntaxError):
             return False, "owner_new_single_source_unreadable"
@@ -111,11 +117,11 @@ def owner_pixel_provenance(pick, png_bytes):
                 return False, "owner_plate_size_mismatch"
             if ImageChops.difference(master, clean).getbbox() is not None:
                 return False, "approved_master_not_current_clean_plate"
-            if ImageChops.difference(
-                master.crop(STATIC_CROWN),
-                original.crop(STATIC_CROWN),
-            ).getbbox() is not None:
-                return False, "owner_original_branding_changed"
+            for patch in STATIC_BRAND_PATCHES:
+                if ImageChops.difference(
+                    master.crop(patch), original.crop(patch)
+                ).getbbox() is not None:
+                    return False, "owner_original_branding_changed"
             # The original Single/Ladder/Builder/Lottery scales its immutable
             # crown with LANCZOS. When the six-stage Ladder adds an owner-derived
             # EMPTY 120px stadium band, the vertical scaling ratio changes by a
@@ -124,7 +130,8 @@ def owner_pixel_provenance(pick, png_bytes):
             # Reconstruct the exact source-layer geometry before resampling,
             # rather than weakening pixel equality or allowing a legacy mask.
             factor = 1080.0 / master.width
-            box = tuple(round(v * factor) for v in STATIC_CROWN)
+            boxes = [tuple(round(v*factor) for v in patch)
+                     for patch in STATIC_BRAND_PATCHES]
             exact_height = round(1080 * master.height / master.width)
             permitted = [exact_height]
             if family == "ladder" and master.size == (691, 865):
@@ -153,10 +160,11 @@ def owner_pixel_provenance(pick, png_bytes):
             expected = comparison.resize(
                 (1080, owner_body.height if family == "ladder" else exact_height),
                 Image.Resampling.LANCZOS
-            ).crop(box)
-            actual = owner_body.crop(box)
-            if ImageChops.difference(expected, actual).getbbox() is not None:
-                return False, "owner_masthead_pixel_overlap"
+            )
+            for box in boxes:
+                actual = owner_body.crop(box)
+                if ImageChops.difference(expected.crop(box), actual).getbbox() is not None:
+                    return False, "owner_masthead_pixel_overlap"
     except (OSError, ValueError, SyntaxError):
         return False, "owner_pixel_artwork_unreadable"
     return True, "source_original_pixels_verified"
