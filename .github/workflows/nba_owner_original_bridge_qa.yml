@@ -26,6 +26,7 @@ name: PROP HUNTER NBA Actual Owner Originals Integration QA
       - 'test_prop_hunter_ladder_exact_form.py'
       - 'test_prop_hunter_nba_opposing_badges.py'
       - 'prop_hunter_owner_clean_builder.py'
+      - 'test_prop_hunter_owner_builder_2_to_10.py'
       - 'test_prop_hunter_builder_no_duplicate_portrait_names.py'
       - 'test_prop_hunter_real_portrait_head_visibility.py'
       - 'test_prop_hunter_crest_slots.py'
@@ -112,6 +113,23 @@ jobs:
           python test_prop_hunter_owner_leg_status.py
           python prop_hunter_borderless_portrait_test.py
           python test_prop_hunter_owner_pixel_qa.py
+      - name: Exhaustive 2-10 genuine-owner NBA Builder variants (offline only)
+        env:
+          PROP_OWNER_BUILDER_2_TO_10_QA: output/owner_builder_2_to_10_qa
+          TELEGRAM_BOT_TOKEN: ""
+          SUPABASE_URL: ""
+        run: |
+          python -m py_compile prop_hunter_owner_clean_builder.py test_prop_hunter_owner_builder_2_to_10.py
+          python -m unittest -v test_prop_hunter_owner_builder_2_to_10
+          echo "ALL NINE COUNTS, 2 THROUGH 10: STRICT OFFLINE ORIGINAL-OWNER QA ONLY"
+      - name: Export all nine data-filled owner Builder counts for visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROP-HUNTER-OWNER-BUILDER-2-THROUGH-10-QA-NO-TELEGRAM
+          path: output/owner_builder_2_to_10_qa/nba_owner_builder_*_LEGS_SANDBOX.png
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Telegram Android-style OFFLINE visual hardtest of ALL owner card variants
         run: |
           python prop_hunter_telegram_sandbox_hardtest.py
