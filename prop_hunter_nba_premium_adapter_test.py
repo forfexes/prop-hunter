@@ -220,8 +220,8 @@ with patch.object(image_cards, "ON", True), \
             ]
         if family == "builder":
             pick.leg_details = [
-                {"player": "TEST PLAYER A", "market": "points", "odds": 1.7},
-                {"player": "TEST PLAYER B", "market": "rebounds", "odds": 1.8},
+                {"player": "TEST PLAYER A", "market": "points", "odds": 1.7, **same_fixture},
+                {"player": "TEST PLAYER B", "market": "rebounds", "odds": 1.8, **same_fixture},
             ]
         if family == "lottery":
             pick.leg_details = [
