@@ -12,7 +12,19 @@ def img(kind="player"):
     d.rounded_rectangle((12,125,168,219),24,fill=(40,65,110,255))
     return im
 
-teams=[("HOME TEAM",img("logo")),("AWAY TEAM",img("logo"))]
+# Opposing teams must never share the same source logo even in synthetic QA.
+# Deterministic club-specific pixels keep the mock fully offline.
+def fixture_logo(team, league=None):
+    from hashlib import sha256
+    emblem=img("logo")
+    digest=sha256(str(team).strip().casefold().encode()).digest()
+    ImageDraw.Draw(emblem).ellipse((25,15,155,150),
+        fill=(digest[0],digest[1],digest[2],255))
+    return emblem
+
+
+teams=[("HOME TEAM",fixture_logo("HOME TEAM")),
+       ("AWAY TEAM",fixture_logo("AWAY TEAM"))]
 feats={"bookmaker":"TEST ONLY BOOKMAKER","venue":"TEST ARENA",
        "combined_odds_observed":True,"combined_quote_id":"TEST-NOT-REAL"}
 base={"source_sport":"NBA","game":"HOME TEAM vs AWAY TEAM",
@@ -164,7 +176,7 @@ from unittest.mock import patch
 import prop_hunter_image_cards as image_cards
 with patch.dict(os.environ, {"PH_NBA_PREMIUM_V2": "1"}), \
      patch.object(image_cards, "player_photo", return_value=img()), \
-     patch.object(image_cards, "team_logo", return_value=img("logo")), \
+     patch.object(image_cards, "team_logo", side_effect=fixture_logo), \
      patch.object(image_cards, "render", side_effect=AssertionError("Legacy card unexpectedly used")):
     via_pipeline = image_cards.build_for_pick(single)
     assert via_pipeline and Image.open(BytesIO(via_pipeline)).size == (1080,1440)
@@ -193,7 +205,7 @@ rejects(SimpleNamespace(**base,type="longshot",player="TEST ATHLETE",
 # Test all four families through the actual production routing, not only the adapter.
 with patch.object(image_cards, "ON", True), \
      patch.object(image_cards, "player_photo", return_value=img()), \
-     patch.object(image_cards, "team_logo", return_value=img("logo")), \
+     patch.object(image_cards, "team_logo", side_effect=fixture_logo), \
      patch.object(image_cards, "render", side_effect=AssertionError("Legacy renderer called")):
     for family, pick in (("single", single), ("ladder", ladder),
                          ("builder", builder), ("lottery", lottery)):
@@ -333,7 +345,7 @@ print("NBA TYPED LEG OBJECT COMPATIBILITY PASS: ladder/builder/lottery, bookmake
 with patch.dict(os.environ, {"PH_NBA_OWNER_ORIGINALS": "0"}), \
      patch.object(image_cards, "ON", True), \
      patch.object(image_cards, "player_photo", return_value=img()), \
-     patch.object(image_cards, "team_logo", return_value=img("logo")), \
+     patch.object(image_cards, "team_logo", side_effect=fixture_logo), \
      patch.object(image_cards, "render", side_effect=AssertionError("Legacy fallback used")):
     for family, model in (("ladder", typed_ladder),
                           ("builder", typed_builder)):
