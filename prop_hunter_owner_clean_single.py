@@ -77,14 +77,41 @@ def owner_settlement_state(raw, *, green, red, white):
     return state, white
 
 
+def _fit_authentic_crest(source: Image.Image, diameter: int) -> Image.Image:
+    """Trim unused transparent padding; keep the REAL logo's proportions.
+
+    The source master supplies the decorative circle. Never paste a second
+    badge, repaint the existing plate, or stretch an emblem to fake a disc.
+    """
+    if not isinstance(source, Image.Image) or diameter < 1:
+        raise ValueError("Authentic team crest required")
+    icon = source.convert("RGBA")
+    alpha = icon.getchannel("A")
+    visible = alpha.point(lambda a: 255 if a >= 24 else 0).getbbox()
+    if visible is None:
+        raise ValueError("Team crest contains no visible artwork")
+    icon = icon.crop(visible)
+    if min(icon.size) < 12:
+        raise ValueError("Team crest visible artwork too small")
+    icon.thumbnail((diameter, diameter), Image.Resampling.LANCZOS)
+    return icon
+
+
+def _place_authentic_crest(im: Image.Image, source: Image.Image,
+                          cx: int, cy: int, diameter: int) -> None:
+    """One logo, centred horizontally AND vertically in the original slot."""
+    icon = _fit_authentic_crest(source, diameter)
+    x = round(cx - icon.width / 2)
+    y = round(cy - icon.height / 2)
+    im.alpha_composite(icon, (x, y))
+
+
 def _floating_team(im, team, cx):
     if (not team or not str(team[0] or "").strip()
             or not isinstance(team[1], Image.Image)):
         raise ValueError("Genuine team logo and club name are mandatory")
     name, logo = team
-    icon = logo.convert("RGBA")
-    icon.thumbnail((71, 71), Image.Resampling.LANCZOS)
-    im.alpha_composite(icon, (int(cx - icon.width / 2), 151))
+    _place_authentic_crest(im, logo, cx, 186, 71)
     _text(ImageDraw.Draw(im), (cx, 250), name, size=16, max_width=123)
 
 
