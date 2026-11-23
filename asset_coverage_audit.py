@@ -170,16 +170,17 @@ def main():
         load("netrattler_builder_picks", "legs", builder)
     else:
         def add(r, boost):
-            sport = (r.get("sport") or r.get("league") or "").upper()
+            league = str(r.get("league") or "").upper()
+            sport = league if league in {"NBA","WNBA","NHL","NFL","MLB","NCAAF","NCAAB","EUROLEAGUE"} else str(r.get("sport") or "").upper()
             p = r.get("player_name") or r.get("player")
             team = r.get("team") or ""
             person(p, team, sport, boost)
             club(team, sport, boost)
             club(r.get("opponent"), sport, boost)
-        load("prop_hunter_player_gamelogs", "sport,player_name,team,opponent", lambda r: add(r, 0))
-        load("prop_hunter_player_features", "sport,player_name", lambda r: add(r, 0))
-        load("prop_hunter_picks", "sport,player_name,player,team,opponent", lambda r: add(r, 80))
-        load("prop_picks", "sport,player_name,player,team", lambda r: add(r, 40))
+        load("prop_hunter_player_gamelogs", "sport,league,player_name,team,opponent", lambda r: add(r, 0))
+        load("prop_hunter_player_features", "sport,league,player_name", lambda r: add(r, 0))
+        load("prop_hunter_picks", "sport,league,player_name,player,team,opponent", lambda r: add(r, 80))
+        load("prop_picks", "sport,league,player_name,player,team", lambda r: add(r, 40))
         if secondary and secondary_key:
             def snap(r):
                 add(r, 1)
@@ -187,7 +188,7 @@ def main():
                 club(r.get("home_team"), sport, 1)
                 club(r.get("away_team"), sport, 1)
             load("prop_hunter_prop_snapshots",
-                "sport,player_name,team,opponent,home_team,away_team", snap,
+                "sport,league,player_name,team,opponent,home_team,away_team", snap,
                 secondary, secondary_key)
         else:
             blank["secondary_not_configured"] += 1
@@ -218,10 +219,7 @@ def main():
             except Exception:
                 return False, "provider_error"
         league = card.league_of(p["sport"])
-        if not league:
-            lookup = {"BASKETBALL": "nba", "AMERICAN_FOOTBALL": "nfl",
-                      "BASEBALL": "mlb", "ICE_HOCKEY": "nhl"}
-            league = card.LEAGUES.get(lookup.get(p["sport"]))
+        # Generic basketball/football/hockey may contain other leagues; don't guess league.
         try:
             if not league:
                 return False, "league_unclear"
@@ -249,10 +247,7 @@ def main():
             except Exception:
                 return False, "provider_error"
         league = card.league_of(t["sport"])
-        if not league:
-            league = card.LEAGUES.get({"BASKETBALL": "nba",
-                "AMERICAN_FOOTBALL": "nfl", "BASEBALL": "mlb",
-                "ICE_HOCKEY": "nhl"}.get(t["sport"]))
+        # Generic sports are not silently mapped to NBA/NFL/MLB/NHL.
         try:
             if not league:
                 return False, "league_unclear"
