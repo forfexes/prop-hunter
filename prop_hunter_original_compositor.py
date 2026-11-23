@@ -403,14 +403,18 @@ def _background_portrait(im, person, rect):
     w, h = x1-x0, y1-y0
     if w < 20 or h < 20:
         return False
-    # Preserve the entire face/torso silhouette, cropping only at the edges
-    # of the left stadium zone. The player is anchored to the lower edge.
-    scale = max((h * 0.98) / picture.height, (w * 0.94) / picture.width)
+    # A wide but SHORT multi-player slot cannot fit a full tall cutout at
+    # 94% of its width: the prior 'max' could produce a portrait 3x taller
+    # than the slot, then crop off the athlete's ENTIRE forehead/head.
+    # Keep a prominent portrait but cap vertical overflow to 20%, cropped
+    # from the LOWER jersey only. Face/top-of-head remain inside the card.
+    scale = min((w * 0.96) / picture.width, (h * 1.20) / picture.height)
     nw = max(1, round(picture.width * scale))
     nh = max(1, round(picture.height * scale))
     picture = picture.resize((nw, nh), Image.Resampling.LANCZOS)
     tile = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    tile.paste(picture, ((w-nw)//2, h-nh))
+    top = 0 if nh > h else h - nh
+    tile.paste(picture, ((w-nw)//2, top))
     # Fade the cutout at the right and bottom into the arena; never mask
     # the head with a rectangular navy patch.
     fade = Image.new('L', (w, h), 255)
