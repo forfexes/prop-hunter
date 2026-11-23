@@ -194,6 +194,7 @@ class SourceOriginalQA(unittest.TestCase):
                 "odds":"@1.74","settlement":"OFFEN"}
         with patch.dict(os.environ,{
                 "PH_NBA_USER_SINGLE_20261122":"1",
+                "PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED":"1",
                 "PH_NBA_OWNER_ORIGINALS":"1",
                 "PH_BLOCK_OVERPAINTED_MASTERS":"1",
                 "PH_ALLOW_VERIFIED_LAYERED_OWNER":"1",
@@ -208,6 +209,38 @@ class SourceOriginalQA(unittest.TestCase):
             self.assertEqual(image.width,1080)
             self.assertGreater(image.height,1080)
         (ROOT/"preview_single_owner_telegram_safe.png").write_bytes(picture)
+
+    def test_new_single_is_blocked_until_owner_has_seen_and_approved_preview(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from prop_hunter_nba_owner_bridge import render_owner
+        import os
+        pick=SimpleNamespace(type="single",sport="NBA",market="assists",
+                             player="QA TEST ATHLETE",odds=1.74,features={})
+        values={"date":"23.11.2026","time":"01:00","stake":"1u",
+                "odds":"@1.74","settlement":"OFFEN"}
+        with patch.dict(os.environ,{
+                "PH_NBA_USER_SINGLE_20261122":"1",
+                "PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED":"0",
+                "PH_NBA_OWNER_ORIGINALS":"1",
+                "PH_BLOCK_OVERPAINTED_MASTERS":"1",
+                "PH_ALLOW_VERIFIED_LAYERED_OWNER":"1"}):
+            with self.assertRaisesRegex(
+                    ValueError,"nba_single_no_silhouette_owner_preview_approval_required"):
+                render_owner(pick,"single_assists",[self.fields["row"]],
+                             self.fields["teams"],values,[])
+        # The guard must apply to previously pinned cards too.
+        pick._owner_single_master_20261122=True
+        with patch.dict(os.environ,{
+                "PH_NBA_USER_SINGLE_20261122":"0",
+                "PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED":"0",
+                "PH_NBA_OWNER_ORIGINALS":"1",
+                "PH_BLOCK_OVERPAINTED_MASTERS":"1",
+                "PH_ALLOW_VERIFIED_LAYERED_OWNER":"1"}):
+            with self.assertRaisesRegex(
+                    ValueError,"nba_single_no_silhouette_owner_preview_approval_required"):
+                render_owner(pick,"single_assists",[self.fields["row"]],
+                             self.fields["teams"],values,[])
 
     def test_tampered_user_single_title_is_rejected_by_pixel_gate(self):
         from types import SimpleNamespace
