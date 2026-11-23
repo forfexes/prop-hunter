@@ -50,6 +50,34 @@ class SourceOriginalQA(unittest.TestCase):
         self.assertLessEqual(box[2],316)
         self.assertLessEqual(box[3],490)
 
+    def test_floating_team_crest_master_has_no_preprinted_gold_rings(self):
+        # This compares the two actual owner-supplied background stages.
+        # The gold circles cannot silently return behind genuine NBA logos.
+        with Image.open(owner.EDITABLE) as old, Image.open(owner.FLOATING) as new:
+            old=old.convert("RGB")
+            new=new.convert("RGB")
+            self.assertEqual(old.size,new.size)
+            def gold_count(picture,box):
+                x0,y0,x1,y1=box
+                count=0
+                for y in range(y0,y1):
+                    for x in range(x0,x1):
+                        r,g,b=picture.getpixel((x,y))
+                        count+=(r>145 and g>90 and r>b*1.2)
+                return count
+            for box in ((152,68,233,142),(282,68,364,142)):
+                with self.subTest(box=box):
+                    baked=gold_count(old,box)
+                    cleaned=gold_count(new,box)
+                    self.assertGreater(baked,60,
+                                       "Source gold ring was not identified")
+                    self.assertLess(cleaned,max(5,baked//12),
+                                    "An old gold logo circle is still baked in")
+            self.assertGreater(gold_count(new,(240,96,275,135)),15,
+                               "Original golden VS must remain visible")
+            for px in ((10,10),(490,280),(256,44),(22,470)):
+                self.assertEqual(old.getpixel(px),new.getpixel(px))
+
     def test_renderer_keeps_stadium_and_gold_frames(self):
         raw=self.render()
         with Image.open(BytesIO(raw)) as im:
