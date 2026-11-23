@@ -69,29 +69,25 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     for cx, team in zip((213, 476), teams):
         _team(im, team, cx)
     d = ImageDraw.Draw(im)
+    # Keep portraits free of repeated names and betting selections.
+    # The full player and market appear ONCE, in the numbered ticket below.
+    # Only independently observed recent form may sit beneath a portrait.
     if n <= 3:
         for row, cx in zip(rows, centers):
-            _text(d, (cx, 350), row.get("name"), size=18, max_width=199)
-            _text(d, (cx, 380), row.get("label"),
-                  size=16, max_width=194, color=GOLD)
-            _text(d, (cx, 401), _form_label(row.get("form"), True),
-                  size=11, max_width=202, color=GREEN)
+            _text(d, (cx, 387), _form_label(row.get("form"), True),
+                  size=12, max_width=202, color=GREEN)
     elif n <= 6:
         for i, row in enumerate(rows):
             cx = centers[i % 3]
             top = 133 + (i // 3) * 130
-            _text(d, (cx, top + 101), row.get("name"),
-                  size=15, max_width=207)
-            _text(d, (cx, top + 121), row.get("label"),
-                  size=12, max_width=206, color=GOLD)
+            _text(d, (cx, top + 108), _form_label(row.get("form")),
+                  size=12, max_width=202, color=GREEN)
     else:
         for i, row in enumerate(rows):
             cx = centers[i % 3]
             top = 129 + (i // 3) * 91
-            _text(d, (cx, top + 65), row.get("name"),
-                  size=13, max_width=205)
-            _text(d, (cx, top + 84), row.get("label"),
-                  size=11, max_width=205, color=GOLD)
+            _text(d, (cx, top + 78), _form_label(row.get("form")),
+                  size=11, max_width=198, color=GREEN)
 
     date, clock = _verified_time(subtitle)
     _text(d, (344, 506), (date + " · " + clock).strip(" ·"),
