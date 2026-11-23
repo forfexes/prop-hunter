@@ -19,7 +19,7 @@ BASE = HERE / "single_blank_editable_20261122.png"
 TARGET = HERE / "single_blank_floating_20261123.png"
 SOURCE_SHA256 = "499ed837eb187b672c9a7781553eb9889c9fe37bb501aef3df61da1010019692"
 # Only the two actual gold circles, not the VS, title, dates or name plates.
-RINGS = ((145, 64, 240, 145), (273, 64, 371, 145))
+RINGS = ((140, 64, 374, 145),)  # One seamless band, genuine VS restored
 
 
 def make_master(source=BASE, target=TARGET):
@@ -29,51 +29,60 @@ def make_master(source=BASE, target=TARGET):
         if image.size != (512, 512):
             raise ValueError("Unexpected owner Single plate dimensions")
         original = np.array(image.convert("RGB"))
-    # The original circles have no usable background outside their neon
-    # rims. Neither rectangle inpainting (bright triangles) nor stretching
-    # the old *circle interior* (blue disks) is a clean floating-logo plate.
-    # Reconstruct the dark arena behind each ring from genuine neighbouring
-    # dark stadium pixels. Every horizontal line smoothly interpolates the
-    # left and right undisturbed source bands; no disk, polygon, sticker,
-    # invented team artwork or dynamic screenshot overpaint is introduced.
+    # Rebuild ONE continuous stadium header band under BOTH original
+    # preprinted team rings. Previous isolated replacements left obvious
+    # blue disk/rectangular seams. All values are sourced from unchanged
+    # DARK owner-stadium pixels. Keep the original VS lettering itself.
     cleaned=original.copy()
     allowed=np.zeros((512,512),dtype=np.uint8)
+    x0,y0,x1,y1=RINGS[0]
     safe=np.concatenate((
-        original[80:104,174:209].reshape(-1,3),
-        original[80:104,300:340].reshape(-1,3),
-        original[70:99,244:272].reshape(-1,3)
+        original[72:96,242:273].reshape(-1,3),
+        original[82:101,175:208].reshape(-1,3),
+        original[82:101,301:338].reshape(-1,3),
     )).astype(np.float32)
-    safe=safe[(np.max(safe,axis=1)<120) &
-              (safe[:,2]>safe[:,0]*1.15) &
-              (safe[:,2]>=safe[:,1]*0.85)]
+    safe=safe[(safe[:,2]>safe[:,0]*1.15) &
+              (safe[:,2]>=safe[:,1]*0.85) &
+              (np.max(safe,axis=1)<105)]
     if not len(safe):
-        raise AssertionError("Owner source lacks a dark unchanged stadium donor")
-    dark_stadium=np.median(safe,axis=0)
-    for x0,y0,x1,y1 in RINGS:
-        for y in range(y0,y1):
-            left=original[y,max(0,x0-19):x0-4].astype(np.float32)
-            right=original[y,x1+4:min(512,x1+19)].astype(np.float32)
-            # Reject gold outlines/text, only use natural dark stadium.
-            left=left[(np.max(left,axis=1)<110) &
-                      (left[:,2]>left[:,0]*1.15) &
-                      (left[:,2]>=left[:,1]*0.85)]
-            right=right[(np.max(right,axis=1)<110) &
-                        (right[:,2]>right[:,0]*1.15) &
-                        (right[:,2]>=right[:,1]*0.85)]
-            # Fixture labels/VS sometimes occupy a whole border row.
-            # In that case borrow the genuinely dark upper-center ARENA
-            # pixels from the same uploaded original, never the bright rim.
-            a=np.median(left,axis=0) if len(left) else dark_stadium
-            b=np.median(right,axis=0) if len(right) else dark_stadium
-            blend=np.linspace(0,1,x1-x0,dtype=np.float32)[:,None]
-            cleaned[y,x0:x1]=np.clip(a[None,:]*(1-blend)+b[None,:]*blend,
-                                     0,255).astype(np.uint8)
-        # Smooth within the original source slots, never in the surrounding
-        # crown, VS label, name rails or NBA shield.
-        restored=cleaned[y0:y1,x0:x1].copy()
-        cleaned[y0:y1,x0:x1]=cv2.GaussianBlur(
-            restored,(0,0),sigmaX=4.0,sigmaY=8.0)
-        allowed[y0:y1,x0:x1]=255
+        raise AssertionError("Actual original stadium donor unavailable")
+    center=np.median(safe,axis=0)
+    # Select only blue/dark real pixels from either side of the empty
+    # header band, excluding the gold player outline and cyan date rail.
+    def genuine_dark(values):
+        p=values.reshape(-1,3).astype(np.float32)
+        p=p[(p[:,2]>p[:,0]*1.1)&(np.max(p,axis=1)<115)]
+        return np.median(p,axis=0) if len(p) else center
+    left=genuine_dark(original[76:139,124:139])
+    right=genuine_dark(original[76:139,375:391])
+    width=x1-x0
+    # Smooth 2D, continuous arena texture -- no two oval/circle shapes.
+    for y in range(y0,y1):
+        for ix in range(width):
+            t=ix/max(width-1,1)
+            if t<0.5:
+                rgb=left*(1-2*t)+center*2*t
+            else:
+                rgb=center*(2-2*t)+right*(2*t-1)
+            cleaned[y,x0+ix]=np.clip(rgb,0,255).astype(np.uint8)
+    cleaned[y0:y1,x0:x1]=cv2.GaussianBlur(
+        cleaned[y0:y1,x0:x1],(0,0),sigmaX=7,sigmaY=6)
+    allowed[y0:y1,x0:x1]=255
+    # Preserve actual gold VS glyphs (including 2px glow) rather than
+    # approximating them with a retyped or generated symbol.
+    vx0,vy0,vx1,vy1=(237,92,277,138)
+    old=original[vy0:vy1,vx0:vx1]
+    text_mask=((old[:,:,0].astype(np.float32)>110) &
+               (old[:,:,1].astype(np.float32)>70) &
+               (old[:,:,0].astype(np.float32)>old[:,:,2]*1.25))
+    alpha=cv2.dilate(text_mask.astype(np.uint8),
+                     np.ones((3,3),np.uint8),iterations=1)
+    alpha=cv2.GaussianBlur(alpha.astype(np.float32),(0,0),0.85)
+    alpha=np.clip(alpha[:,:,None],0,1)
+    clean_patch=cleaned[vy0:vy1,vx0:vx1].astype(np.float32)
+    cleaned[vy0:vy1,vx0:vx1]=np.clip(
+        old.astype(np.float32)*alpha+clean_patch*(1-alpha),0,255
+    ).astype(np.uint8)
     changed=np.any(cleaned!=original,axis=2)
     if np.any(changed & (allowed==0)):
         raise AssertionError("Original artwork changed outside the two crest slots")
