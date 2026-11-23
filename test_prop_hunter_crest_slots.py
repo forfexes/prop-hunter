@@ -59,6 +59,20 @@ class TeamCrestGeometry(unittest.TestCase):
                 self.assertLessEqual(x1-x0, diameter)
                 self.assertLessEqual(y1-y0, diameter)
 
+    def test_new_owner_single_crest_fills_the_actual_gold_circle(self):
+        # The 512px owner's team ring is approximately 76px across.
+        # A 54px badge looked like a loose sticker surrounded by black.
+        im=Image.new("RGBA",(512,512),(4,12,25,255))
+        emblem=Image.new("RGBA",(160,160),(0,0,0,0))
+        ImageDraw.Draw(emblem).rectangle((18,18,142,142),
+                                        fill=(246,32,45,255))
+        user_single_logo(im,("QA NBA TEAM",emblem),191)
+        x0,y0,x1,y1=red_bounds(im)
+        self.assertGreaterEqual(x1-x0,68)
+        self.assertLessEqual(x1-x0,70)
+        self.assertLessEqual(abs((x0+x1)/2-191),1)
+        self.assertLessEqual(abs((y0+y1)/2-108),1)
+
     def test_all_original_family_placers_use_one_identical_rule(self):
         logo = padded_logo()
         for callback, size, expected in (
