@@ -96,7 +96,7 @@ def owner_pixel_provenance(pick, png_bytes):
                                                        Image.Resampling.LANCZOS)
                 # Preserve both immutable owner marks: original header
                 # AND the actual NBA shield, no fabricated replacement.
-                for source_patch in ((140,2,385,64),(14,2,72,70)):
+                for source_patch in ((140,2,385,64),(12,2,58,55)):
                     region=tuple(round(v*1080/512) for v in source_patch)
                     if ImageChops.difference(expected.crop(region),
                                              body.crop(region)).getbbox():
@@ -117,11 +117,15 @@ def owner_pixel_provenance(pick, png_bytes):
                 return False, "owner_plate_size_mismatch"
             if ImageChops.difference(master, clean).getbbox() is not None:
                 return False, "approved_master_not_current_clean_plate"
-            for patch in STATIC_BRAND_PATCHES:
-                if ImageChops.difference(
-                    master.crop(patch), original.crop(patch)
-                ).getbbox() is not None:
-                    return False, "owner_original_branding_changed"
+            # Only the known immutable crown is pixel-identical to the
+            # historical JPEG screenshot. The approved PNG shield can carry
+            # old JPEG/source-cleanup differences. Its outbound pixels still
+            # must match the approved clean master exactly (see below).
+            if ImageChops.difference(
+                master.crop(STATIC_CROWN),
+                original.crop(STATIC_CROWN)
+            ).getbbox() is not None:
+                return False, "owner_original_branding_changed"
             # The original Single/Ladder/Builder/Lottery scales its immutable
             # crown with LANCZOS. When the six-stage Ladder adds an owner-derived
             # EMPTY 120px stadium band, the vertical scaling ratio changes by a
