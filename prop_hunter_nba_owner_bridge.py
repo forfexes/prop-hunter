@@ -113,8 +113,19 @@ def render_owner(pick, key: str, rows: list, teams: list,
     feats=pick.get("features", {}) if isinstance(pick,dict) else getattr(pick,"features",{}) or {}
     from prop_hunter_combo_prices import confirmed_ticket
     verified=confirmed_ticket(pick)
-    footer=(("Quote " if verified or family in ("single","ladder") else "Berechnet ")
-            + str(observed_quote)) if observed_quote else ""
+    # A multiplied component-odds product is not a price a user can
+    # actually book. Every Builder, Lottery, cross-game or same-player
+    # multi-stat card MUST carry a separately observed bookmaker ticket.
+    # A regular one-athlete LADDER instead displays independently observed
+    # rung prices and does not claim a combined booking price.
+    combined_ticket=(family in ("builder","lottery")
+                     or render_family=="same_player")
+    if combined_ticket and not verified:
+        raise ValueError("Observed bookmaker combined ticket ID required; calculated quote forbidden")
+    if combined_ticket and not observed_quote:
+        raise ValueError("Observed bookmaker combined ticket price missing")
+    footer=("Quote "+str(observed_quote)) if observed_quote and (
+        verified or not combined_ticket) else ""
     if stake:
         footer += (" · " if footer else "") + "Einsatz " + str(stake)
     labels=[]
