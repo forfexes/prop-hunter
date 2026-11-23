@@ -1,0 +1,31 @@
+name: PROP HUNTER Exact Original Card References for Chat Preview
+"on":
+  push:
+    paths:
+      - ".github/workflows/owner_originals_visual_reference_export.yml"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  export-unaltered-originals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all four real user-original reference screenshots
+        run: |
+          test -s card_templates/originals/single.jpg
+          test -s card_templates/originals/ladder.jpg
+          test -s card_templates/originals/builder.jpg
+          test -s card_templates/originals/lottery.jpg
+          sha256sum card_templates/originals/{single,ladder,builder,lottery}.jpg
+      - name: Export original screenshots unchanged; no Telegram
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROP-HUNTER-FOUR-EXACT-ORIGINALS-NOT-NEW-MASTERS
+          path: |
+            card_templates/originals/single.jpg
+            card_templates/originals/ladder.jpg
+            card_templates/originals/builder.jpg
+            card_templates/originals/lottery.jpg
+          retention-days: 3
