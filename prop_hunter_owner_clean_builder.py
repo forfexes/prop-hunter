@@ -128,7 +128,14 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
               size=17 if n < 6 else 13, max_width=81, color=GREEN)
 
     _text(d, (182, 754), f"{n}-LEG BUILDER", size=24, max_width=291)
-    quote = re.search(r"(?:Quote|Berechnet)\s+@?([\d.,]+)",
+    # Rendering a calculated leg-product as gold '@xx' misrepresents it as
+    # an available BOOKMAKER ticket. This must fail closed even when callers
+    # bypass the approved NBA bridge. Synthetic offline image QA can leave
+    # the price unknown ("—"), but must never invent a combined quote.
+    if re.search(r"\b(?:Berechnet|estimated|calculated)\b",
+                 str(footer or ""), re.I):
+        raise ValueError("Calculated Builder quote is not an observed bookmaker price")
+    quote = re.search(r"\bQuote\s+@?([\d.,]+)\b",
                       str(footer or ""), re.I)
     _text(d, (445, 746), "@" + quote.group(1) if quote else "—",
           size=23, max_width=107, color=GOLD)
