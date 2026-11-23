@@ -26,13 +26,16 @@ def _team(im, team, cx):
 
 
 def _form_label(raw, all_windows=False):
+    """Actual L5/L10/L15 per athlete. Missing samples are unknown, never 0/0."""
     fields = []
     for n in (5, 10, 15):
         match = re.search(
             r"\bL" + str(n) + r"\s+(\d+)/(\d+)\b", str(raw or ""), re.I
         )
-        if match and 0 <= int(match[1]) <= int(match[2]) <= n:
+        if match and 0 <= int(match[1]) <= int(match[2]) <= n and int(match[2]) > 0:
             fields.append(f"L{n} {match[1]}/{match[2]}")
+        else:
+            fields.append(f"L{n} —")
     return " · ".join(fields if all_windows else fields[-1:])
 
 
