@@ -150,9 +150,18 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
             "losangelesclippers": "laclippers",
             "waswizards": "washingtonwizards",
             "utajazz": "utahjazz",
+            "lalakers": "losangeleslakers",
         },
-        "nhl": {"utamammoth": "utahmammoth"},
-        "nfl": {"lachargers": "losangeleschargers"},
+        "nhl": {
+            "utamammoth": "utahmammoth",
+            "nyrangers": "newyorkrangers",
+            "wascapitals": "washingtoncapitals",
+        },
+        "nfl": {
+            "lachargers": "losangeleschargers",
+            "wascommanders": "washingtoncommanders",
+            "nygiants": "newyorkgiants",
+        },
     }
     want = _verified_aliases.get(league[1], {}).get(_norm(team), _norm(team))
     matches=[t for t in _CACHE[tkey] if want in t["names"]]
