@@ -168,6 +168,12 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # Never reuse the old text coordinates or silently switch to a substitute.
     if (family == "single" and title == "SINGLE"
             and user_single_original_enabled(pick)):
+        # This revised no-silhouette source must be shown to the owner
+        # BEFORE any Telegram publication or in-place image replacement.
+        # Independent of the earlier 20261122 template rollout switch:
+        # even a previously pinned card cannot bypass visual approval.
+        if os.getenv("PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED", "0").strip() != "1":
+            raise ValueError("nba_single_no_silhouette_owner_preview_approval_required")
         from prop_hunter_owner_supplied_single import render as render_supplied_single
         if len(labels) != 1:
             raise ValueError("User original SINGLE requires one actual athlete")
