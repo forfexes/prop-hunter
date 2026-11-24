@@ -164,7 +164,8 @@ def main():
         if not n or len(n) < 4:
             blank["invalid_player"] += 1
             return
-        k = (str(sport or "").upper(), n)
+        league_key = str(competition or "").strip().upper()
+        k = (str(sport or "").upper(), league_key, n)
         if k not in people:
             people[k] = {"name": str(name).strip(), "sport": str(sport or "").upper(),
                          "teams": set(), "leagues": set(), "count": 0}
@@ -179,10 +180,20 @@ def main():
 
     def club(name, sport="", boost=0, competition=""):
         n = norm(name)
+        # These are competition labels, not clubs; treating them as missing
+        # logos creates misleading deficits in the image coverage report.
+        if str(name or "").strip().upper() in {
+            "NBA", "WNBA", "NHL", "NFL", "MLB", "NCAAF", "NCAAB",
+            "EUROLEAGUE", "SWISS_NL", "SHL", "AHL",
+            "ICE_HOCKEY", "BASKETBALL", "FOOTBALL",
+        }:
+            blank["league_label_not_team"] += 1
+            return
         if not n or n in {"unknown", "none", "na", "home", "away"}:
             blank["invalid_team"] += 1
             return
-        k = (str(sport or "").upper(), n)
+        league_key = str(competition or "").strip().upper()
+        k = (str(sport or "").upper(), league_key, n)
         if k not in teams:
             teams[k] = {"name": str(name).strip(), "sport": str(sport or "").upper(), "leagues": set(), "count": 0}
         teams[k]["count"] += 1
@@ -324,8 +335,15 @@ def main():
     report["coverage_plan"] = {"photos": photo_plan, "crests": team_plan}
     report["not_probed_photo"] = max(0, len(plist)-len(photo_batch))
     report["not_probed_crest"] = max(0, len(tlist)-len(team_batch))
+    # Breakdown prevents a missing league data adapter from being presented
+    # as a permanently missing player picture.
+    report["photo_failures_by_reason"] = {}
+    report["crest_failures_by_reason"] = {}
     for _, p in photo_batch:
         ok, evidence = photo_test(p)
+        if not ok:
+            report["photo_failures_by_reason"][evidence] = (
+                report["photo_failures_by_reason"].get(evidence, 0) + 1)
         report["photo_checked"] += 1
         report["verified_photos" if ok else "missing_or_unverified_photos"] += 1
         if not ok and len(report["missing_photo_samples"]) < 50:
@@ -334,6 +352,9 @@ def main():
                                                         "status": evidence})
     for _, t in team_batch:
         ok, evidence = crest_test(t)
+        if not ok:
+            report["crest_failures_by_reason"][evidence] = (
+                report["crest_failures_by_reason"].get(evidence, 0) + 1)
         report["crest_checked"] += 1
         report["verified_crests" if ok else "missing_or_unverified_crests"] += 1
         if not ok and len(report["missing_crest_samples"]) < 50:
