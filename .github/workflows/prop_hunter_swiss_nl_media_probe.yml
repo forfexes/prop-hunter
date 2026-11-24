@@ -1,0 +1,37 @@
+name: PROP HUNTER Swiss NL Official Media Probe
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "prop_hunter_swiss_nl_media_probe.py"
+      - "test_prop_hunter_swiss_nl_media_probe.py"
+      - "prop_hunter_hockey_source_candidates.py"
+      - ".github/workflows/prop_hunter_swiss_nl_media_probe.yml"
+permissions:
+  contents: read
+jobs:
+  source-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install source-probe deps
+        run: python -m pip install -q 'requests==2.32.5'
+      - name: Check exact player/club image matching without network
+        run: |
+          python -m py_compile prop_hunter_swiss_nl_media_probe.py test_prop_hunter_swiss_nl_media_probe.py
+          python -m unittest -v test_prop_hunter_swiss_nl_media_probe.py
+      - name: Read-only official-club player-image discovery
+        run: python prop_hunter_swiss_nl_media_probe.py --max-profiles 10
+      - name: Publish owner-only diagnostic (not Telegram)
+        uses: actions/upload-artifact@v4
+        with:
+          name: prop-hunter-swiss-nl-official-image-candidates
+          path: diagnostics/swiss_nl_official_image_sources.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Confirm no publication
+        run: echo 'No player photo reused; media rights unverified; NO TELEGRAM; NO SUPABASE.'
