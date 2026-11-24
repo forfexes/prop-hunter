@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-24T17:28:09.029519+00:00",
+  "updated_at": "2026-11-24T17:39:02.547146+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,13 +16,13 @@
       ]
     },
     "NBA": {
-      "rows": 76,
+      "rows": 69,
       "sources": [
         "bovada_direct",
         "fanduel_direct"
       ],
       "market_count": 7,
-      "latest": "2026-11-24T03:04:31.813425+00:00",
+      "latest": "2026-11-24T03:04:31.818916+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -38,17 +38,15 @@
       ]
     },
     "NFL": {
-      "rows": 3,
+      "rows": 9,
       "sources": [
-        "betrivers_direct",
         "bovada_direct"
       ],
-      "market_count": 2,
-      "latest": "2026-11-23T19:28:34.216019+00:00",
+      "market_count": 3,
+      "latest": "2026-11-23T19:28:32.708981+00:00",
       "missing_core": [
         "touchdown",
-        "passing",
-        "receptions"
+        "rushing"
       ]
     },
     "NHL": {
@@ -101,12 +99,19 @@
     },
     {
       "sport": "NFL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "bovada_direct"
+      ]
+    },
+    {
+      "sport": "NFL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
         "touchdown",
-        "passing",
-        "receptions"
+        "rushing"
       ]
     },
     {
