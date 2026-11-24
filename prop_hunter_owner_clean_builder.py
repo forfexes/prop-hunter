@@ -188,10 +188,18 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     if re.search(r"\b(?:Berechnet|estimated|calculated)\b",
                  str(footer or ""), re.I):
         raise ValueError("Calculated Builder quote is not an observed bookmaker price")
-    quote = re.search(r"\bQuote\s+@?([\d.,]+)\b",
-                      str(footer or ""), re.I)
-    _text(d, (445, 746+portrait_extra+ticket_extra), "@" + quote.group(1) if quote else "—",
-          size=23, max_width=107, color=GOLD)
+    formula = re.fullmatch(r"FORMEL-QA ([\d.]+)", str(footer or ""))
+    if formula:
+        import os
+        if os.getenv("PH_NBA_FORMULA_OFFLINE_QA") != "1" or settlement != "QA ONLY":
+            raise ValueError("Formula preview requires isolated offline QA")
+        _text(d, (445, 746+portrait_extra+ticket_extra), formula.group(1),
+              size=23, max_width=107, color=GOLD)
+    else:
+        quote = re.search(r"\bQuote\s+@?([\d.,]+)\b",
+                          str(footer or ""), re.I)
+        _text(d, (445, 746+portrait_extra+ticket_extra), "@" + quote.group(1) if quote else "—",
+              size=23, max_width=107, color=GOLD)
     stake = re.search(r"Einsatz\s+([\d.,]+u)", str(footer or ""), re.I)
     _text(d, (599, 746+portrait_extra+ticket_extra), stake.group(1) if stake else "—",
           size=22, max_width=95, color=GOLD)
@@ -200,7 +208,8 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     # Owner-approved footer: a single floating AUSWERTUNG / status line,
     # WHITE when pending, without any extra sticker or opaque rectangle.
     # The sample-free stadium below the real quote has room for this text.
-    _text(d, (350, 786+portrait_extra+ticket_extra), "AUSWERTUNG: " + state,
+    _text(d, (350, 786+portrait_extra+ticket_extra),
+          "BERECHNET · KEINE BOOKIE-QUOTE" if formula else "AUSWERTUNG: " + state,
           size=17, max_width=355, color=color)
 
     output = im.convert("RGB").resize(

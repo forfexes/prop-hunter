@@ -71,13 +71,22 @@ def render(plate: Image.Image, *, rows: list,
           size=19, max_width=286, color=GOLD)
     _text(d, (603, 149), f"{n} SPIELE",
           size=23, max_width=158, color=WHITE)
-    _text(d, (600, 188), "BUCHMACHER-QUOTE",
-          size=13, max_width=160, color=GOLD)
-    quote = re.search(r"\bQuote\s+@?([\d.,]+)", str(footer or ""), re.I)
-    if not quote:
-        raise ValueError("Real observed combined bookmaker ticket missing")
-    _text(d, (601, 220), "@" + quote.group(1),
-          size=28, max_width=161, color=GOLD)
+    formula = re.fullmatch(r"FORMEL-QA ([\d.]+)", str(footer or ""))
+    if formula:
+        import os
+        if os.getenv("PH_NBA_FORMULA_OFFLINE_QA") != "1" or settlement != "QA ONLY":
+            raise ValueError("Formula preview requires isolated offline QA")
+        _text(d, (600, 188), "BERECHNET", size=13, max_width=160, color=GOLD)
+        _text(d, (601, 220), formula.group(1), size=28, max_width=161, color=GOLD)
+        _text(d, (600, 247), "KEINE BOOKIE-QUOTE", size=12, max_width=160, color=WHITE)
+    else:
+        _text(d, (600, 188), "BUCHMACHER-QUOTE",
+              size=13, max_width=160, color=GOLD)
+        quote = re.search(r"\bQuote\s+@?([\d.,]+)", str(footer or ""), re.I)
+        if not quote:
+            raise ValueError("Real observed combined bookmaker ticket missing")
+        _text(d, (601, 220), "@" + quote.group(1),
+              size=28, max_width=161, color=GOLD)
 
     top = 342 + max(0, (295 - n * 85) // 2)
     tint = Image.new("RGBA", im.size, (0, 0, 0, 0))

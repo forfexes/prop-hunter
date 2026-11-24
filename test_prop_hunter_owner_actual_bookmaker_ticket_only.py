@@ -68,6 +68,28 @@ class RealTicketOnly(unittest.TestCase):
                                footer="Berechnet 62.40 · Einsatz 1u",
                                settlement="OFFEN")
 
+    def test_formula_preview_is_explicit_and_never_prints_bookmaker_total(self):
+        from prop_hunter_owner_clean_lottery import render as render_lottery
+        pick=SimpleNamespace(type="betbuilder",features={})
+        env={"PH_NBA_OWNER_ORIGINALS":"1", "PH_NBA_FORMULA_OFFLINE_QA":"1"}
+        for key, renderer in (("builder_2", builder), ("lottery_2",
+                           __import__("prop_hunter_owner_clean_lottery")),
+                           ("cross_game_2", __import__("prop_hunter_owner_clean_lottery"))):
+            with self.subTest(key=key), patch.dict(os.environ,env,clear=True), patch.object(
+                    renderer, "_text", wraps=renderer._text) as printed:
+                result=bridge.render_owner(pick,key,self.rows,self.teams,self.values,[],
+                                           formula_preview=True)
+                self.assertTrue(result.startswith(bytes((137,80,78,71))))
+                strings=[str(call.args[2]) for call in printed.call_args_list]
+                self.assertIn("3.70",strings)
+                self.assertTrue(any("KEINE BOOKIE-QUOTE" in v for v in strings))
+                self.assertNotIn("@62.40",strings)
+                self.assertNotIn("BUCHMACHER-QUOTE",strings)
+        with patch.dict(os.environ,{"PH_NBA_OWNER_ORIGINALS":"1"},clear=True):
+            with self.assertRaisesRegex(ValueError,"isolated offline QA"):
+                bridge.render_owner(pick,"builder_2",self.rows,self.teams,
+                                    self.values,[],formula_preview=True)
+
     def test_verified_builder_ticket_reaches_original_renderer_not_estimate(self):
         pick=SimpleNamespace(type="betbuilder",features={
             "combined_odds_observed":True,
