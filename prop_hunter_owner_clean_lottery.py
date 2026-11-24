@@ -28,12 +28,16 @@ def _extended(plate: Image.Image, n: int):
     width, height = src.size
     cut = 637
     canvas = Image.new("RGBA", (width, height + extra), (3, 15, 29, 255))
-    canvas.paste(src.crop((0, 0, width, cut)), (0, 0))
-    # A genuinely empty arena band from this SAME owner image is inserted.
-    # The top brand, all authentic outlines and bottom footer remain original.
-    band = src.crop((0, 445, width, 515))
-    for y in range(cut, cut + extra, 70):
-        canvas.paste(band, (0, y))
+    # Expand the continuous, cleaned arena midsection rather than tiling a
+    # 70px strip. Tiling introduced hard horizontal seams and duplicated
+    # lights, especially on six- and twelve-leg cards. Keep the hero/header
+    # and original footer exactly as supplied, and preserve the width.
+    start = 445
+    canvas.paste(src.crop((0, 0, width, start)), (0, 0))
+    band = src.crop((0, start, width, cut))
+    expanded = band.resize((width, cut - start + extra),
+                           Image.Resampling.BILINEAR)
+    canvas.paste(expanded, (0, start))
     canvas.paste(src.crop((0, cut, width, height)), (0, cut + extra))
     return canvas, extra
 
