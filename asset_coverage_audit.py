@@ -150,6 +150,7 @@ def main():
     priority = collections.Counter()
     existing_crests = {}
     from prop_hunter_asset_identity import resolve_provider, normalized_team
+    from prop_hunter_hockey_source_candidates import roster_source
 
     def person(name, team="", sport="", boost=0, competition=""):
         n = norm(name)
@@ -339,6 +340,9 @@ def main():
     # as a permanently missing player picture.
     report["photo_failures_by_reason"] = {}
     report["crest_failures_by_reason"] = {}
+    # A verified official club profile is an identity/source lead only; a
+    # picture is counted as verified solely after actual alpha/size decoding.
+    report["official_player_profile_candidates"] = 0
     for _, p in photo_batch:
         ok, evidence = photo_test(p)
         if not ok:
@@ -346,10 +350,18 @@ def main():
                 report["photo_failures_by_reason"].get(evidence, 0) + 1)
         report["photo_checked"] += 1
         report["verified_photos" if ok else "missing_or_unverified_photos"] += 1
-        if not ok and len(report["missing_photo_samples"]) < 50:
-            report["missing_photo_samples"].append({"name": p["name"], "sport": p["sport"],
-                                                        "league": sorted(p.get("leagues") or []),
-                                                        "status": evidence})
+        if not ok:
+            candidate = roster_source(p["name"], p.get("teams") or (), p.get("leagues") or ())
+            if candidate:
+                report["official_player_profile_candidates"] += 1
+            if len(report["missing_photo_samples"]) < 50:
+                sample = {"name": p["name"], "sport": p["sport"],
+                          "league": sorted(p.get("leagues") or []),
+                          "status": evidence}
+                if candidate:
+                    sample["official_club_profile"] = candidate.url
+                    sample["photo_rights"] = "unverified; not imported or published"
+                report["missing_photo_samples"].append(sample)
     for _, t in team_batch:
         ok, evidence = crest_test(t)
         if not ok:
