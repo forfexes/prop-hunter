@@ -62,6 +62,12 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # opaque rectangles over original artwork. Re-enable only after a reviewed
     # overlay-free clean-plate renderer replaces this path.
     import os
+    # Preview-only single geometry must NOT silently become a production
+    # Telegram/settlement master. Owner must explicitly approve the new
+    # centred version after inspecting the exact real-player image.
+    if (os.getenv("PH_NBA_SINGLE_CENTERED_PREVIEW", "0").strip() == "1"
+            and os.getenv("PH_NBA_CENTERED_SINGLE_VISUAL_APPROVED", "0").strip() != "1"):
+        raise ValueError("centered_single_requires_owner_visual_approval")
     if os.getenv("PH_BLOCK_OVERPAINTED_MASTERS", "0").strip() == "1":
         # Keep old overpaint fully blocked. A separate NBA-only production
         # release can use only the approved source-derived layered renderer.
