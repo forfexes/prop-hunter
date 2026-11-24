@@ -60,3 +60,13 @@ def official_source(player, team, league):
     matches = [s for s in CANDIDATES
                if _norm(s.player) == _norm(player) and _norm(s.team) == _norm(team)]
     return matches[0] if len(matches) == 1 else None
+
+
+
+def roster_source(player, teams, leagues):
+    """Source evidence is only safe when the row proves ONE club and ONE league."""
+    team_set = {str(x).strip() for x in teams if str(x or "").strip()}
+    league_set = {str(x).strip().upper() for x in leagues if str(x or "").strip()}
+    if len(team_set) != 1 or league_set != {"SWISS_NL"}:
+        return None
+    return official_source(player, next(iter(team_set)), "SWISS_NL")
