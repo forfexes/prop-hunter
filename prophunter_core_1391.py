@@ -38,7 +38,7 @@ BDL_KEY = BALLDONTLIE_KEY
 ODDSPAPI_KEY = next((
     piece.strip()
     for envname in ("ODDSPAPI_KEYS", "ODDSPAPI_KEY", "ODDSPAPI", "ODDSPAPI_API_KEY")
-    for piece in re.split(r"[,;\\r\\n]+", os.environ.get(envname, "") or "")
+    for piece in re.split(r"[,;\r\n]+", os.environ.get(envname, "") or "")
     if piece.strip()
 ), "")
 SPORTSGAMEODDS_KEY = next((
