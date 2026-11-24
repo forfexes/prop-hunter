@@ -94,6 +94,74 @@ class NBAPricedLegIdentityQA(unittest.TestCase):
             self.assertEqual(render_nba_pick(pick,rows,teams),b"QA_OWNER_BYTES")
         renderer.assert_called_once()
 
+    def test_builder_same_player_wrong_market_is_never_rendered(self):
+        pick,rows,teams=examples()
+        rows[0]["label"]="Assists Over 20.5"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as render:
+            with self.assertRaisesRegex(PremiumDataMissing,"market differs"):
+                render_nba_pick(pick,rows,teams)
+        render.assert_not_called()
+
+    def test_builder_priced_threshold_must_equal_displayed_line(self):
+        pick,rows,teams=examples()
+        pick.leg_details[0]["point"]=22.5
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as render:
+            with self.assertRaisesRegex(PremiumDataMissing,"threshold differs"):
+                render_nba_pick(pick,rows,teams)
+        render.assert_not_called()
+
+    def test_builder_priced_over_under_must_equal_displayed_direction(self):
+        pick,rows,teams=examples()
+        pick.leg_details[1]["direction"]="under"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as render:
+            with self.assertRaisesRegex(PremiumDataMissing,"direction differs"):
+                render_nba_pick(pick,rows,teams)
+        render.assert_not_called()
+
+    def test_single_priced_line_and_direction_must_match_display(self):
+        pick,rows,teams=examples()
+        pick.type="single"
+        pick.player="Jayson Tatum"
+        pick.market="points"
+        pick.direction="under"
+        pick.point=20.5
+        pick.odds=1.91
+        pick.leg_details=[]
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as render:
+            with self.assertRaisesRegex(PremiumDataMissing,"direction differs"):
+                render_nba_pick(pick,[rows[0]],teams)
+        render.assert_not_called()
+        pick.direction="over"
+        pick.point=19.5
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as render:
+            with self.assertRaisesRegex(PremiumDataMissing,"threshold differs"):
+                render_nba_pick(pick,[rows[0]],teams)
+        render.assert_not_called()
+        pick.point=20.5
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner",
+                   return_value=b"UNCHANGED_ORIGINAL_ART") as render:
+            self.assertEqual(render_nba_pick(pick,[rows[0]],teams),
+                             b"UNCHANGED_ORIGINAL_ART")
+        render.assert_called_once()
+
+    def test_different_valid_source_field_alias_line_is_consistent(self):
+        pick,rows,teams=examples()
+        pick.leg_details[0]["line"]=20.5
+        pick.leg_details[0]["direction"]="over"
+        pick.leg_details[1]["point"]=3.5
+        pick.leg_details[1]["direction"]="over"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner",
+                   return_value=b"ORIGINAL") as render:
+            self.assertEqual(render_nba_pick(pick,rows,teams),b"ORIGINAL")
+        render.assert_called_once()
+
     def test_single_player_must_match_parent_ticket_identity(self):
         pick,rows,teams=examples()
         pick.type="single"
