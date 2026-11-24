@@ -3511,6 +3511,12 @@ def _payload_card_image(payload,picks):
             pool=[p for p in all_picks if getattr(p,"type",None) in ("kombi2","kombi3","big","super","lottery","betbuilder","ladder")];idx=(payload.get("combo_indices") or [None])[0]
         if idx is None or idx>=len(pool):return None
         pick=pool[idx]
+        # Do not render an attractive but false NBA tipoff time. Production
+        # publication gate performs the same check before any Telegram call.
+        feats=getattr(pick,"features",{}) or {}
+        if isinstance(feats,dict) and feats.get("verified_fixture_kickoff_conflict") is True:
+            log.error("NBA_CARD_OFFICIAL_KICKOFF_CONFLICT: %s",getattr(pick,"game",""))
+            return None
         details=list(getattr(pick,"leg_details",None) or [])
         # Builder/Ladder legs can be dicts, Pydantic objects or typed
         # SimpleNamespace models. The source classifier must never abort
@@ -3916,13 +3922,25 @@ def fetch_bdl_live_props(sport_key: str) -> list:
 def enrich_commence(props):
     """Setzt commence_time aus dem ESPN-Spielplan, wo die Quelle keine liefert."""
     try:
-        from prop_hunter_matchup import game_start, game_venue
+        from prop_hunter_matchup import game_start, game_venue, official_fixture_start
+        from prop_hunter_fixture_time_guard import mark_official_conflict
     except Exception:
         return props
     n = 0
     for p in props:
         try:
             sp_, gm_ = str(getattr(p, "sport", "")), getattr(p, "game", "") or ""
+            claim = getattr(p, "commence_time", None) or (
+                (getattr(p, "features", None) or {}).get("commence_time"))
+            # An exact, independent TWO-TEAM ESPN fixture schedule outranks an
+            # odds-feed timestamp. Never alter the source value to hide a
+            # conflict: flag and let preflight block the mismatched tip.
+            if sp_.upper() == "NBA" and claim:
+                official = official_fixture_start("NBA", gm_, claim)
+                if official and mark_official_conflict(p, official) == "conflict":
+                    log.warning("NBA_OFFICIAL_KICKOFF_MISMATCH: game=%s source=%s official=%s",
+                                gm_, str(claim), str(official))
+                    continue
             if not getattr(p, "commence_time", None):
                 st = game_start(sp_, gm_)
                 if st:
