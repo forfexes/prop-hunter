@@ -15,7 +15,13 @@ from urllib.parse import urljoin, urlparse
 from prop_hunter_hockey_source_candidates import CANDIDATES, _norm
 
 MAX_HTML = 1_500_000
+MAX_IMAGE_BYTES = 4_000_000
 ALLOWED_SCHEMES = {"https"}
+TRUSTED_IMAGE_HOSTS = {
+    "cms.evz.ch", "www.evz.ch", "www.gotteron.ch", "gotteron.ch",
+    "lausannehc.ch", "www.lausannehc.ch", "www.hclugano.ch",
+    "www.zsclions.ch", "www.gshc.ch", "www.scb.ch", "www.hc-ajoie.ch",
+}
 
 
 class _MediaTags(HTMLParser):
@@ -88,6 +94,59 @@ def page_candidates(page_url, html, expected_player):
             "page_title": title[:150], "image_candidates": urls[:6]}
 
 
+def inspect_image_bytes(payload):
+    """Decode source bytes without saving them; alpha is not a usage license."""
+    from io import BytesIO
+    from PIL import Image, UnidentifiedImageError
+    if not isinstance(payload, (bytes,bytearray)) or not payload or len(payload)>MAX_IMAGE_BYTES:
+        return {"status": "image_missing_or_exceeds_limit"}
+    try:
+        with Image.open(BytesIO(payload)) as im:
+            if im.width*im.height>16_000_000:
+                return {"status": "image_too_many_pixels"}
+            im.load()
+            transparent = im.convert("RGBA").getchannel("A").getextrema()[0] < 255
+            if min(im.size)<200:
+                return {"status":"image_too_small","width":im.width,"height":im.height}
+            return {"status":"decoded","width":im.width,"height":im.height,
+                    "format":im.format,"has_transparency":bool(transparent),
+                    "licensed_for_telegram":False}
+    except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError):
+        return {"status":"image_decode_failed"}
+
+
+def fetch_image_metadata(session, url):
+    """Check exact player images on known club hosts; keep no media bytes."""
+    import requests
+    parsed=urlparse(url)
+    if parsed.scheme!="https" or parsed.hostname not in TRUSTED_IMAGE_HOSTS:
+        return {"status":"untrusted_image_host"}
+    response=None
+    try:
+        response=session.get(url,timeout=9,allow_redirects=True,stream=True,
+                             headers={"Accept":"image/*"})
+        if response.status_code!=200:
+            return {"status":"image_http_"+str(response.status_code)}
+        final=urlparse(response.url)
+        if final.scheme!="https" or final.hostname not in TRUSTED_IMAGE_HOSTS:
+            return {"status":"image_redirect_host_not_approved"}
+        if not str(response.headers.get("content-type") or "").lower().startswith("image/"):
+            return {"status":"not_image_mime"}
+        if int(response.headers.get("content-length") or 0)>MAX_IMAGE_BYTES:
+            return {"status":"image_exceeds_byte_limit"}
+        chunks=bytearray()
+        for chunk in response.iter_content(32768):
+            chunks.extend(chunk)
+            if len(chunks)>MAX_IMAGE_BYTES:
+                return {"status":"image_exceeds_byte_limit"}
+        return inspect_image_bytes(chunks)
+    except (requests.RequestException, ValueError):
+        return {"status":"image_network_error"}
+    finally:
+        if response is not None:
+            response.close()
+
+
 def scan(max_profiles=10):
     import requests
     session = requests.Session()
@@ -123,9 +182,16 @@ def scan(max_profiles=10):
                 response.close()
             except (NameError, AttributeError):
                 pass
+        if entry.get("image_candidates"):
+            entry["image_probe"]=[{"url":u,**fetch_image_metadata(session,u)}
+                                  for u in entry["image_candidates"][:2]]
         rows.append(entry)
     return {"verified_player_club_links": len(rows),
             "named_image_source_candidates": sum(x.get("status") == "named_candidate_found" for x in rows),
+            "decoded_source_files": sum(z.get("status") == "decoded"
+                for x in rows for z in x.get("image_probe", [])),
+            "transparent_source_files": sum(z.get("status") == "decoded" and z.get("has_transparency")
+                for x in rows for z in x.get("image_probe", [])),
             "all_image_rights_unverified": True,
             "status": "read_only_offline_review",
             "records": rows}
