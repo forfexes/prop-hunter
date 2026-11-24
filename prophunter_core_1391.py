@@ -32,8 +32,20 @@ GEMINI_KEYS    = _csv("GEMINI_API_KEY")
 GROQ_KEYS      = _csv("GROQ_API_KEY")
 BALLDONTLIE_KEY= os.environ.get("BALLDONTLIE_API_KEY","")
 BDL_KEY = BALLDONTLIE_KEY
-ODDSPAPI_KEY   = (os.environ.get("ODDSPAPI_KEY","") or os.environ.get("ODDSPAPI","") or os.environ.get("ODDSPAPI_API_KEY","")).strip()
-SPORTSGAMEODDS_KEY = (os.environ.get("SPORTSGAMEODDS_KEY","") or os.environ.get("SPORTS_GAME_ODDS_KEY","")).strip()
+# The collector supports several rotated keys. Respect its modern multi-key
+# secret as a readiness signal; the collector itself performs the rotation.
+# Keep older secret names for existing installations.
+ODDSPAPI_KEY = next((
+    piece.strip()
+    for envname in ("ODDSPAPI_KEYS", "ODDSPAPI_KEY", "ODDSPAPI", "ODDSPAPI_API_KEY")
+    for piece in re.split(r"[,;\\r\\n]+", os.environ.get(envname, "") or "")
+    if piece.strip()
+), "")
+SPORTSGAMEODDS_KEY = next((
+    str(os.environ.get(name) or "").strip()
+    for name in ("SPORTSGAMEODDS_KEY", "SPORTSGAMEODDS_API_KEY", "SPORTS_GAME_ODDS_KEY")
+    if str(os.environ.get(name) or "").strip()
+), "")
 SUPABASE_URL   = os.environ.get("SUPABASE_URL","")
 SUPABASE_KEY   = os.environ.get("SUPABASE_KEY","")
 TG_TOKEN       = os.environ.get("TELEGRAM_BOT_TOKEN","")
