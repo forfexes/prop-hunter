@@ -479,6 +479,8 @@ if __name__ == "__main__":
 # ── Spielplan: Anstoss-Zeiten fuer Props ohne commence_time ──────────────────
 _SCHED: Dict[str, Dict[str, str]] = {}
 _VENUE: Dict[str, Dict[str, str]] = {}
+# Pair-level schedule evidence: team-only lookup can select yesterday's match.
+_FIXTURE_STARTS: Dict[str, dict] = {}
 
 
 def _load_schedule(sport: str) -> Dict[str, str]:
@@ -487,6 +489,7 @@ def _load_schedule(sport: str) -> Dict[str, str]:
     if key in _SCHED:
         return _SCHED[key]
     out: Dict[str, str] = {}
+    pair_starts = {}
     paths = ESPN_LEAGUE.get(key)
     if requests is not None and paths:
         import datetime as _d
@@ -501,6 +504,15 @@ def _load_schedule(sport: str) -> Dict[str, str]:
                 st = ev.get("date")
                 if not st:
                     continue
+                # Preserve the actual game pair, not the first game seen
+                # for an individual franchise in a five-day scoreboard.
+                if key == "NBA":
+                    from prop_hunter_player_fixture_guard import nba_code
+                    competitors = ((ev.get("competitions") or [{}])[0].get("competitors") or [])
+                    codes = [nba_code((c.get("team") or {}).get("abbreviation"))
+                             for c in competitors]
+                    if len(codes) == 2 and all(codes) and codes[0] != codes[1]:
+                        pair_starts.setdefault(tuple(sorted(codes)), set()).add(st)
                 ven = ((ev.get("competitions") or [{}])[0].get("venue") or {})
                 vtxt = (str(ven.get("fullName") or "") + "|" +
                         str((ven.get("address") or {}).get("city") or "")) if ven.get("fullName") else ""
@@ -513,7 +525,50 @@ def _load_schedule(sport: str) -> Dict[str, str]:
                                 _VENUE.setdefault(key, {}).setdefault(_norm(t[f]), vtxt)
     print(f"matchup: schedule {key} teams={len(out)}", flush=True)
     _SCHED[key] = out
+    _FIXTURE_STARTS[key] = {name: sorted(starts) for name, starts in pair_starts.items()}
     return out
+
+
+def official_fixture_start(sport: str, game: str, claimed_time=None):
+    """Independent ESPN kickoff for an EXACT NBA two-team fixture.
+
+    A team-only calendar can match the wrong date. Require both known clubs
+    and a unique nearby official fixture; never guess with fuzzy city names.
+    """
+    if str(sport or "").upper() != "NBA":
+        return None
+    import re
+    from datetime import datetime, timezone
+    from prop_hunter_player_fixture_guard import nba_code
+    parts = re.split(r"\\s+(?:vs\\.?|@|-)\\s+", str(game or ""), maxsplit=1, flags=re.I)
+    if len(parts) != 2:
+        return None
+    codes = (nba_code(parts[0]), nba_code(parts[1]))
+    if not all(codes) or codes[0] == codes[1]:
+        return None
+    _load_schedule("NBA")
+    candidates = _FIXTURE_STARTS.get("NBA", {}).get(tuple(sorted(codes)), [])
+    if not candidates or not claimed_time:
+        return None
+    try:
+        claim = claimed_time if isinstance(claimed_time, datetime) else datetime.fromisoformat(
+            str(claimed_time).replace("Z", "+00:00"))
+        if claim.tzinfo is None or claim.utcoffset() is None:
+            return None
+        choices = []
+        for raw in candidates:
+            known = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            if known.tzinfo is not None and known.utcoffset() is not None:
+                seconds = abs((known.astimezone(timezone.utc)
+                               - claim.astimezone(timezone.utc)).total_seconds())
+                if seconds <= 18 * 3600:
+                    choices.append((seconds, raw))
+        # Multiple nearby same-match events cannot be disambiguated safely.
+        if len(choices) != 1:
+            return None
+        return choices[0][1]
+    except (ValueError, TypeError, OverflowError):
+        return None
 
 
 def game_start(sport: str, game: str) -> Optional[str]:
