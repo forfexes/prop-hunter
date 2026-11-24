@@ -768,6 +768,10 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
                 if not leg_league or not league or leg_league[1] != league[1]:
                     print("PREMIUM_LEG_LEAGUE_MISMATCH: publication and settlement blocked", flush=True)
                     return None
+        if league and league[1] == "nfl" and os.getenv("PH_NFL_PREMIUM_CARDS", "0") == "1":
+            import sys
+            from prop_hunter_nfl_cards import render_nfl_pick
+            return render_nfl_pick(pick, details, sys.modules[__name__])
         # Fail before any ESPN network/image fetch for sports without approved masters.
         # Other sports remain text-only until their own premium masters are approved.
         if not league or league[1] != "nba":
