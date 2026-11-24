@@ -122,8 +122,10 @@ def _portrait(im, photo, *, centered_qa=False):
     # Keep both owner's exact protected background sizes; photo enlargement
     # is QA-only and is drawn below team crests. All real portrait pixels
     # remain unchanged except for scaling and soft bottom fading.
-    scale=(min(211/img.height,195/img.width) if centered_qa
-           else min(189/img.height,174/img.width))
+    if centered_qa:
+        scale=min(211/img.height,195/img.width)
+    else:
+        scale=min(189/img.height,174/img.width)
     w,h=max(1,round(img.width*scale)),max(1,round(img.height*scale))
     img=img.resize((w,h),Image.Resampling.LANCZOS)
     layer=Image.new('RGBA',(512,512),(0,0,0,0))
