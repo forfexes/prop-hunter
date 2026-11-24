@@ -46,3 +46,6 @@ assert s["unavailable_games"]==2 and s["rows_upserted"]==0
 assert existing_counts("https://example.supabase.co","fake",today,
     fetch=lambda *a,**k:[{"nba_game_id":"0022600001","nba_player_id":1}])=={"0022600001":1}
 print("AUTOMATIC NBA USAGE DISCOVERY / IDEMPOTENT BACKFILL / NO FAKE ROWS PASSED")
+
+empty_schedule={"leagueSchedule":{"gameDates":[{"gameDate":"11/24/2026","games":[]}]}}
+assert discover(today,45,fetch=lambda url:empty_schedule,fetch_log=lambda d,n:verified)==verified

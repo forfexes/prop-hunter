@@ -55,6 +55,17 @@ jobs:
               print(f"NBA official usage source OK: season={season}, players={len(rows)}")
           PY
 
+      - name: Validate manual import arguments
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          NBA_GAME_ID: ${{ inputs.nba_game_id }}
+          NBA_GAME_DATE: ${{ inputs.game_date }}
+        run: |
+          if { [ -n "$NBA_GAME_ID" ] && [ -z "$NBA_GAME_DATE" ]; } || { [ -z "$NBA_GAME_ID" ] && [ -n "$NBA_GAME_DATE" ]; }; then
+            echo "Both game ID and date are required for manual import"
+            exit 1
+          fi
+
       - name: Optional verified NBA game usage import
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.nba_game_id != '' && inputs.game_date != '' }}
         env:
@@ -64,8 +75,8 @@ jobs:
           NBA_GAME_DATE: ${{ inputs.game_date }}
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "Usage import SKIPPED: Supabase secrets missing"
-            exit 0
+            echo "Usage import BLOCKED: Supabase secrets missing"
+            exit 1
           fi
           python prop_hunter_nba_usage_ingest.py "$NBA_GAME_ID" "$NBA_GAME_DATE"
 

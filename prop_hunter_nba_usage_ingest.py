@@ -58,7 +58,7 @@ def main(argv=None):
     rows = safe_fetch_game_usage(args[0], args[1])
     if not rows:
         print("NBA game usage UNAVAILABLE: zero rows written")
-        return 0
+        return 1
     count = upsert_official_game_usage(rows, url=os.environ.get("SUPABASE_URL"),
                                       service_key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
     print(f"NBA game usage: {count} verified observations written")

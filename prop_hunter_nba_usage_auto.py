@@ -104,7 +104,10 @@ def discover(today, days, fetch=get_json, fetch_log=fetch_completed_log):
             payload=fetch(url)
             if not payload.get("leagueSchedule",{}).get("gameDates"):
                 raise ValueError("Official schedule missing")
-            return completed_games(payload,today,days)
+            games = completed_games(payload,today,days)
+            if games:
+                return games
+            print("NBA schedule has no completed games in requested window; checking fallback")
         except Exception as exc:
             print("NBA schedule unavailable:",type(exc).__name__)
     try:
