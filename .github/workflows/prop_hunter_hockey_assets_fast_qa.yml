@@ -1,0 +1,39 @@
+name: PROP HUNTER Hockey Assets Fast Identity QA
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "prop_hunter_asset_identity.py"
+      - "prop_hunter_image_cards.py"
+      - "prop_hunter_hockey_source_candidates.py"
+      - "asset_coverage_audit.py"
+      - "test_prop_hunter_asset_identity.py"
+      - "test_asset_coverage_rotation.py"
+      - "test_prop_hunter_hockey_source_candidates.py"
+      - ".github/workflows/prop_hunter_hockey_assets_fast_qa.yml"
+permissions:
+  contents: read
+jobs:
+  identity-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Lightweight dependencies
+        run: python -m pip install -q 'requests==2.32.5' 'Pillow==11.3.0'
+      - name: Compile all identity modules and audit
+        run: |
+          python -m py_compile prop_hunter_asset_identity.py prop_hunter_image_cards.py prop_hunter_hockey_source_candidates.py asset_coverage_audit.py
+      - name: Exact player-club, competition isolation and media-gate tests
+        run: |
+          python -m unittest -v test_asset_coverage_rotation.py test_prop_hunter_asset_identity.py test_prop_hunter_hockey_source_candidates.py
+      - name: Verify photo publication remains owner-only
+        run: |
+          python - <<'PY'
+          import prop_hunter_hockey_source_candidates as x
+          assert all(c.image_license == "unverified" and c.import_approved is False for c in x.CANDIDATES)
+          print("SWISS_NL_MEDIA_NOT_PUBLISHED_NO_FALSE_NHL_LOOKUP")
+          PY
