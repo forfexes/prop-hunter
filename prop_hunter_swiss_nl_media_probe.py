@@ -78,7 +78,7 @@ def page_candidates(page_url, html, expected_player):
         return {"status": "page_identity_unconfirmed", "page_title": title[:150],
                 "image_candidates": []}
     urls = []
-    name_tokens = [_norm(x) for x in re.split(r"\s+", str(expected_player)) if len(_norm(x)) >= 4]
+    name_tokens = [_norm(x) for x in re.split(r"\s+", str(expected_player)) if len(_norm(x)) >= 3]
     reversed_full_name = "".join(reversed(name_tokens)) if len(name_tokens) == 2 else ""
     for item in parser.images:
         link = item.get("src") or ""
