@@ -29,6 +29,8 @@ class _MediaTags(HTMLParser):
         super().__init__()
         self.title = []
         self.in_title = False
+        self.headings = []
+        self.in_heading = False
         self.meta = {}
         self.images = []
 
@@ -36,6 +38,8 @@ class _MediaTags(HTMLParser):
         attrs = dict(attrs)
         if tag == "title":
             self.in_title = True
+        elif tag in {"h1","h2","h3"}:
+            self.in_heading = True
         elif tag == "meta":
             key = (attrs.get("property") or attrs.get("name") or "").lower()
             if key in {"og:title", "og:image", "twitter:title", "twitter:image"}:
@@ -47,10 +51,14 @@ class _MediaTags(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "title":
             self.in_title = False
+        if tag in {"h1","h2","h3"}:
+            self.in_heading = False
 
     def handle_data(self, data):
         if self.in_title:
             self.title.append(data)
+        if self.in_heading:
+            self.headings.append(data)
 
 
 def page_candidates(page_url, html, expected_player):
@@ -61,11 +69,17 @@ def page_candidates(page_url, html, expected_player):
     parser.feed(html[:MAX_HTML])
     title = parser.meta.get("og:title") or " ".join(parser.title)
     identity = _norm(expected_player)
-    if not identity or identity not in _norm(title):
+    # Club sites often have generic browser titles. A player's *complete*
+    # first+last name in a primary heading can independently confirm that
+    # the URL is a specific athlete profile; a surname alone never qualifies.
+    headings = " ".join(parser.headings)
+    heading_match = any(identity == _norm(part) for part in parser.headings)
+    if not identity or (identity not in _norm(title) and not heading_match):
         return {"status": "page_identity_unconfirmed", "page_title": title[:150],
                 "image_candidates": []}
     urls = []
     name_tokens = [_norm(x) for x in re.split(r"\s+", str(expected_player)) if len(_norm(x)) >= 4]
+    reversed_full_name = "".join(reversed(name_tokens)) if len(name_tokens) == 2 else ""
     for item in parser.images:
         link = item.get("src") or ""
         alt = _norm(item.get("alt"))
@@ -76,7 +90,8 @@ def page_candidates(page_url, html, expected_player):
         # Require full player name in the supplied alt text, or a URL
         # path containing BOTH a recognizable first and last name token.
         path = _norm(parsed.path)
-        exact_alt = identity in alt
+        exact_alt = (identity in alt or
+                     bool(reversed_full_name and reversed_full_name in alt))
         path_match = len(name_tokens) >= 2 and all(t in path for t in name_tokens)
         if (exact_alt or path_match) and joined not in urls:
             urls.append(joined)
