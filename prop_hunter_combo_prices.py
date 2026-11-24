@@ -218,6 +218,11 @@ def calculated_combo_quote(obj):
         return None
 
 
+def publishable_tip(obj):
+    """Allow explicitly labelled formula tips without accepting them as tickets."""
+    return calculated_combo_quote(obj) is not None or publishable_extra(obj)
+
+
 def publishable_extra(obj):
     """Never present an unverified multi-leg product as a bookmaker quote.
 
@@ -250,6 +255,8 @@ def quote_withdrawal_reason(ticket):
     return scope+'Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote'
 
 def invalidate_unpriced_combo(ticket):
+    if ticket.get('calculated_display_quote') is not None:
+        return False
     if ticket.get('quote_invalidated'):
         # Migrate only our old generic reason; preserve other incident evidence
         # and original result/profit. This does not reinstate withdrawn tips.

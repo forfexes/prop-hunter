@@ -2890,11 +2890,16 @@ def persist(picks, telegram_message_id=None, telegram_text=None, telegram_cards=
         sb_insert({**hp.model_dump(),"league":real_sport,"features":getattr(p,"features",{}) or {}})
     _saved_combo_ids_by_object={}
     _saved_combo_ids_by_signature={}
+    from prop_hunter_combo_prices import calculated_combo_quote
     for p in combos:
         combo = {"type":p.type,"category":getattr(p,"category",None),"player":p.player or "",
                  "market":p.market or "","sport":_clean_sport(p),"legs":p.legs or [],
                  "leg_details":getattr(p,"leg_details",[]) or [],"odds":p.odds,"stake":p.stake,
                  "probability":p.probability,"result":"pending","created_at":datetime.now(timezone.utc).isoformat()}
+        formula_quote = calculated_combo_quote(p)
+        if formula_quote is not None:
+            combo["calculated_display_quote"] = formula_quote
+            combo["stake"] = 0.0
         if p.type == "ladder":
             combo["ladder_legs"]=[x.model_dump() for x in (p.picks or [])]
             combo["direction"]=p.direction or "over"
@@ -3312,30 +3317,36 @@ def build_post(picks):
         for p in ladders:
             for leg in (p.picks or []): out.append(f"• {p.player} {leg.market} @{leg.odds:.2f} → {leg.stake}u")
         out.append("")
+    from prop_hunter_combo_prices import calculated_combo_quote
+    def combo_price(p, decimals=2):
+        quote = calculated_combo_quote(p)
+        if quote is not None:
+            return f" · Berechnete Gesamtquote @{quote:.2f} (keine Buchmacherquote)"
+        return f" @{p.odds:.{decimals}f} → {p.stake}u"
     if builders:
         out+=["🎯 BET BUILDER:"]
         for p in builders:
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
-            out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
+            out.append(f"• {' + '.join(legs)}{combo_price(p)}")
         out.append("")
     if kombis:
         out+=["🔥 2-LEG KOMBIS:"]
         for p in kombis:
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
-            out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
+            out.append(f"• {' + '.join(legs)}{combo_price(p)}")
         out.append("")
     if triples:
         out+=["🔥 3-LEG TRIPLES:"]
         for p in triples:
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
-            out.append(f"• {' + '.join(legs)} @{p.odds:.2f} → {p.stake}u")
+            out.append(f"• {' + '.join(legs)}{combo_price(p)}")
         out.append("")
     if bigs:
         out+=["💣 LOTTERY BIGS:"]
         for p in bigs:
             pfx="🚀" if p.type=="super" else "•"
             legs=[_fmt_leg(x, singles) for x in (p.legs or [])]
-            out.append(f"{pfx} {' + '.join(legs)} @{p.odds:.1f} → {p.stake}u")
+            out.append(f"{pfx} {' + '.join(legs)}{combo_price(p, 1)}")
         out.append("")
     out+=["📊 Mehr Value Picks · Keine negative Edge · Lines Pflicht 🎯","@prophunter"]
     return "\n".join(out)
@@ -3452,12 +3463,16 @@ def _render_combo_pro_tip(p):
     singles=[]
     title=_combo_pro_title(p)
     game=str(getattr(p,"game",None) or "").strip()
+    from prop_hunter_combo_prices import calculated_combo_quote
+    formula_quote = calculated_combo_quote(p)
     estimated=bool(feats.get("acca_odds_estimated_from_legs") or feats.get("builder_odds_estimated_from_legs"))
     odds=getattr(p,"odds",None)
     label=getattr(p,"market",None) or f"{len(legs)}-Leg"
     out=[f"{title} — {today}",""]
     if game:out.append(f"🏟 {game}")
-    if estimated:
+    if formula_quote is not None:
+        out.append(f"• {label} · Berechnete Gesamtquote @{formula_quote:.2f}")
+    elif estimated:
         out.append(f"• {label} · Rechnerische Quote @{float(odds):.2f}")
     else:
         try:out.append(f"• {label} @{float(odds):.2f} → {getattr(p,'stake',0)}u")
@@ -3468,12 +3483,12 @@ def _render_combo_pro_tip(p):
     if prob is not None:
         try:meta.append(f"Prob {float(prob)*100:.1f}%")
         except Exception:pass
-    if edge is not None and not estimated:
+    if edge is not None and not estimated and formula_quote is None:
         try:meta.append(f"EV {float(edge):+.1f}%")
         except Exception:pass
     if meta:out.append("📈 "+" · ".join(meta))
     if feats.get("combo_scope")=="cross_game":out.append("🌐 Cross-Game")
-    if estimated:out.append("⚠️ Einzelquoten multipliziert · keine bestätigte Buchmacherquote")
+    if estimated or formula_quote is not None:out.append("⚠️ Einzelquoten multipliziert · keine bestätigte Buchmacherquote")
     out+=["","🏁 Auswertung: ⏳ offen","@prophunter"]
     return "\n".join(out)
 
@@ -3527,6 +3542,9 @@ def _payload_card_image(payload,picks):
         hint=(getattr(pick,"source_sport",None) or getattr(pick,"sport",None)
               or leg_sport)
         league=cards.league_of(hint)
+        from prop_hunter_combo_prices import calculated_combo_quote
+        if calculated_combo_quote(pick) is not None and (not league or league[1] != "nfl"):
+            return None  # Use the labelled caption until this league supports formula PNGs.
         payload["premium_required"]=bool(
             os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1"
             and league and league[1]=="nba")
@@ -5606,28 +5624,16 @@ def run(dry_run=False,sport_filter=None):
                 log.info("estimated team+player builders: +%d", len(est_mixed))
         except Exception as est_exc:
             log.warning("estimated mixed builder skipped: %s", est_exc)
-        from prop_hunter_combo_prices import publishable_extra
-        _generated_count=len(extras)
-        from collections import Counter
-        from prop_hunter_combo_prices import publishable_extra_reason
-        rejected_reasons = Counter(publishable_extra_reason(p) for p in extras if not publishable_extra(p))
-        extras = [p for p in extras if publishable_extra(p)]
-        log.info("builder price scope: generated=%d accepted=%d rejected=%d reasons=%s",_generated_count,len(extras),_generated_count-len(extras),dict(rejected_reasons))
-        picks = picks + extras
-        log.info("verified builder extras: +%d", len(extras))
+        from prop_hunter_combo_prices import publishable_tip
+        eligible = [p for p in extras if publishable_tip(p)]
+        log.info("builder extras: generated=%d accepted=%d", len(extras), len(eligible))
+        picks = picks + eligible
     except Exception as exc:
         log.warning("verified builder skipped: %s", exc)
-    from prop_hunter_combo_prices import publishable_extra, prepare_calculated_combo
-    # Analyse ALL Combo/Builder/Lottery candidates first, including ones
-    # without a combined bookmaker ticket. Independent model probabilities
-    # and same-game conditional/joint evidence are kept separately from
-    # book prices; unbookable tickets are still blocked from Telegram.
+    from prop_hunter_combo_prices import publishable_tip, prepare_calculated_combo
     formula_candidates = [prepare_calculated_combo(p) for p in picks]
-    formula_deferred = [
-        p for p in formula_candidates if not publishable_extra(p)]
-    log.info("Kombi/Builder/Lottery formula analysed: total=%d offline_unbookable=%d",
-             len(formula_candidates), len(formula_deferred))
-    picks = [p for p in formula_candidates if publishable_extra(p)]
+    picks = [p for p in formula_candidates if publishable_tip(p)]
+    log.info("Combo formula screening: total=%d accepted=%d", len(formula_candidates), len(picks))
     from prop_hunter_form_quality import filter_tickets
     picks, form_rejected = filter_tickets(picks)
     log.info("final form evidence filter: %s", form_rejected)

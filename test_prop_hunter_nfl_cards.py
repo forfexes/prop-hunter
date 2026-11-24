@@ -78,3 +78,35 @@ def test_nfl_cards_offline():
 if __name__ == "__main__":
     test_nfl_cards_offline()
     print("NFL sandbox: 17 PNG variants and 17 simulated Telegram photo deliveries")
+
+
+def test_formula_publication_across_sports():
+    from datetime import datetime, timezone
+    from prop_hunter_combo_prices import publishable_tip
+    from prop_hunter_image_publication_gate import filter_verified_nba_images
+
+    source = ast.parse(Path("prophunter_core_1391.py").read_text())
+    names = {"_combo_pro_title", "_render_combo_pro_tip", "_telegram_payloads", "_payload_card_image"}
+    functions = [node for node in source.body if isinstance(node, ast.FunctionDef) and node.name in names]
+    namespace = {"datetime": datetime, "timezone": timezone, "os": os, "log": Mock(),
+                 "_fmt_leg": lambda leg, _: leg}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), "<telegram>", "exec"), namespace)
+    with patch.dict(os.environ, {"PH_NBA_OWNER_ORIGINALS": "1", "PH_OWNER_APPROVED_ALL_SPORTS": "1"}):
+        for sport in ("NBA", "WNBA", "NHL", "MLB", "NFL"):
+            for kind in ("kombi2", "lottery", "betbuilder"):
+                pick = Pick(type=kind, source_sport=sport, odds=99, edge_pct=12,
+                            features={"combo_scope": "cross_game"} if kind == "betbuilder" else {},
+                            leg_details=[{"sport": sport, "game": "A vs B", "odds": 1.5},
+                                         {"sport": sport, "game": "C vs D", "odds": 2.0}])
+                assert publishable_tip(pick)
+                assert not publishable_extra(pick)
+                assert filter_verified_nba_images([pick], cards) == ([pick], 0)
+                payload, = namespace["_telegram_payloads"]("", [pick])
+                assert "Berechnete Gesamtquote @3.00" in payload["text"]
+                assert "keine bestätigte Buchmacherquote" in payload["text"]
+                assert "@99" not in payload["text"] and "EV 12" not in payload["text"]
+                if sport != "NFL":
+                    assert namespace["_payload_card_image"](payload, [pick]) is None
+                    assert not payload.get("premium_required")
+                pick.leg_details[0]["odds"] = None
+                assert not publishable_tip(pick)
