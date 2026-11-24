@@ -138,6 +138,14 @@ def player_photo(name: str, league: Optional[Tuple[str, str]]) -> Optional["Imag
 def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.Image"]:
     if not team or not league:
         return None
+    # Exact source-specific abbreviation correction, but never borrow an NBA
+    # crest for a falsely tagged EuroLeague team (or vice versa).
+    from prop_hunter_asset_identity import normalized_team
+    canonical, reason = normalized_team(team, league[1])
+    if canonical is None:
+        print(f"PROTECTED_TEAM_IDENTITY: {reason}", flush=True)
+        return None
+    team = canonical
     tkey = f"teams:{league[1]}"
     if tkey not in _CACHE:
         # ESPN college team endpoints may otherwise return only a small first page.
