@@ -39,13 +39,13 @@ def fixture(value):
     return tuple(codes)
 
 
-def render_nfl_pick(pick, details, cards):
+def render_nfl_pick(pick, details, cards, *, formula_quote=None):
     kind = str(pick.type).lower()
     features = pick.features or {}
     title = {
         "single": "SINGLE", "longshot": "SINGLE", "ladder": "LADDER",
         "big": "LOTTERY", "super": "LOTTERY", "lottery": "LOTTERY",
-    }.get(kind, "CROSS" if features.get("combo_scope") == "cross_game" else "BUILDER")
+    }.get(kind, "CROSS" if kind == "cross" or (getattr(pick, "combo_scope", None) or features.get("combo_scope")) == "cross_game" else "BUILDER")
     player = str(getattr(pick, "player", "") or "").strip()
     assets = artwork()
     image = assets["stadium"].resize((900, 1125)).copy()
@@ -141,8 +141,12 @@ def render_nfl_pick(pick, details, cards):
             evidence = "   ·   ".join(filter(None, (cards._form_text(leg.get("features") or {}), cards._result_text(leg))))
             text(evidence, (x, y+76), 21, 840-x, color=ice, anchor="lm")
         rule(333+row_height*len(details))
-        text(f"GESAMTQUOTE {float(pick.odds):.2f}", (450, 980), 49)
-        text(model(pick), (450, 1040), 28, color=ice)
+        if formula_quote is None:
+            text(f"GESAMTQUOTE {float(pick.odds):.2f}", (450, 980), 49)
+            text(model(pick), (450, 1040), 28, color=ice)
+        else:
+            text(f"BERECHNETE GESAMTQUOTE {formula_quote:.2f}", (450, 980), 41)
+            text("KEINE BUCHMACHERQUOTE", (450, 1040), 25, color=ice)
     output = BytesIO()
     image.convert("RGB").save(output, format="PNG")
     return output.getvalue()

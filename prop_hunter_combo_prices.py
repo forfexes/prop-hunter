@@ -204,6 +204,20 @@ def _ladder_stages_are_individual(obj, legs):
     return True
 
 
+def calculated_combo_quote(obj):
+    """Indicative figure for formula cards, separate from settlement prices."""
+    kind = str(value(obj, "type") or "").strip().lower()
+    scope = str(value(obj, "combo_scope") or features(obj).get("combo_scope") or "").strip().lower()
+    if kind not in {"kombi", "kombi2", "kombi3", "combo", "cross", "big", "super", "lottery"}:
+        if kind not in {"builder", "betbuilder"} or scope != "cross_game":
+            return None
+    from premium_joint_formula import estimate_combo
+    try:
+        return estimate_combo(value(obj, "leg_details") or [])["indicative_leg_product"]
+    except ValueError:
+        return None
+
+
 def publishable_extra(obj):
     """Never present an unverified multi-leg product as a bookmaker quote.
 

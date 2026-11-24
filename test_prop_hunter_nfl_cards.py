@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 from PIL import Image
 
 import prop_hunter_image_cards as cards
+from prop_hunter_combo_prices import calculated_combo_quote, publishable_extra
 
 
 def test_nfl_cards_offline():
@@ -47,9 +48,14 @@ def test_nfl_cards_offline():
                 market="receiving_yards", direction="over", point=50.5, odds=1.85,
                 leg_details=details,
             )
-            if kind not in ("single", "ladder"):
+            if kind == "builder":
                 assert cards.build_for_pick(pick) is None  # no bookmaker receipt
                 pick.features.update(combined_odds_observed=True, combined_quote_id=f"qa-{kind}-{n}")
+            if kind in ("cross", "lottery"):
+                assert not publishable_extra(pick)
+                assert calculated_combo_quote(pick) == round(1.85 ** n, 4)
+                with patch.dict(details[-1], {"odds": None}):
+                    assert cards.build_for_pick(pick) is None
             img = cards.build_for_pick(pick)
             with Image.open(BytesIO(img)) as rendered:
                 assert rendered.format == "PNG"

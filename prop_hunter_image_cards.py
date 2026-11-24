@@ -752,8 +752,10 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         # The visual generator (including later in-place Telegram edits) is
         # itself a hard release gate. Offline leg-products and forged Singles
         # must never reach a photo, regardless of caller or workflow version.
-        from prop_hunter_combo_prices import publishable_extra
-        if not publishable_extra(pick):
+        from prop_hunter_combo_prices import calculated_combo_quote, publishable_extra
+        nfl_enabled = league and league[1] == "nfl" and os.getenv("PH_NFL_PREMIUM_CARDS", "0") == "1"
+        formula_quote = calculated_combo_quote(pick) if nfl_enabled else None
+        if formula_quote is None and not publishable_extra(pick):
             print("OWNER_IMAGE_QUOTE_UNVERIFIED: no image produced", flush=True)
             return None
         # Settlement re-renders bypass the new-pick publication preflight.
@@ -768,10 +770,10 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
                 if not leg_league or not league or leg_league[1] != league[1]:
                     print("PREMIUM_LEG_LEAGUE_MISMATCH: publication and settlement blocked", flush=True)
                     return None
-        if league and league[1] == "nfl" and os.getenv("PH_NFL_PREMIUM_CARDS", "0") == "1":
+        if nfl_enabled:
             import sys
             from prop_hunter_nfl_cards import render_nfl_pick
-            return render_nfl_pick(pick, details, sys.modules[__name__])
+            return render_nfl_pick(pick, details, sys.modules[__name__], formula_quote=formula_quote)
         # Fail before any ESPN network/image fetch for sports without approved masters.
         # Other sports remain text-only until their own premium masters are approved.
         if not league or league[1] != "nba":
