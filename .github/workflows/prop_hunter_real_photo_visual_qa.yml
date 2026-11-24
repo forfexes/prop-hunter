@@ -54,6 +54,7 @@ jobs:
               _plate as latest_single_plate,
               _portrait as latest_single_portrait,
               _logo as latest_single_logo,
+              _write as latest_single_write,
           )
 
           out=Path("output/real_photo_visual_qa")
@@ -99,9 +100,10 @@ jobs:
           # is provided to the production-only owner renderer.
           source=latest_single_plate()
           original=source.copy()
-          latest_single_portrait(source,player)
+          latest_single_portrait(source,player,centered_qa=True)
           latest_single_logo(source,("Boston Celtics",logos[0]),191)
           latest_single_logo(source,("New York Knicks",logos[1]),322)
+          latest_single_write(ImageDraw.Draw(source),(256,199),actual_name,298,24,(250,251,253),italic=False)
           # Real sports assets are allowed ONLY in their dynamic slots.
           # The owner's PROP HUNTER masthead and NBA shield stay literally
           # pixel-identical, not AI-drawn or pasted over.
@@ -133,7 +135,7 @@ jobs:
                      ).getbbox() is not None:
                   raise AssertionError("QA stamp overwrote original owner artwork")
               return framed
-          image=qa_margin(source,"OFFLINE BILDKONTROLLE · KEINE WETTE")
+          image=qa_margin(source,"BILD-QA · LOGOS SEPARATE TESTASSETS · KEINE WETTE")
           image.save(out/"real_photo_original_single_QA.png")
           print("REAL_PHOTO_OWNER_SINGLE_RENDERED_NO_TELEGRAM")
           from prop_hunter_owner_clean_ladder import render as render_ladder
@@ -146,6 +148,8 @@ jobs:
           for name in ("LeBron James","Stephen Curry","Nikola Jokic",
                        "Luka Doncic","Jayson Tatum","Giannis Antetokounmpo",
                        "Kevin Durant","Devin Booker","Anthony Edwards"):
+              if name.casefold() in {existing.casefold() for existing,_ in actual_athletes}:
+                  continue
               candidate=cards.player_photo(name,league)
               if candidate is None:
                   continue
@@ -157,6 +161,8 @@ jobs:
               if len(actual_athletes)>=6:
                   break
           evidence["real_alpha_players"]=[name for name,_ in actual_athletes]
+          evidence["single_centered_preview"]=True
+          evidence["team_logos_are_independent_qa_assets"]=True
           (out/"evidence.json").write_text(json.dumps(evidence,indent=2))
           if len(actual_athletes)<6:
               raise SystemExit("Insufficient real photo cutouts for 6-leg Builder/Lottery QA")
