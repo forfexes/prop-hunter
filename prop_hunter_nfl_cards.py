@@ -131,8 +131,8 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
         if (title == "BUILDER" and (len(distinct) != 1 or frozenset(fixture(pick.game)) not in distinct)) or (title == "CROSS" and len(distinct) < 2):
             raise ValueError("NFL combo scope conflicts with its fixtures")
         if title == "BUILDER":
-            logos(games[0], 450, 258, 113, 100)
-            text("VS", (450, 258), 30)
+            logos(games[0], 450, 243, 113, 100)
+            text("VS", (450, 243), 30)
         draw.rectangle((0, 323, 900, 1125), fill=navy)
         row_height = min(135, 600 // len(details))
         for i, (leg, game) in enumerate(zip(details, games)):
