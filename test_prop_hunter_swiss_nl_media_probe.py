@@ -1,6 +1,6 @@
 """No-network regressions for genuine player image source hints."""
 import unittest
-from prop_hunter_swiss_nl_media_probe import page_candidates
+from prop_hunter_swiss_nl_media_probe import page_candidates, inspect_image_bytes, fetch_image_metadata
 
 
 class OfficialSourceImageIdentity(unittest.TestCase):
@@ -43,6 +43,33 @@ class OfficialSourceImageIdentity(unittest.TestCase):
         self.assertEqual(data["image_candidates"],
                          ["https://lausannehc.ch/media/philipp_kurashev_2026.png"])
 
+
+
+
+class SourceBytesQA(unittest.TestCase):
+    def test_real_alpha_and_opaque_image_differ_without_any_license(self):
+        from io import BytesIO
+        from PIL import Image
+        for mode, expected in (("RGBA",True),("RGB",False)):
+            with self.subTest(mode=mode):
+                im=Image.new(mode,(320,400),(0,0,0,0) if mode=="RGBA" else (45,70,90))
+                buf=BytesIO()
+                im.save(buf,format="PNG")
+                details=inspect_image_bytes(buf.getvalue())
+                self.assertEqual(details["status"],"decoded")
+                self.assertEqual(details["has_transparency"],expected)
+                self.assertFalse(details["licensed_for_telegram"])
+
+    def test_bad_payload_fails_closed(self):
+        self.assertEqual(inspect_image_bytes(b"<html>Error</html>")["status"],"image_decode_failed")
+        self.assertEqual(inspect_image_bytes(b"")["status"],"image_missing_or_exceeds_limit")
+
+    def test_unknown_external_host_never_requested(self):
+        class NoNetwork:
+            def get(self,*args,**kwargs):
+                raise AssertionError("must not contact arbitrary image CDN")
+        result=fetch_image_metadata(NoNetwork(),"https://evil.example.org/portrait.png")
+        self.assertEqual(result["status"],"untrusted_image_host")
 
 if __name__ == "__main__":
     unittest.main()
