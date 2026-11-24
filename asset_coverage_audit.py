@@ -270,7 +270,7 @@ def main():
         # These are stored references only. HTTP and alpha check performed below.
         report["cached_crest_urls"] = len(existing_crests)
         report["teams_without_exact_cached_url"] = sum(
-            1 for (_, name) in teams if name not in existing_crests)
+            1 for key in teams if key[-1] not in existing_crests)
         import netrattler_stats_match_cards as card
         import netrattler_player_photos as portraits
     else:
