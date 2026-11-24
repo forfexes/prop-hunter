@@ -277,7 +277,7 @@ def _family_from_key(key):
     raise PremiumDataMissing("Unsupported NBA premium card master: " + key)
 
 
-def render_nba_pick(pick, rows, teams):
+def render_nba_pick(pick, rows, teams, *, formula_preview=False):
     """Return a 1080×1440 PNG for a fully verified NBA pick, otherwise fail closed."""
     from importlib import import_module
     if str(MASTER_DIR) not in sys.path:
@@ -297,6 +297,39 @@ def render_nba_pick(pick, rows, teams):
     key = _template(pick, rows)
     family = _family_from_key(key)
     multi_game = family in ("lottery", "combo", "cross_game")
+    if formula_preview:
+        # Use the exact normal adapter (identity/market/fixture guards)
+        # rather than hand-populated test card values. This route is analysis
+        # only until the owner approves a separate non-wager delivery path.
+        from prop_hunter_combo_prices import confirmed_ticket
+        from premium_joint_formula import estimate_combo
+        if (os.getenv("PH_NBA_FORMULA_OFFLINE_QA") != "1"
+                or os.getenv("PH_NBA_OWNER_ORIGINALS") != "1"
+                or any(os.getenv(k) for k in ("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN",
+                                             "TELEGRAM_CHAT_ID", "TG_BOT_TOKEN"))):
+            raise PremiumDataMissing("Formula analysis requires isolated offline QA")
+        if family not in ("builder", "lottery", "combo", "cross_game"):
+            raise PremiumDataMissing("Formula analysis requires a combined market")
+        if (confirmed_ticket(pick) or feats.get("combined_odds_observed") is True
+                or feats.get("combined_quote_id") or _get(pick,"combined_quote_id")
+                or _get(pick,"combined_odds_observed") is True):
+            raise PremiumDataMissing("Formula analysis cannot carry a bookmaker ticket receipt")
+        for leg in details:
+            lf = _get(leg,"features") or {}
+            if not isinstance(lf,dict):
+                lf={}
+            if (_get(leg,"estimated") or _get(leg,"synthetic")
+                    or _get(leg,"odds_calculated") or lf.get("estimated")
+                    or lf.get("odds_calculated")):
+                raise PremiumDataMissing("Formula analysis requires observed individual prices")
+            if not str(_get(leg,"bookmaker") or lf.get("bookmaker") or "").strip():
+                raise PremiumDataMissing("Formula analysis requires each leg's bookmaker provenance")
+        try:
+            formula = estimate_combo(details)
+        except ValueError as exc:
+            raise PremiumDataMissing(str(exc)) from exc
+        if not formula["individual_prices_observed"]:
+            raise PremiumDataMissing("Formula analysis requires observed individual prices")
     values = {
         "odds_verified": True,
         "settlement": str(_get(pick, "settlement_summary") or "OFFEN"),
@@ -308,7 +341,7 @@ def render_nba_pick(pick, rows, teams):
         values.update({"home_name": str(teams[0][0]), "away_name": str(teams[1][0]),
                        "date": date, "time": time, "venue": str(feats.get("venue") or "")})
     stake = _get(pick, "stake")
-    if stake is not None:
+    if stake is not None and not formula_preview:
         try:
             stake_value = float(stake)
         except (TypeError, ValueError, OverflowError):
@@ -408,7 +441,7 @@ def render_nba_pick(pick, rows, teams):
         else:
             from prop_hunter_combo_prices import confirmed_ticket
             verified_combo = confirmed_ticket(pick)
-            if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and not verified_combo:
+            if os.getenv("PH_NBA_OWNER_ORIGINALS", "0").strip() == "1" and not verified_combo and not formula_preview:
                 # Production and settlement must obey the SAME genuine-price
                 # rule. Never repaint an existing real owner card with a
                 # calculated accumulator when its bookmaker ticket is absent.
@@ -448,6 +481,8 @@ def render_nba_pick(pick, rows, teams):
         # verified data cannot fit, refuse the image instead of publishing a
         # similar-looking generated SVG poster.
         from prop_hunter_nba_owner_bridge import render_owner
+        if formula_preview:
+            return render_owner(pick,key,rows,teams,values,details,formula_preview=True)
         return render_owner(pick, key, rows, teams, values,
                             list(_get(pick, "leg_details") or []))
     return renderer.render_png(key, values, images, strict=True)
