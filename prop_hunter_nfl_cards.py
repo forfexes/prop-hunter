@@ -70,6 +70,9 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
     def logos(teams, x, y, gap, size):
         paste(teams[0], (x-gap, y), (size, size))
         paste(teams[1], (x+gap, y), (size, size))
+        if size >= 100:
+            for code, center in zip(teams, (x-gap, x+gap)):
+                text(TEAMS[code].upper(), (center, y+size//2+13), 21, 165, color=ice)
 
     def rule(y):
         draw.line((45, y, 855, y), fill=violet, width=2)
@@ -137,7 +140,8 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
             rule(y)
             if title != "BUILDER":
                 logos(game, 90, y+34, 26, 45)
-                text(" vs ".join(code.upper() for code in game), (90, y+69), 13, 106, color=ice)
+                text(" vs ".join(TEAMS[code].upper() for code in game),
+                     (90, y+69), 15, 120, color=ice)
             x = 55 if title == "BUILDER" else 151
             text(str(leg.get("player") or "").upper(), (x, y+20), 30, 840-x, anchor="lm")
             text(cards._label(leg), (x, y+48), 24, 840-x, anchor="lm")
