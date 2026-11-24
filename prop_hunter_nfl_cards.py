@@ -87,7 +87,14 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
         )))
 
     draw.rectangle((0, 0, 900, 145), fill=navy)
-    text("PROP HUNTER", (450, 43), 58)
+    wordmark_font = ImageFont.truetype("DejaVuSansCondensed-BoldOblique.ttf", 62)
+    first_width = wordmark_font.getlength("PROP")
+    gap = wordmark_font.getlength(" ")
+    total_width = first_width + gap + wordmark_font.getlength("HUNTER")
+    start = (900 - total_width) / 2
+    draw.text((start, 43), "PROP", font=wordmark_font, fill=white, anchor="lm")
+    draw.text((start + first_width + gap, 43), "HUNTER",
+              font=wordmark_font, fill=ice, anchor="lm")
     paste("shield", (450, 109), (54, 66))
     text(title, (450, 173), 32)
     if title in {"SINGLE", "LADDER"}:

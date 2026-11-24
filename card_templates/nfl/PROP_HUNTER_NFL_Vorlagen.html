@@ -73,7 +73,14 @@ function render(){
   }
   gradient(soloCard?520:175,soloCard?710:390);
   ctx.fillStyle='#041021';ctx.fillRect(0,0,900,145);
-  txt('PROP HUNTER',450,47,62);
+  ctx.save();
+  ctx.font='italic 900 62px "Arial Narrow", Arial, sans-serif';
+  ctx.textAlign='left';ctx.textBaseline='middle';
+  const propWidth=ctx.measureText('PROP ').width;
+  const wordmarkX=(W-propWidth-ctx.measureText('HUNTER').width)/2;
+  ctx.fillStyle=white;ctx.fillText('PROP',wordmarkX,47);
+  ctx.fillStyle=ice;ctx.fillText('HUNTER',wordmarkX+propWidth,47);
+  ctx.restore();
   const badge=pictures.shield;ctx.drawImage(badge,450-28,80,56,68);
   txt(kind.toUpperCase(),450,174,32);
   if(soloCard){
