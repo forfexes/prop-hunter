@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install source-probe deps
-        run: python -m pip install -q 'requests==2.32.5'
+        run: python -m pip install -q 'requests==2.32.5' 'Pillow==11.3.0'
       - name: Check exact player/club image matching without network
         run: |
           python -m py_compile prop_hunter_swiss_nl_media_probe.py test_prop_hunter_swiss_nl_media_probe.py
