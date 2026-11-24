@@ -221,6 +221,9 @@ jobs:
           PH_NBA_PREMIUM_V2_REQUIRE: '1'  # strict premium-only; never use legacy image design
           PH_NBA_OWNER_ORIGINALS: '1'  # use approved actual user-original Singles Ladders and Builders
           PH_NBA_USER_SINGLE_20261122: '1'  # exact owner-provided 512px Single, version-stamped after pixel QA
+          # Explicit owner-controlled visual approval; CI cannot grant it.
+          PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED: ${{ vars.PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED == 'true' && '1' || '0' }}
+          PH_OWNER_BUILDER_8_10_TG_APPROVED: ${{ vars.PH_OWNER_BUILDER_8_10_TG_APPROVED == 'true' && '1' || '0' }}
           PH_BLOCK_OVERPAINTED_MASTERS: '1'  # never send opaque-patched owner screenshots
           PH_ALLOW_VERIFIED_LAYERED_OWNER: '1'  # permit ONLY 4 fully cleaned, pixel-checked original NBA family layers
           PH_OWNER_PIXEL_QA: '1'  # strict approved-vs-cleaned and immutable-original pixel QA before Telegram
