@@ -48,7 +48,9 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
     }.get(kind, "CROSS" if kind == "cross" or (getattr(pick, "combo_scope", None) or features.get("combo_scope")) == "cross_game" else "BUILDER")
     player = str(getattr(pick, "player", "") or "").strip()
     assets = artwork()
-    image = assets["stadium"].resize((900, 1125)).copy()
+    image = Image.new("RGBA", (900, 1125), "#041021")
+    stadium = assets["stadium"].crop((0, 445, 900, 875))
+    image.paste(stadium.resize((900, 475), Image.Resampling.LANCZOS), (0, 145))
     draw = ImageDraw.Draw(image)
     white, ice, violet, navy = "#f6f9ff", "#9eeaff", "#b45bff", "#041021"
 
@@ -134,7 +136,8 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
             y = 333+i*row_height
             rule(y)
             if title != "BUILDER":
-                logos(game, 90, y+40, 26, 45)
+                logos(game, 90, y+34, 26, 45)
+                text(" vs ".join(code.upper() for code in game), (90, y+69), 13, 106, color=ice)
             x = 55 if title == "BUILDER" else 151
             text(str(leg.get("player") or "").upper(), (x, y+20), 30, 840-x, anchor="lm")
             text(cards._label(leg), (x, y+48), 24, 840-x, anchor="lm")
@@ -147,6 +150,7 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
         else:
             text(f"BERECHNETE GESAMTQUOTE {formula_quote:.2f}", (450, 980), 41)
             text("KEINE BUCHMACHERQUOTE", (450, 1040), 25, color=ice)
+    text("@prophunter", (450, 1103), 20, color=ice)
     output = BytesIO()
     image.convert("RGB").save(output, format="PNG")
     return output.getvalue()
