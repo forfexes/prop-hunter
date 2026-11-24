@@ -49,23 +49,24 @@ def test_nfl_cards_offline():
             )
             if kind not in ("single", "ladder"):
                 assert cards.build_for_pick(pick) is None  # no bookmaker receipt
-            with patch("prop_hunter_combo_prices.publishable_extra", return_value=True):
-                img = cards.build_for_pick(pick)
-                with Image.open(BytesIO(img)) as rendered:
-                    assert rendered.format == "PNG"
-                    assert rendered.size == (900, 1125)
-                    rendered.verify()
-                payload.clear()
-                payload.update(text="NFL sandbox", kind="single" if kind == "single" else "combo",
-                               single_indices=[0], combo_indices=[0])
-                assert namespace["send_telegram"]("NFL sandbox", picks=[pick]) == 47
-                args, kwargs = call.call_args
-                assert args[0].endswith("/sendPhoto")
-                assert kwargs["files"]["photo"][1] == img
+                pick.features.update(combined_odds_observed=True, combined_quote_id=f"qa-{kind}-{n}")
+            img = cards.build_for_pick(pick)
+            with Image.open(BytesIO(img)) as rendered:
+                assert rendered.format == "PNG"
+                assert rendered.size == (900, 1125)
+                rendered.verify()
+            payload.clear()
+            payload.update(text="NFL sandbox", kind="single" if kind == "single" else "combo",
+                           single_indices=[0], combo_indices=[0])
+            assert namespace["send_telegram"]("NFL sandbox", picks=[pick]) == 47
+            args, kwargs = call.call_args
+            assert args[0].endswith("/sendPhoto")
+            assert kwargs["files"]["photo"][1] == img
         assert call.call_count == 17
-        pick.leg_details[0]["sport"] = "NBA"
-        with patch("prop_hunter_combo_prices.publishable_extra", return_value=True):
+        with patch.dict(os.environ, {"PH_NFL_PREMIUM_CARDS": "0"}):
             assert cards.build_for_pick(pick) is None
+        pick.leg_details[0]["sport"] = "NBA"
+        assert cards.build_for_pick(pick) is None
 
 
 if __name__ == "__main__":
