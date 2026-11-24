@@ -93,6 +93,65 @@ def _form(form):
     return values
 
 
+
+def _verified_market_family(text):
+    """Extract only unambiguous NBA prop markets; never fuzzy-match bets."""
+    raw=unicodedata.normalize("NFKD",str(text or "").casefold())
+    raw=" ".join(re.findall(r"[a-z0-9]+", raw))
+    if not raw:
+        return None
+    if re.search(r"\b(points rebounds assists|pts reb ast|p r a|pra)\b",raw):
+        return "pra"
+    for label,pattern in (
+        ("points_rebounds",r"\b(points rebounds|pts reb)\b"),
+        ("points_assists",r"\b(points assists|pts ast)\b"),
+        ("rebounds_assists",r"\b(rebounds assists|reb ast)\b"),
+        ("blocks",r"\b(blocks|blk)\b"),
+        ("steals",r"\b(steals|stl)\b"),
+        ("assists",r"\b(assists|ast)\b"),
+        ("rebounds",r"\b(rebounds|reb)\b"),
+        ("points",r"\b(points|pts)\b"),
+        ("threes",r"\b(threes|three pointers|3pt|3pm)\b"),
+        ("turnovers",r"\b(turnovers|to)\b"),
+    ):
+        if re.search(pattern,raw):
+            return label
+    return None
+
+
+def _assert_selection_matches_ticket(row_label, ticket, where):
+    """Observed selection and actually PRINTED choice must agree.
+
+    A confirmed athlete identity is insufficient: that same athlete can have
+    several differently priced prop markets, directions and numeric lines.
+    Only compare fields independently present on the actual priced ticket;
+    missing source details never get silently fabricated by this guard.
+    """
+    shown=str(row_label or "").strip()
+    if not shown:
+        raise PremiumDataMissing(f"{where} displayed selection missing")
+    observed=re.search(r"\b(over|under)\s+(\d+(?:[.,]\d+)?)\b",shown,re.I)
+    priced_direction=str(_get(ticket,"direction") or "").casefold().strip()
+    priced_point=_get(ticket,"point")
+    # Some real bookmakers call their selected threshold "line" instead.
+    if priced_point is None:
+        priced_point=_get(ticket,"line")
+    if priced_direction and priced_direction in ("over","under"):
+        if not observed or observed.group(1).casefold()!=priced_direction:
+            raise PremiumDataMissing(f"{where} direction differs from bookmaker selection")
+    if priced_point is not None:
+        try:
+            v=float(str(priced_point).replace(",","."))
+        except (ValueError,TypeError,OverflowError) as exc:
+            raise PremiumDataMissing(f"{where} invalid bookmaker selection line") from exc
+        if not math.isfinite(v) or not observed or abs(float(observed.group(2).replace(",","."))-v)>1e-6:
+            raise PremiumDataMissing(f"{where} threshold differs from bookmaker selection")
+    priced_market=_verified_market_family(_get(ticket,"market"))
+    shown_market=_verified_market_family(shown)
+    if priced_market and shown_market and priced_market!=shown_market:
+        raise PremiumDataMissing(f"{where} market differs from bookmaker selection")
+
+
 def _template(pick, rows):
     typ = str(_get(pick, "type") or "").lower()
     feats = _get(pick, "features") or {}
@@ -252,6 +311,7 @@ def render_nba_pick(pick, rows, teams):
         identity = _get(pick, "player")
         if identity and _verified_player_key(identity) != _verified_player_key(rows[0].get("name")):
             raise PremiumDataMissing("NBA single displayed athlete differs from ticket")
+        _assert_selection_matches_ticket(rows[0].get("label"), pick, "NBA single")
         values["market"] = str(rows[0].get("label") or "")
         values["odds"] = _price(_get(pick, "odds"))
         values.update(_form(rows[0].get("form")))
@@ -288,6 +348,7 @@ def render_nba_pick(pick, rows, teams):
             leg_sport = str(_get(detail, "sport") or "").lower().replace("_", " ").strip()
             if leg_sport and not re.search(r"\bnba\b", leg_sport):
                 raise PremiumDataMissing(f"Leg {i} is not NBA")
+            _assert_selection_matches_ticket(row.get("label"), detail, f"NBA leg {i}")
             values[f"leg_{i}_name"] = str(row.get("name") or "")
             values[f"leg_{i}_market"] = str(row.get("label") or "")
             for form_key, form_value in _form(row.get("form")).items():
