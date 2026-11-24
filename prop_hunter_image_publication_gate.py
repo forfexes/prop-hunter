@@ -101,6 +101,8 @@ def pre_match_quote_provenance(pick):
     f=_pick_value(pick, "features", {}) or {}
     if not isinstance(f, dict):
         return False, "no_quote_provenance"
+    if f.get("verified_fixture_kickoff_conflict") is True:
+        return False, "official_fixture_kickoff_conflict"
     # Single-leg prices have no combined ticket; demand a real bookmaker or
     # observed exchange source rather than treating a formula estimate as odds.
     if kind in ("single", "longshot"):
