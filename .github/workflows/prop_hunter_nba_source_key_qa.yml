@@ -1,0 +1,26 @@
+name: PROP HUNTER NBA Source Key QA (no Telegram)
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "prophunter_core_1391.py"
+      - "prop_hunter_oddspapi.py"
+      - "test_prop_hunter_odds_source_env.py"
+      - ".github/workflows/prop_hunter_nba_source_key_qa.yml"
+permissions:
+  contents: read
+jobs:
+  offline-source-keys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax and source provider gate
+        run: |
+          python -m py_compile prophunter_core_1391.py prop_hunter_oddspapi.py test_prop_hunter_odds_source_env.py
+          python -m unittest -v test_prop_hunter_odds_source_env
+      - name: No live sends
+        run: echo "NBA pre-match odds-source environment QA only; no Telegram, no Supabase writes."
