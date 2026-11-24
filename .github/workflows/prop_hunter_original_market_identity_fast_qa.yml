@@ -1,0 +1,37 @@
+name: PROP HUNTER Original Card Market-Identity Fast QA
+"on":
+  push:
+    branches: [main]
+    paths:
+      - 'prop_hunter_nba_premium_adapter.py'
+      - 'test_prop_hunter_nba_priced_leg_identity.py'
+      - 'CARD_STYLE_LOCK.md'
+      - 'scripts/check_card_style_lock.py'
+      - '.github/workflows/prop_hunter_original_market_identity_fast_qa.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  protect-source-originals-and-market-lines:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_TOKEN: ""
+      SUPABASE_URL: ""
+      PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED: "0"
+      PH_OWNER_BUILDER_8_10_TG_APPROVED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install only offline Pillow
+        run: python -m pip install --quiet Pillow
+      - name: Verify original reference pixels are unchanged
+        run: python scripts/check_card_style_lock.py
+      - name: Fail on wrongly displayed athlete, market, threshold or Over Under
+        run: |
+          python -m py_compile prop_hunter_nba_premium_adapter.py test_prop_hunter_nba_priced_leg_identity.py
+          python -m unittest -v test_prop_hunter_nba_priced_leg_identity
+          echo "NO TELEGRAM; ONLY EXACT OWNER DESIGNS; VERIFIED PRICED LEG MARKETS"
