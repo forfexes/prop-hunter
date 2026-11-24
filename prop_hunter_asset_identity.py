@@ -79,7 +79,11 @@ def normalized_team(team, league_code):
     if not name:
         return None, "team_missing"
     norm = _key(name)
-    if norm in _KNOWN_NBA_TEAMS and league_code != "NBA":
+    # Use the already-reviewed, complete 30-franchise NBA resolver rather
+    # than a handful of names: "LA Clippers" or "UTA" are NBA too. The
+    # guard checks exact aliases and cannot reclassify a EuroLeague fixture.
+    from prop_hunter_player_fixture_guard import nba_code
+    if league_code != "NBA" and (norm in _KNOWN_NBA_TEAMS or nba_code(name)):
         return None, "team_league_conflict:NBA/" + str(league_code)
     if norm in _KNOWN_NBL_TEAMS and league_code == "EUROLEAGUE":
         return None, "team_league_conflict:NBL/EUROLEAGUE"
