@@ -6,6 +6,7 @@ publish to Telegram or authorize the use of an unfinished source plate.
 from __future__ import annotations
 
 import io
+import os
 import re
 
 from PIL import Image, ImageDraw, ImageFont
@@ -176,9 +177,18 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
 
     from prop_hunter_original_compositor import _background_portrait
     im = plate.convert("RGBA").copy()
+    # Owner-requested changes are isolated to offline QA. This flag is NOT
+    # enabled in either Telegram workflow and never modifies the clean plate.
+    centered_qa = os.getenv("PH_NBA_SINGLE_CENTERED_PREVIEW", "0") == "1"
+    if centered_qa:
+        # Enlarge the genuine transparent player cutout; draw it BEFORE real
+        # club crests so it cannot hide their identifiers.
+        if not _background_portrait(im, row.get("photo"), (0, 123, 264, 457)):
+            raise ValueError("Actual transparent athlete cutout required")
     for center, team in zip((273, 457), teams):
         _floating_team(im, team, center)
-    if not _background_portrait(im, row.get("photo"), (0, 129, 239, 457)):
+    if not centered_qa and not _background_portrait(
+            im, row.get("photo"), (0, 129, 239, 457)):
         raise ValueError("Actual transparent athlete cutout required")
 
     date, clock = _verified_time(subtitle)
@@ -186,7 +196,12 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
     _text(d, (597, 163), date, size=17, max_width=176, color=GOLD)
     _text(d, (597, 202), clock + " Uhr" if clock else "",
           size=18, max_width=170)
-    _text(d, (402, 312), row.get("name"), size=29, max_width=293)
+    if centered_qa:
+        # Real canvas centre = 691/2; no truncation, no extra name badge.
+        _text(d, (345, 312), row.get("name"), size=31, max_width=374,
+              stroke_width=1, stroke_fill=(3, 12, 22))
+    else:
+        _text(d, (402, 312), row.get("name"), size=29, max_width=293)
     if title and title not in ("SINGLE",):
         _text(d, (402, 347), title, size=16, max_width=280, color=GOLD)
 
