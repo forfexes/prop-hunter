@@ -18,6 +18,9 @@ name: Prop Hunter Diagnostic Dry Run
       - 'prop_hunter_nba_context_sources_test.py'
       - 'prop_hunter_form_windows_test.py'
       - 'prophunter_core_1391.py'
+      - 'prop_hunter_matchup.py'
+      - 'prop_hunter_fixture_time_guard.py'
+      - 'test_prop_hunter_fixture_kickoff_guard.py'
       - 'prop_hunter_nba_usage.py'
       - 'prop_hunter_nba_usage_test.py'
       - 'prop_hunter_bref_usage.py'
@@ -57,6 +60,7 @@ jobs:
         run: |
           python -m py_compile prophunter.py prophunter_core_1391.py prop_hunter_builder_engine.py prop_hunter_ladder_l15_test.py prop_hunter_quote_guard.py prop_hunter_settler.py prop_hunter_settler_extras.py
           python prop_hunter_ladder_l15_test.py
+          python -m unittest -v test_prop_hunter_fixture_kickoff_guard
           python prop_hunter_form_windows_test.py
           python prop_hunter_form_quality_test.py
           python prop_hunter_runtime_guard.py
@@ -82,6 +86,17 @@ jobs:
         if: ${{ !contains(github.event.head_commit.message, '[offline-only]') }}
         env:
           PH_ESTIMATED_SAME_GAME_BUILDERS: '1'
+          # Offline preview ONLY: activate the exact owner-supplied 512px
+          # no-silhouette Single master. Never copy this visual-approval
+          # preview override into the production Telegram workflow.
+          PH_NBA_OWNER_ORIGINALS: '1'
+          PH_NBA_USER_SINGLE_20261122: '1'
+          PH_BLOCK_OVERPAINTED_MASTERS: '1'
+          PH_ALLOW_VERIFIED_LAYERED_OWNER: '1'
+          PH_OWNER_PIXEL_QA: '1'
+          PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED: '1'
+          PH_OWNER_APPROVED_ALL_SPORTS: '0'
+          PH_IMAGE_CARDS: '1'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SECONDARY_URL: ${{ secrets.SUPABASE_SECONDARY_URL }}
