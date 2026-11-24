@@ -33,9 +33,11 @@ examples=[
     ("single",N(**common,type="single",market="points",odds=1.90),
      [row],[]),
     ("single_points_rebounds_owner",N(**common,type="single",
-     market="points rebounds",odds=1.90),[row],[]),
+     market="points rebounds",odds=1.90),
+     [dict(row,label="Points Rebounds Over 20.5")],[]),
     ("single_double_double_owner",N(**common,type="single",
-     market="double double",odds=2.45),[row],[]),
+     market="double double",odds=2.45),
+     [dict(row,label="Double Double")],[]),
     ("ladder",N(**common,type="ladder",player="TEST PLAYER",odds=2.4,leg_details=[
          {"odds":1.8,"sport":"NBA"},{"odds":2.4,"sport":"NBA"}]),
      [row,dict(row,label="Over 25.5 points")],[]),
