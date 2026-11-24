@@ -52,7 +52,53 @@ def completed_games(payload, today, days=45):
             games[gid] = day
     return sorted(games.items(),key=lambda item:(item[1],item[0]),reverse=True)
 
-def discover(today, days, fetch=get_json):
+def completed_log_games(rows, today, days):
+    """Only canonical regular-season IDs with both final team results."""
+    games = {}
+    earliest = today - dt.timedelta(days=days)
+    for row in rows:
+        gid = str(row.get("GAME_ID") or "")
+        if not re.fullmatch(r"002[0-9]{7}", gid):
+            continue
+        if row.get("WL") not in ("W", "L"):
+            continue
+        try:
+            day = dt.date.fromisoformat(str(row["GAME_DATE"])[:10])
+            team = int(row["TEAM_ID"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not earliest <= day <= today or team <= 0:
+            continue
+        game = games.setdefault(gid, {"day": day, "teams": {}})
+        if game["day"] != day:
+            raise ValueError("Conflicting official game log dates")
+        previous = game["teams"].get(team)
+        if previous is not None and previous != row["WL"]:
+            raise ValueError("Conflicting official game log outcomes")
+        game["teams"][team] = row["WL"]
+    return sorted(
+        [(gid, game["day"]) for gid, game in games.items()
+         if sorted(game["teams"].values()) == ["L", "W"]],
+        key=lambda item: (item[1], item[0]), reverse=True)
+
+
+def fetch_completed_log(today, days):
+    from nba_api.stats.endpoints import leaguegamelog
+    earliest = today - dt.timedelta(days=days)
+    years = {d.year if d.month >= 10 else d.year - 1 for d in (earliest, today)}
+    rows = []
+    for year in sorted(years):
+        result = leaguegamelog.LeagueGameLog(
+            league_id="00", player_or_team_abbreviation="T",
+            season=f"{year}-{str(year+1)[-2:]}",
+            season_type_all_star="Regular Season",
+            date_from_nullable=earliest.strftime("%m/%d/%Y"),
+            date_to_nullable=today.strftime("%m/%d/%Y"), timeout=12)
+        rows.extend(result.get_normalized_dict().get("LeagueGameLog", []))
+    return completed_log_games(rows, today, days)
+
+
+def discover(today, days, fetch=get_json, fetch_log=fetch_completed_log):
     for url in SCHEDULE_URLS:
         try:
             payload=fetch(url)
@@ -61,7 +107,14 @@ def discover(today, days, fetch=get_json):
             return completed_games(payload,today,days)
         except Exception as exc:
             print("NBA schedule unavailable:",type(exc).__name__)
-    raise RuntimeError("No accessible official NBA schedule")
+    try:
+        games = fetch_log(today, days)
+        if games:
+            print("NBA official completed team game log fallback:", len(games))
+            return games
+    except Exception as exc:
+        print("NBA team game log unavailable:", type(exc).__name__)
+    raise RuntimeError("No accessible official NBA schedule or completed game log")
 
 def existing_counts(url, key, earliest, fetch=get_json):
     if urlparse(url).scheme != "https" or not key:
