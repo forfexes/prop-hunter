@@ -396531,7 +396531,7 @@
             "source_market": "points",
             "direction": "under",
             "point": 21.5,
-            "odds": 1.8333,
+            "odds": 1.83,
             "probability": 0.5695,
             "edge_pct": 4.4,
             "gamelog_l15_hits": 11,
@@ -396575,7 +396575,12 @@
               "gamelog_n": 15,
               "venue": "Spectrum Center|Charlotte"
             },
-            "commence_time": "2026-11-24 00:00:00+00:00"
+            "commence_time": "2026-11-24 00:00:00+00:00",
+            "stake": 0.34,
+            "date": "2026-11-23",
+            "created_at": "2026-11-23T19:40:56.283504+00:00",
+            "result": "win",
+            "actual_value": 20
           },
           {
             "player": "Brandon Miller",
@@ -396628,7 +396633,12 @@
               "gamelog_n": 15,
               "venue": "Spectrum Center|Charlotte"
             },
-            "commence_time": "2026-11-24 00:00:00+00:00"
+            "commence_time": "2026-11-24 00:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-23",
+            "created_at": "2026-11-23T19:40:56.283504+00:00",
+            "result": "win",
+            "actual_value": 20
           },
           {
             "player": "Brandon Miller",
@@ -396681,7 +396691,12 @@
               "gamelog_n": 15,
               "venue": "Spectrum Center|Charlotte"
             },
-            "commence_time": "2026-11-24 00:00:00+00:00"
+            "commence_time": "2026-11-24 00:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-23",
+            "created_at": "2026-11-23T19:40:56.283504+00:00",
+            "result": "loss",
+            "actual_value": 20
           }
         ],
         "odds": 1.83,
@@ -396696,7 +396711,7 @@
         "commence_time": "2026-11-24T00:00:00+00:00",
         "event_id": null,
         "probability": 0.5695,
-        "result": "pending",
+        "result": "win",
         "created_at": "2026-11-23T19:40:56.283504+00:00",
         "ladder_legs": [
           {
@@ -396744,7 +396759,184 @@
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
         "same_player_multistat": false,
-        "date": "2026-11-23"
+        "date": "2026-11-23",
+        "profit": 0.3,
+        "settlement_legs": [
+          {
+            "player": "Brandon Miller",
+            "sport": "NBA",
+            "market": "Points Under 21.5",
+            "source_market": "points",
+            "direction": "under",
+            "point": 21.5,
+            "odds": 1.83,
+            "probability": 0.5695,
+            "edge_pct": 4.4,
+            "gamelog_l15_hits": 11,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "Memphis Grizzlies @ Charlotte Hornets",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-24",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-20",
+              "gamelog_l15_hits": 11,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 21.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 21.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 16.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 7,
+                  "avg": 19.4
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 11,
+                  "avg": 18.9333
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 7
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Spectrum Center|Charlotte"
+            },
+            "commence_time": "2026-11-24 00:00:00+00:00",
+            "stake": 0.34,
+            "date": "2026-11-23",
+            "created_at": "2026-11-23T19:40:56.283504+00:00",
+            "result": "win",
+            "actual_value": 20
+          },
+          {
+            "player": "Brandon Miller",
+            "sport": "NBA",
+            "market": "Points Under 20.5",
+            "source_market": "points",
+            "direction": "under",
+            "point": 20.5,
+            "odds": 2.05,
+            "probability": 0.5695,
+            "edge_pct": 16.7,
+            "gamelog_l15_hits": 11,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "Memphis Grizzlies @ Charlotte Hornets",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-24",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-20",
+              "gamelog_l15_hits": 11,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 20.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 20.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 16.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 7,
+                  "avg": 19.4
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 11,
+                  "avg": 18.9333
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 7
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Spectrum Center|Charlotte"
+            },
+            "commence_time": "2026-11-24 00:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-23",
+            "created_at": "2026-11-23T19:40:56.283504+00:00",
+            "result": "win",
+            "actual_value": 20
+          },
+          {
+            "player": "Brandon Miller",
+            "sport": "NBA",
+            "market": "Points Under 19.5",
+            "source_market": "points",
+            "direction": "under",
+            "point": 19.5,
+            "odds": 2.3,
+            "probability": 0.5695,
+            "edge_pct": 31.0,
+            "gamelog_l15_hits": 11,
+            "gamelog_l15_n": 15,
+            "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+            "bookmaker": "bovada",
+            "game": "Memphis Grizzlies @ Charlotte Hornets",
+            "features": {
+              "form_window_policy": "current_season",
+              "form_reference_date": "2026-11-24",
+              "form_season_start": "2026-10-20",
+              "form_last_game_date": "2026-11-20",
+              "gamelog_l15_hits": 11,
+              "gamelog_l15_n": 15,
+              "gamelog_l15_line": 19.5,
+              "gamelog_l15_direction": "under",
+              "recent_form": {
+                "version": 1,
+                "line": 19.5,
+                "direction": "under",
+                "l5": {
+                  "n": 5,
+                  "hits": 4,
+                  "avg": 16.4
+                },
+                "l10": {
+                  "n": 10,
+                  "hits": 7,
+                  "avg": 19.4
+                },
+                "l15": {
+                  "n": 15,
+                  "hits": 11,
+                  "avg": 18.9333
+                },
+                "previous": {
+                  "n": 10,
+                  "hits": 7
+                }
+              },
+              "gamelog_n": 15,
+              "venue": "Spectrum Center|Charlotte"
+            },
+            "commence_time": "2026-11-24 00:00:00+00:00",
+            "stake": 0.33,
+            "date": "2026-11-23",
+            "created_at": "2026-11-23T19:40:56.283504+00:00",
+            "result": "loss",
+            "actual_value": 20
+          }
+        ]
       }
     ],
     "cards": [
@@ -397813,8 +398005,8 @@
         },
         "card_design_version": 5,
         "image_settlement_version": 1,
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 23.11.2026\n\n🏀 Josh Giddey\n🏟 Cleveland Cavaliers @ Chicago Bulls\n\n• Points Under 11.5 @2.90 → 0.34u\n  📈 Prob konservativ 57% · EV konservativ +65.2% · L15 11/15\n• Points Under 15.5 @1.67 → 0.33u\n  📈 Prob konservativ 86% · EV konservativ +43.3% · L15 15/15\n• Points Under 17.5 @1.40 → 0.33u\n  📈 Prob konservativ 86% · EV konservativ +20.4% · L15 15/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
-        "settlement_updated_at": "2026-11-23T22:14:40.086175+00:00"
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 23.11.2026\n\n🏀 Josh Giddey\n🏟 Cleveland Cavaliers @ Chicago Bulls\n\n• Points Under 11.5 @2.90 → 0.34u\n  📈 Prob konservativ 57% · EV konservativ +65.2% · L15 11/15\n• Points Under 15.5 @1.67 → 0.33u\n  📈 Prob konservativ 86% · EV konservativ +43.3% · L15 15/15\n• Points Under 17.5 @1.40 → 0.33u\n  📈 Prob konservativ 86% · EV konservativ +20.4% · L15 15/15\n\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
+        "settlement_updated_at": "2026-11-24T03:55:53.697635+00:00"
       },
       {
         "created_at": "2026-11-23T19:40:56.650882+00:00",
@@ -397984,8 +398176,8 @@
         },
         "card_design_version": 5,
         "image_settlement_version": 1,
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 23.11.2026\n\n🏀 Josh Giddey\n🏟 Cleveland Cavaliers @ Chicago Bulls\n\n• Rebounds Under 8.5 @1.36 → 0.25u\n  📈 Prob konservativ 80% · EV konservativ +9.3% · L15 14/15\n• Rebounds Under 7.5 @1.62 → 0.25u\n  📈 Prob konservativ 64% · EV konservativ +4.2% · L15 12/15\n• Rebounds Under 6.5 @2.10 → 0.25u\n  📈 Prob konservativ 57% · EV konservativ +19.6% · L15 11/15\n• Rebounds Under 5.5 @2.90 → 0.25u\n  📈 Prob konservativ 50% · EV konservativ +45.4% · L15 10/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
-        "settlement_updated_at": "2026-11-23T22:14:46.096468+00:00"
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 23.11.2026\n\n🏀 Josh Giddey\n🏟 Cleveland Cavaliers @ Chicago Bulls\n\n• Rebounds Under 8.5 @1.36 → 0.25u\n  📈 Prob konservativ 80% · EV konservativ +9.3% · L15 14/15\n• Rebounds Under 7.5 @1.62 → 0.25u\n  📈 Prob konservativ 64% · EV konservativ +4.2% · L15 12/15\n• Rebounds Under 6.5 @2.10 → 0.25u\n  📈 Prob konservativ 57% · EV konservativ +19.6% · L15 11/15\n• Rebounds Under 5.5 @2.90 → 0.25u\n  📈 Prob konservativ 50% · EV konservativ +45.4% · L15 10/15\n\n\n🏁 Auswertung: 0✅ 0❌ 1⏳ · +0.00u\n@prophunter",
+        "settlement_updated_at": "2026-11-24T03:55:59.584904+00:00"
       },
       {
         "created_at": "2026-11-23T19:40:56.650890+00:00",
@@ -398016,39 +398208,183 @@
           },
           "leg_details": [
             {
+              "player": "Brandon Miller",
+              "sport": "NBA",
               "market": "Points Under 21.5",
-              "odds": 1.83,
-              "stake": 0.34,
-              "point": 21.5,
+              "source_market": "points",
               "direction": "under",
+              "point": 21.5,
+              "odds": 1.83,
               "probability": 0.5695,
               "edge_pct": 4.4,
-              "bookmaker": "bovada"
+              "gamelog_l15_hits": 11,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "bovada",
+              "game": "Memphis Grizzlies @ Charlotte Hornets",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-24",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-20",
+                "gamelog_l15_hits": 11,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 21.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 21.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 16.4
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 7,
+                    "avg": 19.4
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 11,
+                    "avg": 18.9333
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 7
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Spectrum Center|Charlotte"
+              },
+              "commence_time": "2026-11-24 00:00:00+00:00",
+              "stake": 0.34,
+              "date": "2026-11-23",
+              "created_at": "2026-11-23T19:40:56.283504+00:00",
+              "result": "win",
+              "actual_value": 20
             },
             {
+              "player": "Brandon Miller",
+              "sport": "NBA",
               "market": "Points Under 20.5",
-              "odds": 2.05,
-              "stake": 0.33,
-              "point": 20.5,
+              "source_market": "points",
               "direction": "under",
+              "point": 20.5,
+              "odds": 2.05,
               "probability": 0.5695,
               "edge_pct": 16.7,
-              "bookmaker": "bovada"
+              "gamelog_l15_hits": 11,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "bovada",
+              "game": "Memphis Grizzlies @ Charlotte Hornets",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-24",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-20",
+                "gamelog_l15_hits": 11,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 20.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 20.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 16.4
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 7,
+                    "avg": 19.4
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 11,
+                    "avg": 18.9333
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 7
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Spectrum Center|Charlotte"
+              },
+              "commence_time": "2026-11-24 00:00:00+00:00",
+              "stake": 0.33,
+              "date": "2026-11-23",
+              "created_at": "2026-11-23T19:40:56.283504+00:00",
+              "result": "win",
+              "actual_value": 20
             },
             {
+              "player": "Brandon Miller",
+              "sport": "NBA",
               "market": "Points Under 19.5",
-              "odds": 2.3,
-              "stake": 0.33,
-              "point": 19.5,
+              "source_market": "points",
               "direction": "under",
+              "point": 19.5,
+              "odds": 2.3,
               "probability": 0.5695,
               "edge_pct": 31.0,
-              "bookmaker": "bovada"
+              "gamelog_l15_hits": 11,
+              "gamelog_l15_n": 15,
+              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
+              "bookmaker": "bovada",
+              "game": "Memphis Grizzlies @ Charlotte Hornets",
+              "features": {
+                "form_window_policy": "current_season",
+                "form_reference_date": "2026-11-24",
+                "form_season_start": "2026-10-20",
+                "form_last_game_date": "2026-11-20",
+                "gamelog_l15_hits": 11,
+                "gamelog_l15_n": 15,
+                "gamelog_l15_line": 19.5,
+                "gamelog_l15_direction": "under",
+                "recent_form": {
+                  "version": 1,
+                  "line": 19.5,
+                  "direction": "under",
+                  "l5": {
+                    "n": 5,
+                    "hits": 4,
+                    "avg": 16.4
+                  },
+                  "l10": {
+                    "n": 10,
+                    "hits": 7,
+                    "avg": 19.4
+                  },
+                  "l15": {
+                    "n": 15,
+                    "hits": 11,
+                    "avg": 18.9333
+                  },
+                  "previous": {
+                    "n": 10,
+                    "hits": 7
+                  }
+                },
+                "gamelog_n": 15,
+                "venue": "Spectrum Center|Charlotte"
+              },
+              "commence_time": "2026-11-24 00:00:00+00:00",
+              "stake": 0.33,
+              "date": "2026-11-23",
+              "created_at": "2026-11-23T19:40:56.283504+00:00",
+              "result": "loss",
+              "actual_value": 20
             }
           ],
-          "result": "pending",
+          "result": "win",
           "actual_value": null,
-          "profit": null,
+          "profit": 0.3,
           "stake": 1.0,
           "commence_time": "2026-11-24T00:00:00+00:00",
           "game_date": null,
@@ -398125,8 +398461,9 @@
         },
         "card_design_version": 5,
         "image_settlement_version": 1,
-        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 23.11.2026\n\n🏀 Brandon Miller\n🏟 Memphis Grizzlies @ Charlotte Hornets\n\n• Points Under 21.5 @1.83 → 0.34u\n  📈 Prob konservativ 57% · EV konservativ +4.4% · L15 11/15\n• Points Under 20.5 @2.05 → 0.33u\n  📈 Prob konservativ 57% · EV konservativ +16.7% · L15 11/15\n• Points Under 19.5 @2.30 → 0.33u\n  📈 Prob konservativ 57% · EV konservativ +31.0% · L15 11/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
-        "settlement_updated_at": "2026-11-23T22:14:52.670049+00:00"
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 23.11.2026\n\n🏀 Brandon Miller\n🏟 Memphis Grizzlies @ Charlotte Hornets\n\n✅ Points Under 21.5 @1.83 → 0.34u · Ergebnis 20 · +0.28u\n  📈 Prob konservativ 57% · EV konservativ +4.4% · L15 11/15\n✅ Points Under 20.5 @2.05 → 0.33u · Ergebnis 20 · +0.35u\n  📈 Prob konservativ 57% · EV konservativ +16.7% · L15 11/15\n❌ Points Under 19.5 @2.30 → 0.33u · Ergebnis 20 · -0.33u\n  📈 Prob konservativ 57% · EV konservativ +31.0% · L15 11/15\n\n\n🏁 Auswertung: 1✅ 0❌ · +0.30u\n@prophunter",
+        "settlement_updated_at": "2026-11-24T03:56:05.826474+00:00",
+        "ladder_rung_version": 3
       }
     ]
   }
