@@ -1,0 +1,30 @@
+name: PROP HUNTER Official NBA Fixture Kickoff QA
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "prop_hunter_fixture_time_guard.py"
+      - "prop_hunter_matchup.py"
+      - "prop_hunter_image_publication_gate.py"
+      - "test_prop_hunter_fixture_kickoff_guard.py"
+      - ".github/workflows/prop_hunter_fixture_kickoff_qa.yml"
+permissions:
+  contents: read
+jobs:
+  official-kickoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install minimal offline QA tools
+        run: python -m pip install -q 'Pillow==11.3.0' 'requests==2.32.5'
+      - name: Compile production files
+        run: |
+          python -m py_compile prop_hunter_fixture_time_guard.py prop_hunter_matchup.py prophunter_core_1391.py prop_hunter_image_publication_gate.py
+      - name: NBA exact fixture + quote + false-start prevention
+        run: python -m unittest -v test_prop_hunter_fixture_kickoff_guard
+      - name: Confirm no Telegram and no database writes
+        run: echo "No Telegram tokens, no fixture edits, no image publication. Owner review required."
