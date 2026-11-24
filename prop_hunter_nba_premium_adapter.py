@@ -136,6 +136,27 @@ def _assert_selection_matches_ticket(row_label, ticket, where):
     # Some real bookmakers call their selected threshold "line" instead.
     if priced_point is None:
         priced_point=_get(ticket,"line")
+    # Bookmakers also encode an Over/Under line INSIDE the market string.
+    # Missing separate direction/point fields must NOT allow that documented
+    # selection to be printed as its opposite or at another threshold.
+    priced_market_text=re.sub(r"[_-]+"," ",str(_get(ticket,"market") or ""))
+    embedded=re.search(r"\b(over|under)\s+(\d+(?:[.,]\d+)?)\b",
+                       priced_market_text,re.I)
+    if embedded:
+        embedded_direction=embedded.group(1).casefold()
+        embedded_point=float(embedded.group(2).replace(",","."))
+        if priced_direction and priced_direction!=embedded_direction:
+            raise PremiumDataMissing(f"{where} contradictory bookmaker market direction")
+        if priced_point is not None:
+            try:
+                source_point=float(str(priced_point).replace(",","."))
+            except (ValueError,TypeError,OverflowError) as exc:
+                raise PremiumDataMissing(f"{where} invalid bookmaker selection line") from exc
+            if not math.isfinite(source_point) or abs(source_point-embedded_point)>1e-6:
+                raise PremiumDataMissing(f"{where} contradictory bookmaker market threshold")
+        priced_direction=priced_direction or embedded_direction
+        if priced_point is None:
+            priced_point=embedded_point
     if priced_direction and priced_direction in ("over","under"):
         if not observed or observed.group(1).casefold()!=priced_direction:
             raise PremiumDataMissing(f"{where} direction differs from bookmaker selection")
