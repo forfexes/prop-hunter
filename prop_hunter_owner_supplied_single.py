@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from io import BytesIO
 from datetime import datetime
-import hashlib, re
+import hashlib, os, re
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 
 BASE = Path(__file__).resolve().parent / 'card_templates' / 'owner_supplied'
@@ -100,7 +100,7 @@ def _logo(im, entry, center):
     _write(ImageDraw.Draw(im),(center,154),name,94,11,WHITE)
 
 
-def _portrait(im, photo):
+def _portrait(im, photo, *, centered_qa=False):
     """Only real ALPHA-cutout athlete pixels; no ghost, hard body mask or halo."""
     if not isinstance(photo,Image.Image):
         raise ValueError('Actual transparent athlete cutout photo mandatory')
@@ -119,19 +119,28 @@ def _portrait(im, photo):
     # expose a second gold-edged fake athlete. That masking is prohibited.
     # Keep the real athlete BELOW the immutable NBA shield and gold header.
     # Never hide forehead pixels behind a protected owner masthead.
-    scale=min(189/img.height,174/img.width)
+    # Keep both owner's exact protected background sizes; photo enlargement
+    # is QA-only and is drawn below team crests. All real portrait pixels
+    # remain unchanged except for scaling and soft bottom fading.
+    scale=(min(211/img.height,195/img.width) if centered_qa
+           else min(189/img.height,174/img.width))
     w,h=max(1,round(img.width*scale)),max(1,round(img.height*scale))
     img=img.resize((w,h),Image.Resampling.LANCZOS)
     layer=Image.new('RGBA',(512,512),(0,0,0,0))
-    x=max(0,round(88-w/2))
-    y=254-h
+    x=max(0,round((95 if centered_qa else 88)-w/2))
+    y=(max(73,276-h) if centered_qa else 254-h)
     layer.alpha_composite(img,(x,y))
     # Only a short natural fade at the jersey hem, never over the face.
     fade=Image.new('L',(512,512),255)
     d=ImageDraw.Draw(fade)
-    for yy in range(215,255):
-        opacity=round(255*max(0,(249-yy)/34))
-        d.line((0,yy,511,yy),fill=opacity)
+    if centered_qa:
+        for yy in range(243,289):
+            opacity=round(255*max(0,(282-yy)/39))
+            d.line((0,yy,511,yy),fill=opacity)
+    else:
+        for yy in range(215,255):
+            opacity=round(255*max(0,(249-yy)/34))
+            d.line((0,yy,511,yy),fill=opacity)
     layer.putalpha(ImageChops.multiply(layer.getchannel('A'),fade))
     im.alpha_composite(layer)
 
@@ -195,7 +204,10 @@ def render(*, title, subtitle, teams, row, footer, settlement):
     if not isinstance(teams,(list,tuple)) or len(teams)!=2 or not isinstance(row,dict):
         raise ValueError('Exactly two NBA teams and one observed player required')
     im=_plate()
-    _portrait(im,row.get('photo'))
+    # QA-only requested photo enlargement/centred title. Production keeps
+    # its current verified coordinates until the new preview is approved.
+    centered_qa=os.getenv('PH_NBA_SINGLE_CENTERED_PREVIEW','0')=='1'
+    _portrait(im,row.get('photo'),centered_qa=centered_qa)
     _logo(im,teams[0],191)
     _logo(im,teams[1],322)
     d=ImageDraw.Draw(im)
@@ -207,7 +219,12 @@ def render(*, title, subtitle, teams, row, footer, settlement):
     name=str(row.get('name') or '').strip()
     if len(name.split())<2:
         raise ValueError('Verified full player name required')
-    _write(d,(308,199),name,314,23,WHITE,italic=True)
+    if centered_qa:
+        # Centre of the actual 512px original canvas, not the right-hand
+        # column; no opaque backing or logo/font replacement.
+        _write(d,(256,199),name,298,24,WHITE,italic=False)
+    else:
+        _write(d,(308,199),name,314,23,WHITE,italic=True)
     market,selection=_label_parts(row.get('label'))
     _write(d,(272,247),market,229,16,WHITE)
     _write(d,(218,287),selection,210,19,WHITE)
