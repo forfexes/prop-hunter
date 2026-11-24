@@ -83,7 +83,16 @@ def normalized_team(team, league_code):
     # than a handful of names: "LA Clippers" or "UTA" are NBA too. The
     # guard checks exact aliases and cannot reclassify a EuroLeague fixture.
     from prop_hunter_player_fixture_guard import nba_code
-    if league_code != "NBA" and (norm in _KNOWN_NBA_TEAMS or nba_code(name)):
+    # Three-letter franchise abbreviations often overlap across leagues:
+    # HOU means Houston Astros in MLB AND Houston Rockets in NBA,
+    # BOS means Bruins/Celtics/Red Sox, UTA means Utah Mammoth/Jazz.
+    # They MUST be interpreted only within the explicitly verified league.
+    # Generic short codes in EuroLeague are ambiguous, not proof of an NBA
+    # identity; never borrow an NBA logo for an unverified EuroLeague code.
+    if len(norm) <= 4:
+        if league_code == "EUROLEAGUE" and nba_code(name):
+            return None, "team_code_ambiguous_for_league"
+    elif league_code != "NBA" and (norm in _KNOWN_NBA_TEAMS or nba_code(name)):
         return None, "team_league_conflict:NBA/" + str(league_code)
     if norm in _KNOWN_NBL_TEAMS and league_code == "EUROLEAGUE":
         return None, "team_league_conflict:NBL/EUROLEAGUE"
