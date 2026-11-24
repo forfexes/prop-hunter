@@ -540,7 +540,7 @@ def official_fixture_start(sport: str, game: str, claimed_time=None):
     import re
     from datetime import datetime, timezone
     from prop_hunter_player_fixture_guard import nba_code
-    parts = re.split(r"\\s+(?:vs\\.?|@|-)\\s+", str(game or ""), maxsplit=1, flags=re.I)
+    parts = re.split(r"\s+(?:vs\.?|@|-)\s+", str(game or ""), maxsplit=1, flags=re.I)
     if len(parts) != 2:
         return None
     codes = (nba_code(parts[0]), nba_code(parts[1]))
