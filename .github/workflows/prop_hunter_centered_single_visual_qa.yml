@@ -1,0 +1,54 @@
+name: PROP HUNTER Centered NBA Single Visual QA (No Telegram)
+"on":
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "prop_hunter_owner_clean_single.py"
+      - "prop_hunter_owner_supplied_single.py"
+      - "test_prop_hunter_centered_single_qa.py"
+      - ".github/workflows/prop_hunter_centered_single_visual_qa.yml"
+permissions:
+  contents: read
+jobs:
+  centered-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_TOKEN: ""
+      TELEGRAM_CHAT_ID: ""
+      PH_NBA_SINGLE_CENTERED_PREVIEW: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline image decoder
+        run: python -m pip install -q 'Pillow>=10,<14'
+      - name: Compile and test both exact owner single canvases
+        run: |
+          python -m py_compile prop_hunter_owner_clean_single.py prop_hunter_owner_supplied_single.py test_prop_hunter_centered_single_qa.py
+          python -m unittest -v test_prop_hunter_centered_single_qa
+      - name: Export individual 691px and 512px smartphone mockups
+        run: |
+          python - <<'PY'
+          from test_prop_hunter_centered_single_qa import save_qa_previews
+          save_qa_previews("output/nba_centered_single_qa")
+          print("FOUR_OFFLINE_CENTERED_PREVIEWS; NOT REAL PICKS; NO TELEGRAM")
+          PY
+      - name: Ensure production workflows retain no unapproved preview switch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for path in ('.github/workflows/prophunter.yml',
+                       '.github/workflows/prophunter_results.yml'):
+              text=Path(path).read_text()
+              assert 'PH_NBA_SINGLE_CENTERED_PREVIEW:' not in text, path
+          print('PRODUCTION_UNCHANGED_PREVIEW_ONLY_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prop-hunter-centered-owner-single-691-and-512-no-telegram
+          path: output/nba_centered_single_qa/*.png
+          if-no-files-found: error
+          retention-days: 7
