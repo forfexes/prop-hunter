@@ -46,13 +46,18 @@ def main():
         print("NBA season staging: credentials unavailable; no writes")
         return 0
     total = 0
+    failures = []
     for season in SEASONS:
-        records = make_records(season, download_season_csv(season))
-        count = upload(records, url, key)
-        total += count
-        print("NBA season staging:", season, count, "verified season rows")
-    print("NBA season staging total:", total)
-    return 0
+        try:
+            records = make_records(season, download_season_csv(season))
+            count = upload(records, url, key)
+            total += count
+            print("NBA season staging:", season, count, "verified season rows")
+        except Exception as exc:
+            failures.append(season)
+            print("NBA season staging UNAVAILABLE:", season, type(exc).__name__)
+    print("NBA season staging total:", total, "unavailable seasons:", failures)
+    return 0 if total else 1
 
 
 if __name__ == "__main__":

@@ -96,9 +96,9 @@ def prepare_calculated_combo(obj):
         return obj
     from premium_joint_formula import estimate_combo
     f=features(obj)
-    ticket=dict(combined_odds_observed=f.get('combined_odds_observed'),
+    ticket=dict(combined_odds_observed=True,
                 combined_quote_id=f.get('combined_quote_id'),
-                odds=value(obj,'odds'))
+                odds=value(obj,'odds')) if confirmed_ticket(obj) else None
     try:
         analysis=estimate_combo(
             legs,
@@ -108,6 +108,8 @@ def prepare_calculated_combo(obj):
     except ValueError:
         return obj
     calculated=analysis['indicative_leg_product']
+    if calculated is None:
+        return obj
     f.update(formula_indicative_leg_product=calculated,
              formula_joint_probability=analysis['joint_probability'],
              formula_fair_odds=analysis['fair_model_odds'],

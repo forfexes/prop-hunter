@@ -48,3 +48,10 @@ def test_correlated_builder_with_true_conditionals():
     assert p.features["formula_method"]=="chain_rule_observed_conditionals"
     assert math.isclose(p.features["formula_joint_probability"],0.42)
     assert math.isclose(p.features["formula_ev_real_ticket_only"],51.2)
+
+def test_conflicting_formula_markers_never_produce_bookmaker_ev():
+    p=_pick(dict(combined_odds_observed=True,combined_quote_id="STALE",
+                 combined_quote_calculated=True),odds=5)
+    prepare_calculated_combo(p)
+    assert p.features["formula_ev_real_ticket_only"] is None
+    assert not publishable_extra(p)

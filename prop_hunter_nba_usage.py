@@ -106,7 +106,19 @@ def fetch_game_usage(game_id, game_date, timeout=12):
     box = payload.get("boxScoreUsage", {})
     records = []
     for side in ("homeTeam", "awayTeam"):
-        records.extend(box.get(side, {}).get("players", []))
+        for player in box.get(side, {}).get("players", []):
+            if not isinstance(player, dict):
+                continue
+            # NBA v3 normally nests the actual usage in statistics.
+            # Exclude explicitly inactive players rather than recording 0%.
+            stats = player.get("statistics")
+            if isinstance(stats, dict):
+                minutes = str(stats.get("minutes") or "").strip()
+                if minutes in ("PT00M00.00S", "PT0M0S", "0:00", "00:00") or player.get("played") == "0":
+                    continue
+                records.append({**player, **stats, "personId": player.get("personId")})
+            else:
+                records.append(player)
     return normalize_game_usage_rows(game_id, game_date, records)
 
 
