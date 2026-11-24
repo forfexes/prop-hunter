@@ -69,9 +69,9 @@ class RealTicketOnly(unittest.TestCase):
                                settlement="OFFEN")
 
     def test_formula_preview_is_explicit_and_never_prints_bookmaker_total(self):
-        from prop_hunter_owner_clean_lottery import render as render_lottery
         pick=SimpleNamespace(type="betbuilder",features={})
         env={"PH_NBA_OWNER_ORIGINALS":"1", "PH_NBA_FORMULA_OFFLINE_QA":"1"}
+        self.values["leg_1_odds"] = "@2.00"
         for key, renderer in (("builder_2", builder), ("lottery_2",
                            __import__("prop_hunter_owner_clean_lottery")),
                            ("cross_game_2", __import__("prop_hunter_owner_clean_lottery"))):
@@ -81,7 +81,7 @@ class RealTicketOnly(unittest.TestCase):
                                            formula_preview=True)
                 self.assertTrue(result.startswith(bytes((137,80,78,71))))
                 strings=[str(call.args[2]) for call in printed.call_args_list]
-                self.assertIn("3.70",strings)
+                self.assertIn("3.90",strings)
                 self.assertTrue(any("KEINE BOOKIE-QUOTE" in v for v in strings))
                 self.assertNotIn("@62.40",strings)
                 self.assertNotIn("BUCHMACHER-QUOTE",strings)
