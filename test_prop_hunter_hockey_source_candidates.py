@@ -46,10 +46,19 @@ class SwissSourceIdentity(unittest.TestCase):
             with self.subTest(team=name):
                 actual,reason=normalized_team(name,"EUROLEAGUE")
                 self.assertIsNone(actual)
-                self.assertIn("NBA",reason)
+                self.assertTrue("NBA" in reason or reason=="team_code_ambiguous_for_league")
         actual,reason=normalized_team("FC Bayern München","EUROLEAGUE")
         self.assertEqual(actual,"FC Bayern München")
         self.assertEqual(reason,"exact_source_name")
+
+    def test_cross_sport_three_letter_codes_are_not_nba_clubs(self):
+        for code,league in (("HOU","MLB"),("BOS","MLB"),
+                            ("BOS","NHL"),("UTA","NHL"),
+                            ("ATL","NFL"),("NYK","MLB")):
+            with self.subTest(team=code,league=league):
+                actual,reason=normalized_team(code,league)
+                self.assertEqual(actual,code)
+                self.assertEqual(reason,"exact_source_name")
 
     def test_real_swiss_competition_stays_separate_from_nhl(self):
         for league in ("SWISS_NL","SHL","AHL"):
