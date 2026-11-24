@@ -35,6 +35,21 @@ class OfficialSourceImageIdentity(unittest.TestCase):
         data=page_candidates("https://www.scb.ch/",html,"Miro Aaltonen")
         self.assertEqual(data["image_candidates"],[])
 
+    def test_generic_page_title_with_exact_player_heading(self):
+        html='''<title>HC Ajoie Official Site</title><h2>Kevin Fey</h2>
+        <img alt="" src="https://www.hc-ajoie.ch/media/kevin_fey_26.png">'''
+        data=page_candidates("https://www.hc-ajoie.ch/players/id-22050",html,"Kevin Fey")
+        self.assertEqual(data["status"],"named_candidate_found")
+        self.assertEqual(len(data["image_candidates"]),1)
+
+    def test_reversed_full_name_alt_is_safe(self):
+        html='''<title>Jesper Frödén - ZSC Lions</title>
+        <img src="/fileadmin/image_28.png" alt="Frödén, Jesper">'''
+        data=page_candidates("https://www.zsclions.ch/1-mannschaft/team/spieler/28-froeden/",html,"Jesper Frödén")
+        self.assertEqual(data["status"],"named_candidate_found")
+        self.assertEqual(len(data["image_candidates"]),1)
+        self.assertEqual(page_candidates("https://example.org/",html,"Jesper Nilsson")["image_candidates"],[])
+
     def test_named_path_supported_without_alt(self):
         html='''<title>Philipp Kurashev Lausanne HC</title>
         <img src="/media/philipp_kurashev_2026.png" alt="">'''
