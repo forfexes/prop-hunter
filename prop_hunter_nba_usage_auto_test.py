@@ -12,6 +12,24 @@ payload={"leagueSchedule":{"gameDates":[{"gameDate":"11/23/2026 00:00:00","games
 games=completed_games(payload,today)
 assert games==[("0022600001",dt.date(2026,11,23)),("0022600004",dt.date(2026,11,22))]
 assert discover(today,45,fetch=lambda url:payload)==games
+from prop_hunter_nba_usage_auto import completed_log_games
+log_rows = [
+    {"GAME_ID":"0022600001","GAME_DATE":"2026-11-23","TEAM_ID":1,"WL":"W"},
+    {"GAME_ID":"0022600001","GAME_DATE":"2026-11-23","TEAM_ID":2,"WL":"L"},
+    {"GAME_ID":"0022600002","GAME_DATE":"2026-11-23","TEAM_ID":1,"WL":"W"},
+    {"GAME_ID":"0012600003","GAME_DATE":"2026-11-23","TEAM_ID":1,"WL":"W"},
+]
+verified = [("0022600001", dt.date(2026,11,23))]
+assert completed_log_games(log_rows, today, 45) == verified
+assert discover(today,45,fetch=lambda url:{},
+                fetch_log=lambda d,n:completed_log_games(log_rows,d,n)) == verified
+try:
+    discover(today,45,fetch=lambda url:{},fetch_log=lambda d,n:[])
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("Unavailable sources must not report success")
+
 posted=[]
 def get(gid,day,timeout):
     assert timeout==7
