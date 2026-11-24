@@ -50,7 +50,8 @@ assert Image.open(BytesIO(render_nba_pick(ladder,rungs,teams))).size==(1080,1440
 
 builder=SimpleNamespace(**base,type="betbuilder",odds=5.10,
                         leg_details=[{"player":"TEST PLAYER A","odds":1.7,**same_fixture},{"player":"TEST PLAYER B","odds":1.8,**same_fixture}])
-legs=[dict(row,name="TEST PLAYER A"),dict(row,name="TEST PLAYER B")]
+legs=[dict(row,name="TEST PLAYER A"),
+      dict(row,name="TEST PLAYER B",label="Over 8.5 rebounds")]
 assert Image.open(BytesIO(render_nba_pick(builder,legs,teams))).size==(1080,1440)
 builder_3=SimpleNamespace(**base,type="betbuilder",odds=6.40,
                           leg_details=[{"player":"TEST PLAYER A","odds":1.7,**same_fixture},{"player":"TEST PLAYER B","odds":1.8,**same_fixture},{"player":"TEST PLAYER C","odds":1.9,**same_fixture}])
