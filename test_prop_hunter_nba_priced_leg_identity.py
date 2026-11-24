@@ -162,6 +162,27 @@ class NBAPricedLegIdentityQA(unittest.TestCase):
             self.assertEqual(render_nba_pick(pick,rows,teams),b"ORIGINAL")
         render.assert_called_once()
 
+    def test_market_string_embedded_under_and_line_are_binding(self):
+        pick,rows,teams=examples()
+        pick.leg_details[0]["market"]="Points Under 20.5"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as render:
+            with self.assertRaisesRegex(PremiumDataMissing,"direction differs"):
+                render_nba_pick(pick,rows,teams)
+        render.assert_not_called()
+        pick.leg_details[0]["market"]="Points Over 21.5"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner") as render:
+            with self.assertRaisesRegex(PremiumDataMissing,"threshold differs"):
+                render_nba_pick(pick,rows,teams)
+        render.assert_not_called()
+        pick.leg_details[0]["market"]="Points Over 20.5"
+        with patch.dict("os.environ",{"PH_NBA_OWNER_ORIGINALS":"1"}), \
+             patch("prop_hunter_nba_owner_bridge.render_owner",
+                   return_value=b"EXACT_ORIGINAL") as render:
+            self.assertEqual(render_nba_pick(pick,rows,teams),b"EXACT_ORIGINAL")
+        render.assert_called_once()
+
     def test_single_player_must_match_parent_ticket_identity(self):
         pick,rows,teams=examples()
         pick.type="single"
