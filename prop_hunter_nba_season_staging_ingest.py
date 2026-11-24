@@ -44,7 +44,7 @@ def main():
     key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
     if not url or not key:
         print("NBA season staging: credentials unavailable; no writes")
-        return 0
+        return 1
     total = 0
     failures = []
     for season in SEASONS:

@@ -90,9 +90,10 @@ def collect(games, counts, *, url, key, today, max_games=24,
     fresh=[(g,d) for g,d in missing if d>=today-dt.timedelta(days=2)]
     older=[(g,d) for g,d in reversed(missing) if d<today-dt.timedelta(days=2)]
     budget=max_games
-    chosen=fresh[:max(1,budget//2)]
+    fresh_count=min(len(fresh),max(1,budget//2))
+    chosen=fresh[:fresh_count]
     chosen+=older[:budget-len(chosen)]
-    chosen+=(fresh[len(chosen):] if not older else [])[:max(0,budget-len(chosen))]
+    chosen+=fresh[fresh_count:fresh_count+max(0,budget-len(chosen))]
     imported=0
     failures=0
     for gid,day in chosen:

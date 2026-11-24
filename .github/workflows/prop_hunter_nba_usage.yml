@@ -59,7 +59,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.nba_game_id != '' && inputs.game_date != '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
           NBA_GAME_ID: ${{ inputs.nba_game_id }}
           NBA_GAME_DATE: ${{ inputs.game_date }}
         run: |
@@ -73,5 +73,5 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.nba_game_id == '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
         run: python prop_hunter_nba_usage_auto.py --days 45 --max-games 24
