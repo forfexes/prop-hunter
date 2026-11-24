@@ -149,8 +149,9 @@ def main():
     counts, blank = collections.Counter(), collections.Counter()
     priority = collections.Counter()
     existing_crests = {}
+    from prop_hunter_asset_identity import resolve_provider, normalized_team
 
-    def person(name, team="", sport="", boost=0):
+    def person(name, team="", sport="", boost=0, competition=""):
         n = norm(name)
         if n in {"alternatetotal", "alternatespread", "alternateline",
                  "teamtotal", "gametotal", "matchtotal", "overtotal",
@@ -166,23 +167,27 @@ def main():
         k = (str(sport or "").upper(), n)
         if k not in people:
             people[k] = {"name": str(name).strip(), "sport": str(sport or "").upper(),
-                         "teams": set(), "count": 0}
+                         "teams": set(), "leagues": set(), "count": 0}
         p = people[k]
         p["count"] += 1
         if team and norm(team):
             p["teams"].add(str(team).strip())
+        if competition:
+            p["leagues"].add(str(competition).strip().upper())
         if boost:
             priority[k] += boost
 
-    def club(name, sport="", boost=0):
+    def club(name, sport="", boost=0, competition=""):
         n = norm(name)
         if not n or n in {"unknown", "none", "na", "home", "away"}:
             blank["invalid_team"] += 1
             return
         k = (str(sport or "").upper(), n)
         if k not in teams:
-            teams[k] = {"name": str(name).strip(), "sport": str(sport or "").upper(), "count": 0}
+            teams[k] = {"name": str(name).strip(), "sport": str(sport or "").upper(), "leagues": set(), "count": 0}
         teams[k]["count"] += 1
+        if competition:
+            teams[k]["leagues"].add(str(competition).strip().upper())
         if boost:
             priority[("team",) + k] += boost
 
@@ -222,9 +227,10 @@ def main():
             sport = league if league in {"NBA","WNBA","NHL","NFL","MLB","NCAAF","NCAAB","EUROLEAGUE"} else str(r.get("sport") or "").upper()
             p = r.get("player_name") or r.get("player")
             team = r.get("team") or ""
-            person(p, team, sport, boost)
-            club(team, sport, boost)
-            club(r.get("opponent"), sport, boost)
+            competition = str(r.get("league") or "").upper()
+            person(p, team, sport, boost, competition=competition)
+            club(team, sport, boost, competition=competition)
+            club(r.get("opponent"), sport, boost, competition=competition)
         load("prop_hunter_player_gamelogs", "sport,league,player_name,team,opponent", lambda r: add(r, 0))
         load("prop_hunter_player_features", "sport,league,player_name", lambda r: add(r, 0))
         load("prop_hunter_picks", "sport,league,player_name,player,team,opponent", lambda r: add(r, 80))
@@ -233,8 +239,9 @@ def main():
             def snap(r):
                 add(r, 1)
                 sport = str(r.get("sport") or "").upper()
-                club(r.get("home_team"), sport, 1)
-                club(r.get("away_team"), sport, 1)
+                competition = str(r.get("league") or "").upper()
+                club(r.get("home_team"), sport, 1, competition=competition)
+                club(r.get("away_team"), sport, 1, competition=competition)
             load("prop_hunter_prop_snapshots",
                 "sport,league,player_name,team,opponent,home_team,away_team", snap,
                 secondary, secondary_key)
@@ -266,11 +273,13 @@ def main():
                 return bool(url and image_ok(url)), ("name_only_unverified" if url else "not_found")
             except Exception:
                 return False, "provider_error"
-        league = card.league_of(p["sport"])
-        # Generic basketball/football/hockey may contain other leagues; don't guess league.
+        league, league_reason, competition = resolve_provider(p["sport"], p.get("leagues") or ())
+        # Swiss National League, Swedish SHL and American AHL are not NHL.
+        # A missing licensed/identity-verified local provider is a source gap,
+        # not a reason to fetch some other league's player photo.
         try:
             if not league:
-                return False, "league_unclear"
+                return False, league_reason
             img = card.player_photo(p["name"], league)
             if img is None:
                 return False, "not_found"
@@ -294,12 +303,14 @@ def main():
                 return min(im.size) >= 48 and im.getchannel("A").getextrema()[0] < 255, "provider_fallback"
             except Exception:
                 return False, "provider_error"
-        league = card.league_of(t["sport"])
-        # Generic sports are not silently mapped to NBA/NFL/MLB/NHL.
+        league, league_reason, competition = resolve_provider(t["sport"], t.get("leagues") or ())
         try:
             if not league:
-                return False, "league_unclear"
-            img = card.team_logo(t["name"], league)
+                return False, league_reason
+            name, alias_reason = normalized_team(t["name"], competition)
+            if name is None:
+                return False, alias_reason
+            img = card.team_logo(name, league)
             if img is None:
                 return False, "not_found"
             return min(img.size) >= 48 and img.convert("RGBA").getchannel("A").getextrema()[0] < 255, "provider_match"
@@ -318,13 +329,17 @@ def main():
         report["photo_checked"] += 1
         report["verified_photos" if ok else "missing_or_unverified_photos"] += 1
         if not ok and len(report["missing_photo_samples"]) < 50:
-            report["missing_photo_samples"].append({"name": p["name"], "sport": p["sport"], "status": evidence})
+            report["missing_photo_samples"].append({"name": p["name"], "sport": p["sport"],
+                                                        "league": sorted(p.get("leagues") or []),
+                                                        "status": evidence})
     for _, t in team_batch:
         ok, evidence = crest_test(t)
         report["crest_checked"] += 1
         report["verified_crests" if ok else "missing_or_unverified_crests"] += 1
         if not ok and len(report["missing_crest_samples"]) < 50:
-            report["missing_crest_samples"].append({"team": t["name"], "sport": t["sport"], "status": evidence})
+            report["missing_crest_samples"].append({"team": t["name"], "sport": t["sport"],
+                                                        "league": sorted(t.get("leagues") or []),
+                                                        "status": evidence})
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     # Report only counts to log; report artifact contains limited sample names, never credentials.
