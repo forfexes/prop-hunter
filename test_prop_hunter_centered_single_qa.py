@@ -157,6 +157,18 @@ class CenteredSingleQA(unittest.TestCase):
             supplied.render(**fields)
         self.assertIn((fields["row"]["name"], (308, 199)), hits)
 
+    def test_centered_qa_cannot_publish_without_owner_visual_approval(self):
+        # The release guard must run BEFORE any assets, odds or Telegram
+        # state can be accessed and must leave ordinary production unchanged.
+        from prop_hunter_nba_owner_bridge import render_owner
+        with patch.dict(os.environ, {
+            "PH_NBA_SINGLE_CENTERED_PREVIEW": "1",
+            "PH_NBA_CENTERED_SINGLE_VISUAL_APPROVED": "0",
+        }):
+            with self.assertRaisesRegex(
+                    ValueError, "centered_single_requires_owner_visual_approval"):
+                render_owner(None, "single_assists", [], [], {}, [])
+
     def test_preview_no_unknown_arena_and_preserves_result_on_original(self):
         f = sample_fields()
         with patch.dict(os.environ, QA):
