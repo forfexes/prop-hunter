@@ -40,3 +40,31 @@ def test_ambiguous_and_wrong_portrait_url():
     with pytest.raises(ValueError): official_portrait_url(roster(PLAYER,PLAYER),"QA Player")
     with pytest.raises(ValueError): official_portrait_url(roster({**PLAYER,"headshot":URL.replace("1234567","987")}),"QA Player")
     with pytest.raises(ValueError): official_portrait_url(roster({**PLAYER,"headshot":URL.replace("assets.nhle.com","untrusted.invalid")}),"QA Player")
+
+
+def test_multileg_asset_slots_and_exact_identity():
+    from prop_hunter_nhl_offline_assets import resolve_legs
+    leg=dict(player="QA Player",player_team="TOR",home="TOR",away="COL",player_id=1234567)
+    calls=[]
+    def photo(url):
+        calls.append(url)
+        return transparent()
+    def logo(code,league):
+        calls.append((code,league))
+        return transparent()
+    kwargs=dict(rosters={"TOR":roster(PLAYER)},load_photo=photo,load_logo=logo)
+    for kind in ("ladder","builder","kombi","lottery"):
+        calls.clear()
+        assets=resolve_legs(kind,[leg,leg],**kwargs)
+        assert len(assets)==6 and len(calls)==3
+        assert render(kind,[leg,leg],assets=assets).count("data:image/png;base64,")==6
+    calls.clear()
+    different={**leg,"away":"NYR"}
+    with pytest.raises(ValueError):
+        resolve_legs("builder",[leg,different],**kwargs)
+    with pytest.raises(ValueError):
+        resolve_legs("cross",[leg,leg],**kwargs)
+    assert not calls
+    assets=resolve_legs("cross",[leg,different],**kwargs)
+    assert len(assets)==6 and len(calls)==4
+    assert render("cross",[leg,different],assets=assets).count("data:image/png;base64,")==6
