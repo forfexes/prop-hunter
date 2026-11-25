@@ -151,3 +151,19 @@ def test_formula_preview_output_requires_isolation_and_verified_legs(tmp_path, m
     monkeypatch.setenv("TELEGRAM_TOKEN","blocked-test-token")
     assert render_formula_previews([p],tmp_path,renderer)==0
     renderer.assert_called_once()
+
+
+def test_formula_rejects_conflicting_and_synthetic_leg_evidence():
+    from prop_hunter_combo_prices import formula_card_metadata
+    for patch in (
+        {"odds_observed":False,"features":{"odds_observed":True}},
+        {"odds_observed":True,"features":{"odds_observed":False}},
+        {"odds_observed":True,"synthetic":True},
+        {"odds_observed":True,"features":{"price_type":"derived_builder"}},
+    ):
+        p=_pick({},odds=None)
+        p.leg_details[0].update(patch)
+        prepare_calculated_combo(p)
+        assert p.features["formula_individual_odds_verified"] is False
+        assert formula_card_metadata(p) is None
+        assert not publishable_extra(p)
