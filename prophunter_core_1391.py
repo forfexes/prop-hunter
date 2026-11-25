@@ -4370,12 +4370,14 @@ def _market_with_line(market: str, direction: Optional[str], point: Optional[flo
     return f"{m} {dir_word} {point:g}".strip()
 
 
-def analyse(props):
+def analyse(props, *, diagnostics=None):
     if not props: return []
     prompt=build_prompt(props)
     def llm(p): return call_gemini(p) or call_groq(p)
     picks=call_with_retry(prompt,llm)
     log.info("LLM: %d picks",len(picks))
+    if diagnostics is not None:
+        diagnostics["model_candidates"] = len(picks)
     for pk in picks:
         if pk.type != "single":
             continue
@@ -5541,7 +5543,8 @@ def run(dry_run=False,sport_filter=None):
         return
 
     log.info("CARD PIPELINE: gathered_props=%d", len(props))
-    picks=analyse(props)
+    analysis_diagnostics = {}
+    picks=analyse(props, diagnostics=analysis_diagnostics)
 
     if not picks:
         log.warning("no picks from LLM — trying source-prop rescue")
@@ -5572,8 +5575,15 @@ def run(dry_run=False,sport_filter=None):
         if rescue2:
             picks = filter_picks(rescue2)  # auch hier gegen heute Gepostete deduppen
             log.info("relaxed rescue: %d picks", len(picks))
-        else:
-            log.error("CARD EMPTY at MODEL/RESCUE: gathered_props=%d; check source-prop rescue rejected breakdown above", len(props))
+        if not picks:
+            # A real model response followed by successful quality/rescue evaluation
+            # may legitimately yield no eligible bets. Never send or persist an empty card.
+            # A missing/invalid model response is still a diagnostic failure.
+            if analysis_diagnostics.get("model_candidates", 0) > 0:
+                log.info("NO_QUALIFIED_PICKS at MODEL/RESCUE: gathered_props=%d model_candidates=%d; no Telegram delivery attempted",
+                         len(props), analysis_diagnostics["model_candidates"])
+                return
+            log.error("CARD EMPTY at MODEL/RESCUE: gathered_props=%d; no valid model candidates and no source-rescue picks", len(props))
             if not dry_run and os.getenv("PH_FAIL_ON_EMPTY_CARD", "1") == "1":
                 raise RuntimeError("PROP HUNTER EMPTY CARD: zero qualified LLM and source-rescue picks")
             return
