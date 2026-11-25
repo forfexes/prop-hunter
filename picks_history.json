@@ -401463,7 +401463,8 @@
         "builder_odds_estimated_from_legs": false,
         "acca_odds_estimated_from_legs": false,
         "combo_scope": null,
-        "same_player_multistat": false
+        "same_player_multistat": false,
+        "date": "2026-11-25"
       }
     ],
     "cards": [
@@ -401685,13 +401686,13 @@
             "venue": "Fiserv Forum|Milwaukee"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-26T01:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-25",
           "probability": 0.8404,
           "edge_pct": 27.52,
           "confidence_score": null,
@@ -401801,13 +401802,13 @@
             "venue": "FedExForum|Memphis"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
-          "commence_time": null,
+          "commence_time": "2026-11-26T01:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-25",
           "probability": 0.7359,
           "edge_pct": 17.07,
           "confidence_score": null,
@@ -401917,13 +401918,13 @@
             "venue": "Fiserv Forum|Milwaukee"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-26T01:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-25",
           "probability": 0.7222,
           "edge_pct": 15.7,
           "confidence_score": null,
@@ -402033,13 +402034,13 @@
             "venue": "Madison Square Garden|New York"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-26T00:30:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-25",
           "probability": 0.6845,
           "edge_pct": 11.93,
           "confidence_score": null,
@@ -402149,13 +402150,13 @@
             "venue": "Fiserv Forum|Milwaukee"
           },
           "leg_details": null,
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-26T01:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-25",
           "probability": 0.6763,
           "edge_pct": 11.11,
           "confidence_score": null,
@@ -402196,172 +402197,43 @@
           },
           "leg_details": [
             {
-              "player": "Moussa Diabate",
-              "sport": "NBA",
               "market": "Points Under 10.5",
-              "source_market": "points",
-              "direction": "under",
+              "odds": 1.74,
+              "stake": 0.34,
               "point": 10.5,
-              "odds": 1.7407,
+              "direction": "under",
               "probability": 0.6413,
               "edge_pct": 11.6,
-              "gamelog_l15_hits": 12,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Chicago Bulls @ Charlotte Hornets",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-26",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 12,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 10.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 10.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 3,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 7,
-                    "avg": 8.6
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 12,
-                    "avg": 7.3333
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 9
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "Spectrum Center|Charlotte"
-              },
-              "commence_time": "2026-11-26 00:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Moussa Diabate",
-              "sport": "NBA",
               "market": "Points Under 8.5",
-              "source_market": "points",
-              "direction": "under",
-              "point": 8.5,
               "odds": 2.4,
+              "stake": 0.33,
+              "point": 8.5,
+              "direction": "under",
               "probability": 0.6413,
               "edge_pct": 53.9,
-              "gamelog_l15_hits": 12,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Chicago Bulls @ Charlotte Hornets",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-26",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 12,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 8.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 8.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 3,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 7,
-                    "avg": 8.6
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 12,
-                    "avg": 7.3333
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 9
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "Spectrum Center|Charlotte"
-              },
-              "commence_time": "2026-11-26 00:00:00+00:00"
+              "bookmaker": "bovada"
             },
             {
-              "player": "Moussa Diabate",
-              "sport": "NBA",
               "market": "Points Under 7.5",
-              "source_market": "points",
-              "direction": "under",
-              "point": 7.5,
               "odds": 2.9,
+              "stake": 0.33,
+              "point": 7.5,
+              "direction": "under",
               "probability": 0.4359,
               "edge_pct": 26.4,
-              "gamelog_l15_hits": 9,
-              "gamelog_l15_n": 15,
-              "probability_method": "min(model,one_sided_90pct_wilson_l15)",
-              "bookmaker": "bovada",
-              "game": "Chicago Bulls @ Charlotte Hornets",
-              "features": {
-                "form_window_policy": "current_season",
-                "form_reference_date": "2026-11-26",
-                "form_season_start": "2026-10-20",
-                "form_last_game_date": "2026-11-20",
-                "gamelog_l15_hits": 9,
-                "gamelog_l15_n": 15,
-                "gamelog_l15_line": 7.5,
-                "gamelog_l15_direction": "under",
-                "recent_form": {
-                  "version": 1,
-                  "line": 7.5,
-                  "direction": "under",
-                  "l5": {
-                    "n": 5,
-                    "hits": 3,
-                    "avg": 9.8
-                  },
-                  "l10": {
-                    "n": 10,
-                    "hits": 6,
-                    "avg": 8.6
-                  },
-                  "l15": {
-                    "n": 15,
-                    "hits": 9,
-                    "avg": 7.3333
-                  },
-                  "previous": {
-                    "n": 10,
-                    "hits": 6
-                  }
-                },
-                "gamelog_n": 15,
-                "venue": "Spectrum Center|Charlotte"
-              },
-              "commence_time": "2026-11-26 00:00:00+00:00"
+              "bookmaker": "bovada"
             }
           ],
-          "result": null,
+          "result": "pending",
           "actual_value": null,
           "profit": null,
           "stake": 1.0,
           "commence_time": "2026-11-26T00:00:00+00:00",
           "game_date": null,
-          "date": null,
+          "date": "2026-11-25",
           "probability": 0.6413,
           "edge_pct": 11.6,
           "confidence_score": null,
@@ -402398,9 +402270,44 @@
               "bookmaker": "bovada"
             }
           ],
-          "_owner_layered_original_v1": true
+          "_owner_layered_original_v1": true,
+          "ladder_legs": [
+            {
+              "market": "Points Under 10.5",
+              "odds": 1.74,
+              "stake": 0.34,
+              "point": 10.5,
+              "direction": "under",
+              "probability": 0.6413,
+              "edge_pct": 11.6,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Points Under 8.5",
+              "odds": 2.4,
+              "stake": 0.33,
+              "point": 8.5,
+              "direction": "under",
+              "probability": 0.6413,
+              "edge_pct": 53.9,
+              "bookmaker": "bovada"
+            },
+            {
+              "market": "Points Under 7.5",
+              "odds": 2.9,
+              "stake": 0.33,
+              "point": 7.5,
+              "direction": "under",
+              "probability": 0.4359,
+              "edge_pct": 26.4,
+              "bookmaker": "bovada"
+            }
+          ]
         },
-        "card_design_version": 5
+        "card_design_version": 5,
+        "image_settlement_version": 1,
+        "settlement_text": "🪜 PROP HUNTER PRO TIP — LADDER — 25.11.2026\n\n🏀 Moussa Diabate\n🏟 Chicago Bulls @ Charlotte Hornets\n\n• Points Under 10.5 @1.74 → 0.34u\n  📈 Prob konservativ 64% · EV konservativ +11.6% · L15 12/15\n• Points Under 8.5 @2.40 → 0.33u\n  📈 Prob konservativ 64% · EV konservativ +53.9% · L15 12/15\n• Points Under 7.5 @2.90 → 0.33u\n  📈 Prob konservativ 44% · EV konservativ +26.4% · L15 9/15\n\n\n🏁 Auswertung: ⏳ offen\n@prophunter",
+        "settlement_updated_at": "2026-11-25T17:09:10.140548+00:00"
       }
     ]
   }

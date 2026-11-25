@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-25T07:49:25.138286+00:00",
+  "updated_at": "2026-11-25T17:09:45.903185+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,15 +16,12 @@
       ]
     },
     "NBA": {
-      "rows": 1461,
+      "rows": 214,
       "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "fanduel_direct",
-        "kambi"
+        "betrivers_direct"
       ],
-      "market_count": 13,
-      "latest": "2026-11-25T04:03:08.613463+00:00",
+      "market_count": 11,
+      "latest": "2026-11-25T01:04:31.970201+00:00",
       "missing_core": []
     },
     "WNBA": {
@@ -40,26 +37,27 @@
       ]
     },
     "NFL": {
-      "rows": 191,
+      "rows": 328,
       "sources": [
+        "22bet_linefeed",
         "betrivers_direct",
         "bovada_direct",
         "fanduel_direct"
       ],
-      "market_count": 21,
-      "latest": "2026-11-25T04:03:14.722712+00:00",
+      "market_count": 17,
+      "latest": "2026-11-25T09:25:06.453952+00:00",
       "missing_core": []
     },
     "NHL": {
-      "rows": 20,
-      "sources": [
-        "kambi"
-      ],
-      "market_count": 2,
-      "latest": "2026-11-24T22:50:41.801319+00:00",
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
       "missing_core": [
         "shots",
         "goals",
+        "points",
+        "assists",
         "saves"
       ]
     }
@@ -83,6 +81,14 @@
       ]
     },
     {
+      "sport": "NBA",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "betrivers_direct"
+      ]
+    },
+    {
       "sport": "WNBA",
       "severity": "high",
       "issue": "no_recent_rows"
@@ -100,11 +106,8 @@
     },
     {
       "sport": "NHL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "kambi"
-      ]
+      "severity": "high",
+      "issue": "no_recent_rows"
     },
     {
       "sport": "NHL",
@@ -113,6 +116,8 @@
       "markets": [
         "shots",
         "goals",
+        "points",
+        "assists",
         "saves"
       ]
     }
