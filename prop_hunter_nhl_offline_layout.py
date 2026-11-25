@@ -1,11 +1,14 @@
 """Offline NHL portrait layout prototype; deliberately not a production sender."""
 from html import escape
+from base64 import b64encode
+from io import BytesIO
+from PIL import Image, ImageFont
 from pathlib import Path
 
 KINDS = ("single", "ladder", "builder", "kombi", "cross", "lottery")
 CREAM, WINE, INK = "#f0dfc4", "#641525", "#171411"
 
-def render(kind, rows=(), player="", price="", l10="", l15="", model="", result="OFFEN"):
+def render(kind, rows=(), player="", price="", l10="", l15="", model="", result="OFFEN", assets=None):
     if kind not in KINDS:
         raise ValueError("Unknown NHL card family")
     rows = list(rows)
@@ -13,13 +16,36 @@ def render(kind, rows=(), player="", price="", l10="", l15="", model="", result=
         raise ValueError("Unsupported row count")
     if kind in ("kombi","cross","lottery") and price:
         price = "BERECHNET " + str(price)
-    parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1350" viewBox="0 0 900 1350">']
+    assets = assets or {}
+    parts = ['<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="900" height="1350" viewBox="0 0 900 1350">']
     def rect(x,y,w,h,c):
         parts.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{c}"/>')
     def txt(x,y,s,size=30,c=INK,weight=700,limit=36):
         s=str(s or "")
-        if len(s)>limit: size=max(15,int(size*limit/len(s)))
+        # Measure actual font width, not only character counts.
+        max_width = min(900-x-28, limit*size*0.58)
+        while size > 12:
+            font = ImageFont.truetype("DejaVuSans-Bold.ttf", size)
+            if font.getlength(s) <= max_width: break
+            size -= 1
         parts.append(f'<text x="{x}" y="{y}" font-family="DejaVu Sans, sans-serif" font-weight="{weight}" font-size="{size}" fill="{c}">{escape(s)}</text>')
+    def photo(slot,x,y,w,h):
+        raw=assets.get(slot)
+        if raw is None: return False
+        try:
+            with Image.open(BytesIO(raw)) as im:
+                if im.format!="PNG" or min(im.size)<64 or max(im.size)>4096:
+                    raise ValueError("Invalid image dimensions or format")
+                rgba=im.convert("RGBA")
+                lo,hi=rgba.getchannel("A").getextrema()
+                if lo!=0 or hi==0: raise ValueError("Transparent authentic asset required")
+                out=BytesIO()
+                rgba.save(out,format="PNG")
+        except (OSError,TypeError) as exc:
+            raise ValueError("Invalid asset") from exc
+        encoded=b64encode(out.getvalue()).decode("ascii")
+        parts.append(f'<image x="{x}" y="{y}" width="{w}" height="{h}" preserveAspectRatio="xMidYMid meet" xlink:href="data:image/png;base64,{encoded}"/>')
+        return True
     rect(0,0,900,1350,CREAM)
     parts.append(f'<path d="M520 0H900V825H466Z" fill="{WINE}"/>')
     txt(36,72,"PROP HUNTER",48)
@@ -27,7 +53,10 @@ def render(kind, rows=(), player="", price="", l10="", l15="", model="", result=
     txt(38,164,"OFFLINE QA – KEIN WETTTIPP",20,WINE)
     if kind=="single":
         txt(38,310,player or "SPIELER",69,limit=13)
-        txt(540,390,"FOTO-SLOT",26,CREAM)
+        if not photo("player",490,180,410,465):
+            txt(540,390,"FOTO-SLOT",26,CREAM)
+        photo("home",38,500,90,90)
+        photo("away",166,500,90,90)
         txt(38,660,rows[0].get("match","SPIEL"),30,limit=25)
         txt(38,708,rows[0].get("market","MARKT"),32,WINE,limit=24)
     else:
@@ -41,6 +70,8 @@ def render(kind, rows=(), player="", price="", l10="", l15="", model="", result=
     rect(0,825,900,173,WINE)
     txt(38,872,"QUOTE / MODELL",24,CREAM)
     txt(38,952,price or "—",54,CREAM,limit=24)
+    if kind in ("kombi","cross","lottery") and price:
+        txt(540,982,"KEINE BUCHMACHERQUOTE",20,CREAM)
     txt(38,1055,"L10  "+str(l10 or "—"),29)
     txt(326,1055,"L15  "+str(l15 or "—"),29)
     txt(614,1055,"P  "+str(model or "—"),29)
