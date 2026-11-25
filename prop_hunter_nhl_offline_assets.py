@@ -25,7 +25,7 @@ def team_code(value):
         raise ValueError("Explicit NHL team abbreviation required")
     return code
 
-def official_portrait_url(roster,player,expected_id=None):
+def official_portrait_url(roster,player,expected_id=None,expected_team=None):
     key=name_key(player)
     if not key or not isinstance(roster,dict):
         raise ValueError("Missing roster identity")
@@ -50,6 +50,10 @@ def official_portrait_url(roster,player,expected_id=None):
     # NHL headshots are named by numeric player ID.
     if p.path.rsplit("/",1)[-1]!=str(pid)+".png":
         raise ValueError("Portrait URL does not match official player ID")
+    if expected_team is not None:
+        segments=p.path.strip('/').split('/')
+        if len(segments)<2 or segments[-2].upper()!=team_code(expected_team):
+            raise ValueError("Portrait URL does not match verified roster team")
     return url
 
 def transparent_png(image):
@@ -74,7 +78,7 @@ def resolve_single(*,player,player_team,home,away,rosters,load_photo,load_logo,p
         raise ValueError("Player team must match the exact NHL fixture")
     if not isinstance(rosters,dict) or player_team not in rosters:
         raise ValueError("No verified roster for player's team")
-    url=official_portrait_url(rosters[player_team],player,player_id)
+    url=official_portrait_url(rosters[player_team],player,player_id,player_team)
     assets={"player":transparent_png(load_photo(url)),
             "home":transparent_png(load_logo(home,("hockey","nhl"))),
             "away":transparent_png(load_logo(away,("hockey","nhl")))}
@@ -91,7 +95,7 @@ def resolve_legs(kind, legs, *, rosters, load_photo, load_logo):
         home,away,team=map(team_code,(leg.get("home"),leg.get("away"),leg.get("player_team")))
         if home==away or team not in (home,away) or team not in rosters:
             raise ValueError("Unverified NHL leg fixture or roster")
-        url=official_portrait_url(rosters[team],leg.get("player"),leg.get("player_id"))
+        url=official_portrait_url(rosters[team],leg.get("player"),leg.get("player_id"),team)
         planned.append((home,away,url))
     games={(home,away) for home,away,_ in planned}
     if kind in ("ladder","builder") and len(games)!=1:
