@@ -115,3 +115,18 @@ def test_stale_formula_metadata_cannot_approve_changed_legs():
     assert formula_card_metadata(p) is None
     p.leg_details.pop()
     assert formula_card_metadata(p) is None
+
+
+def test_invalidated_leg_does_not_reuse_cached_formula_diagnostics():
+    from prop_hunter_combo_prices import analyse_formula_candidates
+    p=_pick({},odds=None)
+    _,_,first=analyse_formula_candidates([p])
+    assert first["verified_leg_formulas"]==1
+    p.leg_details[0]["odds"]=None
+    accepted,deferred,summary=analyse_formula_candidates([p])
+    assert accepted==[] and deferred==[p]
+    assert summary["verified_leg_formulas"]==0
+    assert summary["formula_card_ready"]==0
+    assert "calculated_combined_odds" not in p.features
+    assert "formula_individual_odds_verified" not in p.features
+    assert not publishable_extra(p)
