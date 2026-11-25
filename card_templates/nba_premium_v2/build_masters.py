@@ -160,10 +160,17 @@ def leg_row(x,y,w,h,i,family):
         left=x+215
     else:
         left=x+118
-    s+=dynamic(left,y+h*(.34 if family in ('lottery','combo','cross_game') else .45),f'leg_{i}_name' if not is_ladder else f'leg_{i}_line',26,WHITE)
-    s+=dynamic(left,y+h*(.65 if family in ('lottery','combo','cross_game') else .78),f'leg_{i}_market',24,MUTED)
-    if family in ('lottery','combo','cross_game'):
-        s+=dynamic(left,y+h*.89,f'leg_{i}_game',18,MUTED)
+    text_width=x+w-200-left
+    if is_ladder:
+        # One market label per rung; use the second line for that rung's
+        # own observed recent form rather than repeating the same selection.
+        s+=dynamic(left,y+h*.39,f'leg_{i}_line',25,WHITE,max_width=text_width)
+        s+=dynamic(left,y+h*.76,f'leg_{i}_form',16,MUTED,max_width=text_width)
+    else:
+        s+=dynamic(left,y+h*(.34 if family in ('lottery','combo','cross_game') else .45),f'leg_{i}_name',26,WHITE,max_width=text_width)
+        s+=dynamic(left,y+h*(.65 if family in ('lottery','combo','cross_game') else .78),f'leg_{i}_market',24,MUTED,max_width=text_width)
+        if family in ('lottery','combo','cross_game'):
+            s+=dynamic(left,y+h*.89,f'leg_{i}_game',18,MUTED,max_width=text_width)
     s+=neon_box(x+w-186,y+h/2-32,166,64,GOLD,14,'url(#amber)')
     s+=dynamic(x+w-103,y+h/2+10,f'leg_{i}_odds',27,GOLD,'middle',True)
     s+='</g>'
@@ -351,7 +358,12 @@ def qa_and_previews():
         if meta['legs']>1:
             assert ('total_odds' in fields) == (meta['family']!='ladder'),key
             assert 'stake' in fields,key
-            assert f'leg_{meta["legs"]}_market' in fields,key
+            last=meta["legs"]
+            if meta['family'] in ('ladder','same_player'):
+                assert {f'leg_{last}_line',f'leg_{last}_form'} <= fields,key
+                assert f'leg_{last}_market' not in fields,key
+            else:
+                assert f'leg_{last}_market' in fields,key
     previews=HERE/'previews';previews.mkdir(exist_ok=True)
     for key in ('single_single','ladder_4','builder_4','builder_6','same_player_4','combo_5','lottery_6','longshot'):
         (previews/f'{key}.png').write_bytes(render_png(key))

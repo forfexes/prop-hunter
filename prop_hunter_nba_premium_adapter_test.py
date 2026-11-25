@@ -371,3 +371,18 @@ typed_time = SimpleNamespace(features={}, commence_time=None,
     leg_details=[SimpleNamespace(commence_time="2026-11-20T19:00:00+00:00")])
 assert "20.11." in _kickoff_text(typed_time)
 print("NBA LIVE ENTRYPOINT TYPED LEGS PASS: all four families, league isolation, venue and kickoff")
+
+
+# Every ladder/same-player master contains a single market field per rung,
+# plus its independently supplied form; no duplicated market lines.
+def test_ladder_master_has_one_market_and_independent_form_per_rung():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    for family in ("ladder","same_player"):
+        for count in range(2,7):
+            root=ET.fromstring(multi(family,count))
+            fields=[e.get("data-field") for e in root.iter() if e.get("data-field")]
+            for i in range(1,count+1):
+                assert fields.count(f"leg_{i}_line")==1
+                assert fields.count(f"leg_{i}_form")==1
+                assert f"leg_{i}_market" not in fields
