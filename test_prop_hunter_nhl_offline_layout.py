@@ -21,3 +21,24 @@ def test_invalid_family_and_rows():
     with pytest.raises(ValueError): render("NBA",[])
     with pytest.raises(ValueError): render("cross",[])
     with pytest.raises(ValueError): render("single",[{},{}])
+
+
+def test_transparent_png_slots_and_formula_label():
+    from io import BytesIO
+    from PIL import Image, ImageDraw
+    def asset(transparent):
+        img=Image.new("RGBA",(100,100),(0,0,0,0) if transparent else (0,0,0,255))
+        ImageDraw.Draw(img).rectangle((25,25,75,75),fill=(255,0,0,255))
+        out=BytesIO()
+        img.save(out,format="PNG")
+        return out.getvalue()
+    raw=asset(True)
+    svg=render("single",[{"match":"QA A / QA B","market":"Test"}],assets={"player":raw,"home":raw,"away":raw})
+    root=ET.fromstring(svg)
+    assert len(root.findall("{http://www.w3.org/2000/svg}image"))==3
+    assert "FOTO-SLOT" not in svg
+    with pytest.raises(ValueError):
+        render("single",[{}],assets={"player":asset(False)})
+    with pytest.raises(ValueError):
+        render("single",[{}],assets={"player":b"invalid"})
+    assert "KEINE BUCHMACHERQUOTE" in render("cross",[{},{}],price="3.40")
