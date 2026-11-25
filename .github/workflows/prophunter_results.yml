@@ -3,6 +3,7 @@ name: Prop Hunter Results Autonomous
 "on":
   workflow_dispatch: {}
   push:
+    branches: [main]
     paths:
       - 'prop_hunter_settler.py'
       - 'prop_hunter_settler_extras.py'
@@ -60,6 +61,8 @@ env:
 
 jobs:
   results:
+    # QA branches must never acquire production credentials or check out main.
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

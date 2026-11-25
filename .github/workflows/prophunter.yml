@@ -3,6 +3,7 @@ name: Prop Hunter Autonomous
 "on":
   workflow_dispatch: {}
   push:
+    branches: [main]
     paths:
       - '.github/card-trigger'
   schedule:
@@ -19,6 +20,8 @@ concurrency:
 
 jobs:
   card:
+    # QA branches must never acquire production credentials or check out main.
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25  # source collection + NBA model can exceed 10 min; avoid killing before Telegram delivery
     steps:
