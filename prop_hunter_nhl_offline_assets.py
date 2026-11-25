@@ -79,3 +79,34 @@ def resolve_single(*,player,player_team,home,away,rosters,load_photo,load_logo,p
             "home":transparent_png(load_logo(home,("hockey","nhl"))),
             "away":transparent_png(load_logo(away,("hockey","nhl")))}
     return assets
+
+
+def resolve_legs(kind, legs, *, rosters, load_photo, load_logo):
+    """Validate all leg identities first, then reuse only identical source assets."""
+    legs=list(legs)
+    if kind not in ("ladder","builder","kombi","cross","lottery") or not 2<=len(legs)<=6:
+        raise ValueError("Invalid NHL multi-leg card")
+    planned=[]
+    for leg in legs:
+        home,away,team=map(team_code,(leg.get("home"),leg.get("away"),leg.get("player_team")))
+        if home==away or team not in (home,away) or team not in rosters:
+            raise ValueError("Unverified NHL leg fixture or roster")
+        url=official_portrait_url(rosters[team],leg.get("player"),leg.get("player_id"))
+        planned.append((home,away,url))
+    games={(home,away) for home,away,_ in planned}
+    if kind in ("ladder","builder") and len(games)!=1:
+        raise ValueError("Same-game card contains different fixtures")
+    if kind=="ladder" and len({url for _,_,url in planned})!=1:
+        raise ValueError("Ladder contains different players")
+    if kind=="cross" and len(games)<2:
+        raise ValueError("Cross requires different fixtures")
+    photos,logos,assets={},{},{}
+    for i,(home,away,url) in enumerate(planned):
+        if url not in photos:
+            photos[url]=transparent_png(load_photo(url))
+        for team in (home,away):
+            if team not in logos:
+                logos[team]=transparent_png(load_logo(team,("hockey","nhl")))
+        assets.update({f"leg_{i}_player":photos[url],f"leg_{i}_home":logos[home],
+                       f"leg_{i}_away":logos[away]})
+    return assets
