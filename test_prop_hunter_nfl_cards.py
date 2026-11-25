@@ -61,6 +61,22 @@ def test_nfl_cards_offline():
                 assert rendered.format == "PNG"
                 assert rendered.size == (900, 1125)
                 rendered.verify()
+            review_dir = os.getenv("PH_NFL_OFFLINE_REVIEW")
+            if review_dir:
+                from PIL import ImageDraw, ImageFont
+                out = Path(review_dir)
+                out.mkdir(parents=True, exist_ok=True)
+                with Image.open(BytesIO(img)) as source:
+                    # Add a separate QA footer BELOW the exact transmitted
+                    # card, never alter its actual pixels or production art.
+                    preview = Image.new("RGB", (source.width, source.height+48), "#041021")
+                    preview.paste(source.convert("RGB"), (0,0))
+                    draw = ImageDraw.Draw(preview)
+                    draw.text((source.width//2,source.height+24),
+                              "SANDBOX · SYNTHETISCHE DATEN · KEIN TIPP",
+                              font=ImageFont.truetype("DejaVuSans-Bold.ttf",20),
+                              fill="white",anchor="mm")
+                    preview.save(out/f"{kind}_{n}_SANDBOX.png")
             payload.clear()
             payload.update(text="NFL sandbox", kind="single" if kind == "single" else "combo",
                            single_indices=[0], combo_indices=[0])
