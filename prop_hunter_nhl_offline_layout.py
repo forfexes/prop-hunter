@@ -62,11 +62,16 @@ def render(kind, rows=(), player="", price="", l10="", l15="", model="", result=
     else:
         rect(0,200,900,625,CREAM)
         for i,row in enumerate(rows):
-            y=240+i*94
-            rect(36,y+55,828,1,WINE)
-            txt(38,y+1,row.get("player","SPIELER"),26,limit=39)
-            txt(38,y+36,row.get("market","MARKT"),23,WINE,limit=34)
-            txt(540,y+36,row.get("match","SPIEL"),19,limit=24)
+            y=210+i*100
+            rect(36,y+94,828,1,WINE)
+            # Separate slots: no circles, placeholder images or reused crests.
+            photo(f"leg_{i}_player",36,y+2,88,88)
+            photo(f"leg_{i}_home",678,y+1,70,70)
+            photo(f"leg_{i}_away",774,y+1,70,70)
+            txt(142,y+29,row.get("player","SPIELER"),26,limit=30)
+            txt(142,y+58,row.get("market","MARKT"),23,WINE,limit=34)
+            txt(142,y+83,row.get("match","SPIEL"),19,limit=36)
+            txt(650,y+88,row.get("form",""),16,WINE,limit=20)
     rect(0,825,900,173,WINE)
     txt(38,872,"QUOTE / MODELL",24,CREAM)
     txt(38,952,price or "—",54,CREAM,limit=24)
