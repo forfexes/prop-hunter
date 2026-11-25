@@ -276,3 +276,26 @@ def publishable_extra_reason(obj):
     if len(set(games))<len(games):
         return "same_game_missing_confirmed_quote"
     return "cross_game_missing_confirmed_quote"
+
+
+def analyse_formula_candidates(candidates):
+    """One pass: compute every extra, then partition without changing live P/L.
+    A calculated-only candidate is not an observed ticket. Keep it separately
+    for model-card QA; it must never enter ordinary settlement/history.
+    """
+    from collections import Counter
+    accepted, deferred = [], []
+    reasons = Counter()
+    verified_formula = 0
+    for candidate in candidates:
+        candidate = prepare_calculated_combo(candidate)
+        if features(candidate).get("formula_individual_odds_verified") is True:
+            verified_formula += 1
+        if publishable_extra(candidate):
+            accepted.append(candidate)
+        else:
+            deferred.append(candidate)
+            reasons[publishable_extra_reason(candidate)] += 1
+    return accepted, deferred, {"total":len(accepted)+len(deferred),
+        "accepted":len(accepted),"offline_unbookable":len(deferred),
+        "verified_leg_formulas":verified_formula,"reasons":dict(reasons)}

@@ -55,3 +55,25 @@ def test_conflicting_formula_markers_never_produce_bookmaker_ev():
     prepare_calculated_combo(p)
     assert p.features["formula_ev_real_ticket_only"] is None
     assert not publishable_extra(p)
+
+
+def test_formula_runs_before_price_rejection_and_preserves_live_separation():
+    from prop_hunter_combo_prices import analyse_formula_candidates
+    missing=_pick({},odds=None)
+    actual=_pick({"combined_odds_observed":True,"combined_quote_id":"BOOK-ID"})
+    accepted,deferred,summary=analyse_formula_candidates([missing,actual])
+    assert accepted==[actual] and deferred==[missing]
+    assert missing.features["calculated_combined_odds"]==3.42
+    assert missing.features["formula_ev_real_ticket_only"] is None
+    assert summary["verified_leg_formulas"]==2
+    assert summary["offline_unbookable"]==1
+    assert not publishable_extra(missing)
+
+def test_core_does_not_drop_extras_before_formula():
+    from pathlib import Path
+    source=Path("prophunter_core_1391.py").read_text()
+    stage=source[source.index("extras = build_autonomous_extras(picks, props, Pick, LadderLeg)"):]
+    stage=stage[:stage.index("from prop_hunter_form_quality import filter_tickets")]
+    assert "picks = picks + extras" in stage
+    assert "analyse_formula_candidates(picks)" in stage
+    assert "extras = [p for p in extras if publishable_extra(p)]" not in stage
