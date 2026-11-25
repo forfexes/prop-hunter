@@ -68,3 +68,11 @@ def test_multileg_asset_slots_and_exact_identity():
     assets=resolve_legs("cross",[leg,different],**kwargs)
     assert len(assets)==6 and len(calls)==4
     assert render("cross",[leg,different],assets=assets).count("data:image/png;base64,")==6
+
+
+def test_portrait_from_other_roster_team_is_blocked_before_download():
+    wrong={**PLAYER,"headshot":URL.replace("/TOR/","/COL/")}
+    def unexpected(*args): pytest.fail("No download for contradictory roster team")
+    with pytest.raises(ValueError,match="verified roster team"):
+        resolve_single(player="QA Player",player_team="TOR",home="TOR",away="COL",
+            rosters={"TOR":roster(wrong)},load_photo=unexpected,load_logo=unexpected)
