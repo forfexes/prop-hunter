@@ -345,3 +345,29 @@ def analyse_formula_candidates(candidates):
     return accepted, deferred, {"total":len(accepted)+len(deferred),
         "accepted":len(accepted),"offline_unbookable":len(deferred),
         "verified_leg_formulas":verified_formula,"formula_card_ready":formula_card_ready,"reasons":dict(reasons)}
+
+
+def isolated_formula_qa():
+    """Formula pictures are explicit disconnected dry-run artifacts only."""
+    return (os.getenv("PH_NBA_FORMULA_OFFLINE_QA") == "1"
+            and os.getenv("PH_NBA_OWNER_ORIGINALS") == "1"
+            and not any(os.getenv(k) for k in ("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN",
+                        "TELEGRAM_CHAT_ID", "TG_BOT_TOKEN", "TG_TOKEN", "TG_CHAT")))
+
+
+def render_formula_previews(candidates, output_dir, renderer):
+    """Render verified formula cards separately, never return publishable picks."""
+    from pathlib import Path
+    if not isolated_formula_qa():
+        return 0
+    directory=Path(output_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    count=0
+    for candidate in candidates:
+        if formula_card_metadata(candidate) is None:
+            continue
+        png=renderer(candidate, formula_preview=True)
+        if isinstance(png, bytes) and png.startswith(bytes((137,80,78,71,13,10,26,10))):
+            count+=1
+            (directory / f"formula-qa-{count:03}.png").write_bytes(png)
+    return count
