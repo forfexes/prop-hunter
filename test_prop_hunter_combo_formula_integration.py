@@ -99,3 +99,19 @@ def test_formula_card_is_display_only_and_requires_verified_leg_prices():
     real=_pick({"combined_odds_observed":True,"combined_quote_id":"BOOK-REAL"})
     prepare_calculated_combo(real)
     assert formula_card_metadata(real) is None
+
+
+def test_stale_formula_metadata_cannot_approve_changed_legs():
+    from prop_hunter_combo_prices import formula_card_metadata
+    p=_pick({},odds=None)
+    prepare_calculated_combo(p)
+    assert formula_card_metadata(p)["display_quote"] == 3.42
+    p.leg_details[0]["odds_observed"] = False
+    assert formula_card_metadata(p) is None
+    p.leg_details[0]["odds_observed"] = True
+    p.leg_details[0]["odds"] = 2.0
+    assert formula_card_metadata(p)["display_quote"] == 3.6
+    p.leg_details[0]["game"] = ""
+    assert formula_card_metadata(p) is None
+    p.leg_details.pop()
+    assert formula_card_metadata(p) is None
