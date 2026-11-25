@@ -5,6 +5,8 @@ name: PROP HUNTER NHL Offline Portrait QA
     paths:
       - prop_hunter_nhl_offline_layout.py
       - test_prop_hunter_nhl_offline_layout.py
+      - prop_hunter_nhl_offline_assets.py
+      - test_prop_hunter_nhl_offline_assets.py
       - .github/workflows/prop_hunter_nhl_offline_qa.yml
 permissions:
   contents: read
@@ -18,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install pytest cairosvg pillow
-      - run: python -m pytest -q test_prop_hunter_nhl_offline_layout.py
+      - run: python -m pytest -q test_prop_hunter_nhl_offline_layout.py test_prop_hunter_nhl_offline_assets.py
       - run: python prop_hunter_nhl_offline_layout.py
       - run: |
           python - <<'PY'
