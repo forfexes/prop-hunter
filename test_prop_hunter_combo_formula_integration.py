@@ -77,3 +77,25 @@ def test_core_does_not_drop_extras_before_formula():
     assert "picks = picks + extras" in stage
     assert "analyse_formula_candidates(picks)" in stage
     assert "extras = [p for p in extras if publishable_extra(p)]" not in stage
+
+
+def test_formula_card_is_display_only_and_requires_verified_leg_prices():
+    from prop_hunter_combo_prices import formula_card_metadata, analyse_formula_candidates
+    p=_pick({},odds=None)
+    accepted,deferred,summary=analyse_formula_candidates([p])
+    assert accepted==[] and deferred==[p] and summary["formula_card_ready"]==1
+    card=formula_card_metadata(p)
+    assert card["display_quote"]==3.42
+    assert card["label"]=="BERECHNET – KEINE BUCHMACHERQUOTE"
+    assert card["settle_as_bookmaker_ticket"] is False
+    assert card["realised_profit"] is None and card["bookmaker_ev"] is None
+    unknown=_pick({},games=("",""),odds=None)
+    prepare_calculated_combo(unknown)
+    assert formula_card_metadata(unknown) is None
+    unverified=_pick({},odds=None)
+    unverified.leg_details[0]["odds_observed"]=False
+    prepare_calculated_combo(unverified)
+    assert formula_card_metadata(unverified) is None
+    real=_pick({"combined_odds_observed":True,"combined_quote_id":"BOOK-REAL"})
+    prepare_calculated_combo(real)
+    assert formula_card_metadata(real) is None
