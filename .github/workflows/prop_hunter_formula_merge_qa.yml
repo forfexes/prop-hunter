@@ -12,6 +12,7 @@ name: PROP HUNTER Formula Merge QA
       - prop_hunter_nba_owner_bridge.py
       - test_prop_hunter_owner_actual_bookmaker_ticket_only.py
       - test_prop_hunter_combo_formula_integration.py
+      - test_prop_hunter_premium_delivery.py
       - .github/workflows/prop_hunter_formula_merge_qa.yml
   push:
     branches: [fix/nba-formula-current-main-20261125]
@@ -20,7 +21,7 @@ permissions:
 jobs:
   offline-formula:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     env:
       TELEGRAM_BOT_TOKEN: ''
       TELEGRAM_TOKEN: ''
@@ -32,6 +33,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install pytest pillow requests cairosvg
+      - run: python -m pip install pytest pillow requests cairosvg numpy
       - run: python -m py_compile prop_hunter_combo_prices.py premium_joint_formula.py prophunter_core_1391.py prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py
       - run: python -m pytest -q test_prop_hunter_combo_formula_integration.py test_prop_hunter_owner_actual_bookmaker_ticket_only.py
+      - name: Offline Telegram transport receipt and image guard
+        run: python test_prop_hunter_premium_delivery.py
+      - name: Render owner variants and simulate Telegram without credentials
+        run: |
+          python test_prop_hunter_single_overlay_geometry.py
+          python test_prop_hunter_nba_owner_bridge.py
+          python test_prop_hunter_owner_ladder_settlement_rows.py
+          python test_prop_hunter_owner_leg_status.py
+          python prop_hunter_telegram_sandbox_hardtest.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nba-final-offline-card-review
+          path: |
+            output/nba_owner_qa/*.png
+            output/telegram_sandbox/*.png
+            output/telegram_sandbox/manifest.json
+          if-no-files-found: warn
+          retention-days: 7

@@ -3669,10 +3669,10 @@ def send_telegram(text,dry_run=False,picks=None):
                     break
                 data=r.json() if r.content else {}
                 mid=((data.get("result") or {}).get("message_id"))
-                if mid is None:
-                    log.error("Telegram returned no message_id kind=%s",payload.get("kind"))
+                if data.get("ok") is not True or type(mid) is not int or mid<=0:
+                    log.error("Telegram returned invalid positive message receipt kind=%s",payload.get("kind"))
                     break
-                item=dict(payload);item["message_id"]=int(mid);sent.append(item)
+                item=dict(payload);item["message_id"]=mid;sent.append(item)
                 delivered=True
                 break
             except Exception as e:
