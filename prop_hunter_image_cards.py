@@ -727,7 +727,7 @@ def _same_visible_team_crest(teams: List[Tuple[str, Optional["Image.Image"]]]) -
     return normalized[0] == normalized[1]
 
 
-def build_for_pick(pick: Any) -> Optional[bytes]:
+def build_for_pick(pick: Any, *, formula_preview=False) -> Optional[bytes]:
     """PNG-Bytes fuer einen Pick (single/ladder/betbuilder/kombi) oder None."""
     if not ON:
         return None
@@ -752,8 +752,11 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         # The visual generator (including later in-place Telegram edits) is
         # itself a hard release gate. Offline leg-products and forged Singles
         # must never reach a photo, regardless of caller or workflow version.
-        from prop_hunter_combo_prices import publishable_extra
-        if not publishable_extra(pick):
+        from prop_hunter_combo_prices import publishable_extra, formula_card_metadata, isolated_formula_qa
+        if formula_preview:
+            if not isolated_formula_qa() or formula_card_metadata(pick) is None:
+                return None
+        elif not publishable_extra(pick):
             print("OWNER_IMAGE_QUOTE_UNVERIFIED: no image produced", flush=True)
             return None
         # Settlement re-renders bypass the new-pick publication preflight.
@@ -874,7 +877,8 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         if league and league[1] == "nba":
             try:
                 from prop_hunter_nba_premium_adapter import render_nba_pick
-                png = render_nba_pick(pick, rows, teams)
+                png = (render_nba_pick(pick, rows, teams, formula_preview=True)
+                       if formula_preview else render_nba_pick(pick, rows, teams))
                 print("NBA_PREMIUM_V2_RENDER_OK type=%s legs=%d" % (typ, len(rows)), flush=True)
                 return png
             except Exception as exc:
