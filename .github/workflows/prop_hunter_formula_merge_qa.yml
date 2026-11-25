@@ -7,6 +7,10 @@ name: PROP HUNTER Formula Merge QA
       - premium_joint_formula.py
       - prophunter_core_1391.py
       - prop_hunter_image_publication_gate.py
+      - prop_hunter_image_cards.py
+      - prop_hunter_nba_premium_adapter.py
+      - prop_hunter_nba_owner_bridge.py
+      - test_prop_hunter_owner_actual_bookmaker_ticket_only.py
       - test_prop_hunter_combo_formula_integration.py
       - .github/workflows/prop_hunter_formula_merge_qa.yml
   push:
@@ -28,6 +32,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install pytest
-      - run: python -m py_compile prop_hunter_combo_prices.py premium_joint_formula.py prophunter_core_1391.py
-      - run: python -m pytest -q test_prop_hunter_combo_formula_integration.py
+      - run: python -m pip install pytest pillow requests cairosvg
+      - run: python -m py_compile prop_hunter_combo_prices.py premium_joint_formula.py prophunter_core_1391.py prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py
+      - run: python -m pytest -q test_prop_hunter_combo_formula_integration.py test_prop_hunter_owner_actual_bookmaker_ticket_only.py
