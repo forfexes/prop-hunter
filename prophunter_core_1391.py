@@ -5627,6 +5627,13 @@ def run(dry_run=False,sport_filter=None):
     # publication and accounting gates remain unchanged until renderer approval.
     picks, formula_deferred, formula_diagnostics = analyse_formula_candidates(picks)
     log.info("Kombi/Builder/Lottery formula analysed before ticket gate: %s", formula_diagnostics)
+    if dry_run:
+        from prop_hunter_combo_prices import isolated_formula_qa, render_formula_previews
+        if isolated_formula_qa():
+            import prop_hunter_image_cards as _formula_cards
+            _formula_count = render_formula_previews(formula_deferred,
+                "output/formula_card_previews", _formula_cards.build_for_pick)
+            log.info("Isolated NBA formula previews rendered=%d", _formula_count)
     from prop_hunter_form_quality import filter_tickets
     picks, form_rejected = filter_tickets(picks)
     log.info("final form evidence filter: %s", form_rejected)
