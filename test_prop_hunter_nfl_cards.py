@@ -38,7 +38,7 @@ def test_nfl_cards_offline():
                 {"sport": "NFL", "player": "QA Player" if kind == "ladder" else f"QA Player {i}",
                  "game": fixtures[0 if kind in ("builder", "ladder") else i % 3],
                  "market": "receiving_yards", "direction": "over", "point": 50.5+i,
-                 "odds": 1.85}
+                 "odds": 1.85, "odds_observed": True}
                 for i in range(n)
             ]
             pick = Pick(
@@ -96,17 +96,20 @@ def test_formula_publication_across_sports():
             for kind in ("kombi2", "lottery", "betbuilder"):
                 pick = Pick(type=kind, source_sport=sport, odds=99, edge_pct=12,
                             features={"combo_scope": "cross_game"} if kind == "betbuilder" else {},
-                            leg_details=[{"sport": sport, "game": "A vs B", "odds": 1.5},
-                                         {"sport": sport, "game": "C vs D", "odds": 2.0}])
+                            leg_details=[{"sport": sport, "game": "A vs B", "odds": 1.5, "odds_observed": True},
+                                         {"sport": sport, "game": "C vs D", "odds": 2.0, "odds_observed": True}])
                 assert publishable_tip(pick)
                 assert not publishable_extra(pick)
-                assert filter_verified_nba_images([pick], cards) == ([pick], 0)
+                assert filter_verified_nba_images([pick], cards) == ([], 1)
                 payload, = namespace["_telegram_payloads"]("", [pick])
                 assert "Berechnete Gesamtquote @3.00" in payload["text"]
                 assert "keine bestätigte Buchmacherquote" in payload["text"]
                 assert "@99" not in payload["text"] and "EV 12" not in payload["text"]
                 if sport != "NFL":
                     assert namespace["_payload_card_image"](payload, [pick]) is None
-                    assert not payload.get("premium_required")
+                    assert payload.get("premium_required")
+                pick.leg_details[0]["odds_observed"] = False
+                assert not publishable_tip(pick)
+                pick.leg_details[0]["odds_observed"] = True
                 pick.leg_details[0]["odds"] = None
                 assert not publishable_tip(pick)
