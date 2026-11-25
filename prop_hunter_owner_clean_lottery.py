@@ -95,7 +95,6 @@ def render(plate: Image.Image, *, rows: list,
         y = top + i * 85
         p.rounded_rectangle(
             (43, y, 648, y + 81), radius=9,
-            outline=(170, 80, 240, 180), width=1,
             outline=(200, 71, 238, 210), width=2,
         )
     im = Image.alpha_composite(im, tint)

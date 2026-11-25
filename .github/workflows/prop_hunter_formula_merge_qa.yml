@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install pytest pillow requests cairosvg numpy
-      - run: python -m py_compile prop_hunter_combo_prices.py premium_joint_formula.py prophunter_core_1391.py prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py
+      - run: python -m py_compile prop_hunter_combo_prices.py premium_joint_formula.py prophunter_core_1391.py prop_hunter_image_cards.py prop_hunter_nba_premium_adapter.py prop_hunter_owner_clean_single.py prop_hunter_owner_clean_ladder.py prop_hunter_owner_clean_builder.py prop_hunter_owner_clean_lottery.py
       - run: python -m pytest -q test_prop_hunter_combo_formula_integration.py test_prop_hunter_owner_actual_bookmaker_ticket_only.py test_prop_hunter_uncovered_owner_rows.py
       - name: Offline Telegram transport receipt and image guard
         run: python test_prop_hunter_premium_delivery.py
