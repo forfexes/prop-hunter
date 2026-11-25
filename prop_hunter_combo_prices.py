@@ -89,13 +89,21 @@ def prepare_calculated_combo(obj):
     Real combined ticket prices, when present, remain authoritative.
     Unknown same-game correlations never produce a fair model probability.
     """
+    f=features(obj)
+    # Formula diagnostics are derived from the current legs, never cached proof.
+    # Preserve price-provenance flags so stale calculated odds cannot become a
+    # confirmed bookmaker ticket after invalidation.
+    for key in ('formula_indicative_leg_product', 'formula_joint_probability',
+                'formula_fair_odds', 'formula_method', 'formula_scope',
+                'formula_ev_real_ticket_only', 'formula_individual_odds_verified',
+                'calculated_combined_odds'):
+        f.pop(key, None)
     if str(value(obj, 'type') or '').lower() in {'single', 'longshot', 'ladder'}:
         return obj
     legs=value(obj, 'leg_details', []) or []
     if len(legs)<2:
         return obj
     from premium_joint_formula import estimate_combo
-    f=features(obj)
     ticket=dict(combined_odds_observed=True,
                 combined_quote_id=f.get('combined_quote_id'),
                 odds=value(obj,'odds')) if confirmed_ticket(obj) else None
@@ -105,7 +113,7 @@ def prepare_calculated_combo(obj):
             conditional_probabilities=f.get('conditional_probabilities'),
             joint_observations=f.get('joint_observations'),
             observed_ticket=ticket)
-    except ValueError:
+    except (TypeError, ValueError, OverflowError):
         return obj
     calculated=analysis['indicative_leg_product']
     if calculated is None:
