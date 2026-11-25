@@ -278,6 +278,33 @@ def publishable_extra_reason(obj):
     return "cross_game_missing_confirmed_quote"
 
 
+def formula_card_metadata(obj):
+    """Display-only contract for a calculated ticket, never a settlement price.
+
+    Only verified leg-price products and identified fixtures qualify.
+    No bookable ticket, cash profit, or bookmaker EV is implied.
+    """
+    kind=str(value(obj, "type") or "").strip().lower()
+    if kind not in {"kombi","kombi2","kombi3","combo","cross","cross_mix",
+                    "big","super","lottery","builder","betbuilder"}:
+        return None
+    f=features(obj)
+    if confirmed_ticket(obj) or f.get("formula_individual_odds_verified") is not True:
+        return None
+    if f.get("formula_scope") not in {"separate_games_independence_assumed",
+                                      "shared_game_correlated"}:
+        return None
+    try:
+        quote=float(f.get("calculated_combined_odds"))
+    except (TypeError,ValueError,OverflowError):
+        return None
+    if not math.isfinite(quote) or quote<=1 or f.get("formula_ev_real_ticket_only") is not None:
+        return None
+    return {"display_quote":quote,"label":"BERECHNET – KEINE BUCHMACHERQUOTE",
+            "price_type":"calculated_from_leg_odds","settle_as_bookmaker_ticket":False,
+            "bookmaker_ev":None,"realised_profit":None}
+
+
 def analyse_formula_candidates(candidates):
     """One pass: compute every extra, then partition without changing live P/L.
     A calculated-only candidate is not an observed ticket. Keep it separately
@@ -287,6 +314,7 @@ def analyse_formula_candidates(candidates):
     accepted, deferred = [], []
     reasons = Counter()
     verified_formula = 0
+    formula_card_ready = 0
     for candidate in candidates:
         candidate = prepare_calculated_combo(candidate)
         if features(candidate).get("formula_individual_odds_verified") is True:
@@ -295,7 +323,9 @@ def analyse_formula_candidates(candidates):
             accepted.append(candidate)
         else:
             deferred.append(candidate)
+            if formula_card_metadata(candidate) is not None:
+                formula_card_ready += 1
             reasons[publishable_extra_reason(candidate)] += 1
     return accepted, deferred, {"total":len(accepted)+len(deferred),
         "accepted":len(accepted),"offline_unbookable":len(deferred),
-        "verified_leg_formulas":verified_formula,"reasons":dict(reasons)}
+        "verified_leg_formulas":verified_formula,"formula_card_ready":formula_card_ready,"reasons":dict(reasons)}
