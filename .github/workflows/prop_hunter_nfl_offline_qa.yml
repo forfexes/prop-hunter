@@ -8,6 +8,11 @@ on:
       - card_templates/nfl/**
       - prop_hunter_image_cards.py
       - prop_hunter_nfl_cards.py
+      - prop_hunter_combo_prices.py
+      - prop_hunter_image_publication_gate.py
+      - prophunter_core_1391.py
+      - prophunter_results.py
+      - test_prop_hunter_premium_only.py
       - test_prop_hunter_nfl_cards.py
   pull_request:
     branches: [main]
