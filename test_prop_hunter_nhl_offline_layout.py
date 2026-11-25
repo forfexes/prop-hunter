@@ -42,3 +42,19 @@ def test_transparent_png_slots_and_formula_label():
     with pytest.raises(ValueError):
         render("single",[{}],assets={"player":b"invalid"})
     assert "KEINE BUCHMACHERQUOTE" in render("cross",[{},{}],price="3.40")
+
+
+@pytest.mark.parametrize("kind", ("builder","kombi","cross","lottery"))
+@pytest.mark.parametrize("count", (7,10,12))
+def test_long_ticket_extends_clean_canvas_and_keeps_every_leg(kind,count):
+    rows=[dict(player=f"QA PLAYER {i}",market="TESTMARKT",match="QA MATCH") for i in range(count)]
+    root=ET.fromstring(render(kind,rows,price="3.40"))
+    ns="{http://www.w3.org/2000/svg}"
+    height=1350+(count-6)*100
+    assert int(root.get("height"))==height
+    texts={e.text:float(e.get("y")) for e in root.findall(ns+"text") if e.text}
+    assert all(f"QA PLAYER {i}" in texts for i in range(count))
+    assert texts["QA PLAYER "+str(count-1)] < texts["QUOTE / MODELL"]
+    assert texts["AUSWERTUNG: OFFEN"] < height
+    with pytest.raises(ValueError):
+        render(kind,rows+[{}]*(13-count))
