@@ -130,3 +130,24 @@ def test_invalidated_leg_does_not_reuse_cached_formula_diagnostics():
     assert "calculated_combined_odds" not in p.features
     assert "formula_individual_odds_verified" not in p.features
     assert not publishable_extra(p)
+
+
+def test_formula_preview_output_requires_isolation_and_verified_legs(tmp_path, monkeypatch):
+    from prop_hunter_combo_prices import render_formula_previews
+    from unittest.mock import Mock
+    p=_pick({},odds=None)
+    renderer=Mock(return_value=bytes((137,80,78,71,13,10,26,10)))
+    monkeypatch.setenv("PH_NBA_FORMULA_OFFLINE_QA","1")
+    monkeypatch.setenv("PH_NBA_OWNER_ORIGINALS","1")
+    for k in ("TELEGRAM_TOKEN","TELEGRAM_BOT_TOKEN","TELEGRAM_CHAT_ID","TG_BOT_TOKEN","TG_TOKEN","TG_CHAT"):
+        monkeypatch.delenv(k,raising=False)
+    assert render_formula_previews([p],tmp_path,renderer)==1
+    renderer.assert_called_once_with(p,formula_preview=True)
+    assert (tmp_path/"formula-qa-001.png").exists()
+    assert not publishable_extra(p)
+    p.leg_details[0]["odds_observed"]=False
+    assert render_formula_previews([p],tmp_path,renderer)==0
+    p.leg_details[0]["odds_observed"]=True
+    monkeypatch.setenv("TELEGRAM_TOKEN","blocked-test-token")
+    assert render_formula_previews([p],tmp_path,renderer)==0
+    renderer.assert_called_once()
