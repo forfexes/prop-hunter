@@ -289,16 +289,24 @@ def formula_card_metadata(obj):
                     "big","super","lottery","builder","betbuilder"}:
         return None
     f=features(obj)
-    if confirmed_ticket(obj) or f.get("formula_individual_odds_verified") is not True:
+    if confirmed_ticket(obj):
         return None
-    if f.get("formula_scope") not in {"separate_games_independence_assumed",
-                                      "shared_game_correlated"}:
-        return None
+    # Revalidate the current legs rather than trusting cached formula markers.
+    # A changed or removed leg must never inherit a previously approved card.
+    from premium_joint_formula import estimate_combo
     try:
-        quote=float(f.get("calculated_combined_odds"))
+        analysis=estimate_combo(value(obj, "leg_details") or [],
+            conditional_probabilities=f.get("conditional_probabilities"),
+            joint_observations=f.get("joint_observations"))
     except (TypeError,ValueError,OverflowError):
         return None
-    if not math.isfinite(quote) or quote<=1 or f.get("formula_ev_real_ticket_only") is not None:
+    if analysis["individual_prices_observed"] is not True:
+        return None
+    if analysis["scope"] not in {"separate_games_independence_assumed",
+                                  "shared_game_correlated"}:
+        return None
+    quote=analysis["indicative_leg_product"]
+    if quote is None or not math.isfinite(quote) or quote<=1:
         return None
     return {"display_quote":quote,"label":"BERECHNET – KEINE BUCHMACHERQUOTE",
             "price_type":"calculated_from_leg_odds","settle_as_bookmaker_ticket":False,
