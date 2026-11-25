@@ -39,6 +39,19 @@ def user_single_original_enabled(pick) -> bool:
 
 
 
+def centered_single_enabled(pick) -> bool:
+    """Use the owner-released geometry for new cards; preserve historical geometry."""
+    import os
+    marker = (pick.get("_owner_single_centered_20261125")
+              if isinstance(pick, dict)
+              else getattr(pick, "_owner_single_centered_20261125", None))
+    if type(marker) is bool:
+        return marker
+    if os.getenv("PH_NBA_SINGLE_CENTERED_PREVIEW", "0") == "1":
+        return True
+    return os.getenv("PH_NBA_CENTERED_SINGLE_RELEASE", "0") == "1"
+
+
 def _layered_owner_release_ready() -> bool:
     """Release only if all four clean owner-derived plates are current.
 
@@ -207,7 +220,8 @@ def render_owner(pick, key: str, rows: list, teams: list,
             raise ValueError("User original SINGLE requires one actual athlete")
         owner_png = render_supplied_single(
             title=title, subtitle=subtitle, teams=teams, row=labels[0],
-            footer=footer, settlement=values.get("settlement") or "OFFEN")
+            footer=footer, settlement=values.get("settlement") or "OFFEN",
+            centered_qa=centered_single_enabled(pick))
     else:
         owner_png = original_card(family, title, subtitle,"NBA",teams,
                                   labels,footer,"QA ONLY" if formula_preview else values.get("settlement") or "OFFEN")

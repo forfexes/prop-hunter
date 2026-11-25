@@ -233,6 +233,7 @@ jobs:
           PH_NBA_PREMIUM_V2_REQUIRE: '1'  # strict premium-only; incomplete photo/odds never trigger legacy image
           PH_NBA_OWNER_ORIGINALS: '1'  # settle in the SAME approved original artwork as the posted tip
           PH_NBA_USER_SINGLE_20261122: '1'  # only source-tagged new Singles; historical originals retain old template
+          PH_NBA_CENTERED_SINGLE_RELEASE: '1'  # Owner approved visual release 2026-11-25; existing photo/quote gates stay active
           # Explicit owner-controlled visual approval; CI cannot grant it.
           PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED: ${{ vars.PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED == 'true' && '1' || '0' }}
           PH_OWNER_BUILDER_8_10_TG_APPROVED: ${{ vars.PH_OWNER_BUILDER_8_10_TG_APPROVED == 'true' && '1' || '0' }}

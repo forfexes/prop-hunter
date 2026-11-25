@@ -3573,6 +3573,8 @@ def _payload_card_image(payload,picks):
             if (str(getattr(pick,"type","")).lower()=="single"
                     and os.getenv("PH_NBA_USER_SINGLE_20261122","0")=="1"):
                 payload["image_pick"]["_owner_single_master_20261122"] = True
+                from prop_hunter_nba_owner_bridge import centered_single_enabled
+                payload["image_pick"]["_owner_single_centered_20261125"] = centered_single_enabled(pick)
         if png: payload["media_type"]="photo"
         return png
     except Exception as exc:

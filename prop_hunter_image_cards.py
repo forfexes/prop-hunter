@@ -909,6 +909,7 @@ def settled_image(data, text):
     # ORIGINAL 691px artwork instead of being silently redesigned.
     if str(obj.get("type") or "").lower()=="single":
         obj.setdefault("_owner_single_master_20261122", False)
+        obj.setdefault("_owner_single_centered_20261125", False)
     obj["picks"]=[SimpleNamespace(**x) for x in obj.get("picks",[]) or []]
     summary=next((ln for ln in text.splitlines() if "Auswertung:" in ln), "")
     summary=re.sub(r"[^\w\s:.,+%/−-]", "", summary)
