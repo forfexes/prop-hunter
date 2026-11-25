@@ -276,3 +276,64 @@ def publishable_extra_reason(obj):
     if len(set(games))<len(games):
         return "same_game_missing_confirmed_quote"
     return "cross_game_missing_confirmed_quote"
+
+
+def formula_card_metadata(obj):
+    """Display-only contract for a calculated ticket, never a settlement price.
+
+    Only verified leg-price products and identified fixtures qualify.
+    No bookable ticket, cash profit, or bookmaker EV is implied.
+    """
+    kind=str(value(obj, "type") or "").strip().lower()
+    if kind not in {"kombi","kombi2","kombi3","combo","cross","cross_mix",
+                    "big","super","lottery","builder","betbuilder"}:
+        return None
+    f=features(obj)
+    if confirmed_ticket(obj):
+        return None
+    # Revalidate the current legs rather than trusting cached formula markers.
+    # A changed or removed leg must never inherit a previously approved card.
+    from premium_joint_formula import estimate_combo
+    try:
+        analysis=estimate_combo(value(obj, "leg_details") or [],
+            conditional_probabilities=f.get("conditional_probabilities"),
+            joint_observations=f.get("joint_observations"))
+    except (TypeError,ValueError,OverflowError):
+        return None
+    if analysis["individual_prices_observed"] is not True:
+        return None
+    if analysis["scope"] not in {"separate_games_independence_assumed",
+                                  "shared_game_correlated"}:
+        return None
+    quote=analysis["indicative_leg_product"]
+    if quote is None or not math.isfinite(quote) or quote<=1:
+        return None
+    return {"display_quote":quote,"label":"BERECHNET – KEINE BUCHMACHERQUOTE",
+            "price_type":"calculated_from_leg_odds","settle_as_bookmaker_ticket":False,
+            "bookmaker_ev":None,"realised_profit":None}
+
+
+def analyse_formula_candidates(candidates):
+    """One pass: compute every extra, then partition without changing live P/L.
+    A calculated-only candidate is not an observed ticket. Keep it separately
+    for model-card QA; it must never enter ordinary settlement/history.
+    """
+    from collections import Counter
+    accepted, deferred = [], []
+    reasons = Counter()
+    verified_formula = 0
+    formula_card_ready = 0
+    for candidate in candidates:
+        candidate = prepare_calculated_combo(candidate)
+        if features(candidate).get("formula_individual_odds_verified") is True:
+            verified_formula += 1
+        if publishable_extra(candidate):
+            accepted.append(candidate)
+        else:
+            deferred.append(candidate)
+            if formula_card_metadata(candidate) is not None:
+                formula_card_ready += 1
+            reasons[publishable_extra_reason(candidate)] += 1
+    return accepted, deferred, {"total":len(accepted)+len(deferred),
+        "accepted":len(accepted),"offline_unbookable":len(deferred),
+        "verified_leg_formulas":verified_formula,"formula_card_ready":formula_card_ready,"reasons":dict(reasons)}
