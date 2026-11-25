@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-11-25T07:16:51.274849+00:00",
+  "updated_at": "2026-11-25T07:49:39.638659+00:00",
   "markets": [
     {
       "market_base": "points",
       "sample": "points",
-      "observations": 3658,
+      "observations": 3088,
       "sports": {
-        "NBA": 2778,
-        "EUROLEAGUE": 109,
-        "NHL": 765,
-        "NCAAB": 6
+        "NBA": 2542,
+        "EUROLEAGUE": 31,
+        "NHL": 514,
+        "NCAAB": 1
       },
       "status": "known",
       "auto_enable": true
@@ -17,11 +17,10 @@
     {
       "market_base": "rebounds",
       "sample": "rebounds",
-      "observations": 1400,
+      "observations": 1347,
       "sports": {
-        "NBA": 1356,
-        "EUROLEAGUE": 43,
-        "NCAAB": 1
+        "NBA": 1330,
+        "EUROLEAGUE": 17
       },
       "status": "known",
       "auto_enable": true
@@ -29,12 +28,23 @@
     {
       "market_base": "assists",
       "sample": "assists",
-      "observations": 1360,
+      "observations": 1334,
       "sports": {
-        "NBA": 917,
-        "EUROLEAGUE": 66,
-        "NHL": 375,
+        "NBA": 1055,
+        "EUROLEAGUE": 10,
+        "NHL": 267,
         "NCAAB": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "receiving yards",
+      "sample": "receiving_yards",
+      "observations": 1161,
+      "sports": {
+        "NCAAF": 246,
+        "NFL": 915
       },
       "status": "known",
       "auto_enable": true
@@ -42,9 +52,10 @@
     {
       "market_base": "pra",
       "sample": "pra",
-      "observations": 1050,
+      "observations": 836,
       "sports": {
-        "NBA": 1050
+        "NBA": 829,
+        "EUROLEAGUE": 7
       },
       "status": "known",
       "auto_enable": true
@@ -52,30 +63,29 @@
     {
       "market_base": "shots on goal",
       "sample": "shots_on_goal",
-      "observations": 862,
+      "observations": 773,
       "sports": {
-        "NHL": 862
+        "NHL": 773
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "receiving yards",
-      "sample": "receiving_yards",
-      "observations": 674,
+      "market_base": "pr",
+      "sample": "pr",
+      "observations": 760,
       "sports": {
-        "NFL": 515,
-        "NCAAF": 159
+        "NBA": 760
       },
-      "status": "known",
-      "auto_enable": true
+      "status": "shadow",
+      "auto_enable": false
     },
     {
       "market_base": "goals",
       "sample": "goals",
-      "observations": 673,
+      "observations": 754,
       "sports": {
-        "NHL": 673
+        "NHL": 754
       },
       "status": "shadow",
       "auto_enable": false
@@ -83,30 +93,20 @@
     {
       "market_base": "threes",
       "sample": "threes",
-      "observations": 647,
+      "observations": 667,
       "sports": {
-        "EUROLEAGUE": 29,
-        "NBA": 618
+        "NBA": 660,
+        "EUROLEAGUE": 7
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "pr",
-      "sample": "pr",
-      "observations": 594,
-      "sports": {
-        "NBA": 594
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
       "market_base": "pa",
       "sample": "pa",
-      "observations": 553,
+      "observations": 661,
       "sports": {
-        "NBA": 553
+        "NBA": 661
       },
       "status": "shadow",
       "auto_enable": false
@@ -114,9 +114,9 @@
     {
       "market_base": "ra",
       "sample": "ra",
-      "observations": 492,
+      "observations": 499,
       "sports": {
-        "NBA": 492
+        "NBA": 499
       },
       "status": "shadow",
       "auto_enable": false
@@ -124,21 +124,10 @@
     {
       "market_base": "rushing yards",
       "sample": "rushing_yards",
-      "observations": 456,
+      "observations": 434,
       "sports": {
-        "NCAAF": 173,
-        "NFL": 283
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "blocks",
-      "sample": "blocks",
-      "observations": 332,
-      "sports": {
-        "NBA": 331,
-        "NCAAB": 1
+        "NFL": 269,
+        "NCAAF": 165
       },
       "status": "known",
       "auto_enable": true
@@ -146,9 +135,31 @@
     {
       "market_base": "receptions",
       "sample": "receptions",
-      "observations": 299,
+      "observations": 408,
       "sports": {
-        "NFL": 299
+        "NFL": 408
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "blocks",
+      "sample": "blocks",
+      "observations": 331,
+      "sports": {
+        "NBA": 329,
+        "NCAAB": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "passing yards",
+      "sample": "passing_yards",
+      "observations": 300,
+      "sports": {
+        "NFL": 231,
+        "NCAAF": 69
       },
       "status": "known",
       "auto_enable": true
@@ -158,8 +169,18 @@
       "sample": "alternate_spread",
       "observations": 291,
       "sports": {
-        "NFL": 20,
-        "NBA": 271
+        "NFL": 66,
+        "NBA": 225
+      },
+      "status": "shadow",
+      "auto_enable": false
+    },
+    {
+      "market_base": "to score including overtime",
+      "sample": "to_score_including_overtime",
+      "observations": 270,
+      "sports": {
+        "NHL": 270
       },
       "status": "shadow",
       "auto_enable": false
@@ -167,41 +188,51 @@
     {
       "market_base": "steals",
       "sample": "steals",
-      "observations": 248,
+      "observations": 179,
       "sports": {
-        "NBA": 248
+        "NBA": 176,
+        "NCAAB": 3
       },
       "status": "known",
       "auto_enable": true
-    },
-    {
-      "market_base": "to score including overtime",
-      "sample": "to_score_including_overtime",
-      "observations": 226,
-      "sports": {
-        "NHL": 226
-      },
-      "status": "shadow",
-      "auto_enable": false
     },
     {
       "market_base": "anytime td",
       "sample": "anytime_td",
-      "observations": 219,
+      "observations": 174,
       "sports": {
-        "NFL": 153,
-        "NCAAF": 66
+        "NFL": 144,
+        "NCAAF": 30
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "passing yards",
-      "sample": "passing_yards",
-      "observations": 196,
+      "market_base": "passing attempts",
+      "sample": "passing_attempts",
+      "observations": 97,
       "sports": {
-        "NCAAF": 54,
-        "NFL": 142
+        "NFL": 97
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "rushing attempts",
+      "sample": "rushing_attempts",
+      "observations": 82,
+      "sports": {
+        "NFL": 82
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "passing completions",
+      "sample": "passing_completions",
+      "observations": 77,
+      "sports": {
+        "NFL": 77
       },
       "status": "known",
       "auto_enable": true
@@ -209,41 +240,21 @@
     {
       "market_base": "td",
       "sample": "2_plus_td",
-      "observations": 175,
+      "observations": 73,
       "sports": {
-        "NCAAF": 82,
-        "NFL": 93
+        "NFL": 50,
+        "NCAAF": 23
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "rushing attempts",
-      "sample": "rushing_attempts",
-      "observations": 90,
+      "market_base": "passing touchdowns",
+      "sample": "passing_touchdowns",
+      "observations": 64,
       "sports": {
-        "NFL": 90
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "st td scorer inc ot",
-      "sample": "1st_td_scorer_inc_ot",
-      "observations": 74,
-      "sports": {
-        "NCAAF": 72,
-        "NFL": 2
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "passing attempts",
-      "sample": "passing_attempts",
-      "observations": 66,
-      "sports": {
-        "NFL": 66
+        "NFL": 16,
+        "NCAAF": 48
       },
       "status": "known",
       "auto_enable": true
@@ -251,9 +262,9 @@
     {
       "market_base": "double double",
       "sample": "double_double",
-      "observations": 58,
+      "observations": 61,
       "sports": {
-        "NBA": 58
+        "NBA": 61
       },
       "status": "shadow",
       "auto_enable": false
@@ -261,36 +272,6 @@
     {
       "market_base": "player to have at least sacks including overtime",
       "sample": "player_to_have_at_least_0_5_sacks_including_overtime",
-      "observations": 38,
-      "sports": {
-        "NFL": 38
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "passing completions",
-      "sample": "passing_completions",
-      "observations": 36,
-      "sports": {
-        "NFL": 36
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "player to make an interception including overtime",
-      "sample": "player_to_make_an_interception_including_overtime",
-      "observations": 36,
-      "sports": {
-        "NFL": 36
-      },
-      "status": "shadow",
-      "auto_enable": false
-    },
-    {
-      "market_base": "tackles",
-      "sample": "tackles",
       "observations": 29,
       "sports": {
         "NFL": 29
@@ -299,29 +280,19 @@
       "auto_enable": false
     },
     {
-      "market_base": "touchdown passes by the player including overtime",
-      "sample": "2_touchdown_passes_by_the_player_including_overtime",
-      "observations": 24,
+      "market_base": "st td scorer inc ot",
+      "sample": "1st_td_scorer_inc_ot",
+      "observations": 26,
       "sports": {
-        "NFL": 24
+        "NCAAF": 11,
+        "NFL": 15
       },
-      "status": "known",
-      "auto_enable": true
+      "status": "shadow",
+      "auto_enable": false
     },
     {
-      "market_base": "passing touchdowns",
-      "sample": "passing_touchdowns",
-      "observations": 23,
-      "sports": {
-        "NCAAF": 20,
-        "NFL": 3
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "field goals made",
-      "sample": "field_goals_made",
+      "market_base": "player to make an interception including overtime",
+      "sample": "player_to_make_an_interception_including_overtime",
       "observations": 22,
       "sports": {
         "NFL": 22
@@ -330,11 +301,51 @@
       "auto_enable": false
     },
     {
+      "market_base": "interceptions",
+      "sample": "interceptions",
+      "observations": 21,
+      "sports": {
+        "NFL": 21
+      },
+      "status": "shadow",
+      "auto_enable": false
+    },
+    {
+      "market_base": "touchdown passes by the player including overtime",
+      "sample": "2_touchdown_passes_by_the_player_including_overtime",
+      "observations": 21,
+      "sports": {
+        "NFL": 21
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "field goals made",
+      "sample": "field_goals_made",
+      "observations": 20,
+      "sports": {
+        "NFL": 20
+      },
+      "status": "shadow",
+      "auto_enable": false
+    },
+    {
+      "market_base": "player s next field goal made to be a pointer after score",
+      "sample": "player_s_next_field_goal_made_to_be_a_3_pointer_after_score_11_18",
+      "observations": 20,
+      "sports": {
+        "NBA": 20
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
       "market_base": "kicking points",
       "sample": "kicking_points",
-      "observations": 17,
+      "observations": 16,
       "sports": {
-        "NFL": 17
+        "NFL": 16
       },
       "status": "known",
       "auto_enable": true
@@ -352,19 +363,19 @@
     {
       "market_base": "total saves",
       "sample": "total_saves",
-      "observations": 12,
+      "observations": 13,
       "sports": {
-        "NHL": 12
+        "NHL": 13
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "interceptions thrown by the player including overtime",
-      "sample": "2_interceptions_thrown_by_the_player_including_overtime",
-      "observations": 10,
+      "market_base": "player to record a sack",
+      "sample": "player_to_record_a_sack",
+      "observations": 12,
       "sports": {
-        "NFL": 10
+        "NFL": 12
       },
       "status": "shadow",
       "auto_enable": false
@@ -372,46 +383,57 @@
     {
       "market_base": "total interceptions thrown by the player including overtime",
       "sample": "total_interceptions_thrown_by_the_player_including_overtime",
-      "observations": 8,
+      "observations": 11,
       "sports": {
-        "NFL": 8
+        "NFL": 11
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "touchdown to be scored by the player including overtime",
-      "sample": "4_touchdown_to_be_scored_by_the_player_including_overtime",
+      "market_base": "next td scorer",
+      "sample": "next_td_scorer_4",
       "observations": 6,
       "sports": {
         "NCAAF": 6
+      },
+      "status": "shadow",
+      "auto_enable": false
+    },
+    {
+      "market_base": "point spread",
+      "sample": "point_spread",
+      "observations": 5,
+      "sports": {
+        "NFL": 2,
+        "NBA": 3
       },
       "status": "known",
       "auto_enable": true
     },
     {
-      "market_base": "next td scorer",
-      "sample": "next_td_scorer_4",
-      "observations": 5,
+      "market_base": "interceptions thrown by the player including overtime",
+      "sample": "3_interceptions_thrown_by_the_player_including_overtime",
+      "observations": 4,
       "sports": {
-        "NCAAF": 5
+        "NFL": 4
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "interceptions",
-      "sample": "interceptions",
-      "observations": 5,
+      "market_base": "triple double",
+      "sample": "triple_double",
+      "observations": 4,
       "sports": {
-        "NFL": 5
+        "NBA": 4
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "total touchdowns by detroit lions including overtime",
-      "sample": "total_touchdowns_by_detroit_lions_including_overtime",
+      "market_base": "total touchdowns including overtime",
+      "sample": "total_touchdowns_including_overtime",
       "observations": 4,
       "sports": {
         "NFL": 4
@@ -420,48 +442,28 @@
       "auto_enable": true
     },
     {
-      "market_base": "triple double",
-      "sample": "triple_double",
+      "market_base": "touchdown to be scored by the player including overtime",
+      "sample": "4_touchdown_to_be_scored_by_the_player_including_overtime",
       "observations": 3,
       "sports": {
-        "NBA": 3
+        "NCAAF": 3
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "tackles",
+      "sample": "tackles",
+      "observations": 3,
+      "sports": {
+        "NFL": 3
       },
       "status": "shadow",
       "auto_enable": false
     },
     {
-      "market_base": "point spread",
-      "sample": "point_spread",
-      "observations": 3,
-      "sports": {
-        "NBA": 3
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "total touchdowns including overtime",
-      "sample": "total_touchdowns_including_overtime",
-      "observations": 3,
-      "sports": {
-        "NFL": 3
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "total yards of shortest touchdown void if touchdown including overtime",
-      "sample": "total_yards_of_shortest_touchdown_void_if_touchdown_including_overtime",
-      "observations": 3,
-      "sports": {
-        "NFL": 3
-      },
-      "status": "known",
-      "auto_enable": true
-    },
-    {
-      "market_base": "total touchdowns by chicago bears including overtime",
-      "sample": "total_touchdowns_by_chicago_bears_including_overtime",
+      "market_base": "kaelon black rushing yds",
+      "sample": "kaelon_black_rushing_yds",
       "observations": 2,
       "sports": {
         "NFL": 2
@@ -470,8 +472,8 @@
       "auto_enable": true
     },
     {
-      "market_base": "total yards of longest touchdown void if touchdown including overtime",
-      "sample": "total_yards_of_longest_touchdown_void_if_touchdown_including_overtime",
+      "market_base": "joe milton iii passing tds",
+      "sample": "joe_milton_iii_passing_tds",
       "observations": 2,
       "sports": {
         "NFL": 2
@@ -480,8 +482,68 @@
       "auto_enable": true
     },
     {
-      "market_base": "total touchdowns by tampa bay buccaneers including overtime",
-      "sample": "total_touchdowns_by_tampa_bay_buccaneers_including_overtime",
+      "market_base": "dak prescott rushing yds",
+      "sample": "dak_prescott_rushing_yds",
+      "observations": 2,
+      "sports": {
+        "NFL": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "joe milton iii passing yds",
+      "sample": "joe_milton_iii_passing_yds",
+      "observations": 2,
+      "sports": {
+        "NFL": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "joe milton iii rushing yds",
+      "sample": "joe_milton_iii_rushing_yds",
+      "observations": 2,
+      "sports": {
+        "NFL": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "jordan love passing tds",
+      "sample": "jordan_love_passing_tds",
+      "observations": 2,
+      "sports": {
+        "NFL": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "chris brooks rushing yds",
+      "sample": "chris_brooks_rushing_yds",
+      "observations": 2,
+      "sports": {
+        "NFL": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "marshawn lloyd rushing yds",
+      "sample": "marshawn_lloyd_rushing_yds",
+      "observations": 2,
+      "sports": {
+        "NFL": 2
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "brock purdy passing tds",
+      "sample": "brock_purdy_passing_tds",
       "observations": 1,
       "sports": {
         "NFL": 1
@@ -490,8 +552,78 @@
       "auto_enable": true
     },
     {
-      "market_base": "daniel jones passing tds",
-      "sample": "daniel_jones_passing_tds",
+      "market_base": "brock purdy passing yds",
+      "sample": "brock_purdy_passing_yds",
+      "observations": 1,
+      "sports": {
+        "NFL": 1
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "kirk cousins passing tds",
+      "sample": "kirk_cousins_passing_tds",
+      "observations": 1,
+      "sports": {
+        "NFL": 1
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "blake corum rushing yds",
+      "sample": "blake_corum_rushing_yds",
+      "observations": 1,
+      "sports": {
+        "NFL": 1
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "savion williams rushing yds",
+      "sample": "savion_williams_rushing_yds",
+      "observations": 1,
+      "sports": {
+        "NFL": 1
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "kyren williams rushing yds",
+      "sample": "kyren_williams_rushing_yds",
+      "observations": 1,
+      "sports": {
+        "NFL": 1
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "total touchdowns by detroit lions including overtime",
+      "sample": "total_touchdowns_by_detroit_lions_including_overtime",
+      "observations": 1,
+      "sports": {
+        "NFL": 1
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "total yards of shortest touchdown void if touchdown including overtime",
+      "sample": "total_yards_of_shortest_touchdown_void_if_touchdown_including_overtime",
+      "observations": 1,
+      "sports": {
+        "NFL": 1
+      },
+      "status": "known",
+      "auto_enable": true
+    },
+    {
+      "market_base": "total touchdowns by chicago bears including overtime",
+      "sample": "total_touchdowns_by_chicago_bears_including_overtime",
       "observations": 1,
       "sports": {
         "NFL": 1
@@ -500,5 +632,5 @@
       "auto_enable": true
     }
   ],
-  "shadow_count": 20
+  "shadow_count": 21
 }
