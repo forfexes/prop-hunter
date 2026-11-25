@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-25T20:02:26.688915+00:00",
+  "updated_at": "2026-11-25T20:15:06.240242+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,15 +16,16 @@
       ]
     },
     "NBA": {
-      "rows": 377,
-      "sources": [
-        "betrivers_direct",
-        "bovada_direct",
-        "fanduel_direct"
-      ],
-      "market_count": 13,
-      "latest": "2026-11-25T18:07:48.534732+00:00",
-      "missing_core": []
+      "rows": 0,
+      "sources": [],
+      "market_count": 0,
+      "latest": null,
+      "missing_core": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
     },
     "WNBA": {
       "rows": 0,
@@ -39,14 +40,12 @@
       ]
     },
     "NFL": {
-      "rows": 115,
+      "rows": 97,
       "sources": [
-        "22bet_linefeed",
-        "betrivers_direct",
-        "bovada_direct"
+        "betrivers_direct"
       ],
       "market_count": 12,
-      "latest": "2026-11-25T18:09:28.851933+00:00",
+      "latest": "2026-11-25T18:07:54.932864+00:00",
       "missing_core": [
         "touchdown"
       ]
@@ -84,6 +83,22 @@
       ]
     },
     {
+      "sport": "NBA",
+      "severity": "high",
+      "issue": "no_recent_rows"
+    },
+    {
+      "sport": "NBA",
+      "severity": "low",
+      "issue": "market_gaps",
+      "markets": [
+        "points",
+        "rebounds",
+        "assists",
+        "threes"
+      ]
+    },
+    {
       "sport": "WNBA",
       "severity": "high",
       "issue": "no_recent_rows"
@@ -97,6 +112,14 @@
         "rebounds",
         "assists",
         "threes"
+      ]
+    },
+    {
+      "sport": "NFL",
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "betrivers_direct"
       ]
     },
     {
