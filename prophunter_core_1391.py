@@ -3516,6 +3516,8 @@ def _telegram_payloads(text,picks=None):
 
 def _payload_card_image(payload,picks):
     """PNG-Bildkarte fuer ein Telegram-Fenster (oder None -> reiner Text). Abschalten: PH_IMAGE_CARDS=0."""
+    # Strict mode requires an image even when classification or rendering fails.
+    payload["premium_required"] = os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0") == "1"
     try:
         import prop_hunter_image_cards as cards
         if not picks:return None
@@ -3543,11 +3545,11 @@ def _payload_card_image(payload,picks):
               or leg_sport)
         league=cards.league_of(hint)
         from prop_hunter_combo_prices import calculated_combo_quote
+        payload["premium_required"]=bool(payload["premium_required"] or
+            (league and ((league[1]=="nba" and os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1")
+                         or (league[1]=="nfl" and os.getenv("PH_NFL_PREMIUM_CARDS","0")=="1"))))
         if calculated_combo_quote(pick) is not None and (not league or league[1] != "nfl"):
-            return None  # Use the labelled caption until this league supports formula PNGs.
-        payload["premium_required"]=bool(
-            os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1"
-            and league and league[1]=="nba")
+            return None  # No caption-only fallback in owner mode.
         payload["image_pick"]=cards.snapshot(pick)
         if not cards.ON:
             return None
@@ -3623,7 +3625,9 @@ def send_telegram(text,dry_run=False,picks=None):
     # Never post text instead of the exact owner-approved artwork; this also
     # avoids a partially delivered batch when later NBA photos are missing.
     image_cache={}
-    if os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1":
+    if (os.getenv("PH_NBA_OWNER_ORIGINALS","0")=="1" or
+            os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0")=="1" or
+            os.getenv("PH_NFL_PREMIUM_CARDS","0")=="1"):
         for payload in payloads:
             png=_payload_card_image(payload,picks)
             image_cache[id(payload)]=png
