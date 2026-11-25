@@ -212,10 +212,16 @@ def calculated_combo_quote(obj):
         if kind not in {"builder", "betbuilder"} or scope != "cross_game":
             return None
     from premium_joint_formula import estimate_combo
-    try:
-        return estimate_combo(value(obj, "leg_details") or [])["indicative_leg_product"]
-    except ValueError:
+    if confirmed_ticket(obj):
         return None
+    try:
+        analysis = estimate_combo(value(obj, "leg_details") or [])
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if (not analysis["individual_prices_observed"] or
+            analysis["scope"] == "event_identity_unknown"):
+        return None
+    return analysis["indicative_leg_product"]
 
 
 def publishable_tip(obj):
