@@ -211,7 +211,10 @@ def filter_verified_nba_images(picks, cards):
         is_nba = bool(league and league[1] == "nba")
         calculated_price = calculated_combo_quote(pick)
         if calculated_price is not None and not enabled:
-            if strict_all:
+            # NBA's owner-original route is photo-only even when the
+            # all-sports rollout flag is disabled. A formula candidate
+            # without an approved renderer must not escape as legacy text.
+            if is_nba or strict_all:
                 blocked += 1
             else:
                 accepted.append(pick)
