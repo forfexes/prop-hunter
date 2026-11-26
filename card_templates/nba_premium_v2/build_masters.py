@@ -192,8 +192,9 @@ def builder_hero(n):
         left=cx-144
         s+=asset_slot(f'leg_{i}_photo',left,246,288,325)
         s+=neon_box(left-9,574,306,85,GOLD,14)
-        s+=dynamic(cx,608,f'leg_{i}_name',25,WHITE,'middle',True)
-        s+=dynamic(cx,638,f'leg_{i}_market',22,GOLD,'middle',True)
+        # Keep the name and market once, in the corresponding numbered ticket.
+        # The portrait is identified by the matching number, not duplicate text.
+        s+=txt(cx,630,f'{i}.',31,GOLD,'middle',italic=True)
         s+=neon_box(left,661,288,61,BLUE,12)
         for index,form in enumerate(('l5','l10','l15')):
             xx=left+12+index*93
@@ -251,11 +252,10 @@ def multi(family,n):
     s+='</g>'
     s+='<g id="layer-09-combination">'
     if family=='ladder':
-        for j,key in enumerate(('l5','l10','l15','prob','stake')):
-            xx=28+j*209
-            s+=neon_box(xx,1124+extra,194,97,BLUE if j<4 else GOLD,14)
-            s+=txt(xx+17,1160+extra,key.upper() if key!='prob' else 'MODELL',22,WHITE,italic=True)
-            s+=dynamic(xx+176,1200+extra,key,29,GOLD,'end',True)
+        # Each rung has its own measured form. No empty or misleading aggregate boxes.
+        s+=neon_box(726,1124+extra,320,97,GOLD,14,'url(#amber)')
+        s+=txt(746,1186+extra,'EINSATZ',28,WHITE,italic=True)
+        s+=dynamic(1022,1186+extra,'stake',34,GOLD,'end',True,max_width=134)
     else:
         s+=neon_box(35,1124+extra,675,97,GOLD,16,'url(#amber)')
         s+=txt(62,1186+extra,'GESAMTQUOTE',32,WHITE,italic=True)+dynamic(679,1186+extra,'total_odds',38,GOLD,'end',True)

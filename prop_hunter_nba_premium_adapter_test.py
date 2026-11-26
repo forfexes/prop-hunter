@@ -386,3 +386,20 @@ def test_ladder_master_has_one_market_and_independent_form_per_rung():
                 assert fields.count(f"leg_{i}_line")==1
                 assert fields.count(f"leg_{i}_form")==1
                 assert f"leg_{i}_market" not in fields
+
+
+def test_builder_hero_and_ladder_do_not_duplicate_data_fields():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    for count in (2, 3):
+        root=ET.fromstring(multi('builder',count))
+        fields=[e.get('data-field') for e in root.iter() if e.get('data-field')]
+        for i in range(1,count+1):
+            assert fields.count(f'leg_{i}_name') == 1
+            assert fields.count(f'leg_{i}_market') == 1
+            assert all(fields.count(f'leg_{i}_{key}') == 1 for key in ('l5','l10','l15'))
+    for count in range(2,7):
+        root=ET.fromstring(multi('ladder',count))
+        fields=[e.get('data-field') for e in root.iter() if e.get('data-field')]
+        assert not set(fields).intersection({'l5','l10','l15','prob'})
+        assert fields.count('stake') == 1
