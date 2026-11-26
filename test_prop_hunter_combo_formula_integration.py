@@ -55,3 +55,115 @@ def test_conflicting_formula_markers_never_produce_bookmaker_ev():
     prepare_calculated_combo(p)
     assert p.features["formula_ev_real_ticket_only"] is None
     assert not publishable_extra(p)
+
+
+def test_formula_runs_before_price_rejection_and_preserves_live_separation():
+    from prop_hunter_combo_prices import analyse_formula_candidates
+    missing=_pick({},odds=None)
+    actual=_pick({"combined_odds_observed":True,"combined_quote_id":"BOOK-ID"})
+    accepted,deferred,summary=analyse_formula_candidates([missing,actual])
+    assert accepted==[actual] and deferred==[missing]
+    assert missing.features["calculated_combined_odds"]==3.42
+    assert missing.features["formula_ev_real_ticket_only"] is None
+    assert summary["verified_leg_formulas"]==2
+    assert summary["offline_unbookable"]==1
+    assert not publishable_extra(missing)
+
+def test_core_does_not_drop_extras_before_formula():
+    from pathlib import Path
+    source=Path("prophunter_core_1391.py").read_text()
+    stage=source[source.index("extras = build_autonomous_extras(picks, props, Pick, LadderLeg)"):]
+    stage=stage[:stage.index("from prop_hunter_form_quality import filter_tickets")]
+    assert "picks = picks + extras" in stage
+    assert "analyse_formula_candidates(picks)" in stage
+    assert "extras = [p for p in extras if publishable_extra(p)]" not in stage
+
+
+def test_formula_card_is_display_only_and_requires_verified_leg_prices():
+    from prop_hunter_combo_prices import formula_card_metadata, analyse_formula_candidates
+    p=_pick({},odds=None)
+    accepted,deferred,summary=analyse_formula_candidates([p])
+    assert accepted==[] and deferred==[p] and summary["formula_card_ready"]==1
+    card=formula_card_metadata(p)
+    assert card["display_quote"]==3.42
+    assert card["label"]=="BERECHNET – KEINE BUCHMACHERQUOTE"
+    assert card["settle_as_bookmaker_ticket"] is False
+    assert card["realised_profit"] is None and card["bookmaker_ev"] is None
+    unknown=_pick({},games=("",""),odds=None)
+    prepare_calculated_combo(unknown)
+    assert formula_card_metadata(unknown) is None
+    unverified=_pick({},odds=None)
+    unverified.leg_details[0]["odds_observed"]=False
+    prepare_calculated_combo(unverified)
+    assert formula_card_metadata(unverified) is None
+    real=_pick({"combined_odds_observed":True,"combined_quote_id":"BOOK-REAL"})
+    prepare_calculated_combo(real)
+    assert formula_card_metadata(real) is None
+
+
+def test_stale_formula_metadata_cannot_approve_changed_legs():
+    from prop_hunter_combo_prices import formula_card_metadata
+    p=_pick({},odds=None)
+    prepare_calculated_combo(p)
+    assert formula_card_metadata(p)["display_quote"] == 3.42
+    p.leg_details[0]["odds_observed"] = False
+    assert formula_card_metadata(p) is None
+    p.leg_details[0]["odds_observed"] = True
+    p.leg_details[0]["odds"] = 2.0
+    assert formula_card_metadata(p)["display_quote"] == 3.6
+    p.leg_details[0]["game"] = ""
+    assert formula_card_metadata(p) is None
+    p.leg_details.pop()
+    assert formula_card_metadata(p) is None
+
+
+def test_invalidated_leg_does_not_reuse_cached_formula_diagnostics():
+    from prop_hunter_combo_prices import analyse_formula_candidates
+    p=_pick({},odds=None)
+    _,_,first=analyse_formula_candidates([p])
+    assert first["verified_leg_formulas"]==1
+    p.leg_details[0]["odds"]=None
+    accepted,deferred,summary=analyse_formula_candidates([p])
+    assert accepted==[] and deferred==[p]
+    assert summary["verified_leg_formulas"]==0
+    assert summary["formula_card_ready"]==0
+    assert "calculated_combined_odds" not in p.features
+    assert "formula_individual_odds_verified" not in p.features
+    assert not publishable_extra(p)
+
+
+def test_formula_preview_output_requires_isolation_and_verified_legs(tmp_path, monkeypatch):
+    from prop_hunter_combo_prices import render_formula_previews
+    from unittest.mock import Mock
+    p=_pick({},odds=None)
+    renderer=Mock(return_value=bytes((137,80,78,71,13,10,26,10)))
+    monkeypatch.setenv("PH_NBA_FORMULA_OFFLINE_QA","1")
+    monkeypatch.setenv("PH_NBA_OWNER_ORIGINALS","1")
+    for k in ("TELEGRAM_TOKEN","TELEGRAM_BOT_TOKEN","TELEGRAM_CHAT_ID","TG_BOT_TOKEN","TG_TOKEN","TG_CHAT"):
+        monkeypatch.delenv(k,raising=False)
+    assert render_formula_previews([p],tmp_path,renderer)==1
+    renderer.assert_called_once_with(p,formula_preview=True)
+    assert (tmp_path/"formula-qa-001.png").exists()
+    assert not publishable_extra(p)
+    p.leg_details[0]["odds_observed"]=False
+    assert render_formula_previews([p],tmp_path,renderer)==0
+    p.leg_details[0]["odds_observed"]=True
+    monkeypatch.setenv("TELEGRAM_TOKEN","blocked-test-token")
+    assert render_formula_previews([p],tmp_path,renderer)==0
+    renderer.assert_called_once()
+
+
+def test_formula_rejects_conflicting_and_synthetic_leg_evidence():
+    from prop_hunter_combo_prices import formula_card_metadata
+    for patch in (
+        {"odds_observed":False,"features":{"odds_observed":True}},
+        {"odds_observed":True,"features":{"odds_observed":False}},
+        {"odds_observed":True,"synthetic":True},
+        {"odds_observed":True,"features":{"price_type":"derived_builder"}},
+    ):
+        p=_pick({},odds=None)
+        p.leg_details[0].update(patch)
+        prepare_calculated_combo(p)
+        assert p.features["formula_individual_odds_verified"] is False
+        assert formula_card_metadata(p) is None
+        assert not publishable_extra(p)

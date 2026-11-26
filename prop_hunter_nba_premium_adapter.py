@@ -405,7 +405,12 @@ def render_nba_pick(pick, rows, teams, *, formula_preview=False):
             _assert_selection_matches_ticket(row.get("label"), detail, f"NBA leg {i}")
             values[f"leg_{i}_name"] = str(row.get("name") or "")
             values[f"leg_{i}_market"] = str(row.get("label") or "")
-            for form_key, form_value in _form(row.get("form")).items():
+            observed_form = _form(row.get("form"))
+            values[f"leg_{i}_form"] = " · ".join(
+                f"{key.upper()} {observed_form[key]}"
+                for key in ("l5","l10","l15") if observed_form.get(key)
+            )
+            for form_key, form_value in observed_form.items():
                 # Per-athlete L5/L10/L15 are observed windows only; do not
                 # invent data or copy another builder leg's statistics.
                 values[f"leg_{i}_{form_key}"] = form_value

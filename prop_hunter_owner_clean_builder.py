@@ -159,8 +159,7 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
         y = round(start + i * row_step)
         p.rounded_rectangle(
             (37, y, 654, y + max(21, round(row_step) - 3)),
-            radius=7, fill=(3, 18, 36, 134),
-            outline=(40, 183, 230, 205), width=1,
+            radius=7, outline=(40, 183, 230, 205), width=1,
         )
     im = Image.alpha_composite(im, tint)
     d = ImageDraw.Draw(im)

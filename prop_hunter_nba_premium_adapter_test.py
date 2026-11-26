@@ -371,3 +371,68 @@ typed_time = SimpleNamespace(features={}, commence_time=None,
     leg_details=[SimpleNamespace(commence_time="2026-11-20T19:00:00+00:00")])
 assert "20.11." in _kickoff_text(typed_time)
 print("NBA LIVE ENTRYPOINT TYPED LEGS PASS: all four families, league isolation, venue and kickoff")
+
+
+# Every ladder/same-player master contains a single market field per rung,
+# plus its independently supplied form; no duplicated market lines.
+def test_ladder_master_has_one_market_and_independent_form_per_rung():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    for family in ("ladder","same_player"):
+        for count in range(2,7):
+            root=ET.fromstring(multi(family,count))
+            fields=[e.get("data-field") for e in root.iter() if e.get("data-field")]
+            for i in range(1,count+1):
+                assert fields.count(f"leg_{i}_line")==1
+                assert fields.count(f"leg_{i}_form")==1
+                assert f"leg_{i}_market" not in fields
+
+
+def test_builder_hero_and_ladder_do_not_duplicate_data_fields():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    for count in (2, 3):
+        root=ET.fromstring(multi('builder',count))
+        fields=[e.get('data-field') for e in root.iter() if e.get('data-field')]
+        for i in range(1,count+1):
+            assert fields.count(f'leg_{i}_name') == 1
+            assert fields.count(f'leg_{i}_market') == 1
+            assert all(fields.count(f'leg_{i}_{key}') == 1 for key in ('l5','l10','l15'))
+    for count in range(2,7):
+        root=ET.fromstring(multi('ladder',count))
+        fields=[e.get('data-field') for e in root.iter() if e.get('data-field')]
+        assert not set(fields).intersection({'l5','l10','l15','prob'})
+        assert fields.count('stake') == 1
+
+
+def test_multi_game_and_large_builder_keep_individual_form_and_geometry():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    ns='{http://www.w3.org/2000/svg}'
+    for family, maximum in (('builder',7),('lottery',12),('combo',12),('cross_game',12)):
+        for n in range(4 if family=='builder' else 2,maximum+1):
+            root=ET.fromstring(multi(family,n))
+            for i in range(1,n+1):
+                group=next(e for e in root.iter() if e.get('id')==f'layer-leg-{i}')
+                fields={e.get('data-field'):e for e in group.iter(ns+'text') if e.get('data-field')}
+                keys=['name','market']+(['game'] if family!='builder' else [])+['form']
+                lines=[fields[f'leg_{i}_{key}'] for key in keys]
+                for prev, nxt in zip(lines,lines[1:]):
+                    assert float(nxt.get('y'))-float(prev.get('y'))>=float(nxt.get('font-size'))
+                for line in lines:
+                    assert float(line.get('x'))+float(line.get('data-max-width')) < float(fields[f'leg_{i}_odds'].get('x'))-83
+
+
+def test_dense_multileg_text_never_grows_beyond_master_font():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    from card_templates.nba_premium_v2.render_cards import render_svg
+    key='lottery_12'
+    master=ET.fromstring(multi('lottery',12))
+    expected={e.get('data-field'):float(e.get('font-size')) for e in master.iter() if e.get('data-field')}
+    values={'leg_1_form':'L5 3/5 · L10 7/10 · L15 10/15','leg_1_game':'TEAM A vs TEAM B · 26.11.2026 20:00'}
+    rendered=ET.fromstring(render_svg(key,values,{},strict=False,embed_background=False))
+    for e in rendered.iter():
+        name=e.get('data-field')
+        if name in values:
+            assert float(e.get('font-size'))<=expected[name], name

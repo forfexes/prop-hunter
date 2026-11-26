@@ -3669,10 +3669,10 @@ def send_telegram(text,dry_run=False,picks=None):
                     break
                 data=r.json() if r.content else {}
                 mid=((data.get("result") or {}).get("message_id"))
-                if mid is None:
-                    log.error("Telegram returned no message_id kind=%s",payload.get("kind"))
+                if data.get("ok") is not True or type(mid) is not int or mid<=0:
+                    log.error("Telegram returned invalid positive message receipt kind=%s",payload.get("kind"))
                     break
-                item=dict(payload);item["message_id"]=int(mid);sent.append(item)
+                item=dict(payload);item["message_id"]=mid;sent.append(item)
                 delivered=True
                 break
             except Exception as e:
@@ -5618,28 +5618,22 @@ def run(dry_run=False,sport_filter=None):
                 log.info("estimated team+player builders: +%d", len(est_mixed))
         except Exception as est_exc:
             log.warning("estimated mixed builder skipped: %s", est_exc)
-        from prop_hunter_combo_prices import publishable_extra
-        _generated_count=len(extras)
-        from collections import Counter
-        from prop_hunter_combo_prices import publishable_extra_reason
-        rejected_reasons = Counter(publishable_extra_reason(p) for p in extras if not publishable_extra(p))
-        extras = [p for p in extras if publishable_extra(p)]
-        log.info("builder price scope: generated=%d accepted=%d rejected=%d reasons=%s",_generated_count,len(extras),_generated_count-len(extras),dict(rejected_reasons))
         picks = picks + extras
-        log.info("verified builder extras: +%d", len(extras))
+        log.info("builder extras before formula and ticket gates: +%d", len(extras))
     except Exception as exc:
         log.warning("verified builder skipped: %s", exc)
-    from prop_hunter_combo_prices import publishable_extra, prepare_calculated_combo
-    # Analyse ALL Combo/Builder/Lottery candidates first, including ones
-    # without a combined bookmaker ticket. Independent model probabilities
-    # and same-game conditional/joint evidence are kept separately from
-    # book prices; unbookable tickets are still blocked from Telegram.
-    formula_candidates = [prepare_calculated_combo(p) for p in picks]
-    formula_deferred = [
-        p for p in formula_candidates if not publishable_extra(p)]
-    log.info("Kombi/Builder/Lottery formula analysed: total=%d offline_unbookable=%d",
-             len(formula_candidates), len(formula_deferred))
-    picks = [p for p in formula_candidates if publishable_extra(p)]
+    from prop_hunter_combo_prices import analyse_formula_candidates
+    # Formula-only candidates are evaluated before rejection; the real-ticket
+    # publication and accounting gates remain unchanged until renderer approval.
+    picks, formula_deferred, formula_diagnostics = analyse_formula_candidates(picks)
+    log.info("Kombi/Builder/Lottery formula analysed before ticket gate: %s", formula_diagnostics)
+    if dry_run:
+        from prop_hunter_combo_prices import isolated_formula_qa, render_formula_previews
+        if isolated_formula_qa():
+            import prop_hunter_image_cards as _formula_cards
+            _formula_count = render_formula_previews(formula_deferred,
+                "output/formula_card_previews", _formula_cards.build_for_pick)
+            log.info("Isolated NBA formula previews rendered=%d", _formula_count)
     from prop_hunter_form_quality import filter_tickets
     picks, form_rejected = filter_tickets(picks)
     log.info("final form evidence filter: %s", form_rejected)

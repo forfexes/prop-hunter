@@ -99,7 +99,9 @@ def _get_image(url: str) -> Optional["Image.Image"]:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
     except Exception:
         img = None
-    _CACHE[url] = img
+    # Cache decoded successes only; transient failures must remain retryable.
+    if img is not None:
+        _CACHE[url] = img
     return img
 
 
@@ -131,7 +133,8 @@ def player_photo(name: str, league: Optional[Tuple[str, str]]) -> Optional["Imag
     if len(matches) == 1:
         athlete_id = next(iter(matches))
         img = _get_image(f"https://a.espncdn.com/i/headshots/{league[1]}/players/full/{athlete_id}.png")
-    _CACHE[key] = img
+    if img is not None:
+        _CACHE[key] = img
     return img
 
 
@@ -162,6 +165,9 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
                           "abbreviation": _norm(t.get("abbreviation")),
                           "nickname": _norm(t.get("nickname") or t.get("name")),
                           "logo": logos[0].get("href") if logos else None})
+        # An unavailable team endpoint must not become an empty cached roster.
+        if not teams:
+            return None
         _CACHE[tkey] = teams
     # Exact, independently verified feed-name aliases only. Never fuzzy-match
     # a city/nickname to an unrelated team or cross from another sport.
@@ -727,7 +733,7 @@ def _same_visible_team_crest(teams: List[Tuple[str, Optional["Image.Image"]]]) -
     return normalized[0] == normalized[1]
 
 
-def build_for_pick(pick: Any) -> Optional[bytes]:
+def build_for_pick(pick: Any, *, formula_preview=False) -> Optional[bytes]:
     """PNG-Bytes fuer einen Pick (single/ladder/betbuilder/kombi) oder None."""
     if not ON:
         return None
@@ -752,8 +758,11 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         # The visual generator (including later in-place Telegram edits) is
         # itself a hard release gate. Offline leg-products and forged Singles
         # must never reach a photo, regardless of caller or workflow version.
-        from prop_hunter_combo_prices import publishable_extra
-        if not publishable_extra(pick):
+        from prop_hunter_combo_prices import publishable_extra, formula_card_metadata, isolated_formula_qa
+        if formula_preview:
+            if not isolated_formula_qa() or formula_card_metadata(pick) is None:
+                return None
+        elif not publishable_extra(pick):
             print("OWNER_IMAGE_QUOTE_UNVERIFIED: no image produced", flush=True)
             return None
         # Settlement re-renders bypass the new-pick publication preflight.
@@ -874,7 +883,8 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         if league and league[1] == "nba":
             try:
                 from prop_hunter_nba_premium_adapter import render_nba_pick
-                png = render_nba_pick(pick, rows, teams)
+                png = (render_nba_pick(pick, rows, teams, formula_preview=True)
+                       if formula_preview else render_nba_pick(pick, rows, teams))
                 print("NBA_PREMIUM_V2_RENDER_OK type=%s legs=%d" % (typ, len(rows)), flush=True)
                 return png
             except Exception as exc:

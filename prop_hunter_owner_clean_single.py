@@ -188,7 +188,7 @@ def render(plate: Image.Image, *, title: str, subtitle: str, teams: list,
     for center, team in zip((273, 457), teams):
         _floating_team(im, team, center)
     if not centered_qa and not _background_portrait(
-            im, row.get("photo"), (0, 129, 239, 457)):
+            im, row.get("photo"), (0, 129, 216, 457)):
         raise ValueError("Actual transparent athlete cutout required")
 
     date, clock = _verified_time(subtitle)

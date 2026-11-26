@@ -75,7 +75,6 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
     for i in range(len(rows)):
         y = top + i * 60
         p.rounded_rectangle((257, y, 673, y + 53), radius=10,
-                            fill=(4, 20, 37, 150),
                             outline=(55, 208, 241, 220), width=2)
     im = Image.alpha_composite(im, tint)
     d = ImageDraw.Draw(im)
@@ -90,7 +89,7 @@ def render(plate: Image.Image, *, subtitle: str, teams: list,
         # first threshold's form in the footer wrongly implies that all
         # priced ladder lines have identical L5/L10/L15 performance.
         _text(d, (378, y + 43), _observed_form_windows(row.get("form")),
-              size=12, max_width=235, color=GREEN)
+              size=12, max_width=205, color=GREEN)
         result = str(row.get("result") or "")
         if result:
             # Each rung has an independent, observed result. Support English
