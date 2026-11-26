@@ -106,7 +106,7 @@ MAX_LOTTERY_TOTAL     = 2
 MAX_LOTTERY_LEGS      = 10  # Mini 2-3, Standard 4-5, Super 6-8, Mega 9-10; bookmaker quote gate still applies
 
 GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip() or "gemini-3.6-flash"
-GROQ_MODELS    = ["llama-3.3-70b-versatile","llama-3.1-70b-versatile","mixtral-8x7b-32768"]
+GROQ_MODELS    = ("openai/gpt-oss-120b", "openai/gpt-oss-20b")
 FUZZY_THR      = 85
 LINEUP_THR     = 88
 
@@ -3199,8 +3199,15 @@ def call_groq(prompt):
                 r=requests.post("https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"},
                     json={"model":model,"messages":[{"role":"user","content":prompt}],
-                          "max_tokens":AI_TOKENS,"temperature":AI_TEMP},timeout=TIMEOUT*2)
-                if r.status_code==200: return r.json()["choices"][0]["message"]["content"]
+                          "max_completion_tokens":AI_TOKENS,"temperature":AI_TEMP,
+                          "reasoning_effort":"low"},timeout=TIMEOUT*2)
+                if r.status_code==200:
+                    content = r.json()["choices"][0]["message"].get("content")
+                    if isinstance(content, str) and content.strip():
+                        log.info("groq %s: response received", model)
+                        return content
+                    log.warning("groq %s: empty text response", model)
+                    continue
                 if r.status_code==429: log.warning("groq 429 %s (rate limit) key …%s",model,str(key)[-4:]); continue
                 log.warning("groq %s %d: %s",model,r.status_code,str(r.text)[:160])
             except Exception as e: log.warning("groq %s: %s",model,e)
