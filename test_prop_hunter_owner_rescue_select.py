@@ -3,6 +3,7 @@ be squeezed out of the 18-tip rescue window by unapproved NFL photos.
 
 This test is offline, deterministic and cannot send Telegram cards.
 """
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace as N
 from unittest.mock import patch
 
@@ -52,3 +53,20 @@ with patch.dict("os.environ", env):
     assert select_publishable_owner_rescue([])[0] == []
     assert select_publishable_owner_rescue([])[1]["considered"] == 0
 print("SOURCE_RESCUE_NBA_ORIGINAL_FIRST_NO_UNAPPROVED_PHOTO_PASS")
+
+now = datetime.now(timezone.utc)
+live_nfl = pick("NFL")
+live_nfl.commence_time = now + timedelta(hours=2)
+live_nfl.features = {"odds_observed": True, "bookmaker": "QA bookmaker"}
+live_nhl = pick("NHL")
+live_nhl.commence_time = now + timedelta(hours=2)
+live_nhl.features = live_nfl.features.copy()
+started = pick("NFL")
+started.commence_time = now - timedelta(minutes=5)
+started.features = live_nfl.features.copy()
+with patch.dict("os.environ", {**env, "PH_NFL_PREMIUM_CARDS": "1", "PH_NHL_PREMIUM_CARDS": "1"}):
+    pool, stats = select_publishable_owner_rescue([live_nfl, live_nhl, started, weak[0], pick("MLB")])
+    assert pool == [live_nfl, live_nhl]
+    assert stats["blocked"] == {"prematch_fixture_already_started": 1,
+                                "single_odds_outside_1_70_to_3_00": 1,
+                                "unapproved_league": 1}
