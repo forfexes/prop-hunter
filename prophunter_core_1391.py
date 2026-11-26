@@ -4416,6 +4416,10 @@ def analyse(props, *, diagnostics=None):
         m = _find_source_prop(pk, props)
         if not m:
             continue
+        source_is_nfl_or_nhl = str(m.sport or "").upper() in ("NFL", "NHL")
+        if source_is_nfl_or_nhl and not _same_market(pk.market or "", m.market or ""):
+            pk.features = {}
+            continue
         # Originaldaten übernehmen: verhindert Basket ohne Linie und falsche Teams.
         pk.emoji = pk.emoji or m.emoji
         pk.team = pk.team or getattr(m, "team", None) or m.home or ""
@@ -4435,6 +4439,13 @@ def analyse(props, *, diagnostics=None):
         pk.source_sport = m.sport
         pk.source_game = m.game
         pk.features = getattr(m, "features", {}) or {}
+        if source_is_nfl_or_nhl:
+            pk.game = m.game
+            pk.commence_time = getattr(m, "commence_time", None)
+            pk.team = _source_prop_team(m)
+            pk.player = m.player
+            pk.odds = m.odds
+            pk.market = m.market
         pk.market = _market_with_line(pk.market or m.market, pk.direction, pk.point)
         if m.enrichment and pk.analysis:
             # kurz halten, aber Zusatzinfos nicht verlieren
@@ -5289,6 +5300,8 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
             pk.source_sport = sport
             pk.sport = sport
             pk.source_game = _source_prop_game(sp)
+            if sport in ("NFL", "NHL"):
+                pk.commence_time = getattr(sp, "commence_time", None)
             pk.features = getattr(sp, "features", {}) or {}
             candidates.append(pk)
         except Exception:
@@ -5326,13 +5339,10 @@ def rescue_picks_from_props(props, max_picks=RESCUE_MAX_PICKS):
         except Exception:
             rejected["hr_build_error"] += 1
 
-    # The production photo release currently has ONLY authentic NBA owner
-    # plates. Prefer all independently qualified NBA picks BEFORE allocating
-    # scarce rescue slots, rather than selecting NFL/NHL cards that Telegram
-    # then rejects. This retains all-sports source scouting/diagnostics.
+    # Filter for league approval before slots are allocated.
     from prop_hunter_owner_rescue_select import select_publishable_owner_rescue
     candidates, owner_release_stats = select_publishable_owner_rescue(candidates)
-    if owner_release_stats.get("mode") == "nba_originals_only":
+    if owner_release_stats["mode"] == "approved_leagues":
         log.info("owner original rescue pool: %s", owner_release_stats)
     diversity = os.getenv("PH_RESCUE_SPORT_MIN", "1")
     out = _rescue_select_diverse(candidates, max_picks, min_per_sport=diversity)
