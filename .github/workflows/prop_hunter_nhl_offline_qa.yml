@@ -25,7 +25,7 @@ jobs:
       - run: |
           python - <<'PY'
           import pathlib, cairosvg
-          for f in pathlib.Path('output/nhl_offline').glob('*.svg'):
+          for f in pathlib.Path('output/nhl_offline').rglob('*.svg'):
               cairosvg.svg2png(url=str(f),write_to=str(f.with_suffix('.png')))
           PY
       - uses: actions/upload-artifact@v4

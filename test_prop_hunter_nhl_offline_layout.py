@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import pytest
-from prop_hunter_nhl_offline_layout import KINDS, render, previews
+from prop_hunter_nhl_offline_layout import KINDS, masters, render, previews
 
 @pytest.mark.parametrize("kind", KINDS)
 def test_layout(kind):
@@ -71,3 +71,13 @@ def test_individual_observed_prices_and_form_are_separate():
     rows[1]["odds"]=float("nan")
     with pytest.raises(ValueError,match="Invalid observed"):
         render("cross",rows)
+
+
+def test_empty_master_exports_all_families_without_example_data(tmp_path):
+    masters(tmp_path)
+    assert {path.stem for path in tmp_path.glob("*.svg")} == set(KINDS)
+    for path in tmp_path.glob("*.svg"):
+        svg = path.read_text(encoding="utf-8")
+        assert ET.fromstring(svg).get("width") == "900"
+        for sample in ("QA SPIELER", "Testmarkt", "FOTO-SLOT", "AUSWERTUNG: OFFEN"):
+            assert sample not in svg
