@@ -71,7 +71,7 @@ class PerRungFormQA(unittest.TestCase):
         self.assertEqual(value_lines[-1][1], "L5 — · L10 — · L15 —")
         self.assertEqual(len({xy[1] for xy,_,_ in value_lines}),6)
         for xy,_,kw in value_lines:
-            self.assertEqual(kw["max_width"],235)
+            self.assertEqual(kw["max_width"],205)
             self.assertEqual(kw["size"],12)
         results = [(xy,text) for xy,text,_ in seen if xy[0]==562]
         self.assertEqual(len(results),6)
