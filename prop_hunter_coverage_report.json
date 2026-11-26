@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-25T20:15:06.240242+00:00",
+  "updated_at": "2026-11-26T01:40:29.172643+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,12 +16,13 @@
       ]
     },
     "NBA": {
-      "rows": 0,
-      "sources": [],
-      "market_count": 0,
-      "latest": null,
+      "rows": 60,
+      "sources": [
+        "22bet_linefeed"
+      ],
+      "market_count": 1,
+      "latest": "2026-11-26T00:42:08.847695+00:00",
       "missing_core": [
-        "points",
         "rebounds",
         "assists",
         "threes"
@@ -40,26 +41,26 @@
       ]
     },
     "NFL": {
-      "rows": 97,
+      "rows": 192,
       "sources": [
+        "22bet_linefeed",
         "betrivers_direct"
       ],
-      "market_count": 12,
-      "latest": "2026-11-25T18:07:54.932864+00:00",
+      "market_count": 10,
+      "latest": "2026-11-26T00:44:04.871810+00:00",
       "missing_core": [
         "touchdown"
       ]
     },
     "NHL": {
-      "rows": 0,
-      "sources": [],
-      "market_count": 0,
-      "latest": null,
+      "rows": 164,
+      "sources": [
+        "22bet_linefeed"
+      ],
+      "market_count": 3,
+      "latest": "2026-11-26T00:44:04.884467+00:00",
       "missing_core": [
-        "shots",
-        "goals",
         "points",
-        "assists",
         "saves"
       ]
     }
@@ -84,15 +85,17 @@
     },
     {
       "sport": "NBA",
-      "severity": "high",
-      "issue": "no_recent_rows"
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "22bet_linefeed"
+      ]
     },
     {
       "sport": "NBA",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "points",
         "rebounds",
         "assists",
         "threes"
@@ -112,14 +115,6 @@
         "rebounds",
         "assists",
         "threes"
-      ]
-    },
-    {
-      "sport": "NFL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "betrivers_direct"
       ]
     },
     {
@@ -132,18 +127,18 @@
     },
     {
       "sport": "NHL",
-      "severity": "high",
-      "issue": "no_recent_rows"
+      "severity": "medium",
+      "issue": "single_source",
+      "sources": [
+        "22bet_linefeed"
+      ]
     },
     {
       "sport": "NHL",
       "severity": "low",
       "issue": "market_gaps",
       "markets": [
-        "shots",
-        "goals",
         "points",
-        "assists",
         "saves"
       ]
     }
