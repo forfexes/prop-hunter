@@ -42,6 +42,15 @@ def test_ambiguous_and_wrong_portrait_url():
     with pytest.raises(ValueError): official_portrait_url(roster({**PLAYER,"headshot":URL.replace("assets.nhle.com","untrusted.invalid")}),"QA Player")
 
 
+def test_matching_provider_id_disambiguates_same_name_but_not_duplicate_rows():
+    other={**PLAYER,"id":7654321,"headshot":URL.replace("1234567","7654321")}
+    assert official_portrait_url(roster(other,PLAYER),"QA Player",1234567,"TOR")==URL
+    with pytest.raises(ValueError): official_portrait_url(roster(other,PLAYER),"QA Player")
+    with pytest.raises(ValueError): official_portrait_url(roster(PLAYER,PLAYER),"QA Player",1234567)
+    with pytest.raises(ValueError): official_portrait_url(roster(PLAYER),"Wrong Name",1234567)
+    with pytest.raises(ValueError): official_portrait_url(roster(PLAYER),"QA Player",True)
+
+
 def test_multileg_asset_slots_and_exact_identity():
     from prop_hunter_nhl_offline_assets import resolve_legs
     leg=dict(player="QA Player",player_team="TOR",home="TOR",away="COL",player_id=1234567)
