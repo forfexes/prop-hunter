@@ -421,3 +421,18 @@ def test_multi_game_and_large_builder_keep_individual_form_and_geometry():
                     assert float(nxt.get('y'))-float(prev.get('y'))>=float(nxt.get('font-size'))
                 for line in lines:
                     assert float(line.get('x'))+float(line.get('data-max-width')) < float(fields[f'leg_{i}_odds'].get('x'))-83
+
+
+def test_dense_multileg_text_never_grows_beyond_master_font():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    from card_templates.nba_premium_v2.render_cards import render_svg
+    key='lottery_12'
+    master=ET.fromstring(multi('lottery',12))
+    expected={e.get('data-field'):float(e.get('font-size')) for e in master.iter() if e.get('data-field')}
+    values={'leg_1_form':'L5 3/5 · L10 7/10 · L15 10/15','leg_1_game':'TEAM A vs TEAM B · 26.11.2026 20:00'}
+    rendered=ET.fromstring(render_svg(key,values,{},strict=False,embed_background=False))
+    for e in rendered.iter():
+        name=e.get('data-field')
+        if name in values:
+            assert float(e.get('font-size'))<=expected[name], name

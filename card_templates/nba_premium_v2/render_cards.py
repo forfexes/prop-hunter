@@ -116,7 +116,7 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
             if e.text and len(e.text)>20:
                 original=float(e.get('font-size') or 28)
                 maxlen=24 if key.endswith('_market') else 20
-                e.set('font-size',str(round(max(17,original*maxlen/len(e.text)),1)))
+                e.set('font-size',str(round(min(original,max(12,original*maxlen/len(e.text))),1)))
             # Explicit geometry slots are sized by actual glyph width, not
             # character count. Never let a long name run into match metadata.
             limit=e.get('data-max-width')
