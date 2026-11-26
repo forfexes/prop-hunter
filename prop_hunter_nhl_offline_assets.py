@@ -35,6 +35,12 @@ def official_portrait_url(roster,player,expected_id=None,expected_team=None):
             name=localized(row.get("firstName"))+" "+localized(row.get("lastName"))
             if name_key(name)==key:
                 matches.append(row)
+    # An explicit provider ID can disambiguate identical names, but must
+    # never override the verified full name or accept duplicate roster rows.
+    if expected_id is not None:
+        if isinstance(expected_id,bool) or not str(expected_id).isdigit() or int(expected_id)<=0:
+            raise ValueError("Invalid official player ID")
+        matches=[row for row in matches if str(row.get("id"))==str(expected_id)]
     if len(matches)!=1:
         raise ValueError("Player not uniquely present in the supplied NHL roster")
     row=matches[0]
