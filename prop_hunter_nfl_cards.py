@@ -1,7 +1,9 @@
 """NFL card renderer using the stadium and team artwork in the offline master."""
 import base64
 import json
+import os
 import re
+from datetime import datetime, timezone
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
@@ -37,6 +39,35 @@ def fixture(value):
             raise ValueError("Unknown or duplicate NFL team")
         codes.append(code)
     return tuple(codes)
+
+
+@lru_cache(maxsize=64)
+def _roster(code, day, get_json):
+    url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{code}/roster"
+    data = get_json(url)
+    team = (data or {}).get("team") or {}
+    if str(team.get("name") or "").casefold() != TEAMS[code].casefold() or not data.get("athletes"):
+        raise ValueError("Official NFL roster unavailable")
+    return [row for group in data["athletes"] for row in group.get("items", [])]
+
+
+def _fixture_portrait(player, teams, cards):
+    day = datetime.now(timezone.utc).date()
+    name = cards._norm(player)
+    matches = [
+        row for code in teams for row in _roster(code, day, cards._get_json)
+        if name in {cards._norm(row.get("fullName")), cards._norm(row.get("displayName"))}
+    ]
+    if len(matches) != 1 or not str(matches[0].get("id") or "").isdigit():
+        raise ValueError("NFL athlete is not unique across the two fixture rosters")
+    player_id = matches[0]["id"]
+    portrait = cards._get_image(f"https://a.espncdn.com/i/headshots/nfl/players/full/{player_id}.png")
+    if portrait is None:
+        raise ValueError("Verified NFL cutout unavailable")
+    min_alpha, max_alpha = portrait.convert("RGBA").getchannel("A").getextrema()
+    if min_alpha != 0 or max_alpha == 0:
+        raise ValueError("Invalid NFL cutout transparency")
+    return portrait
 
 
 def render_nfl_pick(pick, details, cards, *, formula_quote=None):
@@ -101,7 +132,10 @@ def render_nfl_pick(pick, details, cards, *, formula_quote=None):
         teams = fixture(pick.game)
         if not player or any(d.get("player") and cards._norm(d["player"]) != cards._norm(player) for d in details):
             raise ValueError("NFL player identity missing or inconsistent")
-        portrait = cards.player_photo(player, ("football", "nfl"))
+        if os.getenv("PH_OWNER_APPROVED_ALL_SPORTS") == "1":
+            portrait = _fixture_portrait(player, teams, cards)
+        else:
+            portrait = cards.player_photo(player, ("football", "nfl"))
         if portrait is not None:
             portrait = portrait.convert("RGBA")
             portrait.thumbnail((525, 425), Image.Resampling.LANCZOS)

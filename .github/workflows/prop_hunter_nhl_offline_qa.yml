@@ -3,6 +3,12 @@ name: PROP HUNTER NHL Offline Portrait QA
   pull_request:
     branches: [main]
     paths:
+      - prop_hunter_nhl_cards.py
+      - test_prop_hunter_nhl_production_cards.py
+      - prop_hunter_image_cards.py
+      - prop_hunter_image_publication_gate.py
+      - prop_hunter_nfl_cards.py
+      - prophunter_core_1391.py
       - prop_hunter_nhl_offline_layout.py
       - test_prop_hunter_nhl_offline_layout.py
       - prop_hunter_nhl_offline_assets.py
@@ -19,8 +25,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install pytest cairosvg pillow
-      - run: python -m pytest -q test_prop_hunter_nhl_offline_layout.py test_prop_hunter_nhl_offline_assets.py
+      - run: pip install pytest cairosvg pillow requests
+      - run: python -m pytest -q test_prop_hunter_nhl_offline_layout.py test_prop_hunter_nhl_offline_assets.py test_prop_hunter_nhl_production_cards.py
       - run: python prop_hunter_nhl_offline_layout.py
       - run: |
           python - <<'PY'
