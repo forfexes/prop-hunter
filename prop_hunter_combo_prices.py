@@ -214,6 +214,31 @@ def _ladder_stages_are_individual(obj, legs):
     return True
 
 
+def calculated_combo_quote(obj):
+    """Indicative figure for formula cards, separate from settlement prices."""
+    kind = str(value(obj, "type") or "").strip().lower()
+    scope = str(value(obj, "combo_scope") or features(obj).get("combo_scope") or "").strip().lower()
+    if kind not in {"kombi", "kombi2", "kombi3", "combo", "cross", "big", "super", "lottery"}:
+        if kind not in {"builder", "betbuilder"} or scope != "cross_game":
+            return None
+    from premium_joint_formula import estimate_combo
+    if confirmed_ticket(obj):
+        return None
+    try:
+        analysis = estimate_combo(value(obj, "leg_details") or [])
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if (not analysis["individual_prices_observed"] or
+            analysis["scope"] == "event_identity_unknown"):
+        return None
+    return analysis["indicative_leg_product"]
+
+
+def publishable_tip(obj):
+    """Allow explicitly labelled formula tips without accepting them as tickets."""
+    return calculated_combo_quote(obj) is not None or publishable_extra(obj)
+
+
 def publishable_extra(obj):
     """Never present an unverified multi-leg product as a bookmaker quote.
 
@@ -246,6 +271,8 @@ def quote_withdrawal_reason(ticket):
     return scope+'Gesamtquote nur aus Einzelquoten berechnet; keine bestätigte Buchmacherquote'
 
 def invalidate_unpriced_combo(ticket):
+    if ticket.get('calculated_display_quote') is not None:
+        return False
     if ticket.get('quote_invalidated'):
         # Migrate only our old generic reason; preserve other incident evidence
         # and original result/profit. This does not reinstate withdrawn tips.

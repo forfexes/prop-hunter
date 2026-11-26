@@ -441,7 +441,10 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict, context_picks
     if not legs:
         return False
     decided=_settle_proven_losing_accumulator(combo,legs,by_dedup,by_signature,context_picks)
-    if decided is not None:return decided
+    if decided is not None:
+        if combo.get("calculated_display_quote") is not None:
+            combo["profit"] = None
+        return decided
     states = []
     profit = 0.0
     for i, leg in enumerate(legs):
@@ -482,7 +485,11 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict, context_picks
         states.append(status)
         if combo.get("type") == "ladder":
             profit += _profit_for(leg, status)
-    if combo.get("type") == "ladder":
+    if combo.get("calculated_display_quote") is not None:
+        final = ("loss" if any(s in {"loss", "lost"} for s in states) else
+                 "win" if any(s in {"win", "won"} for s in states) else "push")
+        profit = None
+    elif combo.get("type") == "ladder":
         final = "win" if profit > 0 else "loss" if profit < 0 else "push"
     elif any(s in {"loss", "lost"} for s in states):
         final = "loss"
@@ -512,10 +519,10 @@ def _settle_combo(combo: dict, by_dedup: dict, by_signature: dict, context_picks
         else:
             final = "push"
             profit = 0.0
-    old = (combo.get("result"), _to_float(combo.get("profit"), 0.0))
+    old = (combo.get("result"), combo.get("profit"))
     combo.pop("settlement_invalidated", None)
     combo["result"] = final
-    combo["profit"] = round(profit, 2)
+    combo["profit"] = round(profit, 2) if profit is not None else None
     combo["leg_details"] = legs if combo.get("leg_details") else combo.get("leg_details", [])
     combo["settlement_legs"] = legs
     return old != (combo["result"], combo["profit"])

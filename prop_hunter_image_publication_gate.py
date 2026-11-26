@@ -197,6 +197,15 @@ def filter_verified_nba_images(picks, cards):
             pass
         if hasattr(pick,"_verified_owner_png") or hasattr(pick,"_verified_owner_signature"):
             continue
+        from prop_hunter_combo_prices import calculated_combo_quote
+        if calculated_combo_quote(pick) is not None:
+            # Formula evidence does not grant an artwork approval or bypass
+            # the owner-only contract. The NFL preview remains offline.
+            if strict_all:
+                blocked += 1
+                continue
+            accepted.append(pick)
+            continue
         if strict_all:
             # Only NBA has actual approved, sample-free owner PNG masters.
             # NFL/NHL/WNBA/MLB and unknown-source cards must be deferred
