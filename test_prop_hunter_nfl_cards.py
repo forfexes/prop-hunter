@@ -13,6 +13,18 @@ import prop_hunter_image_cards as cards
 from prop_hunter_combo_prices import calculated_combo_quote, publishable_extra
 
 
+def test_transient_photo_errors_are_retryable():
+    buf = BytesIO()
+    Image.new("RGBA", (80, 80), (0, 0, 0, 0)).save(buf, format="PNG")
+    failed = Pick(status_code=503, content=b"")
+    success = Pick(status_code=200, content=buf.getvalue())
+    with patch.object(cards, "_CACHE", {}), patch.object(cards.requests, "get", side_effect=[failed, success]) as get:
+        assert cards._get_image("https://qa.invalid/photo.png") is None
+        assert cards._get_image("https://qa.invalid/photo.png") is not None
+        assert cards._get_image("https://qa.invalid/photo.png") is not None
+        assert get.call_count == 2
+
+
 def test_nfl_cards_offline():
     tree = ast.parse(Path("prophunter_core_1391.py").read_text())
     names = {"_payload_card_image", "send_telegram"}
