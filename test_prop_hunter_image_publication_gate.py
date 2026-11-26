@@ -248,3 +248,18 @@ with patch.dict("os.environ", {
     assert not hasattr(broken,"_verified_owner_png")
     assert good_neighbour._verified_owner_png==PNG
 print("OWNER IMAGE PER-PICK RENDER EXCEPTION ISOLATION PASSED")
+
+
+def test_nba_formula_cannot_escape_as_text_when_all_sports_flag_is_off():
+    formula = N(type="lottery", player="formula", sport="NBA",
+                leg_details=[{"sport":"NBA"},{"sport":"NBA"}],
+                features={"combined_odds_observed":False})
+    formula._verified_owner_png = PNG
+    renderer = Cards()
+    with patch.dict("os.environ", {"PH_OWNER_APPROVED_ALL_SPORTS":"0",
+                                    "PH_NBA_OWNER_ORIGINALS":"1"}), \
+         patch("prop_hunter_combo_prices.calculated_combo_quote", return_value=3.0):
+        accepted, blocked = filter_verified_nba_images([formula], renderer)
+    assert accepted == [] and blocked == 1
+    assert renderer.calls == []
+    assert not hasattr(formula, "_verified_owner_png")
