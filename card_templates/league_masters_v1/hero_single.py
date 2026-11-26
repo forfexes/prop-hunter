@@ -18,10 +18,10 @@ def _load(name,path):
     spec=importlib.util.spec_from_file_location(name,path); m=importlib.util.module_from_spec(spec); sys.modules[name]=m; spec.loader.exec_module(m); return m
 league=_load('league_build',HERE/'build_masters.py'); nba=league.nba
 W,H=1080,1440
-TINT={'nhl':((10,40,80),(40,170,235)),'ahl':((50,16,22),(235,100,80)),'mlb':((8,40,26),(90,210,120)),'wnba':((52,28,10),(245,150,60))}
+TINT={'nhl':((10,40,80),(40,170,235)),'ahl':((50,16,22),(235,100,80))}
 
 def smoke(lg,path):
-    rng=np.random.default_rng(abs(hash(lg))%2**32 if False else {'nhl':1,'ahl':2,'mlb':3,'wnba':4}[lg])
+    rng=np.random.default_rng(abs(hash(lg))%2**32 if False else {'nhl':1,'ahl':2}[lg])
     base=np.zeros((H,W),float)
     for sigma,amp in ((120,1.0),(55,.6),(22,.3)):
         n=Image.fromarray((rng.random((H//4,W//4))*255).astype('uint8')).resize((W,H),Image.BICUBIC).filter(ImageFilter.GaussianBlur(sigma))

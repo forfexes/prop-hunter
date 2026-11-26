@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PROP HUNTER league masters (NHL, AHL, MLB, WNBA) — design proposal, NOT production-wired.
+"""PROP HUNTER league masters (NHL, AHL) — design proposal, NOT production-wired.
 
 Same layout engine as the approved NBA premium masters. Each league gets a
 procedural player-free background and an OWN NEUTRAL emblem (generic puck /
@@ -27,12 +27,6 @@ LEAGUES={
  'ahl':{'name':'AHL','venue':'HALLE','bg':'ice_red','accent':'#FF6A5C','glyph':'puck','markets':{
    'single':'PRO TIP · SINGLE','shots_on_goal':'SHOTS ON GOAL','goals':'TORE','assists':'ASSISTS','points':'POINTS (G+A)',
    'saves':'GOALIE SAVES','moneyline':'MONEYLINE','match_total':'MATCH TOTAL'}},
- 'mlb':{'name':'MLB','venue':'STADION','bg':'field','accent':'#7DFF8A','glyph':'ball','markets':{
-   'single':'PRO TIP · SINGLE','hits':'HITS','home_runs':'HOME RUNS','strikeouts':'STRIKEOUTS','total_bases':'TOTAL BASES',
-   'rbis':'RBIs','runs':'RUNS','moneyline':'MONEYLINE','run_line':'RUN LINE','match_total':'MATCH TOTAL'}},
- 'wnba':{'name':'WNBA','venue':'ARENA','bg':'court','accent':'#FFA64D','glyph':'basketball','markets':{
-   'single':'PRO TIP · SINGLE','points':'POINTS','rebounds':'REBOUNDS','assists':'ASSISTS','threes':'3-POINTER',
-   'pra':'PTS + REB + AST','steals':'STEALS','blocks':'BLOCKS','moneyline':'MONEYLINE','spread':'SPREAD','match_total':'MATCH TOTAL'}},
 }
 
 def _sky(im,top,bot,h):
