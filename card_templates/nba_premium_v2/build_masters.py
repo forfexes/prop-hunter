@@ -167,10 +167,17 @@ def leg_row(x,y,w,h,i,family):
         s+=dynamic(left,y+h*.39,f'leg_{i}_line',25,WHITE,max_width=text_width)
         s+=dynamic(left,y+h*.76,f'leg_{i}_form',16,MUTED,max_width=text_width)
     else:
-        s+=dynamic(left,y+h*(.34 if family in ('lottery','combo','cross_game') else .45),f'leg_{i}_name',26,WHITE,max_width=text_width)
-        s+=dynamic(left,y+h*(.65 if family in ('lottery','combo','cross_game') else .78),f'leg_{i}_market',24,MUTED,max_width=text_width)
+        # All legs have their own form; never reuse the parent selection's hit rate.
+        # Reserve distinct baselines even in the longest tickets.
         if family in ('lottery','combo','cross_game'):
-            s+=dynamic(left,y+h*.89,f'leg_{i}_game',18,MUTED,max_width=text_width)
+            s+=dynamic(left,y+h*.24,f'leg_{i}_name',min(26,int(h*.20)),WHITE,max_width=text_width)
+            s+=dynamic(left,y+h*.45,f'leg_{i}_market',min(24,int(h*.19)),GOLD,max_width=text_width)
+            s+=dynamic(left,y+h*.66,f'leg_{i}_game',min(18,int(h*.17)),MUTED,max_width=text_width)
+            s+=dynamic(left,y+h*.87,f'leg_{i}_form',min(18,int(h*.16)),GREEN,max_width=text_width)
+        else:
+            s+=dynamic(left,y+h*.29,f'leg_{i}_name',min(26,int(h*.25)),WHITE,max_width=text_width)
+            s+=dynamic(left,y+h*.58,f'leg_{i}_market',min(24,int(h*.23)),GOLD,max_width=text_width)
+            s+=dynamic(left,y+h*.86,f'leg_{i}_form',min(18,int(h*.19)),GREEN,max_width=text_width)
     s+=neon_box(x+w-186,y+h/2-32,166,64,GOLD,14,'url(#amber)')
     s+=dynamic(x+w-103,y+h/2+10,f'leg_{i}_odds',27,GOLD,'middle',True)
     s+='</g>'

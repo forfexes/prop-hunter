@@ -403,3 +403,21 @@ def test_builder_hero_and_ladder_do_not_duplicate_data_fields():
         fields=[e.get('data-field') for e in root.iter() if e.get('data-field')]
         assert not set(fields).intersection({'l5','l10','l15','prob'})
         assert fields.count('stake') == 1
+
+
+def test_multi_game_and_large_builder_keep_individual_form_and_geometry():
+    import xml.etree.ElementTree as ET
+    from card_templates.nba_premium_v2.build_masters import multi
+    ns='{http://www.w3.org/2000/svg}'
+    for family, maximum in (('builder',7),('lottery',12),('combo',12),('cross_game',12)):
+        for n in range(4 if family=='builder' else 2,maximum+1):
+            root=ET.fromstring(multi(family,n))
+            for i in range(1,n+1):
+                group=next(e for e in root.iter() if e.get('id')==f'layer-leg-{i}')
+                fields={e.get('data-field'):e for e in group.iter(ns+'text') if e.get('data-field')}
+                keys=['name','market']+(['game'] if family!='builder' else [])+['form']
+                lines=[fields[f'leg_{i}_{key}'] for key in keys]
+                for prev, nxt in zip(lines,lines[1:]):
+                    assert float(nxt.get('y'))-float(prev.get('y'))>=float(nxt.get('font-size'))
+                for line in lines:
+                    assert float(line.get('x'))+float(line.get('data-max-width')) < float(fields[f'leg_{i}_odds'].get('x'))-83
