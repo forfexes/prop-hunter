@@ -82,7 +82,9 @@ function render(){
   ctx.fillStyle=ice;ctx.fillText('HUNTER',wordmarkX+propWidth,47);
   ctx.restore();
   const badge=pictures.shield;ctx.drawImage(badge,450-28,80,56,68);
-  txt(kind.toUpperCase(),450,174,32);
+  const heroExample=soloCard&&d.example&&previewImage&&!portrait;
+  if(kind==='Ladder'&&heroExample){ctx.fillStyle='#041021';ctx.fillRect(0,145,W,58);}
+  if(!(kind==='Single'&&heroExample))txt(kind.toUpperCase(),450,174,32);
   if(soloCard){
    logo(d.teams[0],125,418,148,125);logo(d.teams[1],775,418,148,125);
    txt(d.player?.toUpperCase(),450,690,73);rule(738);
