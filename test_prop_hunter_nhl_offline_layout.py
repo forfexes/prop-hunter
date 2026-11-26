@@ -58,3 +58,16 @@ def test_long_ticket_extends_clean_canvas_and_keeps_every_leg(kind,count):
     assert texts["AUSWERTUNG: OFFEN"] < height
     with pytest.raises(ValueError):
         render(kind,rows+[{}]*(13-count))
+
+
+def test_individual_observed_prices_and_form_are_separate():
+    rows=[dict(player="QA A",market="Shots",match="QA A vs QA B",form="L10 7/10 · L15 11/15",odds=1.82,odds_observed=True),
+          dict(player="QA B",market="Goals",match="QA C vs QA D",form="L10 3/10 · L15 6/15",odds=2.14,odds_observed=True)]
+    svg=render("cross",rows,price="3.89")
+    assert "@1.82" in svg and "@2.14" in svg
+    assert "L10 7/10 · L15 11/15" in svg and "L10 3/10 · L15 6/15" in svg
+    rows[0]["odds_observed"]=False
+    assert "@1.82" not in render("cross",rows)
+    rows[1]["odds"]=float("nan")
+    with pytest.raises(ValueError,match="Invalid observed"):
+        render("cross",rows)

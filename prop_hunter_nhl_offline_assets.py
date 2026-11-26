@@ -88,7 +88,8 @@ def resolve_single(*,player,player_team,home,away,rosters,load_photo,load_logo,p
 def resolve_legs(kind, legs, *, rosters, load_photo, load_logo):
     """Validate all leg identities first, then reuse only identical source assets."""
     legs=list(legs)
-    if kind not in ("ladder","builder","kombi","cross","lottery") or not 2<=len(legs)<=6:
+    limit=6 if kind=="ladder" else 12
+    if kind not in ("ladder","builder","kombi","cross","lottery") or not 2<=len(legs)<=limit:
         raise ValueError("Invalid NHL multi-leg card")
     planned=[]
     for leg in legs:

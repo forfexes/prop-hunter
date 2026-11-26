@@ -76,3 +76,20 @@ def test_portrait_from_other_roster_team_is_blocked_before_download():
     with pytest.raises(ValueError,match="verified roster team"):
         resolve_single(player="QA Player",player_team="TOR",home="TOR",away="COL",
             rosters={"TOR":roster(wrong)},load_photo=unexpected,load_logo=unexpected)
+
+
+@pytest.mark.parametrize("kind",("builder","kombi","cross","lottery"))
+def test_extended_nhl_tickets_resolve_every_asset(kind):
+    from prop_hunter_nhl_offline_assets import resolve_legs
+    leg=dict(player="QA Player",player_team="TOR",home="TOR",away="COL",player_id=1234567)
+    legs=[dict(leg) for _ in range(12)]
+    if kind=="cross":
+        legs[-1]["away"]="NYR"
+    kwargs=dict(rosters={"TOR":roster(PLAYER)},load_photo=lambda url:transparent(),load_logo=lambda *a:transparent())
+    assets=resolve_legs(kind,legs,**kwargs)
+    assert len(assets)==36
+    assert render(kind,legs,assets=assets).count("data:image/png;base64,")==36
+    with pytest.raises(ValueError):
+        resolve_legs(kind,legs+[leg],**kwargs)
+    with pytest.raises(ValueError):
+        resolve_legs("ladder",legs,**kwargs)

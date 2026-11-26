@@ -4,6 +4,7 @@ from base64 import b64encode
 from io import BytesIO
 from PIL import Image, ImageFont
 from pathlib import Path
+from math import isfinite
 
 KINDS = ("single", "ladder", "builder", "kombi", "cross", "lottery")
 CREAM, WINE, INK = "#f0dfc4", "#641525", "#171411"
@@ -73,10 +74,18 @@ def render(kind, rows=(), player="", price="", l10="", l15="", model="", result=
             photo(f"leg_{i}_player",36,y+2,88,88)
             photo(f"leg_{i}_home",678,y+1,70,70)
             photo(f"leg_{i}_away",774,y+1,70,70)
-            txt(142,y+29,row.get("player","SPIELER"),26,limit=30,max_width=505)
-            txt(142,y+58,row.get("market","MARKT"),23,WINE,limit=34,max_width=505)
-            txt(142,y+83,row.get("match","SPIEL"),19,limit=36,max_width=490)
-            txt(650,y+88,row.get("form",""),16,WINE,limit=20)
+            txt(142,y+24,row.get("player","SPIELER"),24,limit=30,max_width=505)
+            txt(142,y+46,row.get("market","MARKT"),20,WINE,limit=34,max_width=505)
+            txt(142,y+66,row.get("match","SPIEL"),17,limit=40,max_width=490)
+            txt(142,y+86,row.get("form",""),16,WINE,limit=44,max_width=490)
+            if row.get("odds_observed") is True:
+                try:
+                    q=float(row.get("odds"))
+                except (ValueError,TypeError,OverflowError) as exc:
+                    raise ValueError("Invalid observed NHL leg price") from exc
+                if not isfinite(q) or q<=1:
+                    raise ValueError("Invalid observed NHL leg price")
+                txt(678,y+88,f"@{q:.2f}",18,WINE,max_width=184)
     rect(0,825+extra,900,173,WINE)
     txt(38,872+extra,"QUOTE / MODELL",24,CREAM)
     txt(38,952+extra,price or "—",54,CREAM,limit=24)
