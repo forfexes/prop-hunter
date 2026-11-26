@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-26T01:40:29.172643+00:00",
+  "updated_at": "2026-11-26T16:51:20.905872+00:00",
   "window_hours": 36,
   "sports": {
     "MLB": {
@@ -16,17 +16,14 @@
       ]
     },
     "NBA": {
-      "rows": 60,
+      "rows": 672,
       "sources": [
-        "22bet_linefeed"
+        "betrivers_direct",
+        "kambi"
       ],
-      "market_count": 1,
-      "latest": "2026-11-26T00:42:08.847695+00:00",
-      "missing_core": [
-        "rebounds",
-        "assists",
-        "threes"
-      ]
+      "market_count": 11,
+      "latest": "2026-11-26T03:28:39.828551+00:00",
+      "missing_core": []
     },
     "WNBA": {
       "rows": 0,
@@ -41,28 +38,29 @@
       ]
     },
     "NFL": {
-      "rows": 192,
+      "rows": 1279,
       "sources": [
-        "22bet_linefeed",
-        "betrivers_direct"
+        "betrivers_direct",
+        "bovada_direct",
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 10,
-      "latest": "2026-11-26T00:44:04.871810+00:00",
-      "missing_core": [
-        "touchdown"
-      ]
+      "market_count": 59,
+      "latest": "2026-11-26T03:28:48.926236+00:00",
+      "missing_core": []
     },
     "NHL": {
-      "rows": 164,
+      "rows": 512,
       "sources": [
-        "22bet_linefeed"
+        "betrivers_direct",
+        "bovada_direct",
+        "draftkings_direct",
+        "fanduel_direct",
+        "kambi"
       ],
-      "market_count": 3,
-      "latest": "2026-11-26T00:44:04.884467+00:00",
-      "missing_core": [
-        "points",
-        "saves"
-      ]
+      "market_count": 6,
+      "latest": "2026-11-26T03:28:21.811679+00:00",
+      "missing_core": []
     }
   },
   "issues": [
@@ -84,24 +82,6 @@
       ]
     },
     {
-      "sport": "NBA",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "22bet_linefeed"
-      ]
-    },
-    {
-      "sport": "NBA",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "rebounds",
-        "assists",
-        "threes"
-      ]
-    },
-    {
       "sport": "WNBA",
       "severity": "high",
       "issue": "no_recent_rows"
@@ -115,31 +95,6 @@
         "rebounds",
         "assists",
         "threes"
-      ]
-    },
-    {
-      "sport": "NFL",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "touchdown"
-      ]
-    },
-    {
-      "sport": "NHL",
-      "severity": "medium",
-      "issue": "single_source",
-      "sources": [
-        "22bet_linefeed"
-      ]
-    },
-    {
-      "sport": "NHL",
-      "severity": "low",
-      "issue": "market_gaps",
-      "markets": [
-        "points",
-        "saves"
       ]
     }
   ]
