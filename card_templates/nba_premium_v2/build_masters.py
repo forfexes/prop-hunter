@@ -170,7 +170,7 @@ def leg_row(x,y,w,h,i,family):
         # All legs have their own form; never reuse the parent selection's hit rate.
         # Reserve distinct baselines even in the longest tickets.
         if family in ('lottery','combo','cross_game'):
-            s+=dynamic(left,y+h*.24,f'leg_{i}_name',min(26,int(h*.20)),WHITE,max_width=text_width)
+            s+=dynamic(left,y+h*.20,f'leg_{i}_name',min(26,int(h*.20)),WHITE,max_width=text_width)
             s+=dynamic(left,y+h*.45,f'leg_{i}_market',min(24,int(h*.19)),GOLD,max_width=text_width)
             s+=dynamic(left,y+h*.66,f'leg_{i}_game',min(18,int(h*.17)),MUTED,max_width=text_width)
             s+=dynamic(left,y+h*.87,f'leg_{i}_form',min(18,int(h*.16)),GREEN,max_width=text_width)
