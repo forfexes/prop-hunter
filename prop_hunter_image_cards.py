@@ -760,8 +760,9 @@ def build_for_pick(pick: Any, *, formula_preview=False) -> Optional[bytes]:
         # must never reach a photo, regardless of caller or workflow version.
         from prop_hunter_combo_prices import publishable_extra, formula_card_metadata, isolated_formula_qa
         from prop_hunter_combo_prices import calculated_combo_quote
-        nfl_enabled = league and league[1] == "nfl" and os.getenv("PH_NFL_PREMIUM_CARDS", "0") == "1"
-        formula_quote = calculated_combo_quote(pick) if nfl_enabled and not formula_preview else None
+        from prop_hunter_image_publication_gate import sport_card_enabled
+        league_enabled = sport_card_enabled(league) and not formula_preview
+        formula_quote = calculated_combo_quote(pick) if league_enabled else None
         if formula_preview:
             if not isolated_formula_qa() or formula_card_metadata(pick) is None:
                 return None
@@ -780,10 +781,13 @@ def build_for_pick(pick: Any, *, formula_preview=False) -> Optional[bytes]:
                 if not leg_league or not league or leg_league[1] != league[1]:
                     print("PREMIUM_LEG_LEAGUE_MISMATCH: publication and settlement blocked", flush=True)
                     return None
-        if nfl_enabled:
+        if league_enabled:
             import sys
-            from prop_hunter_nfl_cards import render_nfl_pick
-            return render_nfl_pick(pick, details, sys.modules[__name__], formula_quote=formula_quote)
+            if league[1] == "nfl":
+                from prop_hunter_nfl_cards import render_nfl_pick as render_pick
+            else:
+                from prop_hunter_nhl_cards import render_nhl_pick as render_pick
+            return render_pick(pick, details, sys.modules[__name__], formula_quote=formula_quote)
         # Fail before any ESPN network/image fetch for sports without approved masters.
         # Other sports remain text-only until their own premium masters are approved.
         if not league or league[1] != "nba":
@@ -912,7 +916,7 @@ def snapshot(pick):
     """JSON-safe presentation evidence for editing the original photo later."""
     import json
     from types import SimpleNamespace
-    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit","stake","commence_time","game_date","date","probability","edge_pct","confidence_score","model_confidence")}
+    data = {key: getattr(pick,key,None) for key in ("type","player","market","direction","point","odds","game","source_sport","sport","features","leg_details","result","actual_value","profit","stake","commence_time","game_date","date","team","combo_scope","probability","edge_pct","confidence_score","model_confidence")}
     data["picks"]=[vars(x) if isinstance(x,SimpleNamespace) else (x.model_dump() if hasattr(x,"model_dump") else dict(x) if isinstance(x,dict) else {"market":getattr(x,"market", ""),"odds":getattr(x,"odds",None)}) for x in (getattr(pick,"picks",None) or [])]
     return json.loads(json.dumps(data,default=str))
 

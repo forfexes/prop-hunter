@@ -20,6 +20,11 @@ _PNG_MAGIC=bytes((137,80,78,71,13,10,26,10))
 
 
 
+def sport_card_enabled(league):
+    return bool(league and league[1] in ("nfl", "nhl")
+                and os.getenv(f"PH_{league[1].upper()}_PREMIUM_CARDS") == "1")
+
+
 def owner_image_signature(pick):
     """Hash all ticket fields that can invalidate a pre-verified owner PNG.
 
@@ -28,7 +33,7 @@ def owner_image_signature(pick):
     """
     keys = (
         "type", "sport", "source_sport", "game", "commence_time", "date",
-        "player", "market", "point", "direction", "odds", "stake",
+        "player", "team", "combo_scope", "market", "point", "direction", "odds", "stake",
         # A confirmed card may become stale even when its decimal odds do not.
         # The rendered probability, edge, identity and settlement all matter.
         "probability", "edge_pct", "confidence", "value", "model",
@@ -55,6 +60,8 @@ def owner_image_signature(pick):
         "no_overpaint":os.getenv("PH_BLOCK_OVERPAINTED_MASTERS","0"),
         "layered_owner_release":os.getenv("PH_ALLOW_VERIFIED_LAYERED_OWNER","0"),
         "all_sports":os.getenv("PH_OWNER_APPROVED_ALL_SPORTS","0"),
+        "nfl_cards":os.getenv("PH_NFL_PREMIUM_CARDS","0"),
+        "nhl_cards":os.getenv("PH_NHL_PREMIUM_CARDS","0"),
         "pixel_qa":os.getenv("PH_OWNER_PIXEL_QA","0"),
         "quote_qa":os.getenv("PH_OWNER_QUOTE_QA","0"),
         "premium_quality":os.getenv("PH_ENFORCE_OWNER_QUALITY","0"),
@@ -94,7 +101,7 @@ def owner_single_quality(pick):
     return True, "premium_single_minimums_passed"
 
 
-def pre_match_quote_provenance(pick):
+def pre_match_quote_provenance(pick, *, calculated_price=None, league_routed=False):
     """Block stale pre-match prices and unlabeled sportsbook odds in live sends.
 
     Settlement photo editing intentionally uses its own historical safeguards;
@@ -118,7 +125,7 @@ def pre_match_quote_provenance(pick):
             "synthetic", "model", "estimated", "calculated", "unknown"):
             return False, "single_missing_observed_bookmaker"
     try:
-        price=float(_pick_value(pick, "odds"))
+        price=float(calculated_price if calculated_price is not None else _pick_value(pick, "odds"))
         if kind not in ("ladder",) and (not math.isfinite(price) or price <= 1):
             return False, "invalid_bookmaker_decimal_price"
     except (ValueError, TypeError, OverflowError):
@@ -127,14 +134,16 @@ def pre_match_quote_provenance(pick):
     details=list(_pick_value(pick, "leg_details", None) or [])
     if kind == "ladder" and not details:
         return False, "ladder_rungs_missing"
-    scope=str(f.get("combo_scope") or "").lower()
+    scope=str(_pick_value(pick, "combo_scope") or f.get("combo_scope") or "").lower()
+    kickoff = _pick_value(pick, "commence_time") or f.get("commence_time")
     if scope == "cross_game":
         if len(details)<2:
             return False, "cross_game_leg_timestamps_missing"
         times=[_pick_value(leg, "commence_time") for leg in details]
+    elif league_routed and details and kind not in ("single", "longshot"):
+        times = [_pick_value(leg, "commence_time") or kickoff for leg in details]
     else:
-        times=[(_pick_value(pick, "commence_time")
-                or f.get("commence_time"))]
+        times = [kickoff]
     now=datetime.now(timezone.utc)
     for value in times:
         if not value:
@@ -146,7 +155,7 @@ def pre_match_quote_provenance(pick):
                 return False, "prematch_fixture_already_started"
         except (ValueError, TypeError, OverflowError):
             return False, "kickoff_invalid"
-    return True, "observed_prematch_quote"
+    return True, "calculated_prematch_quote" if calculated_price is not None else "observed_prematch_quote"
 
 
 def _valid_owner_png(value):
@@ -197,44 +206,36 @@ def filter_verified_nba_images(picks, cards):
             pass
         if hasattr(pick,"_verified_owner_png") or hasattr(pick,"_verified_owner_signature"):
             continue
-        from prop_hunter_combo_prices import calculated_combo_quote
-        if calculated_combo_quote(pick) is not None:
-            # Formula evidence does not grant an artwork approval or bypass
-            # the owner-only contract. The NFL preview remains offline.
+        from prop_hunter_combo_prices import calculated_combo_quote, publishable_extra
+        enabled = sport_card_enabled(league)
+        is_nba = bool(league and league[1] == "nba")
+        calculated_price = calculated_combo_quote(pick)
+        if calculated_price is not None and not enabled:
             if strict_all:
                 blocked += 1
+            else:
+                accepted.append(pick)
+            continue
+        if strict_all or enabled:
+            leg_leagues = [cards.league_of(_pick_value(leg, "sport")) for leg in details]
+            if (not (is_nba or enabled) or
+                    any(not item or item != league for item in leg_leagues)):
+                blocked += 1
                 continue
+        if calculated_price is None and not publishable_extra(pick):
+            blocked += 1
+            continue
+        if not (is_nba or enabled):
             accepted.append(pick)
             continue
-        if strict_all:
-            # Only NBA has actual approved, sample-free owner PNG masters.
-            # NFL/NHL/WNBA/MLB and unknown-source cards must be deferred
-            # until THEIR original premium master is formally approved.
-            leg_leagues=[cards.league_of(
-                leg.get("sport") if isinstance(leg,dict)
-                else getattr(leg,"sport",None)) for leg in details]
-            if (not league or league[1]!="nba"
-                    or any(not item or item[1]!="nba" for item in leg_leagues)):
-                blocked+=1
-                continue
-        # Apply the same all-sport combined-ticket provenance gate to
-        # every pick, even one accidentally mislabeled Single/Longshot/Ladder.
-        # No cached PNG may bypass the verified bookmaker-price requirement.
-        from prop_hunter_combo_prices import publishable_extra
-        if not publishable_extra(pick):
-            blocked+=1
-            continue
-        if not league or league[1]!="nba":
-            accepted.append(pick)
-            continue
-        if os.getenv("PH_ENFORCE_OWNER_QUALITY", "0").strip() == "1":
+        if is_nba and os.getenv("PH_ENFORCE_OWNER_QUALITY", "0").strip() == "1":
             qualified, reason = owner_single_quality(pick)
             if not qualified:
                 print("OWNER_PREMIUM_QUALITY_BLOCKED reason=" + reason, flush=True)
                 blocked += 1
                 continue
-        if os.getenv("PH_OWNER_QUOTE_QA", "0").strip() == "1":
-            proven, reason=pre_match_quote_provenance(pick)
+        if enabled or os.getenv("PH_OWNER_QUOTE_QA", "0").strip() == "1":
+            proven, reason=pre_match_quote_provenance(pick, calculated_price=calculated_price, league_routed=enabled)
             if not proven:
                 print("OWNER_QUOTE_PREFLIGHT_BLOCKED reason="+reason, flush=True)
                 blocked+=1
@@ -264,7 +265,7 @@ def filter_verified_nba_images(picks, cards):
             # against both the approved AND the latest cleaned source plate.
             # This refuses a stale master, an altered crown, and sample-image
             # overlays before any Telegram transport is attempted.
-            if os.getenv("PH_OWNER_PIXEL_QA", "0").strip() == "1":
+            if is_nba and os.getenv("PH_OWNER_PIXEL_QA", "0").strip() == "1":
                 from prop_hunter_owner_pixel_qa import owner_pixel_provenance
                 passed, reason = owner_pixel_provenance(pick, result)
                 if not passed:
