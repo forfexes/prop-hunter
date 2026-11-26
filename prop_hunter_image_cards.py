@@ -99,7 +99,9 @@ def _get_image(url: str) -> Optional["Image.Image"]:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
     except Exception:
         img = None
-    _CACHE[url] = img
+    # Cache decoded successes only; transient failures must remain retryable.
+    if img is not None:
+        _CACHE[url] = img
     return img
 
 
@@ -131,7 +133,8 @@ def player_photo(name: str, league: Optional[Tuple[str, str]]) -> Optional["Imag
     if len(matches) == 1:
         athlete_id = next(iter(matches))
         img = _get_image(f"https://a.espncdn.com/i/headshots/{league[1]}/players/full/{athlete_id}.png")
-    _CACHE[key] = img
+    if img is not None:
+        _CACHE[key] = img
     return img
 
 
@@ -162,6 +165,9 @@ def team_logo(team: str, league: Optional[Tuple[str, str]]) -> Optional["Image.I
                           "abbreviation": _norm(t.get("abbreviation")),
                           "nickname": _norm(t.get("nickname") or t.get("name")),
                           "logo": logos[0].get("href") if logos else None})
+        # An unavailable team endpoint must not become an empty cached roster.
+        if not teams:
+            return None
         _CACHE[tkey] = teams
     # Exact, independently verified feed-name aliases only. Never fuzzy-match
     # a city/nickname to an unrelated team or cross from another sport.
