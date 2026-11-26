@@ -733,7 +733,7 @@ def _same_visible_team_crest(teams: List[Tuple[str, Optional["Image.Image"]]]) -
     return normalized[0] == normalized[1]
 
 
-def build_for_pick(pick: Any) -> Optional[bytes]:
+def build_for_pick(pick: Any, *, formula_preview=False) -> Optional[bytes]:
     """PNG-Bytes fuer einen Pick (single/ladder/betbuilder/kombi) oder None."""
     if not ON:
         return None
@@ -758,10 +758,14 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         # The visual generator (including later in-place Telegram edits) is
         # itself a hard release gate. Offline leg-products and forged Singles
         # must never reach a photo, regardless of caller or workflow version.
-        from prop_hunter_combo_prices import calculated_combo_quote, publishable_extra
+        from prop_hunter_combo_prices import publishable_extra, formula_card_metadata, isolated_formula_qa
+        from prop_hunter_combo_prices import calculated_combo_quote
         nfl_enabled = league and league[1] == "nfl" and os.getenv("PH_NFL_PREMIUM_CARDS", "0") == "1"
-        formula_quote = calculated_combo_quote(pick) if nfl_enabled else None
-        if formula_quote is None and not publishable_extra(pick):
+        formula_quote = calculated_combo_quote(pick) if nfl_enabled and not formula_preview else None
+        if formula_preview:
+            if not isolated_formula_qa() or formula_card_metadata(pick) is None:
+                return None
+        elif formula_quote is None and not publishable_extra(pick):
             print("OWNER_IMAGE_QUOTE_UNVERIFIED: no image produced", flush=True)
             return None
         # Settlement re-renders bypass the new-pick publication preflight.
@@ -886,7 +890,8 @@ def build_for_pick(pick: Any) -> Optional[bytes]:
         if league and league[1] == "nba":
             try:
                 from prop_hunter_nba_premium_adapter import render_nba_pick
-                png = render_nba_pick(pick, rows, teams)
+                png = (render_nba_pick(pick, rows, teams, formula_preview=True)
+                       if formula_preview else render_nba_pick(pick, rows, teams))
                 print("NBA_PREMIUM_V2_RENDER_OK type=%s legs=%d" % (typ, len(rows)), flush=True)
                 return png
             except Exception as exc:
@@ -921,6 +926,7 @@ def settled_image(data, text):
     # ORIGINAL 691px artwork instead of being silently redesigned.
     if str(obj.get("type") or "").lower()=="single":
         obj.setdefault("_owner_single_master_20261122", False)
+        obj.setdefault("_owner_single_centered_20261125", False)
     obj["picks"]=[SimpleNamespace(**x) for x in obj.get("picks",[]) or []]
     summary=next((ln for ln in text.splitlines() if "Auswertung:" in ln), "")
     summary=re.sub(r"[^\w\s:.,+%/−-]", "", summary)

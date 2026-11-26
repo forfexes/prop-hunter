@@ -41,8 +41,11 @@ def txt(x,y,s,size=28,color=WHITE,anchor='start',field=None,italic=False,weight=
             f'text-anchor="{anchor}" fill="{color}"'+(f' data-field="{field}"' if field else '')+
             f'>{esc(s)}</text>')
 
-def dynamic(x,y,key,size=30,color=WHITE,anchor='start',italic=False):
-    return txt(x,y,'',size,color,anchor,field=key,italic=italic)
+def dynamic(x,y,key,size=30,color=WHITE,anchor='start',italic=False,max_width=None):
+    node=txt(x,y,'',size,color,anchor,field=key,italic=italic)
+    if max_width is not None:
+        node=node.replace(' data-field=',f' data-max-width="{max_width}" data-field=',1)
+    return node
 
 def gold_line(x1,y1,x2,y2):
     return f'<path d="M{x1} {y1} L{x2} {y2}" stroke="{GOLD}" stroke-width="2" opacity=".7"/>'
@@ -100,7 +103,7 @@ def match_info(x=837,y=305):
     return f'''<g id="layer-06-match-metadata">
 {txt(x,y,'DATUM',18,GOLD)}{dynamic(x,y+36,'date',22)}{gold_line(x,y+48,1050,y+48)}
 {txt(x,y+92,'UHRZEIT',18,GOLD)}{dynamic(x,y+129,'time',22)}{gold_line(x,y+141,1050,y+141)}
-{txt(x,y+184,'ARENA',18,GOLD)}{dynamic(x,y+220,'venue',19)}
+{txt(x,y+184,'ARENA',18,GOLD)}{dynamic(x,y+220,'venue',19,max_width=1050-x)}
 </g>'''
 
 def settlement(y=1260,accent=GOLD):
@@ -132,9 +135,9 @@ def stats(y=833,for_ladder=False):
 
 def single(label):
     s=svg_start()+header('PRO TIP — SINGLE')
-    s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-45,180,408,700)}</g>'
+    s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-20,180,300,615)}</g>'
     s+=crest_pair(286)+match_info(838,286)
-    s+=f'<g id="layer-07-player-name">{dynamic(692,532,"player_name",48,WHITE,"middle",True)}</g>'
+    s+=f'<g id="layer-07-player-name">{dynamic(580,550,"player_name",40,WHITE,"middle",True,max_width=420)}</g>'
     # The generic Single already has the exact PRO TIP — SINGLE header.
     # Never repeat PRO TIP below the player name; leave that area clear.
     if label != 'PRO TIP · SINGLE':
@@ -157,10 +160,24 @@ def leg_row(x,y,w,h,i,family):
         left=x+215
     else:
         left=x+118
-    s+=dynamic(left,y+h*(.34 if family in ('lottery','combo','cross_game') else .45),f'leg_{i}_name' if not is_ladder else f'leg_{i}_line',26,WHITE)
-    s+=dynamic(left,y+h*(.65 if family in ('lottery','combo','cross_game') else .78),f'leg_{i}_market',24,MUTED)
-    if family in ('lottery','combo','cross_game'):
-        s+=dynamic(left,y+h*.89,f'leg_{i}_game',18,MUTED)
+    text_width=x+w-200-left
+    if is_ladder:
+        # One market label per rung; use the second line for that rung's
+        # own observed recent form rather than repeating the same selection.
+        s+=dynamic(left,y+h*.39,f'leg_{i}_line',25,WHITE,max_width=text_width)
+        s+=dynamic(left,y+h*.76,f'leg_{i}_form',16,MUTED,max_width=text_width)
+    else:
+        # All legs have their own form; never reuse the parent selection's hit rate.
+        # Reserve distinct baselines even in the longest tickets.
+        if family in ('lottery','combo','cross_game'):
+            s+=dynamic(left,y+h*.24,f'leg_{i}_name',min(26,int(h*.20)),WHITE,max_width=text_width)
+            s+=dynamic(left,y+h*.45,f'leg_{i}_market',min(24,int(h*.19)),GOLD,max_width=text_width)
+            s+=dynamic(left,y+h*.66,f'leg_{i}_game',min(18,int(h*.17)),MUTED,max_width=text_width)
+            s+=dynamic(left,y+h*.87,f'leg_{i}_form',min(18,int(h*.16)),GREEN,max_width=text_width)
+        else:
+            s+=dynamic(left,y+h*.29,f'leg_{i}_name',min(26,int(h*.25)),WHITE,max_width=text_width)
+            s+=dynamic(left,y+h*.58,f'leg_{i}_market',min(24,int(h*.23)),GOLD,max_width=text_width)
+            s+=dynamic(left,y+h*.86,f'leg_{i}_form',min(18,int(h*.19)),GREEN,max_width=text_width)
     s+=neon_box(x+w-186,y+h/2-32,166,64,GOLD,14,'url(#amber)')
     s+=dynamic(x+w-103,y+h/2+10,f'leg_{i}_odds',27,GOLD,'middle',True)
     s+='</g>'
@@ -180,10 +197,11 @@ def builder_hero(n):
     s+='<g id="layer-04-original-builder-hero-portraits">'
     for i,cx in enumerate(centers,1):
         left=cx-144
-        s+=asset_slot(f'leg_{i}_photo',left,246,288,341)
+        s+=asset_slot(f'leg_{i}_photo',left,246,288,325)
         s+=neon_box(left-9,574,306,85,GOLD,14)
-        s+=dynamic(cx,608,f'leg_{i}_name',25,WHITE,'middle',True)
-        s+=dynamic(cx,638,f'leg_{i}_market',22,GOLD,'middle',True)
+        # Keep the name and market once, in the corresponding numbered ticket.
+        # The portrait is identified by the matching number, not duplicate text.
+        s+=txt(cx,630,f'{i}.',31,GOLD,'middle',italic=True)
         s+=neon_box(left,661,288,61,BLUE,12)
         for index,form in enumerate(('l5','l10','l15')):
             xx=left+12+index*93
@@ -224,9 +242,9 @@ def multi(family,n):
     s=svg_start(H+extra)+header(f'{FAMILIES[family]} · {n} LEGS',accent=accent)
     same=family in ('ladder','same_player')
     if same:
-        s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-45,175,405,805)}</g>'
+        s+=f'<g id="layer-04-frameless-athlete">{asset_slot("player_photo",-20,175,310,805)}</g>'
         s+=crest_pair(273,mini=True)+match_info(845,276)
-        s+=f'<g id="layer-07-player-name">{dynamic(690,539,"player_name",46,WHITE,"middle",True)}</g>'
+        s+=f'<g id="layer-07-player-name">{dynamic(585,539,"player_name",40,WHITE,"middle",True,max_width=430)}</g>'
         x,w,top,bottom=298,750,566,1102
     elif family in ('lottery','combo','cross_game'):
         s+=f'<g id="layer-05-multi-game-context">{txt(540,325,"INDIVIDUELLE NBA-SPIELERPROPS",31,GOLD,"middle",italic=True)}{txt(540,373,"SPIELER · MARKT · SPIELZEIT · QUOTE",23,WHITE,"middle")}</g>'
@@ -241,11 +259,10 @@ def multi(family,n):
     s+='</g>'
     s+='<g id="layer-09-combination">'
     if family=='ladder':
-        for j,key in enumerate(('l5','l10','l15','prob','stake')):
-            xx=28+j*209
-            s+=neon_box(xx,1124+extra,194,97,BLUE if j<4 else GOLD,14)
-            s+=txt(xx+17,1160+extra,key.upper() if key!='prob' else 'MODELL',22,WHITE,italic=True)
-            s+=dynamic(xx+176,1200+extra,key,29,GOLD,'end',True)
+        # Each rung has its own measured form. No empty or misleading aggregate boxes.
+        s+=neon_box(726,1124+extra,320,97,GOLD,14,'url(#amber)')
+        s+=txt(746,1186+extra,'EINSATZ',28,WHITE,italic=True)
+        s+=dynamic(1022,1186+extra,'stake',34,GOLD,'end',True,max_width=134)
     else:
         s+=neon_box(35,1124+extra,675,97,GOLD,16,'url(#amber)')
         s+=txt(62,1186+extra,'GESAMTQUOTE',32,WHITE,italic=True)+dynamic(679,1186+extra,'total_odds',38,GOLD,'end',True)
@@ -348,7 +365,12 @@ def qa_and_previews():
         if meta['legs']>1:
             assert ('total_odds' in fields) == (meta['family']!='ladder'),key
             assert 'stake' in fields,key
-            assert f'leg_{meta["legs"]}_market' in fields,key
+            last=meta["legs"]
+            if meta['family'] in ('ladder','same_player'):
+                assert {f'leg_{last}_line',f'leg_{last}_form'} <= fields,key
+                assert f'leg_{last}_market' not in fields,key
+            else:
+                assert f'leg_{last}_market' in fields,key
     previews=HERE/'previews';previews.mkdir(exist_ok=True)
     for key in ('single_single','ladder_4','builder_4','builder_6','same_player_4','combo_5','lottery_6','longshot'):
         (previews/f'{key}.png').write_bytes(render_png(key))

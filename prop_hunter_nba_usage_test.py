@@ -54,3 +54,10 @@ assert calculate_boxscore_usage(20,8,3,35,240,0,0,0) is None
 assert calculate_boxscore_usage(None,8,3,35,240,90,25,12) is None
 assert calculate_boxscore_usage(-1,8,3,35,240,90,25,12) is None
 print("NBA OBSERVED BOXSCORE USG ESTIMATE PASSED")
+
+# Actual V3 layout: personId is on the player, usage is under statistics.
+endpoints.boxscoreusagev3=SimpleNamespace(BoxScoreUsageV3=lambda **kw: SimpleNamespace(get_dict=lambda:{"boxScoreUsage":{"homeTeam":{"players":[{"personId":123,"statistics":{"usagePercentage":0.27,"minutes":"PT31M05.00S"}},{"personId":456,"statistics":{"usagePercentage":0,"minutes":"PT00M00.00S"}}]},"awayTeam":{"players":[]}}}))
+with patch.dict(sys.modules,{"nba_api":fake,"nba_api.stats":stats,"nba_api.stats.endpoints":endpoints}):
+    got=fetch_game_usage("0022600001","2026-10-28")
+    assert [(r["player_id"],r["usage_pct"]) for r in got]==[(123,27.0)]
+print("NBA NESTED V3 USAGE / INACTIVE PLAYER GUARD PASSED")

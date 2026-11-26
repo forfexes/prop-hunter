@@ -89,25 +89,35 @@ def prepare_calculated_combo(obj):
     Real combined ticket prices, when present, remain authoritative.
     Unknown same-game correlations never produce a fair model probability.
     """
+    f=features(obj)
+    # Formula diagnostics are derived from the current legs, never cached proof.
+    # Preserve price-provenance flags so stale calculated odds cannot become a
+    # confirmed bookmaker ticket after invalidation.
+    for key in ('formula_indicative_leg_product', 'formula_joint_probability',
+                'formula_fair_odds', 'formula_method', 'formula_scope',
+                'formula_ev_real_ticket_only', 'formula_individual_odds_verified',
+                'calculated_combined_odds'):
+        f.pop(key, None)
     if str(value(obj, 'type') or '').lower() in {'single', 'longshot', 'ladder'}:
         return obj
     legs=value(obj, 'leg_details', []) or []
     if len(legs)<2:
         return obj
     from premium_joint_formula import estimate_combo
-    f=features(obj)
-    ticket=dict(combined_odds_observed=f.get('combined_odds_observed'),
+    ticket=dict(combined_odds_observed=True,
                 combined_quote_id=f.get('combined_quote_id'),
-                odds=value(obj,'odds'))
+                odds=value(obj,'odds')) if confirmed_ticket(obj) else None
     try:
         analysis=estimate_combo(
             legs,
             conditional_probabilities=f.get('conditional_probabilities'),
             joint_observations=f.get('joint_observations'),
             observed_ticket=ticket)
-    except ValueError:
+    except (TypeError, ValueError, OverflowError):
         return obj
     calculated=analysis['indicative_leg_product']
+    if calculated is None:
+        return obj
     f.update(formula_indicative_leg_product=calculated,
              formula_joint_probability=analysis['joint_probability'],
              formula_fair_odds=analysis['fair_model_odds'],
@@ -301,3 +311,90 @@ def publishable_extra_reason(obj):
     if len(set(games))<len(games):
         return "same_game_missing_confirmed_quote"
     return "cross_game_missing_confirmed_quote"
+
+
+def formula_card_metadata(obj):
+    """Display-only contract for a calculated ticket, never a settlement price.
+
+    Only verified leg-price products and identified fixtures qualify.
+    No bookable ticket, cash profit, or bookmaker EV is implied.
+    """
+    kind=str(value(obj, "type") or "").strip().lower()
+    if kind not in {"kombi","kombi2","kombi3","combo","cross","cross_mix",
+                    "big","super","lottery","builder","betbuilder"}:
+        return None
+    f=features(obj)
+    if confirmed_ticket(obj):
+        return None
+    # Revalidate the current legs rather than trusting cached formula markers.
+    # A changed or removed leg must never inherit a previously approved card.
+    from premium_joint_formula import estimate_combo
+    try:
+        analysis=estimate_combo(value(obj, "leg_details") or [],
+            conditional_probabilities=f.get("conditional_probabilities"),
+            joint_observations=f.get("joint_observations"))
+    except (TypeError,ValueError,OverflowError):
+        return None
+    if analysis["individual_prices_observed"] is not True:
+        return None
+    if analysis["scope"] not in {"separate_games_independence_assumed",
+                                  "shared_game_correlated"}:
+        return None
+    quote=analysis["indicative_leg_product"]
+    if quote is None or not math.isfinite(quote) or quote<=1:
+        return None
+    return {"display_quote":quote,"label":"BERECHNET – KEINE BUCHMACHERQUOTE",
+            "price_type":"calculated_from_leg_odds","settle_as_bookmaker_ticket":False,
+            "bookmaker_ev":None,"realised_profit":None}
+
+
+def analyse_formula_candidates(candidates):
+    """One pass: compute every extra, then partition without changing live P/L.
+    A calculated-only candidate is not an observed ticket. Keep it separately
+    for model-card QA; it must never enter ordinary settlement/history.
+    """
+    from collections import Counter
+    accepted, deferred = [], []
+    reasons = Counter()
+    verified_formula = 0
+    formula_card_ready = 0
+    for candidate in candidates:
+        candidate = prepare_calculated_combo(candidate)
+        if features(candidate).get("formula_individual_odds_verified") is True:
+            verified_formula += 1
+        if publishable_extra(candidate):
+            accepted.append(candidate)
+        else:
+            deferred.append(candidate)
+            if formula_card_metadata(candidate) is not None:
+                formula_card_ready += 1
+            reasons[publishable_extra_reason(candidate)] += 1
+    return accepted, deferred, {"total":len(accepted)+len(deferred),
+        "accepted":len(accepted),"offline_unbookable":len(deferred),
+        "verified_leg_formulas":verified_formula,"formula_card_ready":formula_card_ready,"reasons":dict(reasons)}
+
+
+def isolated_formula_qa():
+    """Formula pictures are explicit disconnected dry-run artifacts only."""
+    return (os.getenv("PH_NBA_FORMULA_OFFLINE_QA") == "1"
+            and os.getenv("PH_NBA_OWNER_ORIGINALS") == "1"
+            and not any(os.getenv(k) for k in ("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN",
+                        "TELEGRAM_CHAT_ID", "TG_BOT_TOKEN", "TG_TOKEN", "TG_CHAT")))
+
+
+def render_formula_previews(candidates, output_dir, renderer):
+    """Render verified formula cards separately, never return publishable picks."""
+    from pathlib import Path
+    if not isolated_formula_qa():
+        return 0
+    directory=Path(output_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    count=0
+    for candidate in candidates:
+        if formula_card_metadata(candidate) is None:
+            continue
+        png=renderer(candidate, formula_preview=True)
+        if isinstance(png, bytes) and png.startswith(bytes((137,80,78,71,13,10,26,10))):
+            count+=1
+            (directory / f"formula-qa-{count:03}.png").write_bytes(png)
+    return count

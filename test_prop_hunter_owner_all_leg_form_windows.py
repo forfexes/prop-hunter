@@ -69,6 +69,28 @@ class PerLegL5L10L15QA(unittest.TestCase):
         self.assertEqual([label for label in printed if label.startswith("L5 ")],
                          list(EXPECTED))
 
+    def test_extended_lottery_stadium_has_no_repeated_horizontal_seams(self):
+        from PIL import ImageChops
+        # Smooth synthetic arena: any backward jump reveals old strip tiling.
+        source=Image.new("RGBA",(691,753),(0,0,0,255))
+        ink=ImageDraw.Draw(source)
+        for y in range(753):
+            ink.line((0,y,690,y),fill=(y//3,30,60,255))
+        for count in (2,3,4,6,12):
+            with self.subTest(count=count):
+                expanded,extra=lottery._extended(source,count)
+                self.assertEqual(expanded.size,(691,753+extra))
+                self.assertIsNone(ImageChops.difference(
+                    expanded.crop((0,0,691,445)).convert("RGB"),
+                    source.crop((0,0,691,445)).convert("RGB")).getbbox())
+                self.assertIsNone(ImageChops.difference(
+                    expanded.crop((0,637+extra,691,753+extra)).convert("RGB"),
+                    source.crop((0,637,691,753)).convert("RGB")).getbbox())
+                values=[expanded.getpixel((345,y))[0]
+                        for y in range(444,638+extra)]
+                self.assertTrue(all(0 <= b-a <= 1
+                                    for a,b in zip(values,values[1:])))
+
     def test_lottery_each_fixture_has_independent_windows_not_other_player(self):
         rows=[{"name":f"QA ATHLETE {i+1}","label":"QA LINE",
                "odds":"@—","photo":qa_photo(),"form":form,

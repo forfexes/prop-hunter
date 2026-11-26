@@ -157,6 +157,21 @@ class CenteredSingleQA(unittest.TestCase):
             supplied.render(**fields)
         self.assertIn((fields["row"]["name"], (308, 199)), hits)
 
+    def test_production_geometry_release_and_historical_pin(self):
+        from types import SimpleNamespace
+        from prop_hunter_nba_owner_bridge import centered_single_enabled
+        from prop_hunter_image_publication_gate import owner_image_signature
+        pick=SimpleNamespace(type="single")
+        env={"PH_NBA_CENTERED_SINGLE_RELEASE":"1","PH_NBA_SINGLE_CENTERED_PREVIEW":"0"}
+        with patch.dict(os.environ,env):
+            self.assertTrue(centered_single_enabled(pick))
+            self.assertFalse(centered_single_enabled({"_owner_single_centered_20261125":False}))
+            self.assertTrue(centered_single_enabled({"_owner_single_centered_20261125":True}))
+            original=owner_image_signature(pick)
+            with patch.dict(os.environ,{"PH_NBA_CENTERED_SINGLE_RELEASE":"0"}):
+                self.assertFalse(centered_single_enabled(pick))
+                self.assertNotEqual(original,owner_image_signature(pick))
+
     def test_centered_qa_cannot_publish_without_owner_visual_approval(self):
         # The release guard must run BEFORE any assets, odds or Telegram
         # state can be accessed and must leave ordinary production unchanged.

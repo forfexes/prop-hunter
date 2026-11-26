@@ -58,6 +58,43 @@ class NBAPricedLegIdentityQA(unittest.TestCase):
         self.assertEqual(renderer.call_count,1)
         self.assertEqual(renderer.call_args.args[1],"builder_2")
 
+    def test_formula_analysis_uses_normal_adapter_and_no_stake(self):
+        pick,rows,teams=examples()
+        pick.features={"bookmaker":"OFFLINE_QA_BOOKMAKER"}
+        for leg in pick.leg_details:
+            leg.update(odds_observed=True,bookmaker="OFFLINE_QA_BOOKMAKER")
+        env={"PH_NBA_OWNER_ORIGINALS":"1","PH_NBA_FORMULA_OFFLINE_QA":"1"}
+        with patch.dict("os.environ",env,clear=True), patch(
+                "prop_hunter_nba_owner_bridge.render_owner",return_value=b"FORMULA_QA") as renderer:
+            self.assertEqual(render_nba_pick(pick,rows,teams,formula_preview=True),b"FORMULA_QA")
+            self.assertTrue(renderer.call_args.kwargs["formula_preview"])
+            self.assertNotIn("stake",renderer.call_args.args[4])
+            self.assertEqual(renderer.call_args.args[4]["total_odds"],"@3.92")
+            with self.assertRaisesRegex(PremiumDataMissing,"observed bookmaker combined ticket"):
+                render_nba_pick(pick,rows,teams)
+            rows[0],rows[1]=rows[1],rows[0]
+            with self.assertRaisesRegex(PremiumDataMissing,"player identity"):
+                render_nba_pick(pick,rows,teams,formula_preview=True)
+
+    def test_formula_analysis_rejects_unobserved_legs_receipt_and_send_token(self):
+        pick,rows,teams=examples()
+        pick.features={"bookmaker":"OFFLINE_QA_BOOKMAKER"}
+        for leg in pick.leg_details:
+            leg.update(odds_observed=True,bookmaker="OFFLINE_QA_BOOKMAKER")
+        env={"PH_NBA_OWNER_ORIGINALS":"1","PH_NBA_FORMULA_OFFLINE_QA":"1"}
+        with patch.dict("os.environ",env,clear=True):
+            pick.leg_details[0]["odds_observed"]=False
+            with self.assertRaisesRegex(PremiumDataMissing,"observed individual prices"):
+                render_nba_pick(pick,rows,teams,formula_preview=True)
+            pick.leg_details[0]["odds_observed"]=True
+            pick.features["combined_quote_id"]="STALE"
+            with self.assertRaisesRegex(PremiumDataMissing,"ticket receipt"):
+                render_nba_pick(pick,rows,teams,formula_preview=True)
+            pick.features.pop("combined_quote_id")
+            with patch.dict("os.environ",{"TELEGRAM_TOKEN":"FAKE"}):
+                with self.assertRaisesRegex(PremiumDataMissing,"isolated offline QA"):
+                    render_nba_pick(pick,rows,teams,formula_preview=True)
+
     def test_swapped_athletes_cannot_receive_others_bookmaker_odds(self):
         pick,rows,teams=examples()
         rows[0],rows[1]=rows[1],rows[0]

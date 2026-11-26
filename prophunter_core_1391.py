@@ -3593,6 +3593,8 @@ def _payload_card_image(payload,picks):
             if (str(getattr(pick,"type","")).lower()=="single"
                     and os.getenv("PH_NBA_USER_SINGLE_20261122","0")=="1"):
                 payload["image_pick"]["_owner_single_master_20261122"] = True
+                from prop_hunter_nba_owner_bridge import centered_single_enabled
+                payload["image_pick"]["_owner_single_centered_20261125"] = centered_single_enabled(pick)
         if png: payload["media_type"]="photo"
         return png
     except Exception as exc:
@@ -3689,10 +3691,10 @@ def send_telegram(text,dry_run=False,picks=None):
                     break
                 data=r.json() if r.content else {}
                 mid=((data.get("result") or {}).get("message_id"))
-                if mid is None:
-                    log.error("Telegram returned no message_id kind=%s",payload.get("kind"))
+                if data.get("ok") is not True or type(mid) is not int or mid<=0:
+                    log.error("Telegram returned invalid positive message receipt kind=%s",payload.get("kind"))
                     break
-                item=dict(payload);item["message_id"]=int(mid);sent.append(item)
+                item=dict(payload);item["message_id"]=mid;sent.append(item)
                 delivered=True
                 break
             except Exception as e:
@@ -4390,12 +4392,14 @@ def _market_with_line(market: str, direction: Optional[str], point: Optional[flo
     return f"{m} {dir_word} {point:g}".strip()
 
 
-def analyse(props):
+def analyse(props, *, diagnostics=None):
     if not props: return []
     prompt=build_prompt(props)
     def llm(p): return call_gemini(p) or call_groq(p)
     picks=call_with_retry(prompt,llm)
     log.info("LLM: %d picks",len(picks))
+    if diagnostics is not None:
+        diagnostics["model_candidates"] = len(picks)
     for pk in picks:
         if pk.type != "single":
             continue
@@ -5561,7 +5565,8 @@ def run(dry_run=False,sport_filter=None):
         return
 
     log.info("CARD PIPELINE: gathered_props=%d", len(props))
-    picks=analyse(props)
+    analysis_diagnostics = {}
+    picks=analyse(props, diagnostics=analysis_diagnostics)
 
     if not picks:
         log.warning("no picks from LLM — trying source-prop rescue")
@@ -5592,8 +5597,15 @@ def run(dry_run=False,sport_filter=None):
         if rescue2:
             picks = filter_picks(rescue2)  # auch hier gegen heute Gepostete deduppen
             log.info("relaxed rescue: %d picks", len(picks))
-        else:
-            log.error("CARD EMPTY at MODEL/RESCUE: gathered_props=%d; check source-prop rescue rejected breakdown above", len(props))
+        if not picks:
+            # A real model response followed by successful quality/rescue evaluation
+            # may legitimately yield no eligible bets. Never send or persist an empty card.
+            # A missing/invalid model response is still a diagnostic failure.
+            if analysis_diagnostics.get("model_candidates", 0) > 0:
+                log.info("NO_QUALIFIED_PICKS at MODEL/RESCUE: gathered_props=%d model_candidates=%d; no Telegram delivery attempted",
+                         len(props), analysis_diagnostics["model_candidates"])
+                return
+            log.error("CARD EMPTY at MODEL/RESCUE: gathered_props=%d; no valid model candidates and no source-rescue picks", len(props))
             if not dry_run and os.getenv("PH_FAIL_ON_EMPTY_CARD", "1") == "1":
                 raise RuntimeError("PROP HUNTER EMPTY CARD: zero qualified LLM and source-rescue picks")
             return
@@ -5628,16 +5640,30 @@ def run(dry_run=False,sport_filter=None):
                 log.info("estimated team+player builders: +%d", len(est_mixed))
         except Exception as est_exc:
             log.warning("estimated mixed builder skipped: %s", est_exc)
-        from prop_hunter_combo_prices import publishable_tip
-        eligible = [p for p in extras if publishable_tip(p)]
-        log.info("builder extras: generated=%d accepted=%d", len(extras), len(eligible))
-        picks = picks + eligible
+        picks = picks + extras
+        log.info("builder extras before formula and ticket gates: +%d", len(extras))
     except Exception as exc:
         log.warning("verified builder skipped: %s", exc)
-    from prop_hunter_combo_prices import publishable_tip, prepare_calculated_combo
-    formula_candidates = [prepare_calculated_combo(p) for p in picks]
-    picks = [p for p in formula_candidates if publishable_tip(p)]
-    log.info("Combo formula screening: total=%d accepted=%d", len(formula_candidates), len(picks))
+    from prop_hunter_combo_prices import analyse_formula_candidates
+    # Formula-only candidates are evaluated before rejection; the real-ticket
+    # publication and accounting gates remain unchanged until renderer approval.
+    picks, formula_deferred, formula_diagnostics = analyse_formula_candidates(picks)
+    log.info("Kombi/Builder/Lottery formula analysed before ticket gate: %s", formula_diagnostics)
+    if dry_run:
+        from prop_hunter_combo_prices import isolated_formula_qa, render_formula_previews
+        if isolated_formula_qa():
+            import prop_hunter_image_cards as _formula_cards
+            _formula_count = render_formula_previews(formula_deferred,
+                "output/formula_card_previews", _formula_cards.build_for_pick)
+            log.info("Isolated NBA formula previews rendered=%d", _formula_count)
+    if os.getenv("PH_NFL_PREMIUM_CARDS", "0") == "1":
+        from prop_hunter_combo_prices import calculated_combo_quote
+        from prop_hunter_image_cards import league_of
+        for candidate in formula_deferred:
+            sport = getattr(candidate, "source_sport", None) or getattr(candidate, "sport", None)
+            league = league_of(sport)
+            if league and league[1] == "nfl" and calculated_combo_quote(candidate) is not None:
+                picks.append(candidate)
     from prop_hunter_form_quality import filter_tickets
     picks, form_rejected = filter_tickets(picks)
     log.info("final form evidence filter: %s", form_rejected)

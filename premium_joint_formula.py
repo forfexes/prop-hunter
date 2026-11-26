@@ -78,11 +78,20 @@ def estimate_combo(legs, *, conditional_probabilities=None,
         scope = "shared_game_correlated"
     else:
         scope = "event_identity_unknown"
-    verified_legs = indicative is not None and all(
-        _field(leg, "odds_observed") is True
-        or _field(_field(leg, "features") or {}, "odds_observed") is True
-        for leg in legs
-    )
+    def observed_leg(leg):
+        scopes = (leg, _field(leg, "features") or {})
+        if any(_field(scope, "odds_observed") is False for scope in scopes):
+            return False
+        if any(_field(scope, flag) for scope in scopes for flag in
+               ("estimated", "synthetic", "_synthetic", "_no_real_odds",
+                "estimated_odds", "odds_calculated", "price_calculated", "model_odds")):
+            return False
+        if any(str(_field(scope, "price_type") or "").strip().lower() in
+               {"estimated", "synthetic", "model", "model_odds",
+                "calculated_from_leg_odds", "derived_builder"} for scope in scopes):
+            return False
+        return any(_field(scope, "odds_observed") is True for scope in scopes)
+    verified_legs = indicative is not None and all(observed_leg(leg) for leg in legs)
     probs = [_p(_field(leg, "model_probability",
                        _field(leg, "probability"))) for leg in legs]
     probability = None

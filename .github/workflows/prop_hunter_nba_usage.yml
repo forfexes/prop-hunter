@@ -10,24 +10,36 @@ name: Prop Hunter NBA Usage Source Check
         description: "ISO date YYYY-MM-DD for the game"
         required: false
         type: string
+  schedule:
+    - cron: "35 10,14 * * *"
   push:
     paths:
       - ".github/workflows/prop_hunter_nba_usage.yml"
       - "prop_hunter_nba_usage.py"
       - "prop_hunter_nba_usage_test.py"
       - "prop_hunter_nba_usage_ingest.py"
+      - "prop_hunter_nba_usage_auto.py"
+      - "prop_hunter_nba_usage_auto_test.py"
+concurrency:
+  group: nba-usage-import
+  cancel-in-progress: false
 permissions:
   contents: read
 jobs:
   usage:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: pip install nba_api requests
+      - name: Offline usage regressions
+        run: |
+          python prop_hunter_nba_usage_test.py
+          python prop_hunter_nba_usage_ingest_test.py
+          python prop_hunter_nba_usage_auto_test.py
       - name: Official NBA Usage API smoke test
         run: |
           python - <<'PY'
@@ -43,16 +55,34 @@ jobs:
               print(f"NBA official usage source OK: season={season}, players={len(rows)}")
           PY
 
+      - name: Validate manual import arguments
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          NBA_GAME_ID: ${{ inputs.nba_game_id }}
+          NBA_GAME_DATE: ${{ inputs.game_date }}
+        run: |
+          if { [ -n "$NBA_GAME_ID" ] && [ -z "$NBA_GAME_DATE" ]; } || { [ -z "$NBA_GAME_ID" ] && [ -n "$NBA_GAME_DATE" ]; }; then
+            echo "Both game ID and date are required for manual import"
+            exit 1
+          fi
+
       - name: Optional verified NBA game usage import
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.nba_game_id != '' && inputs.game_date != '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
           NBA_GAME_ID: ${{ inputs.nba_game_id }}
           NBA_GAME_DATE: ${{ inputs.game_date }}
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "Usage import SKIPPED: Supabase secrets missing"
-            exit 0
+            echo "Usage import BLOCKED: Supabase secrets missing"
+            exit 1
           fi
           python prop_hunter_nba_usage_ingest.py "$NBA_GAME_ID" "$NBA_GAME_DATE"
+
+      - name: Automatically discover and import completed NBA games
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.nba_game_id == '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
+        run: python prop_hunter_nba_usage_auto.py --days 45 --max-games 24

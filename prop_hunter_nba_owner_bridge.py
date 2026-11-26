@@ -39,6 +39,19 @@ def user_single_original_enabled(pick) -> bool:
 
 
 
+def centered_single_enabled(pick) -> bool:
+    """Use the owner-released geometry for new cards; preserve historical geometry."""
+    import os
+    marker = (pick.get("_owner_single_centered_20261125")
+              if isinstance(pick, dict)
+              else getattr(pick, "_owner_single_centered_20261125", None))
+    if type(marker) is bool:
+        return marker
+    if os.getenv("PH_NBA_SINGLE_CENTERED_PREVIEW", "0") == "1":
+        return True
+    return os.getenv("PH_NBA_CENTERED_SINGLE_RELEASE", "0") == "1"
+
+
 def _layered_owner_release_ready() -> bool:
     """Release only if all four clean owner-derived plates are current.
 
@@ -57,7 +70,7 @@ def _layered_owner_release_ready() -> bool:
 
 
 def render_owner(pick, key: str, rows: list, teams: list,
-                 values: dict, details: list) -> bytes:
+                 values: dict, details: list, *, formula_preview: bool = False) -> bytes:
     # Production fail-closed: the legacy owner compositor still draws large
     # opaque rectangles over original artwork. Re-enable only after a reviewed
     # overlay-free clean-plate renderer replaces this path.
@@ -76,6 +89,15 @@ def render_owner(pick, key: str, rows: list, teams: list,
             raise ValueError("owner_original_overpainted_compositor_blocked")
         if not _layered_owner_release_ready():
             raise ValueError("owner_layered_clean_plates_not_ready")
+    if formula_preview:
+        # Explicit disconnected QA API only. Existing send/settlement callers
+        # cannot reach this branch merely by passing an estimated price.
+        if (os.getenv("PH_NBA_FORMULA_OFFLINE_QA") != "1"
+                or any(os.getenv(k) for k in ("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN",
+                                             "TELEGRAM_CHAT_ID", "TG_BOT_TOKEN"))):
+            raise ValueError("Formula preview requires isolated offline QA")
+        if os.getenv("PH_NBA_OWNER_ORIGINALS") != "1":
+            raise ValueError("Formula preview requires the layered NBA originals")
     from prop_hunter_original_compositor import original_card
     # The master key is the approved market identifier, not necessarily
     # family + one numeric suffix. Single-market names may contain underscores.
@@ -132,13 +154,26 @@ def render_owner(pick, key: str, rows: list, teams: list,
     # rung prices and does not claim a combined booking price.
     combined_ticket=(family in ("builder","lottery")
                      or render_family=="same_player")
-    if combined_ticket and not verified:
+    if combined_ticket and not verified and not formula_preview:
         raise ValueError("Observed bookmaker combined ticket ID required; calculated quote forbidden")
-    if combined_ticket and not observed_quote:
+    if combined_ticket and not observed_quote and not formula_preview:
         raise ValueError("Observed bookmaker combined ticket price missing")
     footer=("Quote "+str(observed_quote)) if observed_quote and (
         verified or not combined_ticket) else ""
-    if stake:
+    if formula_preview:
+        import re
+        from premium_joint_formula import estimate_combo
+        if family not in ("builder", "lottery") or verified:
+            raise ValueError("Formula preview is for unpriced Builder/Combo/Cross/Lottery only")
+        legs = []
+        for i in range(len(rows)):
+            raw = str(values.get(f"leg_{i+1}_odds") or "").strip()
+            if not re.fullmatch(r"@?\d+(?:[.,]\d+)?", raw):
+                raise ValueError("Formula preview requires every individual price")
+            legs.append({"odds": float(raw.lstrip("@").replace(",", "."))})
+        calculated = estimate_combo(legs)["indicative_leg_product"]
+        footer = f"FORMEL-QA {calculated:.2f}"
+    elif stake:
         footer += (" · " if footer else "") + "Einsatz " + str(stake)
     labels=[]
     for i, row in enumerate(rows):
@@ -185,8 +220,9 @@ def render_owner(pick, key: str, rows: list, teams: list,
             raise ValueError("User original SINGLE requires one actual athlete")
         owner_png = render_supplied_single(
             title=title, subtitle=subtitle, teams=teams, row=labels[0],
-            footer=footer, settlement=values.get("settlement") or "OFFEN")
+            footer=footer, settlement=values.get("settlement") or "OFFEN",
+            centered_qa=centered_single_enabled(pick))
     else:
         owner_png = original_card(family, title, subtitle,"NBA",teams,
-                                  labels,footer,values.get("settlement") or "OFFEN")
+                                  labels,footer,"QA ONLY" if formula_preview else values.get("settlement") or "OFFEN")
     return append_owner_margin(owner_png)

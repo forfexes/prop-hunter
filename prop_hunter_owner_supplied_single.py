@@ -199,16 +199,17 @@ def _status(value):
     return state, WHITE if state in ('OFFEN','PUSH','VOID') else GREEN if state=='GEWONNEN' else RED
 
 
-def render(*, title, subtitle, teams, row, footer, settlement):
+def render(*, title, subtitle, teams, row, footer, settlement, centered_qa=None):
     """Return source-derived 1080px PNG; no Telegram message or estimate."""
     if title!='SINGLE':
         raise ValueError('Owner supplied source is approved for Singles only')
     if not isinstance(teams,(list,tuple)) or len(teams)!=2 or not isinstance(row,dict):
         raise ValueError('Exactly two NBA teams and one observed player required')
     im=_plate()
-    # QA-only requested photo enlargement/centred title. Production keeps
-    # its current verified coordinates until the new preview is approved.
-    centered_qa=os.getenv('PH_NBA_SINGLE_CENTERED_PREVIEW','0')=='1'
+    # Direct QA callers retain preview behaviour. The production bridge pins
+    # the owner-approved geometry on each published snapshot.
+    if centered_qa is None:
+        centered_qa=os.getenv('PH_NBA_SINGLE_CENTERED_PREVIEW','0')=='1'
     _portrait(im,row.get('photo'),centered_qa=centered_qa)
     _logo(im,teams[0],191)
     _logo(im,teams[1],322)

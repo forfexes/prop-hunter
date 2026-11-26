@@ -28,12 +28,16 @@ def _extended(plate: Image.Image, n: int):
     width, height = src.size
     cut = 637
     canvas = Image.new("RGBA", (width, height + extra), (3, 15, 29, 255))
-    canvas.paste(src.crop((0, 0, width, cut)), (0, 0))
-    # A genuinely empty arena band from this SAME owner image is inserted.
-    # The top brand, all authentic outlines and bottom footer remain original.
-    band = src.crop((0, 445, width, 515))
-    for y in range(cut, cut + extra, 70):
-        canvas.paste(band, (0, y))
+    # Expand the continuous, cleaned arena midsection rather than tiling a
+    # 70px strip. Tiling introduced hard horizontal seams and duplicated
+    # lights, especially on six- and twelve-leg cards. Keep the hero/header
+    # and original footer exactly as supplied, and preserve the width.
+    start = 445
+    canvas.paste(src.crop((0, 0, width, start)), (0, 0))
+    band = src.crop((0, start, width, cut))
+    expanded = band.resize((width, cut - start + extra),
+                           Image.Resampling.BILINEAR)
+    canvas.paste(expanded, (0, start))
     canvas.paste(src.crop((0, cut, width, height)), (0, cut + extra))
     return canvas, extra
 
@@ -67,13 +71,22 @@ def render(plate: Image.Image, *, rows: list,
           size=19, max_width=286, color=GOLD)
     _text(d, (603, 149), f"{n} SPIELE",
           size=23, max_width=158, color=WHITE)
-    _text(d, (600, 188), "BUCHMACHER-QUOTE",
-          size=13, max_width=160, color=GOLD)
-    quote = re.search(r"\bQuote\s+@?([\d.,]+)", str(footer or ""), re.I)
-    if not quote:
-        raise ValueError("Real observed combined bookmaker ticket missing")
-    _text(d, (601, 220), "@" + quote.group(1),
-          size=28, max_width=161, color=GOLD)
+    formula = re.fullmatch(r"FORMEL-QA ([\d.]+)", str(footer or ""))
+    if formula:
+        import os
+        if os.getenv("PH_NBA_FORMULA_OFFLINE_QA") != "1" or settlement != "QA ONLY":
+            raise ValueError("Formula preview requires isolated offline QA")
+        _text(d, (600, 188), "BERECHNET", size=13, max_width=160, color=GOLD)
+        _text(d, (601, 220), formula.group(1), size=28, max_width=161, color=GOLD)
+        _text(d, (600, 247), "KEINE BOOKIE-QUOTE", size=12, max_width=160, color=WHITE)
+    else:
+        _text(d, (600, 188), "BUCHMACHER-QUOTE",
+              size=13, max_width=160, color=GOLD)
+        quote = re.search(r"\bQuote\s+@?([\d.,]+)", str(footer or ""), re.I)
+        if not quote:
+            raise ValueError("Real observed combined bookmaker ticket missing")
+        _text(d, (601, 220), "@" + quote.group(1),
+              size=28, max_width=161, color=GOLD)
 
     top = 342 + max(0, (295 - n * 85) // 2)
     tint = Image.new("RGBA", im.size, (0, 0, 0, 0))
@@ -82,7 +95,6 @@ def render(plate: Image.Image, *, rows: list,
         y = top + i * 85
         p.rounded_rectangle(
             (43, y, 648, y + 81), radius=9,
-            fill=(21, 10, 34, 146),
             outline=(200, 71, 238, 210), width=2,
         )
     im = Image.alpha_composite(im, tint)

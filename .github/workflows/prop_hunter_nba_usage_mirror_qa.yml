@@ -1,0 +1,27 @@
+name: NBA Independent Usage Mirror Validation
+"on":
+  workflow_dispatch: {}
+  schedule:
+    - cron: "55 10,14 * * *"
+  push:
+    paths:
+      - ".github/workflows/prop_hunter_nba_usage_mirror_qa.yml"
+      - "prop_hunter_nba_usage_mirror_probe.py"
+      - "prop_hunter_nba_usage_mirror_probe_test.py"
+permissions:
+  contents: read
+concurrency:
+  group: nba-usage-mirror-validation
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyarrow
+      - run: python prop_hunter_nba_usage_mirror_probe_test.py
+      - run: python prop_hunter_nba_usage_mirror_probe.py

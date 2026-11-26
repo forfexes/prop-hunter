@@ -20,12 +20,12 @@ class Logger:
     def warning(self,*a,**kw):pass
     def info(self,*a,**kw):pass
 
-def exercise(payloads, reply=200):
+def exercise(payloads, reply=200, *, receipt=47, ok=None):
     calls=[]
     def send(url,**kwargs):
         calls.append(url.rsplit("/",1)[-1])
         return N(status_code=reply,text="synthetic",content=b"{}",
-                 json=lambda:{"ok":reply==200,"result":{"message_id":47}})
+                 json=lambda:{"ok":(reply==200 if ok is None else ok),"result":{"message_id":receipt}})
     def image_for(payload,picks):
         payload["premium_required"]=bool(payload.get("must_photo"))
         return payload.get("png")
@@ -111,3 +111,10 @@ with patch.dict(sys.modules,{"prop_hunter_image_cards":fake}), \
     assert not hasattr(cached,"_verified_owner_signature")
 
 print("PREMIUM TELEGRAM PHOTO-ONLY CONTRACT PASSED: cached identical PNG, NBA classification, preflight, no text fallbacks")
+
+
+for receipt, ok in ((True, True), (0, True), (-1, True), ("47", True), (47, False)):
+    p={"kind":"single","text":"synthetic","must_photo":True,"png":b"PNG"}
+    result,calls,g=exercise([p],receipt=receipt,ok=ok)
+    assert result is None and calls==["sendPhoto"]
+    assert g["_LAST_TELEGRAM_CARDS"]==[]

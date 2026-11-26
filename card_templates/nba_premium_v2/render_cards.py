@@ -8,7 +8,7 @@ from __future__ import annotations
 import base64, io, json, re
 from pathlib import Path
 from xml.etree import ElementTree as ET
-from PIL import Image
+from PIL import Image, ImageFont
 import cairosvg
 
 ROOT=Path(__file__).resolve().parent
@@ -116,7 +116,23 @@ def render_svg(template_key: str, values: dict, images: dict[str,bytes], *,
             if e.text and len(e.text)>20:
                 original=float(e.get('font-size') or 28)
                 maxlen=24 if key.endswith('_market') else 20
-                e.set('font-size',str(round(max(17,original*maxlen/len(e.text)),1)))
+                e.set('font-size',str(round(min(original,max(12,original*maxlen/len(e.text))),1)))
+            # Explicit geometry slots are sized by actual glyph width, not
+            # character count. Never let a long name run into match metadata.
+            limit=e.get('data-max-width')
+            if e.text and limit is not None:
+                size=max(12,int(float(e.get('font-size') or 28)))
+                font_name=('DejaVuSans-BoldOblique.ttf'
+                           if e.get('font-style')=='italic' else 'DejaVuSans-Bold.ttf')
+                while True:
+                    font=ImageFont.truetype(font_name,size)
+                    bbox=font.getbbox(e.text)
+                    if max(font.getlength(e.text),bbox[2]-min(0,bbox[0]))<=float(limit)-6:
+                        break
+                    if size<=12:
+                        raise ValueError('Text does not fit reserved master field: '+key)
+                    size-=1
+                e.set('font-size',str(size))
         slot=e.get('data-image-slot')
         if not slot or not images.get(slot):continue
         data=images[slot]

@@ -48,6 +48,9 @@ def owner_image_signature(pick):
         "nba_owner":os.getenv("PH_NBA_OWNER_ORIGINALS","0"),
         # New 512px owner source must never reuse cached 691px Single pixels.
         "user_single_20261122":os.getenv("PH_NBA_USER_SINGLE_20261122","0"),
+        "centered_release":os.getenv("PH_NBA_CENTERED_SINGLE_RELEASE","0"),
+        "centered_preview":os.getenv("PH_NBA_SINGLE_CENTERED_PREVIEW","0"),
+        "centered_snapshot":_pick_value(pick,"_owner_single_centered_20261125"),
         "no_silhouette_preview_approved":os.getenv("PH_NBA_NO_SILHOUETTE_VISUAL_APPROVED","0"),
         "no_overpaint":os.getenv("PH_BLOCK_OVERPAINTED_MASTERS","0"),
         "layered_owner_release":os.getenv("PH_ALLOW_VERIFIED_LAYERED_OWNER","0"),

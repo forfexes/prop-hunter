@@ -5,6 +5,8 @@ name: Prop Hunter Sandbox Hardtest
     paths:
       - '.github/workflows/prop_hunter_sandbox_hardtest.yml'
       - 'prop_hunter_combo_prices_test.py'
+      - 'prophunter_core_1391.py'
+      - 'test_prop_hunter_no_qualified_picks.py'
       - 'prop_hunter_nba_owner_bridge.py'
       - 'prop_hunter_owner_clean_single.py'
       - 'prop_hunter_owner_clean_ladder.py'
@@ -39,6 +41,7 @@ jobs:
         timeout-minutes: 8
         run: |
           python -m compileall -q .
+          python test_prop_hunter_no_qualified_picks.py
           python prop_hunter_combo_prices_test.py
           python prop_hunter_card_quality_test.py
           python prop_hunter_form_windows_test.py
