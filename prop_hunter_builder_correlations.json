@@ -1290,11 +1290,11 @@
       "raw_ratio": 1.35
     },
     "NFL:rushing_yards:under|NFL:rushing_yards:under": {
-      "factor": 0.9889,
-      "n": 10,
-      "both_wins": 1,
-      "observed_joint": 0.1,
-      "expected_joint": 0.21032,
+      "factor": 0.9556,
+      "n": 16,
+      "both_wins": 2,
+      "observed_joint": 0.125,
+      "expected_joint": 0.28114,
       "raw_ratio": 0.6
     },
     "NFL:30+_receiving_yards:over|NFL:40+_receiving_yards:over": {
@@ -1600,8 +1600,16 @@
       "observed_joint": 0.0,
       "expected_joint": 0.45634,
       "raw_ratio": 0.6
+    },
+    "NFL:receiving_yards:under|NFL:receiving_yards:under": {
+      "factor": 1.0,
+      "n": 3,
+      "both_wins": 0,
+      "observed_joint": 0.0,
+      "expected_joint": 0.16112,
+      "raw_ratio": 0.6
     }
   },
   "profiles": {},
-  "updated_at": "2026-11-27T01:39:10.885704+00:00"
+  "updated_at": "2026-11-27T16:35:27.886065+00:00"
 }
