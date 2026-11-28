@@ -10,10 +10,15 @@ stub.safe_json_write=lambda *a,**k:None;stub.select_pick_rows=lambda *a,**k:[]
 stub.select_settlement_picks=stub.select_pick_rows
 stub.to_float=lambda v,default=None: default if v in (None,'','--') else float(v)
 stub.upsert_rows=lambda *a,**k:None
+_saved={k:sys.modules.get(k) for k in ('prop_hunter_shared_utils','prop_hunter_results_euroleague','prop_hunter_card_formatter')}
 sys.modules['prop_hunter_shared_utils']=stub
 
 import prop_hunter_results_euroleague as mod
 import prop_hunter_card_formatter as cf
+# Do not leak the stub into other test modules collected in the same pytest run.
+for _k,_v in _saved.items():
+    if _v is None:sys.modules.pop(_k,None)
+    else:sys.modules[_k]=_v
 
 def check(value,msg):
     if not value:raise AssertionError(msg)

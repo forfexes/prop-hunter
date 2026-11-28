@@ -18,10 +18,12 @@ def test_nfl_verified_markets():
         {"T": 6188, "P": 0.5, "C": 6.5, "PL": {"N": "Derrick Henry", "I": 1, "T": 1}},
     ]), EV, "NFL")
     by = {(r["player_name"], r["market"], r["direction"]): r for r in rows}
-    assert ("Derrick Henry", "rushing_yards", "over") in by
-    assert ("Derrick Henry", "rushing_yards", "under") in by
+    # 8393-8396 have contradictory/unresolved meanings: deliberately NOT mapped
+    # (fail-closed) until an operator verifies them from a probe.
+    assert ("Derrick Henry", "rushing_yards", "over") not in by
+    assert ("Derrick Henry", "rushing_yards", "under") not in by
+    assert ("Zay Flowers", "receptions", "over") not in by
     assert ("Justin Herbert", "passing_yards", "over") in by
-    assert ("Zay Flowers", "receptions", "over") in by
     assert ("Derrick Henry", "anytime_td", "yes") in by
     assert by[("Derrick Henry", "anytime_td", "yes")]["line"] == 0.5
     print("NFL verified markets OK")
@@ -30,9 +32,9 @@ def test_nfl_verified_markets():
 def test_unverified_type_dropped():
     rows = parse_players_stats(_sub([
         {"T": 99999, "P": 1.5, "C": 2.0, "PL": {"N": "Ghost Market", "I": 9}},
-        {"T": 8395, "P": 4.5, "C": 1.9, "PL": {"N": "Real RB", "I": 8, "T": 1}},
+        {"T": 8397, "P": 193.5, "C": 1.9, "PL": {"N": "Real QB", "I": 8, "T": 1}},
     ]), EV, "NFL")
-    assert len(rows) == 1 and rows[0]["player_name"] == "Real RB", "unverified type must be dropped"
+    assert len(rows) == 1 and rows[0]["player_name"] == "Real QB", "unverified type must be dropped"
     print("unverified type dropped OK")
 
 
