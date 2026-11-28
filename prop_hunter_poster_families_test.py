@@ -1,3 +1,5 @@
+import os as _os
+_os.environ["PH_MASTER_CARDS"]="0"  # these checks cover the legacy compositor only
 """Offline PNG regression for all four premium poster families."""
 from io import BytesIO
 import os

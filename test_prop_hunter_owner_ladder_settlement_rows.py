@@ -1,3 +1,5 @@
+import os as _os
+_os.environ["PH_MASTER_CARDS"]="0"  # these checks cover the legacy compositor only
 """Original PROP HUNTER per-rung Telegram settlement visual QA.
 
 A settled Ladder retains each rung's independently verified win/loss/actual

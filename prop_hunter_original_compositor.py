@@ -685,6 +685,14 @@ def original_card(kind: str, title: str, subtitle: str, sport: str,
     family = _family(kind)
     if not rows:
         raise ValueError('No pick rows')
+    if os.getenv('PH_MASTER_CARDS', '1') != '0':
+        import prop_hunter_master_cards as _pm
+        if family == 'single':
+            return _pm.render_single(title, subtitle, teams, rows[0], footer, settlement)
+        if family == 'ladder':
+            return _pm.render_ladder(title, subtitle, teams, rows, footer, settlement)
+        if len(rows) <= 6:
+            return _pm.render_list(family, title, subtitle, teams, rows, footer, settlement)
     if family == 'ladder':
         distinct = {str(r.get('name') or '').strip().casefold() for r in rows}
         if len(distinct) != 1 or not next(iter(distinct)):

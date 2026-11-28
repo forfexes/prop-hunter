@@ -75,8 +75,9 @@ class RealTicketOnly(unittest.TestCase):
         for key, renderer in (("builder_2", builder), ("lottery_2",
                            __import__("prop_hunter_owner_clean_lottery")),
                            ("cross_game_2", __import__("prop_hunter_owner_clean_lottery"))):
+            import prop_hunter_master_cards as _master
             with self.subTest(key=key), patch.dict(os.environ,env,clear=True), patch.object(
-                    renderer, "_text", wraps=renderer._text) as printed:
+                    _master, "_text", wraps=_master._text) as printed:
                 result=bridge.render_owner(pick,key,self.rows,self.teams,self.values,[],
                                            formula_preview=True)
                 self.assertTrue(result.startswith(bytes((137,80,78,71))))
