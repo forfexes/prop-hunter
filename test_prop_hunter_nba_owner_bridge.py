@@ -1,3 +1,5 @@
+import os as _os
+_os.environ["PH_MASTER_CARDS"]="0"  # these checks cover the legacy compositor only
 """Hermetic original-owner NBA Single/Ladder/Builder render and odds guard QA."""
 from io import BytesIO
 from pathlib import Path

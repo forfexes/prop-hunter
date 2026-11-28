@@ -65,6 +65,10 @@ def owner_pixel_provenance(pick, png_bytes):
         return False, "unapproved_card_family"
     if not isinstance(png_bytes, (bytes, bytearray)):
         return False, "missing_png"
+    from prop_hunter_master_cards import is_master_card
+    _master = is_master_card(bytes(png_bytes))
+    if _master is not None:
+        return _master
     # The user supplied a *different* 512x512 SINGLE source on 22.11.26:
     # no comparison against the unrelated old 691px stadium header.
     if (family == "single" and str(field(pick,"type","")).strip().lower()=="single"
